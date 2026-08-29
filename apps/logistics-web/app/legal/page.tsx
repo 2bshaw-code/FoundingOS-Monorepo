@@ -9,15 +9,15 @@ import { brands } from '@foundingos/config'
 
 const legalSections = [
   
-    { name: 'Privacy Policy', copy: 'We protect portfolio, signal, and contact data with strict controls and secure operational handling.' },
-    { name: 'Terms & Conditions', copy: 'These terms govern account access, trading workflows, execution support, and signal-driven decision-making.' },
-    { name: 'Cookie Policy', copy: 'Cookies support performance monitoring, market signal analytics, and safe user experience across the platform.' },
-    { name: 'Compliance & Data Handling', copy: 'We apply governance to signal data, access controls, and alerting workflows to reduce operational risk.' },
-    { name: 'Trading Risk Disclosure', copy: 'Market decisions carry risk. Signals, alerts, and execution guidance are informational and must be reviewed carefully.' }
+    { name: 'Privacy Policy', copy: 'We protect fleet, route, and contact data with strict controls and secure operational handling.' },
+    { name: 'Terms & Conditions', copy: 'These terms govern account access, fleet workflows, dispatch support, and route-driven decision-making.' },
+    { name: 'Cookie Policy', copy: 'Cookies support performance monitoring, product analytics, and safe user experience across the platform.' },
+    { name: 'Compliance & Data Handling', copy: 'We apply governance to fleet data, access controls, and dispatch workflows to reduce operational risk.' },
+    { name: 'Delivery Risk Disclosure', copy: 'Logistics decisions carry risk. Routes, alerts, and dispatch guidance are informational and must be reviewed carefully.' }
 ] as const
 
 const consoleLinks = [
-  { name: 'Crypto Intelligence & Auto-Execution Console', href: 'http://localhost:3005' },
+  { name: 'Logistics Fleet & Route Console', href: 'http://localhost:3005' },
 ] as const
 
 const cryptoHomeUrl = brands.logistics.webUrl
@@ -31,7 +31,7 @@ export default function Page() {
             <div style={{ width: 42, height: 42, borderRadius: 12, background: '#9C27B0', color: '#071014', display: 'grid', placeItems: 'center', fontWeight: 900 }}>∞</div>
             <div>
               <strong style={{ display: 'block', fontSize: 22, lineHeight: 1.1 }}>FoundLogistics</strong>
-              <small style={{ color: '#ddd6fe', fontSize: 12 }}>{'Crypto Intelligence OS'}</small>
+              <small style={{ color: '#ddd6fe', fontSize: 12 }}>{'Logistics Intelligence OS'}</small>
             </div>
           </a>
 

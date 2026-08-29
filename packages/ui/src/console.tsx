@@ -500,6 +500,131 @@ function bobLabel(config: BrandConsoleConfig) {
   }
 }
 
+export type StatusBadgeTone = 'good' | 'watch' | 'risk' | 'neutral'
+
+// Purely additive premium status badge — usable anywhere a small status/tier
+// pill is needed (tables, cards, headers). Does not replace or alter any
+// existing routing, layout, or component.
+export function StatusBadge({ label, tone = 'neutral' }: { label: string; tone?: StatusBadgeTone }) {
+  return <span className={`status-badge status-badge--${tone}`}>{label}</span>
+}
+
+export type AlertTone = 'info' | 'success' | 'warning' | 'danger'
+
+// Purely additive premium inline alert/banner component.
+export function Alert({ tone = 'info', title, children }: { tone?: AlertTone; title?: string; children?: React.ReactNode }) {
+  return (
+    <div className={`premium-alert premium-alert--${tone}`} role="status">
+      {title && <strong>{title}</strong>}
+      {children && <span>{children}</span>}
+    </div>
+  )
+}
+
+export type TableColumn<T> = { key: string; label: string; render?: (row: T) => React.ReactNode }
+
+// Purely additive, generic responsive table. Uses the existing 'panel' /
+// typography conventions so it matches the current system without inventing
+// new tokens. Not wired into any console by default.
+export function Table<T extends Record<string, any>>({ columns, rows, caption }: { columns: TableColumn<T>[]; rows: T[]; caption?: string }) {
+  return (
+    <div className="premium-table-wrap">
+      {caption && <p className="premium-table-caption">{caption}</p>}
+      <table className="premium-table">
+        <thead>
+          <tr>
+            {columns.map((col) => (
+              <th key={col.key}>{col.label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={index}>
+              {columns.map((col) => (
+                <td key={col.key}>{col.render ? col.render(row) : String(row[col.key] ?? '')}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// Purely additive, non-functional chart shell — a visual placeholder (frame,
+// title, legend) for future metrics. Renders no data/logic of its own.
+export function ChartPlaceholder({ title, legend = [] }: { title: string; legend?: string[] }) {
+  return (
+    <div className="chart-placeholder">
+      <div className="chart-placeholder-head">
+        <strong>{title}</strong>
+        {legend.length > 0 && (
+          <ul className="chart-placeholder-legend">
+            {legend.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div className="chart-placeholder-frame" aria-hidden="true" />
+    </div>
+  )
+}
+
+export type TierName = 'Starter' | 'Growth' | (string & {})
+
+// Purely visual pill for showing a plan/tier label. No logic — the caller
+// decides what text/tier to pass in. Does not imply any restricted-mode or
+// starter/growth feature-gating exists anywhere in the app.
+export function TierIndicator({ tier }: { tier: TierName }) {
+  return <span className="tier-indicator">{tier}</span>
+}
+
+// Generic, brand-agnostic header pattern extracted from SuperDashboardPage's
+// visual style (eyebrow label + title + description). Not wired to any
+// specific console; callers supply their own content and accent via CSS vars.
+export function SuperHeader({ eyebrow, title, description, actions }: { eyebrow?: string; title: string; description?: string; actions?: React.ReactNode }) {
+  return (
+    <header className="module-header header-premium super-header">
+      {eyebrow && <p>{eyebrow}</p>}
+      <h1>{title}</h1>
+      {description && <span>{description}</span>}
+      {actions && <div className="super-header-actions">{actions}</div>}
+    </header>
+  )
+}
+
+// Generic KPI/metric grid — reuses the existing 'kpi-grid' layout class so it
+// visually matches BrandDashboard's grid without duplicating its markup.
+export function MetricsGrid({ metrics }: { metrics: BrandMetric[] }) {
+  return (
+    <div className="kpi-grid">
+      {metrics.map((metric, index) => (
+        <KPIWidget key={metric.label} metric={metric} index={index} />
+      ))}
+    </div>
+  )
+}
+
+export type QuickAction = { label: string; onClick?: () => void; href?: string }
+
+// Generic row of quick-action buttons, styled with the existing 'btn-premium'
+// class. Purely presentational — no new navigation paradigm.
+export function QuickActionsBar({ actions }: { actions: QuickAction[] }) {
+  return (
+    <div className="quick-actions-bar">
+      {actions.map((action) =>
+        action.href ? (
+          <a key={action.label} href={action.href} className="btn-premium">{action.label}</a>
+        ) : (
+          <button key={action.label} type="button" className="btn-premium" onClick={action.onClick}>{action.label}</button>
+        ),
+      )}
+    </div>
+  )
+}
+
 export function KPIWidget({ metric, index = 0 }: { metric: BrandMetric; index?: number }) {
   return (
     <article className={`dashboard-card ${metric.tone ?? 'good'}`}>
@@ -555,7 +680,7 @@ export function BrandDashboard({ config }: { config: BrandConsoleConfig }) {
         </article>
         <article className="panel panel-premium">
           <h2>Quick actions</h2>
-          <div className="action-list">{config.quickActions.map((action) => <button key={action} type="button" className="btn-premium">{action}</button>)}</div>
+          <div className="action-list"><QuickActionsBar actions={config.quickActions.map((action) => ({ label: action }))} /></div>
         </article>
         <article className="panel panel-premium">
           <h2>CRM summary</h2>

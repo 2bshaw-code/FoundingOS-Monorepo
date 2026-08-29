@@ -8,9 +8,9 @@ import { buildQuantumWebsiteSection, buildQuantumDemoCtaLabel } from '@foundingo
 import { QuantumIntelligenceSection } from '@foundingos/ui/quantum-intelligence-section'
 
 export default async function QuantumPage() {
-  const layer = BRAND_PERSONALITIES.crypto
+  const layer = BRAND_PERSONALITIES.finance
   const section = buildQuantumWebsiteSection()
-  const payload = await buildUnifiedQuantumPayload('crypto', layer.kpis[0]?.label ?? layer.name)
+  const payload = await buildUnifiedQuantumPayload('finance', layer.kpis[0]?.label ?? layer.name)
   return (
     <QuantumIntelligenceSection
       brandName={layer.name}

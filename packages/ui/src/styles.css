@@ -1249,6 +1249,136 @@ body[data-sidebar-collapsed='true'] .nav-card {
   opacity: 0.55;
 }
 
+/* Premium status badge — purely additive, uses existing design tokens. */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--line);
+}
+.status-badge--good { color: #0f9d58; background: color-mix(in srgb, #0f9d58 14%, transparent); border-color: color-mix(in srgb, #0f9d58 30%, transparent); }
+.status-badge--watch { color: #f2a600; background: color-mix(in srgb, #f2a600 14%, transparent); border-color: color-mix(in srgb, #f2a600 30%, transparent); }
+.status-badge--risk { color: #e53935; background: color-mix(in srgb, #e53935 14%, transparent); border-color: color-mix(in srgb, #e53935 30%, transparent); }
+.status-badge--neutral { color: var(--muted); background: var(--surface); }
+
+/* Premium inline alert/banner — purely additive, uses existing design tokens. */
+.premium-alert {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.premium-alert strong { font-size: 13px; }
+.premium-alert span { color: var(--muted); font-size: 13px; }
+.premium-alert--info { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+.premium-alert--success { border-color: color-mix(in srgb, #0f9d58 35%, var(--line)); }
+.premium-alert--warning { border-color: color-mix(in srgb, #f2a600 35%, var(--line)); }
+.premium-alert--danger { border-color: color-mix(in srgb, #e53935 35%, var(--line)); }
+
+/* Premium table — purely additive, reuses existing surface/line/text tokens. */
+.premium-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+.premium-table-caption {
+  margin: 0;
+  padding: 12px 16px 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.premium-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.premium-table th, .premium-table td {
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.premium-table th {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.premium-table tr:last-child td { border-bottom: none; }
+
+/* Chart placeholder — purely visual, non-functional shell. */
+.chart-placeholder {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px;
+  background: var(--surface);
+}
+.chart-placeholder-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.chart-placeholder-legend {
+  display: flex;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.chart-placeholder-frame {
+  height: 140px;
+  border-radius: 12px;
+  background: repeating-linear-gradient(135deg, var(--surface-strong), var(--surface-strong) 10px, var(--surface) 10px, var(--surface) 20px);
+  border: 1px dashed var(--line);
+}
+
+/* Tier indicator — purely visual pill, no logic/feature-gating implied. */
+.tier-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* SuperHeader actions row — purely additive extension of .header-premium. */
+.super-header-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+/* Quick actions bar — reuses existing .btn-premium button styling. */
+.quick-actions-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .dashboard-card {
   min-height: 132px;
   border: 1px solid var(--line);

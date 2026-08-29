@@ -1,20 +1,19 @@
 {
-  "name": "@foundingos/foundmeat-console-starter",
+  "name": "@foundingos/foundit-web",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "dev": "next dev -p 6024",
+    "dev": "next dev -p 6006",
     "build": "next build",
-    "start": "next start -p 4003",
+    "start": "next start -p 4018",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@foundingos/auth": "*",
     "@foundingos/config": "*",
     "@foundingos/ui": "*",
     "next": "^14.2.23",
-    "next-auth": "^4.24.11",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },

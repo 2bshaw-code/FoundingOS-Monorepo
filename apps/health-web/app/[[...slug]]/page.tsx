@@ -27,7 +27,7 @@ const messagingOptions = [
 ] as const
 
 const consoleLinks = [
-  { name: 'Crypto Intelligence & Auto-Execution Console', href: `${brands.health.consoleUrl.replace(/\/+$/, '')}/console` },
+  { name: 'Health Operations & Compliance Console', href: `${brands.health.consoleUrl.replace(/\/+$/, '')}/console` },
 ] as const
 
 const cryptoHomeUrl = brands.health.webUrl
@@ -44,19 +44,19 @@ export default function Page() {
     'Works across WhatsApp, Telegram, Messenger, Instagram DM & SMS',
   ] as const
   const bobQuestions = [
-    'How do I review market signals?',
-    'What should I watch before execution?',
-    'Can you explain trading risk simply?',
-    'Which console manages auto-execution?',
+    'How do I review patient scheduling?',
+    'What should I watch before compliance review?',
+    'Can you explain records access simply?',
+    'Which console manages scheduling?',
   ] as const
   const bobActions = [
-    { label: 'Check market risk', answer: 'Momentum is improving in your top positions, but one high-volatility pair is flashing elevated risk and should be reviewed before the next execution window.' },
-    { label: 'Prioritise alert triage', answer: 'I’ve sorted the most relevant market alerts and highlighted which trades need immediate attention versus which can wait.' },
-    { label: 'Prepare a trade brief', answer: 'Your strongest route is a measured position increase on the most liquid pair, paired with a tighter risk guard for the volatile segment.' },
-    { label: 'Review execution pressure', answer: 'Execution risk is building around the next volatility spike, so I’ve flagged a tighter exit plan and a fresh briefing for the team.' },
+    { label: 'Check compliance risk', answer: 'Momentum is improving in your top clinics, but one high-variance department is flashing elevated risk and should be reviewed before the next compliance window.' },
+    { label: 'Prioritise records triage', answer: 'I’ve sorted the most relevant patient records and highlighted which need immediate attention versus which can wait.' },
+    { label: 'Prepare a scheduling brief', answer: 'Your strongest route is a measured capacity increase on the busiest clinic, paired with a tighter risk guard for the volatile segment.' },
+    { label: 'Review compliance pressure', answer: 'Compliance risk is building around the next audit window, so I’ve flagged a tighter review plan and a fresh briefing for the team.' },
   ] as const
   const consoleDetails = [
-    { name: 'Crypto Intelligence & Auto-Execution Console', href: `${brands.health.consoleUrl.replace(/\/+$/, '')}/console`, description: 'Track market signals, execution context, and automation from one control surface.' },
+    { name: 'Health Operations & Compliance Console', href: `${brands.health.consoleUrl.replace(/\/+$/, '')}/console`, description: 'Track patients, scheduling, records, and compliance from one control surface.' },
   ] as const
 
   const handleBobAction = (answer: string) => {
@@ -76,7 +76,7 @@ export default function Page() {
             <div style={{ width: 42, height: 42, borderRadius: 12, background: '#9C27B0', color: '#071014', display: 'grid', placeItems: 'center', fontWeight: 900, boxShadow: '0 10px 25px rgba(0,0,0,0.15)' }}>∞</div>
             <div>
               <strong style={{ display: 'block', fontSize: 22, lineHeight: 1.1 }}>FoundHealth</strong>
-              <small style={{ color: '#ddd6fe', fontSize: 12 }}>{'Crypto Intelligence OS'}</small>
+              <small style={{ color: '#ddd6fe', fontSize: 12 }}>{'Health Intelligence OS'}</small>
             </div>
           </a>
 
@@ -102,8 +102,8 @@ export default function Page() {
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '72px 20px 52px', display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 28, alignItems: 'center' }}>
           <div>
             <p style={{ margin: 0, color: '#d8b4fe', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>FoundHealth brand ecosystem</p>
-            <h1 style={{ margin: '22px 0 0', fontSize: 'clamp(48px, 7vw, 92px)', lineHeight: 0.96, letterSpacing: '-0.05em', maxWidth: 700 }}>{'Make faster moves with clearer signal.'}</h1>
-            <p style={{ marginTop: 22, maxWidth: 620, color: '#ddd6fe', fontSize: 20, lineHeight: 1.8 }}>{'FoundHealth connects charting, alerts, execution context, and market intelligence across all core channels.'}</p>
+            <h1 style={{ margin: '22px 0 0', fontSize: 'clamp(48px, 7vw, 92px)', lineHeight: 0.96, letterSpacing: '-0.05em', maxWidth: 700 }}>{'Clearer scheduling. Calmer compliance.'}</h1>
+            <p style={{ marginTop: 22, maxWidth: 620, color: '#ddd6fe', fontSize: 20, lineHeight: 1.8 }}>{'FoundHealth connects patients, scheduling, records, and compliance across all core channels.'}</p>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 18, marginTop: 28 }}>
               <a href={cryptoPackageUrl('traderos')} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 50, padding: '0 22px', borderRadius: 12, background: '#9C27B0', color: '#061018', textDecoration: 'none', fontWeight: 900 }}>Choose your package</a>
@@ -147,8 +147,8 @@ export default function Page() {
               <div style={{ width: 132, height: 132, borderRadius: '50%', background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.34), transparent 38%), #9C27B0', color: '#061018', display: 'grid', placeItems: 'center', fontSize: 56, fontWeight: 900, boxShadow: '0 0 0 14px rgba(255,255,255,0.04), 0 0 44px rgba(156,39,176,0.45)', animation: 'bobFloat 4s ease-in-out infinite' }}>B</div>
               <div>
                 <div style={{ letterSpacing: '0.18em', textTransform: 'uppercase', fontSize: 12, fontWeight: 800, color: '#ddd6fe' }}>Bob AI</div>
-                <h3 style={{ margin: '10px 0 0', fontSize: 28, lineHeight: 1.1 }}>Premium support for modern trading conversations</h3>
-                <p style={{ margin: '12px auto 0', maxWidth: 320, color: '#ddd6fe', lineHeight: 1.7 }}>Instant answers, clearer guidance, and a more human experience across every trade journey.</p>
+                <h3 style={{ margin: '10px 0 0', fontSize: 28, lineHeight: 1.1 }}>Premium support for modern care conversations</h3>
+                <p style={{ margin: '12px auto 0', maxWidth: 320, color: '#ddd6fe', lineHeight: 1.7 }}>Instant answers, clearer guidance, and a more human experience across every patient journey.</p>
               </div>
               <div style={{ display: 'grid', gap: 10, width: '100%', maxWidth: 620 }}>
                 {bobHighlights.map((item) => (
@@ -171,8 +171,8 @@ export default function Page() {
         <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 28, background: 'rgba(255,255,255,0.03)', padding: 28 }}>
           <div style={{ display: 'grid', gap: 10, marginBottom: 18 }}>
             <p style={{ margin: 0, color: '#9C27B0', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>Our Consoles</p>
-            <h3 style={{ margin: 0, fontSize: 'clamp(28px, 4vw, 42px)' }}>Purpose-built consoles for market teams.</h3>
-            <p style={{ margin: 0, maxWidth: 760, color: '#ddd6fe', lineHeight: 1.8 }}>Each console supports a distinct part of the trading workflow, from intelligence review to execution support.</p>
+            <h3 style={{ margin: 0, fontSize: 'clamp(28px, 4vw, 42px)' }}>Purpose-built consoles for clinical teams.</h3>
+            <p style={{ margin: 0, maxWidth: 760, color: '#ddd6fe', lineHeight: 1.8 }}>Each console supports a distinct part of the care workflow, from scheduling review to compliance support.</p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
             {consoleDetails.map((console) => (
@@ -242,7 +242,7 @@ export default function Page() {
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px 40px', display: 'flex', flexWrap: 'wrap', gap: 20, justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <strong style={{ fontSize: 22 }}>{'FoundHealth'}</strong>
-            <p style={{ margin: '10px 0 0', maxWidth: 480, color: '#ddd6fe', lineHeight: 1.7 }}>{'Crypto insight and execution support for sharper, more structured market operations.'}</p>
+            <p style={{ margin: '10px 0 0', maxWidth: 480, color: '#ddd6fe', lineHeight: 1.7 }}>{'Health insight and compliance support for sharper, more structured operations.'}</p>
             <p style={{ margin: '10px 0 0', color: '#ddd6fe' }}>Registered address: 24 Founder Way, London, UK</p>
           </div>
           <div style={{ display: 'grid', gap: 10, justifyItems: 'start' }}>
@@ -284,7 +284,7 @@ export default function Page() {
                   <h3 style={{ margin: '8px 0 0', fontSize: 24 }}>Your smart brand assistant</h3>
                 </div>
               </div>
-              <p style={{ margin: 0, color: '#bfd8ee', lineHeight: 1.7 }}>Bob AI helps your market team track signal, risk thresholds, and execution context so decisions stay sharp, fast, and well-informed.</p>
+              <p style={{ margin: 0, color: '#bfd8ee', lineHeight: 1.7 }}>Bob AI helps your clinical team track scheduling, records, and compliance so decisions stay sharp, fast, and well-informed.</p>
               <div style={{ display: 'grid', gap: 10, marginTop: 18 }}>
                 {bobActions.map((action) => (
                   <button key={action.label} type="button" onClick={() => handleBobAction(action.answer)} style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', borderRadius: 14, padding: '12px 14px', color: '#edf7ff', textAlign: 'left', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
