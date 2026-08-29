@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Trading charts, crypto dashboards, automation, blockchain visuals, traders">
+  <defs><linearGradient id="bg" x1="0" x2="1" y1="0" y1="1"><stop offset="0%" stop-color="#09061a"/><stop offset="100%" stop-color="#180f31"/></linearGradient></defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect x="92" y="115" width="680" height="660" rx="38" fill="#120d24" stroke="#a855f7" stroke-opacity=".2"/>
+  <rect x="820" y="115" width="688" height="300" rx="38" fill="#11101d" stroke="#22d3ee" stroke-opacity=".18"/>
+  <rect x="820" y="455" width="688" height="320" rx="38" fill="#100b1d" stroke="#7c3aed" stroke-opacity=".16"/>
+  <rect x="145" y="175" width="590" height="140" rx="28" fill="#1a1330"/>
+  <rect x="145" y="345" width="265" height="220" rx="28" fill="#15102a"/>
+  <rect x="440" y="345" width="295" height="220" rx="28" fill="#18142e"/>
+  <rect x="145" y="595" width="590" height="120" rx="28" fill="#110d22"/>
+  <path d="M190 240h160M190 285h220" stroke="#e9d5ff" stroke-width="12" stroke-linecap="round"/>
+  <path d="M490 540c60-80 110-110 180-170" stroke="#22d3ee" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <path d="M490 585c80-20 120 20 210 10" stroke="#a855f7" stroke-width="14" fill="none" stroke-linecap="round"/>
+  <circle cx="260" cy="455" r="72" fill="#7c3aed" fill-opacity=".22"/>
+  <circle cx="585" cy="455" r="72" fill="#22d3ee" fill-opacity=".16"/>
+  <rect x="900" y="170" width="230" height="140" rx="28" fill="#1a1230"/>
+  <rect x="1160" y="170" width="230" height="140" rx="28" fill="#161228"/>
+  <rect x="1420" y="170" width="60" height="140" rx="28" fill="#24143e"/>
+  <path d="M900 620h150M1070 620h160M1260 620h120" stroke="#dbeafe" stroke-width="12" stroke-linecap="round"/>
+  <rect x="885" y="510" width="610" height="70" rx="20" fill="#1a1230"/>
+  <text x="155" y="220" fill="#e9d5ff" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="700">Trading charts, crypto automation, blockchain visuals, traders</text>
+</svg>

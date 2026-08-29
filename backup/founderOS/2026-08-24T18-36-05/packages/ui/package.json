@@ -1,0 +1,35 @@
+{
+  "name": "@foundingos/ui",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.tsx",
+    "./console": "./src/console.tsx",
+    "./package-data": "./src/package-data.ts",
+    "./bob-ai": "./src/bob-ai.tsx",
+    "./crm": "./src/crm.tsx",
+    "./module-loader": "./src/module-loader.tsx",
+    "./sidebar": "./src/sidebar.tsx",
+    "./settings-layout": "./src/settings-layout.tsx",
+    "./topbar": "./src/topbar.tsx",
+    "./theme": "./src/theme.tsx",
+    "./styles.css": "./src/styles.css"
+  },
+  "dependencies": {
+    "@foundingos/config": "*",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.468.0",
+    "odometer": "^0.4.8"
+  },
+  "peerDependencies": {
+    "next": "^14.2.23",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.2"
+  }
+}

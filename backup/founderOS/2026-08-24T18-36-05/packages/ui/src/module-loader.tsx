@@ -1,0 +1,1 @@
+export { BrandModulePage as default } from './console'

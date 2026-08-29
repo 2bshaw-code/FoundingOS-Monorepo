@@ -1,0 +1,78 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["foundmeat"]
+}
+
+model AuthUser {
+  id           String          @id @default(uuid())
+  email        String          @unique
+  passwordHash String
+  role         String
+  tenantId     String?
+  active       Boolean         @default(true)
+  sessions     AuthSession[]
+  resets       PasswordReset[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@schema("foundmeat")
+}
+
+model AuthSession {
+  id                String   @id @default(uuid())
+  userId            String
+  user              AuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash  String
+  refreshTokenId    String
+  deviceFingerprint String
+  ipPrefix          String?
+  expiresAt         DateTime
+  rotatedAt         DateTime @default(now())
+  revokedAt         DateTime?
+  createdAt         DateTime @default(now())
+
+  @@index([userId])
+  @@schema("foundmeat")
+}
+
+model PasswordReset {
+  id        String    @id @default(uuid())
+  userId    String
+  user      AuthUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@schema("foundmeat")
+}
+
+model MeatTrader {
+  id        String        @id @default(cuid())
+  name      String
+  type      String
+  package   String
+  createdAt DateTime      @default(now())
+  listings  StockListing[]
+
+  @@schema("foundmeat")
+}
+
+model StockListing {
+  id         String     @id @default(cuid())
+  cut        String
+  pricePence Int
+  quantity   Int
+  traderId   String
+  trader     MeatTrader @relation(fields: [traderId], references: [id])
+
+  @@schema("foundmeat")
+}

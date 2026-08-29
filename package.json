@@ -1,0 +1,59 @@
+{
+  "name": "founder-os-group",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/foundingos-web",
+    "apps/foundingos-console",
+    "apps/retail-web",
+    "apps/retail-console",
+    "apps/retail-console-starter",
+    "apps/meat-web",
+    "apps/meat-console",
+    "apps/meat-console-starter",
+    "apps/foundthat-web",
+    "apps/foundthat-console",
+    "apps/foundthat-console-starter",
+    "apps/talent-web",
+    "apps/talent-console",
+    "apps/talent-console-starter",
+    "apps/crypto-web",
+    "apps/crypto-console",
+    "apps/crypto-console-starter",
+    "apps/finance-web",
+    "apps/finance-console",
+    "apps/finance-console-starter",
+    "apps/health-web",
+    "apps/health-console",
+    "apps/health-console-starter",
+    "apps/logistics-web",
+    "apps/logistics-console",
+    "apps/logistics-console-starter",
+    "packages/config",
+    "packages/ui",
+    "packages/auth",
+    "packages/db"
+  ],
+  "scripts": {
+    "dev:next": "turbo dev --filter='./apps/*' --concurrency=12",
+    "dev:locked": "turbo dev --filter=@foundingos/foundingos-website --filter=@foundingos/foundretail-web --filter=@foundingos/foundmeat-web --filter=@foundingos/foundthat-web --filter=@foundingos/foundtalent-web --filter=@foundingos/foundcrypto-web --filter=@foundingos/foundfinance-web --filter=@foundingos/foundhealth-web --filter=@foundingos/foundlogistics-web --filter=@foundingos/foundingos-console --filter=@foundingos/foundretail-console-starter --filter=@foundingos/foundretail-console --filter=@foundingos/foundmeat-console-starter --filter=@foundingos/foundmeat-console --filter=@foundingos/foundthat-console-starter --filter=@foundingos/foundthat-console --filter=@foundingos/foundtalent-console-starter --filter=@foundingos/foundtalent-console --filter=@foundingos/foundcrypto-console-starter --filter=@foundingos/foundcrypto-console --filter=@foundingos/foundfinance-console-starter --filter=@foundingos/foundfinance-console --filter=@foundingos/foundhealth-console-starter --filter=@foundingos/foundhealth-console --filter=@foundingos/foundlogistics-console-starter --filter=@foundingos/foundlogistics-console --concurrency=27",
+    "build:next": "turbo build --filter='./apps/*'",
+    "lint:next": "turbo lint --filter='./apps/*'",
+    "db:generate": "npm run db:generate --workspace @foundingos/db",
+    "db:migrate": "npm run db:migrate --workspace @foundingos/db",
+    "build": "npm run verify:brand-assets && npm run verify:superdashboard-isolation",
+    "verify:brand-assets": "node scripts/verify-brand-assets.mjs",
+    "verify:topology": "node scripts/verify-topology.mjs",
+    "verify:superdashboard-isolation": "node scripts/verify-superdashboard-isolation.mjs",
+    "verify:backup-readiness": "node scripts/verify-backup-readiness.mjs",
+    "test": "npm test --workspace @foundingos/auth",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.6"
+  },
+  "allowScripts": {
+    "electron@43.4.0": true
+  },
+  "packageManager": "npm@11.19.0"
+}

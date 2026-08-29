@@ -1,0 +1,11 @@
+{
+  "name": "@foundingos/config",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tailwind": "./tailwind.config.ts",
+    "./tsconfig": "./tsconfig.base.json"
+  }
+}

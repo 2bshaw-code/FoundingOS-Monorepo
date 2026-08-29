@@ -1,0 +1,57 @@
+/* 
+  © 2024–2026 FoundingOS. All rights reserved.
+  Unauthorized copying, distribution, or modification is strictly prohibited.
+*/
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { min-height: 100%; }
+body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: radial-gradient(circle at top, rgba(250, 204, 21, 0.18), transparent 28%), #050816; color: #e5eefc; }
+a { color: inherit; }
+:root {
+  color-scheme: dark;
+  --primary: #facc15;
+  --secondary: #fef3c7;
+  --earth: #2E2E2E;
+  --ink: #e5eefc;
+  --muted: #f5ddb2;
+  --surface: #120d08;
+  --line: rgba(148, 163, 184, 0.22);
+}
+.theme-foundit { --primary: #facc15; --secondary: #fef3c7; --earth: #2E2E2E; --ink: #e5eefc; --muted: #f5ddb2; --surface: #120d08; --line: rgba(148, 163, 184, 0.22); }
+.theme-foundit header { border-color: rgba(250, 204, 21, 0.3); }
+.login-form--foundit { border-color: #facc15; color: #facc15; background: rgba(15, 23, 42, 0.82); box-shadow: 0 1rem 2.5rem rgb(250 204 21 / 18%); }
+.login-form--foundit input:focus { border-color: #facc15; outline: 3px solid rgb(250 204 21 / 22%); }
+.login-form--foundit .login-submit { background: #facc15; color: #2E2E2E; }
+.theme-foundit [role="img"] .bg-\[\#006CFF\] { background: #facc15 !important; }
+.theme-foundit [role="img"] polyline[stroke="#006CFF"] { stroke: #facc15; }
+.theme-foundit [role="img"] polygon[fill="rgba(0,108,255,.08)"] { fill: rgb(250 204 21 / 8%); }
+.theme-foundit [role="img"] [style*="rgba(0, 108, 255"] { background: #facc15 !important; }
+.theme-foundit [role="img"] [style*="background: rgb(0, 108, 255)"] { background: #facc15 !important; }
+.nav-chip { position: relative; display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 999px; background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease; }
+.nav-chip::after { content: ''; position: absolute; left: 18px; right: 18px; bottom: -8px; height: 2px; border-radius: 999px; background: linear-gradient(90deg, rgba(250,204,21,0), rgba(250,204,21,0.9), rgba(125,211,252,0)); opacity: 0; transform: scaleX(0.6); transition: opacity 0.18s ease, transform 0.18s ease; }
+.nav-chip:hover { transform: translateY(-1px); border-color: rgba(250,204,21,0.35); box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18); }
+.nav-chip:hover::after, .nav-chip:focus-visible::after { opacity: 1; transform: scaleX(1); }
+.nav-chip-icon { display: inline-grid; place-items: center; width: 1.2rem; height: 1.2rem; color: #fef08a; font-size: 0.75rem; }
+.theme-foundit main { --console-accent: #facc15; --primary: #facc15; }
+.theme-foundit main > header { border-color: #facc15; }
+.theme-foundit main button.bg-\[\#1E1F22\] { background: #facc15 !important; color: #2E2E2E !important; }
+.login-password-field { position: relative; display: block; }
+.login-password-field input { padding-right: 3rem; }
+.login-password-toggle { position: absolute; top: 50%; right: .55rem; display: grid; width: 2.25rem; height: 2.25rem; padding: 0; place-items: center; border: 0; background: transparent; color: currentColor; transform: translateY(-42%); }
+.login-eye-icon { position: relative; display: block; width: 1.15rem; height: .75rem; border: 2px solid currentColor; border-radius: 60% 15%; transform: rotate(45deg); }
+.login-eye-icon span { position: absolute; top: 50%; left: 50%; width: .3rem; height: .3rem; border-radius: 50%; background: currentColor; transform: translate(-50%, -50%); }
+
+@keyframes bobHeartbeat {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.08); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.bob-ai-circle {
+  animation: bobHeartbeat 1.2s ease-in-out infinite;
+  transform-origin: center;
+}

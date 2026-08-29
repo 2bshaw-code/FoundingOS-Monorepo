@@ -1,0 +1,159 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["foundit"]
+}
+
+model AuthUser {
+  id           String          @id @default(uuid())
+  email        String          @unique
+  passwordHash String
+  role         String
+  tenantId     String?
+  active       Boolean         @default(true)
+  sessions     AuthSession[]
+  resets       PasswordReset[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@schema("foundit")
+}
+
+model AuthSession {
+  id                String    @id @default(uuid())
+  userId            String
+  user              AuthUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash  String
+  refreshTokenId    String
+  deviceFingerprint String
+  ipPrefix          String?
+  expiresAt         DateTime
+  rotatedAt         DateTime  @default(now())
+  revokedAt         DateTime?
+  createdAt         DateTime  @default(now())
+
+  @@index([userId])
+  @@schema("foundit")
+}
+
+model PasswordReset {
+  id        String    @id @default(uuid())
+  userId    String
+  user      AuthUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@schema("foundit")
+}
+
+model MarketplaceMerchant {
+  id             String    @id @default(cuid())
+  name           String
+  wrosMerchantId String?
+  createdAt      DateTime  @default(now())
+  products       Product[]
+
+  @@schema("foundit")
+}
+
+model Product {
+  id         String              @id @default(cuid())
+  title      String
+  merchantId String
+  merchant   MarketplaceMerchant @relation(fields: [merchantId], references: [id])
+
+  @@schema("foundit")
+}
+
+model ScrapedLink {
+  id                String        @id @default(cuid())
+  url               String        @unique
+  sourceHost        String
+  title             String
+  description       String?
+  imageUrl          String?
+  tenantId          String?
+  merchantName      String?
+  companyName       String?
+  contactEmail      String?
+  contactPhone      String?
+  status            String        @default("active")
+  priority          Boolean       @default(false)
+  claimedBy         String?
+  claimedAt         DateTime?
+  rehomedAt         DateTime?
+  listingFeePence   Int           @default(0)
+  placementFeePence Int           @default(0)
+  deliveryFeePence  Int           @default(0)
+  premiumFeePence   Int           @default(0)
+  wrosLeadId        String?
+  sourceId          String?
+  source            ScrapeSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  scrapedAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([tenantId])
+  @@index([sourceId])
+  @@index([scrapedAt])
+  @@schema("foundit")
+}
+
+model ScrapeSource {
+  id                  String        @id @default(cuid())
+  name                String
+  category            String
+  url                 String        @unique
+  active              Boolean       @default(true)
+  tenantId            String?
+  intervalMinutes     Int           @default(60)
+  maxItemsPerRun      Int           @default(20)
+  itemSelector        String?
+  linkSelector        String?
+  merchantName        String?
+  companyName         String?
+  contactEmail        String?
+  contactPhone        String?
+  listingFeePence     Int           @default(0)
+  placementFeePence   Int           @default(0)
+  deliveryFeePence    Int           @default(0)
+  premiumFeePence     Int           @default(0)
+  nextRunAt           DateTime      @default(now())
+  lastRunAt           DateTime?
+  lastSuccessAt       DateTime?
+  lastError           String?
+  consecutiveFailures Int           @default(0)
+  items               ScrapedLink[]
+  runs                ScrapeRun[]
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@index([active, nextRunAt])
+  @@index([tenantId, category])
+  @@schema("foundit")
+}
+
+model ScrapeRun {
+  id          String       @id @default(cuid())
+  sourceId    String
+  source      ScrapeSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  status      String       @default("running")
+  discovered  Int          @default(0)
+  ingested    Int          @default(0)
+  leadsPushed Int          @default(0)
+  errors      Json?
+  startedAt   DateTime     @default(now())
+  completedAt DateTime?
+
+  @@index([sourceId, startedAt])
+  @@index([status, startedAt])
+  @@schema("foundit")
+}

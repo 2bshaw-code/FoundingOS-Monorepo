@@ -1,0 +1,19 @@
+{
+  "name": "@foundingos/auth",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@auth/prisma-adapter": "^2.7.4",
+    "@foundingos/db": "*",
+    "bcryptjs": "^2.4.3",
+    "next-auth": "^4.24.11"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "typescript": "^5.7.2"
+  }
+}

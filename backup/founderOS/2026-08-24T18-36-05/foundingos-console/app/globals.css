@@ -1,0 +1,41 @@
+@import '@foundingos/ui/styles.css';
+
+html,
+body {
+  overflow: auto !important;
+}
+
+.console-shell-page {
+  overflow: auto !important;
+}
+
+.console-shell-page .console-shell {
+  min-height: auto;
+  overflow: visible;
+}
+
+.console-shell-page .sidebar {
+  position: sticky;
+  top: 0;
+  left: auto;
+  align-self: flex-start;
+  height: auto;
+  max-height: 100dvh;
+}
+
+.console-shell-page .topbar {
+  position: sticky;
+  top: 0;
+  left: auto;
+  right: auto;
+}
+
+.console-shell-page .console-shell-main {
+  margin-left: 0;
+  height: auto;
+  overflow: visible;
+}
+
+.console-shell-page .console-shell-content {
+  overflow: visible;
+}

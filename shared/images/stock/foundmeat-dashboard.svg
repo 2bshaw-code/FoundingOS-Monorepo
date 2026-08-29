@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Butchers, meat suppliers, food safety, cold storage, and wholesale operations">
+  <defs><linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#120709"/><stop offset="100%" stop-color="#24111a"/></linearGradient></defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect x="90" y="120" width="690" height="650" rx="40" fill="#1b0c12" stroke="#fb7185" stroke-opacity=".18"/>
+  <rect x="820" y="120" width="690" height="300" rx="40" fill="#17090d" stroke="#fecdd3" stroke-opacity=".18"/>
+  <rect x="820" y="460" width="690" height="310" rx="40" fill="#14080c" stroke="#fb7185" stroke-opacity=".14"/>
+  <rect x="150" y="180" width="560" height="150" rx="26" fill="#2a1218"/>
+  <rect x="150" y="360" width="240" height="250" rx="30" fill="#34151b"/>
+  <rect x="420" y="360" width="290" height="250" rx="30" fill="#2a1117"/>
+  <rect x="150" y="640" width="560" height="90" rx="22" fill="#1f0f14"/>
+  <circle cx="260" cy="255" r="48" fill="#fb7185" fill-opacity=".22"/>
+  <circle cx="530" cy="255" r="48" fill="#fecdd3" fill-opacity=".18"/>
+  <path d="M200 460h150M200 510h120M200 560h170" stroke="#fecdd3" stroke-width="10" stroke-linecap="round"/>
+  <path d="M455 445h180M455 500h120M455 555h160" stroke="#fb7185" stroke-width="10" stroke-linecap="round"/>
+  <rect x="855" y="180" width="220" height="120" rx="26" fill="#2c1117"/>
+  <rect x="1100" y="180" width="220" height="120" rx="26" fill="#31141b"/>
+  <rect x="1345" y="180" width="120" height="120" rx="26" fill="#43161f"/>
+  <rect x="875" y="520" width="590" height="170" rx="30" fill="#241018"/>
+  <path d="M910 610h110M1050 610h170M1250 610h140" stroke="#fecdd3" stroke-width="12" stroke-linecap="round"/>
+  <text x="155" y="238" fill="#ffe4e6" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="700">Butchers, suppliers, food safety, cold storage, wholesale</text>
+</svg>

@@ -1,0 +1,17 @@
+/* 
+  © 2024–2026 FoundingOS. All rights reserved.
+  Unauthorized copying, distribution, or modification is strictly prohibited.
+*/
+.theme-founder {
+  --auth-primary: #006CFF;
+  --auth-secondary: #003366;
+  --auth-accent: #003366;
+  --auth-background: #F5F7FA;
+  --auth-surface: #ffffff;
+  --auth-line: #CCD9E6;
+  --auth-muted: #52677D;
+  --auth-space-1: 0.5rem;
+  --auth-space-2: 0.75rem;
+  --auth-space-3: 1rem;
+  --auth-space-4: 1.5rem;
+}

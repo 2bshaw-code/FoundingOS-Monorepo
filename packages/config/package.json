@@ -1,0 +1,18 @@
+{
+  "name": "@foundingos/brand-config",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./brand-intelligence": "./src/brand-intelligence.ts",
+    "./brand-ai-engine": "./src/brand-ai-engine.ts",
+    "./brandSignalFeed": "./src/brandSignalFeed.ts",
+    "./quantum-defined-engine": "./src/quantum/quantum-defined-engine.ts",
+    "./quantum-client": "./src/quantum/quantum-client.ts",
+    "./quantum-enrichment": "./src/quantum/quantum-enrichment.ts",
+    "./quantum-orchestration-layer": "./src/quantum/quantum-orchestration-layer.ts",
+    "./tailwind": "./tailwind.config.ts",
+    "./tsconfig": "./tsconfig.base.json"
+  }
+}

@@ -1,0 +1,47 @@
+/* 
+  © 2024–2026 FoundingOS. All rights reserved.
+  Unauthorized copying, distribution, or modification is strictly prohibited.
+*/
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { min-height: 100%; }
+body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: radial-gradient(circle at top, rgba(251, 146, 60, 0.18), transparent 28%), #050816; color: #e5eefc; }
+a { color: inherit; }
+
+:root {
+  color-scheme: dark;
+  --primary: #fb923c;
+  --secondary: #1E1F22;
+  --earth: #2B1B13;
+  --ink: #e5eefc;
+  --muted: #f6c49d;
+  --surface: #120d0b;
+  --line: rgba(148, 163, 184, 0.22);
+}
+
+.theme-foundtalent { --primary: #fb923c; --secondary: #1E1F22; --earth: #2B1B13; --ink: #e5eefc; --muted: #f6c49d; --surface: #120d0b; --line: rgba(148, 163, 184, 0.22); }
+.theme-foundtalent header { border-color: rgba(251, 146, 60, 0.3); }
+.theme-foundtalent main { --console-accent: #fb923c; --primary: #fb923c; }
+.theme-foundtalent main > header { border-color: #fb923c; }
+.nav-chip { position: relative; display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid rgba(255,255,255,0.1); border-radius: 999px; background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease; }
+.nav-chip::after { content: ''; position: absolute; left: 18px; right: 18px; bottom: -8px; height: 2px; border-radius: 999px; background: linear-gradient(90deg, rgba(251,146,60,0), rgba(251,146,60,0.9), rgba(125,211,252,0)); opacity: 0; transform: scaleX(0.6); transition: opacity 0.18s ease, transform 0.18s ease; }
+.nav-chip:hover { transform: translateY(-1px); border-color: rgba(251,146,60,0.35); box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18); }
+.nav-chip:hover::after, .nav-chip:focus-visible::after { opacity: 1; transform: scaleX(1); }
+.nav-chip-icon { display: inline-grid; place-items: center; width: 1.2rem; height: 1.2rem; color: #fdba74; font-size: 0.75rem; }
+
+.login-form--foundtalent {
+  border-color: #fb923c;
+  color: #e5eefc;
+  background: rgba(15, 23, 42, 0.82);
+  box-shadow: 0 1rem 2.5rem rgb(251 146 60 / 18%);
+}
+.login-form--foundtalent input:focus {
+  border-color: #fb923c;
+  outline: 3px solid rgb(251 146 60 / 22%);
+}
+.login-form--foundtalent .login-submit {
+  background: #fb923c;
+  color: #ffffff;
+}

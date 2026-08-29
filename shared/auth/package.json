@@ -1,0 +1,50 @@
+{
+  "name": "@founder-os/auth",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@simplewebauthn/browser": "^13.3.0",
+    "bcrypt": "^6.0.0",
+    "express": "^5.0.1",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./AuthWrapper": {
+      "types": "./dist/AuthWrapper.d.ts",
+      "default": "./dist/AuthWrapper.js"
+    },
+    "./ProtectedRoute": {
+      "types": "./dist/ProtectedRoute.d.ts",
+      "default": "./dist/ProtectedRoute.js"
+    },
+    "./AuthGuard": {
+      "types": "./dist/AuthGuard.d.ts",
+      "default": "./dist/AuthGuard.js"
+    }
+  }
+}

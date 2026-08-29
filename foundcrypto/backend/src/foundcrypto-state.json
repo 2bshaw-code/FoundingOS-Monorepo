@@ -1,0 +1,47 @@
+{
+  "foundcrypto-demo": {
+    "watchlist": [
+      "BTC-USD",
+      "ETH-USD"
+    ],
+    "triggers": [
+      {
+        "id": "4ddb26f9-eeae-4664-8606-bfda5381c668",
+        "symbol": "BTC-USD",
+        "indicator": "RSI",
+        "operator": "below",
+        "threshold": 32,
+        "action": "alert",
+        "sellPercent": 0,
+        "enabled": true,
+        "note": "Alert when momentum resets",
+        "createdAt": "2026-08-20T23:58:25.513Z",
+        "updatedAt": "2026-08-20T23:58:25.514Z"
+      },
+      {
+        "id": "6395eeba-81a0-4571-bda3-5565c410ce27",
+        "symbol": "ETH-USD",
+        "indicator": "EMA20/50",
+        "operator": "crossesAbove",
+        "threshold": 0,
+        "action": "sellPercent",
+        "sellPercent": 25,
+        "enabled": false,
+        "note": "Scale out on trend confirmation",
+        "createdAt": "2026-08-20T23:58:25.514Z",
+        "updatedAt": "2026-08-20T23:58:25.514Z"
+      }
+    ],
+    "executions": [],
+    "risk": {
+      "maxPositionPercent": 25,
+      "maxDailyLossPercent": 8,
+      "drawdownStopPercent": 12,
+      "stopLossPercent": 5,
+      "takeProfitPercent": 14,
+      "stablecoin": "USDC",
+      "fiatRail": "GBP",
+      "alertOnVolatility": true
+    }
+  }
+}

@@ -1,0 +1,157 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["founder_os"]
+}
+
+model AuthUser {
+  id           String          @id @default(uuid())
+  email        String          @unique
+  passwordHash String
+  role         String
+  tenantId     String?
+  active       Boolean         @default(true)
+  sessions     AuthSession[]
+  resets       PasswordReset[]
+  passkeys     PasskeyCredential[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@schema("founder_os")
+}
+
+model PasskeyCredential {
+  id          String   @id @default(cuid())
+  credentialId String  @unique
+  publicKey   Bytes
+  counter     BigInt   @default(0)
+  transports  Json?
+  deviceType  String?
+  backedUp    Boolean  @default(false)
+  userId      String
+  user        AuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  lastUsedAt  DateTime?
+
+  @@index([userId])
+  @@schema("founder_os")
+}
+
+model PasskeyChallenge {
+  id        String   @id @default(cuid())
+  email     String
+  challenge String
+  type      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email, type])
+  @@schema("founder_os")
+}
+
+model AuthSession {
+  id                String   @id @default(uuid())
+  userId            String
+  user              AuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash  String
+  refreshTokenId    String
+  deviceFingerprint String
+  ipPrefix          String?
+  expiresAt         DateTime
+  rotatedAt         DateTime @default(now())
+  revokedAt         DateTime?
+  createdAt         DateTime @default(now())
+
+  @@index([userId])
+  @@schema("founder_os")
+}
+
+model PasswordReset {
+  id        String    @id @default(uuid())
+  userId    String
+  user      AuthUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@schema("founder_os")
+}
+
+model AuditEvent {
+  id        String   @id @default(cuid())
+  actorId   String
+  action    String
+  app       String
+  createdAt DateTime @default(now())
+
+  @@schema("founder_os")
+}
+
+model AppHealthSnapshot {
+  id        String   @id @default(cuid())
+  app       String
+  status    String
+  details   Json?
+  checkedAt DateTime @default(now())
+
+  @@schema("founder_os")
+}
+
+model Company {
+  id        String          @id @default(cuid())
+  name      String
+  slug      String          @unique
+  publicWebsiteUrl String?
+  ownerConsoleUrl String?
+  merchantConsoleUrl String?
+  active    Boolean         @default(true)
+  settings  Json?
+  modules   CompanyModule[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@schema("founder_os")
+}
+
+model CompanyModule {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  module    String
+  enabled   Boolean  @default(false)
+  settings  Json?
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, module])
+  @@schema("founder_os")
+}
+
+model PackageApplication {
+  id           String   @id @default(cuid())
+  app          String
+  plan         String
+  businessName String
+  contactName  String
+  email        String
+  phone        String?
+  location     String?
+  businessType String?
+  requirements String
+  status       String   @default("submitted")
+  submittedBy  String
+  tenantId     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([app, plan, status])
+  @@index([submittedBy])
+  @@schema("founder_os")
+}

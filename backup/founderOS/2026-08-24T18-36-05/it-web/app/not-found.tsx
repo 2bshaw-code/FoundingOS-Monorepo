@@ -1,0 +1,1 @@
+export default function NotFound() { return <main className="site-shell"><section className="hero"><p>404</p><h1>Page not found</h1><p>The requested FoundIT page is not available.</p><a className="btn btn-primary" href="/">Return home</a></section></main> }

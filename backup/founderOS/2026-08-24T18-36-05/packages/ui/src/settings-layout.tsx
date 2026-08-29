@@ -1,0 +1,1 @@
+export { BrandSettingsPage as default } from './console'

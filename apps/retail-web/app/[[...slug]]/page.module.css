@@ -1,0 +1,16 @@
+/* 
+  © 2024–2026 FoundingOS. All rights reserved.
+  Unauthorized copying, distribution, or modification is strictly prohibited.
+*/
+.summaryToggle {
+  list-style: none;
+  cursor: pointer;
+}
+
+.summaryToggle::-webkit-details-marker {
+  display: none;
+}
+
+.detailsOpen .summaryToggle {
+  background: rgba(255, 255, 255, 0.06);
+}

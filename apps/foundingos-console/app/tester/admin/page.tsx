@@ -1,0 +1,137 @@
+/* 
+  © 2024–2026 FoundingOS. All rights reserved.
+  Unauthorized copying, distribution, or modification is strictly prohibited.
+*/
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { ADMIN_COOKIE, verifyToken } from '../session'
+import { readTesters } from '../store.server'
+import { CREDENTIALS, MODULE_OPTIONS, SURVEYS, type SurveyId } from '../tester-data'
+import { ReassignForm } from './ReassignForm'
+import { aggregateBrandSignals } from '@foundingos/config/brandSignalFeed'
+import { buildQuantumDemoCtaLabel } from '@foundingos/config/quantum-defined-engine'
+
+export default async function TesterAdminPage() {
+  const token = cookies().get(ADMIN_COOKIE)?.value
+  const adminId = token ? await verifyToken('admin', token) : null
+  if (!adminId) redirect('/tester/admin/login')
+
+  const testers = readTesters()
+  const brandSignals = aggregateBrandSignals(new Date(0).toISOString())
+
+  return (
+    <section className="stack">
+      <header className="module-header">
+        <p>FounderOS Tester Program · Admin</p>
+        <h1>Survey results</h1>
+        <span>All 12 pre-issued tester credentials, module/survey assignments, and completion status. {buildQuantumDemoCtaLabel()} available on each completed module demo.</span>
+      </header>
+
+      <div className="console-grid">
+        <article className="panel wide fo-card">
+          <h2>Aggregated brand intelligence</h2>
+          <table className="superdashboard-brand-table">
+            <thead>
+              <tr><th>Brand</th><th>KPI</th><th>Insight</th><th>Risk</th><th>Opportunity</th><th>Pulse</th><th>Contribution</th></tr>
+            </thead>
+            <tbody>
+              {brandSignals.map((signal) => (
+                <tr key={signal.brand}>
+                  <td style={{ textTransform: 'capitalize' }}>{signal.brand}</td>
+                  <td>{signal.kpi}</td>
+                  <td>{signal.insight}</td>
+                  <td>{signal.risk}</td>
+                  <td>{signal.opportunity}</td>
+                  <td>{signal.pulse}%</td>
+                  <td>{signal.contributionScore}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </article>
+
+        <article className="panel wide fo-card">
+          <h2>Testers</h2>
+          <table className="superdashboard-brand-table">
+            <thead>
+              <tr>
+                <th>Credential</th>
+                <th>Email</th>
+                <th>Module</th>
+                <th>Survey</th>
+                <th>Status</th>
+                <th>Runs completed</th>
+                <th>Current run answers</th>
+                <th>Reassign module</th>
+              </tr>
+            </thead>
+            <tbody>
+              {CREDENTIALS.map((credential) => {
+                const tester = testers[credential.id]
+                const statusClass = tester?.status === 'complete' ? 'status-good' : tester ? 'status-watch' : 'status-risk'
+                const surveyTitle = tester ? SURVEYS[tester.surveyId as SurveyId]?.title ?? tester.surveyId : SURVEYS[credential.surveyId].title
+                return (
+                  <tr key={credential.id}>
+                    <td>{credential.id}</td>
+                    <td>{tester?.email || '—'}</td>
+                    <td>{tester?.moduleLabel ?? credential.moduleLabel}</td>
+                    <td>{surveyTitle}</td>
+                    <td className={statusClass}>{tester?.status ?? 'not registered'}</td>
+                    <td>{tester?.runs.length ?? 0}</td>
+                    <td>{tester?.currentAnswers.length ?? 0}</td>
+                    <td>
+                      {tester ? (
+                        <ReassignForm testerId={credential.id} currentModuleId={tester.moduleId} options={MODULE_OPTIONS} />
+                      ) : (
+                        <small>Not registered yet</small>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </article>
+      </div>
+
+      <div className="module-card-grid">
+        {CREDENTIALS.map((credential) => {
+          const tester = testers[credential.id]
+          if (!tester || (tester.runs.length === 0 && tester.currentAnswers.length === 0)) return null
+          return (
+            <article key={credential.id} className="module-card fo-card">
+              <div className="module-card-top"><span>{credential.id}</span><strong>{credential.moduleLabel}</strong></div>
+              {tester.runs.map((run, index) => (
+                <div key={run.id} className="tester-admin-run">
+                  <p><strong>Run #{index + 1}</strong> · {new Date(run.completedAt).toLocaleString()}</p>
+                  <ul>
+                    {run.answers.map((answer) => (
+                      <li key={answer.questionId}>
+                        <strong>{answer.questionId}{answer.autoGenerated ? ' (follow-up)' : ''}</strong>: {answer.answer}
+                      </li>
+                    ))}
+                  </ul>
+                  {run.signal && (
+                    <p><small>Brand signal — insight: {run.signal.insight} · risk: {run.signal.risk} · opportunity: {run.signal.opportunity} · pulse: {run.signal.pulse}% · contribution: {run.signal.contributionScore} · micro-story: {run.signal.microStory}</small></p>
+                  )}
+                </div>
+              ))}
+              {tester.currentAnswers.length > 0 && (
+                <div className="tester-admin-run">
+                  <p><strong>Current attempt (in progress)</strong></p>
+                  <ul>
+                    {tester.currentAnswers.map((answer) => (
+                      <li key={answer.questionId}>
+                        <strong>{answer.questionId}{answer.autoGenerated ? ' (follow-up)' : ''}</strong>: {answer.answer}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </article>
+          )
+        })}
+      </div>
+    </section>
+  )
+}

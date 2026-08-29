@@ -1,0 +1,31 @@
+/* 
+  © 2024–2026 FoundingOS. All rights reserved.
+  Unauthorized copying, distribution, or modification is strictly prohibited.
+*/
+import { type FormEvent } from 'react'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { storePendingApplication } from '@founder-os/auth/client'
+import { FoundTalentBrandMark } from '@founder-os/brand-assets'
+import { ImageBlock } from '@founder-os/ui'
+
+export const foundTalentPlans = [
+  { id: 'recruiter', name: 'Recruiter', price: '£24.99', description: 'A focused hiring workspace for one team or recruiter with FoundAI onboarding support.', features: ['1 recruiter console', 'Job scraping, scoring, and follow-up', 'FoundAI screening support', '1 staff account'], modules: ['Job scraping', 'Applicant scoring', 'FoundAI onboarding', 'FoundAI'], featured: false },
+  { id: 'manager', name: 'Talent Manager', price: '£59.99', description: 'Coordinate multiple roles, regions, and hiring funnels with FoundAI as the onboarding layer.', features: ['1 talent manager console', 'Up to 5 recruiter consoles', 'Hiring analytics and benchmarks', 'Advanced FoundAI tools', 'Up to 10 staff accounts'], modules: ['Hiring analytics', 'Labour intelligence', 'Staff', 'Automation'], featured: true },
+  { id: 'large', name: 'Workforce Intelligence', price: '£109.99', description: 'Advanced capacity for larger workforce intelligence teams with FoundAI onboarding and training.', features: ['1 workforce intelligence console', 'Up to 20 recruiter consoles', 'Automation, approvals, and reporting', 'Priority onboarding and support', 'Up to 50 staff accounts'], modules: ['All Talent Manager modules', 'Automation', 'Priority support', 'Market intelligence'], featured: false },
+] as const
+
+const planFor = (planId?: string) => foundTalentPlans.find((plan) => plan.id === planId)
+
+export function FoundTalentPackageDetails() {
+  const plan = planFor(useParams().planId)
+  if (!plan) return <Navigate to="/foundtalent-site#pricing" replace />
+  return <main className="min-h-screen bg-[#050816] px-5 py-16 text-[#e5eefc]"><article className="mx-auto max-w-4xl border border-[#fb923c]/20 bg-[linear-gradient(180deg,rgba(11,18,32,.9),rgba(8,12,22,.96))] p-8 shadow-[0_28px_72px_rgba(2,6,23,.45)]"><ImageBlock variant="foundtalent-dashboard" alt="FoundTalent dashboard preview" caption="FoundTalent console preview" glow="#fb923c" /><FoundTalentBrandMark className="mt-6 h-12 w-12"/><p className="mt-5 text-sm font-bold uppercase tracking-[.18em] text-[#fdba74]">FoundTalent package</p><h1 className="mt-3 text-4xl font-bold text-white">{plan.name}</h1><p className="mt-4 text-3xl font-bold text-white">{plan.price}<span className="text-base font-normal text-slate-300">/month</span></p><p className="mt-5 text-slate-300">{plan.description}</p><div className="mt-8 grid gap-6 md:grid-cols-2"><section><h2 className="text-xl font-bold text-white">Features</h2><ul className="mt-4 space-y-3 text-slate-200">{plan.features.map((feature) => <li key={feature}>✓ {feature}</li>)}</ul></section><section><h2 className="text-xl font-bold text-white">Modules included</h2><ul className="mt-4 space-y-3 text-slate-200">{plan.modules.map((module) => <li key={module}>✓ {module}</li>)}</ul></section></div><section className="mt-8 border-t border-white/10 pt-6"><h2 className="text-xl font-bold text-white">Plan difference</h2><p className="mt-3 text-slate-300">{plan.id === 'recruiter' ? 'Built for one recruitment or hiring team.' : plan.id === 'manager' ? 'Adds multi-team oversight, analytics, and labour market intelligence.' : 'Adds maximum hiring capacity, automation, and priority support.'}</p></section><div className="mt-9 flex gap-3"><Link to={`/foundtalent-site/packages/${plan.id}/apply`} className="bg-[#fb923c] px-6 py-3 font-bold text-slate-950">Apply Now</Link><Link to="/foundtalent-site#pricing" className="border border-[#fb923c]/60 px-6 py-3 font-bold text-[#fb923c]">Back to packages</Link></div></article></main>
+}
+
+export function FoundTalentPackageApplication() {
+  const plan = planFor(useParams().planId)
+  const navigate = useNavigate()
+  if (!plan) return <Navigate to="/foundtalent-site#pricing" replace />
+  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const value = new FormData(event.currentTarget); storePendingApplication('foundtalent', { app: 'foundtalent', plan: plan.id, businessName: String(value.get('businessName')), contactName: String(value.get('contactName')), email: String(value.get('email')), location: String(value.get('location')), requirements: String(value.get('requirements')) }); navigate(`/talent/auth/login?next=${encodeURIComponent(`/foundtalent-site/packages/${plan.id}/apply`)}&plan=${plan.id}`) }
+  return <main className="min-h-screen bg-[#050816] px-5 py-16 text-[#e5eefc]"><article className="mx-auto max-w-3xl border border-[#fb923c]/20 bg-[linear-gradient(180deg,rgba(11,18,32,.9),rgba(8,12,22,.96))] p-8 shadow-[0_28px_72px_rgba(2,6,23,.45)]"><p className="text-sm font-bold uppercase tracking-[.18em] text-[#fdba74]">FoundTalent application</p><h1 className="mt-3 text-4xl font-bold text-white">Apply for {plan.name}</h1><p className="mt-4 text-slate-300">Complete the application below. Sign-in is required only when you submit it.</p><form onSubmit={submit} className="mt-8 grid gap-4 md:grid-cols-2"><input required name="businessName" placeholder="Business name" className="border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-slate-400"/><input required name="contactName" placeholder="Contact name" className="border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-slate-400"/><input required name="email" type="email" placeholder="Email" className="border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-slate-400"/><input required name="location" placeholder="Primary hiring region" className="border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-slate-400"/><textarea required name="requirements" placeholder="Tell us about the roles, skills, and hiring goals" className="min-h-32 border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-slate-400 md:col-span-2"/><button className="bg-[#fb923c] px-6 py-3 font-bold text-slate-950 md:col-span-2">Submit application</button></form></article></main>
+}
