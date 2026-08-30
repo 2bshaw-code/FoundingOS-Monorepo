@@ -7,7 +7,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 export const brandConfig: BrandConsoleConfig = {
   "name": "FoundCrypto",
   "logo": "∞",
-  "accent": "#8A4AE2",
+  "accent": "#9933FF",
   "typography": {
     "heading": "Inter",
     "body": "Inter"
@@ -15,7 +15,7 @@ export const brandConfig: BrandConsoleConfig = {
   "colors": {
     "primary": "#8A4AE2",
     "secondary": "#2B174A",
-    "accent": "#8A4AE2",
+    "accent": "#9933FF",
     "background": "#0B0C10",
     "panel": "#141820",
     "text": "#FFFFFF",
@@ -724,7 +724,37 @@ export const brandConfig: BrandConsoleConfig = {
       "icon": "▣",
       "section": "Modules"
     },
+        {
+      "label": "Marketing",
+      "href": "/modules/marketing",
+      "icon": "megaphone",
+      "section": "Modules"
+    },
     {
+      "label": "Accounting",
+      "href": "/modules/accounting",
+      "icon": "banknotes",
+      "section": "Modules"
+    },
+    {
+      "label": "Messaging",
+      "href": "/modules/messaging",
+      "icon": "chat-bubble-left-right",
+      "section": "Modules"
+    },
+    {
+      "label": "Customer Service",
+      "href": "/modules/customer-service",
+      "icon": "lifebuoy",
+      "section": "Modules"
+    },
+    {
+      "label": "FoundAI Demo",
+      "href": "/modules/foundai-demo",
+      "icon": "sparkles",
+      "section": "Modules"
+    },
+{
       "label": "Settings",
       "href": "/settings",
       "icon": "⚙",

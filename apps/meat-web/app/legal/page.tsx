@@ -17,8 +17,8 @@ const legalSections = [
 ] as const
 
 const consoleLinks = [
-  { name: 'Supplier Console', href: 'http://localhost:3002' },
-  { name: 'Buyer Console', href: 'http://localhost:3002/buyer' },
+  { name: 'Meat Operations Console', href: brands.meat.consoleUrl },
+  { name: 'Meat Starter Console', href: brands.meat.starterConsoleUrl },
 ] as const
 
 const meatHomeUrl = brands.meat.webUrl

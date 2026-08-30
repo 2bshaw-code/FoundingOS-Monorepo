@@ -17,7 +17,8 @@ const legalSections = [
 ] as const
 
 const consoleLinks = [
-  { name: 'Crypto Intelligence & Auto-Execution Console', href: 'http://localhost:3005' },
+  { name: 'Crypto Command Console', href: brands.crypto.consoleUrl },
+  { name: 'Crypto Starter Console', href: brands.crypto.starterConsoleUrl },
 ] as const
 
 const cryptoHomeUrl = brands.crypto.webUrl

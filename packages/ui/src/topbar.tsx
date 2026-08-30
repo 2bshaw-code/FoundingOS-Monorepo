@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import type { BrandConsoleConfig } from './console'
 import { ThemeToggle } from './theme'
+import { QuantumSphereLogo } from './QuantumSphereLogo'
 
 const SIDEBAR_KEY = 'foundingos-sidebar-collapsed'
 
@@ -25,25 +26,14 @@ function applySidebarPreference(collapsed: boolean) {
   window.localStorage.setItem(SIDEBAR_KEY, String(collapsed))
 }
 
-function consoleTitle(name?: string) {
-  switch (name) {
-    case 'FoundRetail':
-      return 'Retail Manager Console'
-    case 'FoundMeat':
-      return 'Meat Operations Console'
-    case 'FoundThat':
-      return 'IT Command Console'
-    case 'FoundTalent':
-      return 'Talent Command Console'
-    case 'FoundCrypto':
-      return 'Crypto Command Console'
-    default:
-      return `${name ?? 'Workspace'} Console`
-  }
+function consoleTitle(name?: string, variant: 'console' | 'starter' = 'console') {
+  const brand = name ?? 'Workspace'
+  return variant === 'starter' ? `${brand} Console Starter` : `${brand} Console`
 }
 
-function ActualTopbar({ config }: { config?: BrandConsoleConfig }) {
-  const theme = { '--accent': config?.colors.accent ?? '#4A90E2' } as React.CSSProperties
+function ActualTopbar({ config, variant = 'console' }: { config?: BrandConsoleConfig; variant?: 'console' | 'starter' }) {
+  const theme = { '--accent': config?.colors.accent ?? '#00E0FF' } as React.CSSProperties
+  const sphereAccent = config?.name && config.name !== 'FoundingOS' ? config.colors.accent : undefined
   const [collapsed, setCollapsed] = useState(false)
 
   useEffect(() => {
@@ -61,9 +51,9 @@ function ActualTopbar({ config }: { config?: BrandConsoleConfig }) {
   return (
     <header className="topbar" style={theme}>
      <div className="topbar-title">
-       <span className="brand-logo small">{config?.logo ?? 'F'}</span>
+       <QuantumSphereLogo size={28} accent={sphereAccent} />
        <div>
-         <strong>{consoleTitle(config?.name)}</strong>
+         <strong>{consoleTitle(config?.name, variant)}</strong>
          <span>{config?.name ?? 'Workspace'} command center</span>
        </div>
      </div>
@@ -86,9 +76,9 @@ function ActualTopbar({ config }: { config?: BrandConsoleConfig }) {
   )
 }
 
-export function Topbar({ config }: { config?: BrandConsoleConfig }) {
+export function Topbar({ config, variant = 'console' }: { config?: BrandConsoleConfig; variant?: 'console' | 'starter' }) {
   try {
-    return <ActualTopbar config={config} />
+    return <ActualTopbar config={config} variant={variant} />
   } catch {
     return <div className="p-4 text-red-500">Topbar failed to load</div>
   }

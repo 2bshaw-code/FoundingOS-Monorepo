@@ -7,7 +7,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 export const brandConfig: BrandConsoleConfig = {
   "name": "FoundMeat",
   "logo": "◆",
-  "accent": "#C62828",
+  "accent": "#FF0033",
   "typography": {
     "heading": "Inter",
     "body": "Inter"
@@ -15,462 +15,501 @@ export const brandConfig: BrandConsoleConfig = {
   "colors": {
     "primary": "#C62828",
     "secondary": "#3D0D0D",
-    "accent": "#C62828",
+    "accent": "#FF0033",
     "background": "#0B0C10",
     "panel": "#141820",
     "text": "#FFFFFF",
     "muted": "#A8B3C3"
   },
   "dashboard": {
-    "title": "Wallets, charts, transactions",
-    "subtitle": "Monitor portfolios, exchange connections, signals, transaction volume, automation, and risk exposure.",
+    "title": "Traceability, batches, compliance",
+    "subtitle": "Control supplier batches, QA checkpoints, cold-chain alerts, cuts, and trade orders.",
     "metrics": [
       {
-        "label": "Wallet Balance",
-        "value": "£284k",
-        "trend": "+4.8%",
-        "icon": "£",
+        "label": "Batch Quality",
+        "value": "97%",
+        "trend": "Audit ready",
+        "icon": "✓",
         "tone": "good"
       },
       {
-        "label": "Trigger Activity",
-        "value": "26",
-        "trend": "Open",
+        "label": "Logistics Status",
+        "value": "9 live",
+        "trend": "In transit",
         "icon": "▦",
         "tone": "watch"
       },
       {
-        "label": "Automation Status",
-        "value": "92%",
-        "trend": "Live",
-        "icon": "◍",
+        "label": "Compliance %",
+        "value": "96%",
+        "trend": "Within limits",
+        "icon": "◌",
         "tone": "good"
       }
     ],
     "tableTitle": "Operational snapshot",
     "tableHeaders": [
-      "Asset",
-      "Signal",
-      "Exposure",
-      "Action"
+      "Batch",
+      "Cut",
+      "Supplier",
+      "QA"
     ],
     "tableRows": [
       [
-        "BTC",
-        "Breakout",
-        "34%",
-        "Watch"
+        "B-1042",
+        "Ribeye",
+        "North Farm",
+        "Passed"
       ],
       [
-        "ETH",
-        "Accumulation",
-        "22%",
+        "B-1043",
+        "Brisket",
+        "Hill Butchers",
         "Review"
       ],
       [
-        "SOL",
-        "Volatile",
-        "8%",
-        "Limit"
+        "B-1044",
+        "Sirloin",
+        "Prime Supply",
+        "Passed"
       ]
     ],
     "workflows": [
-      "Add Wallet workflow active",
-      "Create Signal workflow active",
-      "Open Chart workflow active",
-      "Run Risk Check workflow active"
+      "Create Batch workflow active",
+      "Record QA workflow active",
+      "Add Delivery workflow active",
+      "Issue Report workflow active"
     ]
   },
   "modules": [
     {
-      "id": "wallets",
-      "label": "Wallets",
-      "description": "FoundCrypto wallets workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "traceability",
+      "label": "Traceability",
+      "description": "FoundMeat traceability workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
+          "label": "Batches",
+          "value": "64",
+          "trend": "12 in transit",
+          "icon": "▣",
           "tone": "good"
         },
         {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
+          "label": "QA Due",
+          "value": "9",
+          "trend": "Today",
+          "icon": "!",
           "tone": "watch"
+        },
+        {
+          "label": "Compliance",
+          "value": "97%",
+          "trend": "Audit ready",
+          "icon": "✓",
+          "tone": "good"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Create Batch",
+        "Record QA",
+        "Add Delivery",
+        "Issue Report"
       ],
       "workflow": [
-        "Review Wallets queue",
-        "Update Wallets records",
-        "Publish Wallets report"
+        "Review Traceability queue",
+        "Update Traceability records",
+        "Publish Traceability report"
       ]
     },
     {
-      "id": "charts",
-      "label": "Charts",
-      "description": "FoundCrypto charts workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "qa",
+      "label": "QA",
+      "description": "FoundMeat qa workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
+          "label": "Batches",
+          "value": "64",
+          "trend": "12 in transit",
+          "icon": "▣",
           "tone": "good"
         },
         {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
+          "label": "QA Due",
+          "value": "9",
+          "trend": "Today",
+          "icon": "!",
           "tone": "watch"
+        },
+        {
+          "label": "Compliance",
+          "value": "97%",
+          "trend": "Audit ready",
+          "icon": "✓",
+          "tone": "good"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Create Batch",
+        "Record QA",
+        "Add Delivery",
+        "Issue Report"
       ],
       "workflow": [
-        "Review Charts queue",
-        "Update Charts records",
-        "Publish Charts report"
+        "Review QA queue",
+        "Update QA records",
+        "Publish QA report"
       ]
     },
     {
-      "id": "transactions",
-      "label": "Transactions",
-      "description": "FoundCrypto transactions workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "batches",
+      "label": "Batches",
+      "description": "FoundMeat batches workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
+          "label": "Batches",
+          "value": "64",
+          "trend": "12 in transit",
+          "icon": "▣",
           "tone": "good"
         },
         {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
+          "label": "QA Due",
+          "value": "9",
+          "trend": "Today",
+          "icon": "!",
           "tone": "watch"
+        },
+        {
+          "label": "Compliance",
+          "value": "97%",
+          "trend": "Audit ready",
+          "icon": "✓",
+          "tone": "good"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Create Batch",
+        "Record QA",
+        "Add Delivery",
+        "Issue Report"
       ],
       "workflow": [
-        "Review Transactions queue",
-        "Update Transactions records",
-        "Publish Transactions report"
+        "Review Batches queue",
+        "Update Batches records",
+        "Publish Batches report"
       ]
     },
     {
-      "id": "analytics",
-      "label": "Analytics",
-      "description": "FoundCrypto analytics workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "cuts",
+      "label": "Cuts",
+      "description": "FoundMeat cuts workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
+          "label": "Batches",
+          "value": "64",
+          "trend": "12 in transit",
+          "icon": "▣",
           "tone": "good"
         },
         {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
+          "label": "QA Due",
+          "value": "9",
+          "trend": "Today",
+          "icon": "!",
           "tone": "watch"
+        },
+        {
+          "label": "Compliance",
+          "value": "97%",
+          "trend": "Audit ready",
+          "icon": "✓",
+          "tone": "good"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Create Batch",
+        "Record QA",
+        "Add Delivery",
+        "Issue Report"
       ],
       "workflow": [
-        "Review Analytics queue",
-        "Update Analytics records",
-        "Publish Analytics report"
+        "Review Cuts queue",
+        "Update Cuts records",
+        "Publish Cuts report"
       ]
     },
     {
-      "id": "portfolio",
-      "label": "Portfolio",
-      "description": "FoundCrypto portfolio workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "suppliers",
+      "label": "Suppliers",
+      "description": "FoundMeat suppliers workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
+          "label": "Batches",
+          "value": "64",
+          "trend": "12 in transit",
+          "icon": "▣",
           "tone": "good"
         },
         {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
+          "label": "QA Due",
+          "value": "9",
+          "trend": "Today",
+          "icon": "!",
           "tone": "watch"
+        },
+        {
+          "label": "Compliance",
+          "value": "97%",
+          "trend": "Audit ready",
+          "icon": "✓",
+          "tone": "good"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Create Batch",
+        "Record QA",
+        "Add Delivery",
+        "Issue Report"
       ],
       "workflow": [
-        "Review Portfolio queue",
-        "Update Portfolio records",
-        "Publish Portfolio report"
+        "Review Suppliers queue",
+        "Update Suppliers records",
+        "Publish Suppliers report"
       ]
     },
     {
-      "id": "exchange",
-      "label": "Exchange",
-      "description": "FoundCrypto exchange workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "orders",
+      "label": "Orders",
+      "description": "FoundMeat orders workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
+          "label": "Batches",
+          "value": "64",
+          "trend": "12 in transit",
+          "icon": "▣",
           "tone": "good"
         },
         {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
+          "label": "QA Due",
+          "value": "9",
+          "trend": "Today",
+          "icon": "!",
           "tone": "watch"
+        },
+        {
+          "label": "Compliance",
+          "value": "97%",
+          "trend": "Audit ready",
+          "icon": "✓",
+          "tone": "good"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Create Batch",
+        "Record QA",
+        "Add Delivery",
+        "Issue Report"
       ],
       "workflow": [
-        "Review Exchange queue",
-        "Update Exchange records",
-        "Publish Exchange report"
+        "Review Orders queue",
+        "Update Orders records",
+        "Publish Orders report"
       ]
     },
     {
-      "id": "signals",
-      "label": "Signals",
-      "description": "FoundCrypto signals workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "cold-chain",
+      "label": "Cold Chain",
+      "description": "FoundMeat cold chain workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
+          "label": "Batches",
+          "value": "64",
+          "trend": "12 in transit",
+          "icon": "▣",
           "tone": "good"
         },
         {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
+          "label": "QA Due",
+          "value": "9",
+          "trend": "Today",
+          "icon": "!",
           "tone": "watch"
+        },
+        {
+          "label": "Compliance",
+          "value": "97%",
+          "trend": "Audit ready",
+          "icon": "✓",
+          "tone": "good"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Create Batch",
+        "Record QA",
+        "Add Delivery",
+        "Issue Report"
       ],
       "workflow": [
-        "Review Signals queue",
-        "Update Signals records",
-        "Publish Signals report"
+        "Review Cold Chain queue",
+        "Update Cold Chain records",
+        "Publish Cold Chain report"
       ]
     },
     {
-      "id": "risk",
-      "label": "Risk",
-      "description": "FoundCrypto risk workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "compliance",
+      "label": "Compliance",
+      "description": "FoundMeat compliance workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
+          "label": "Batches",
+          "value": "64",
+          "trend": "12 in transit",
+          "icon": "▣",
           "tone": "good"
         },
         {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
+          "label": "QA Due",
+          "value": "9",
+          "trend": "Today",
+          "icon": "!",
           "tone": "watch"
+        },
+        {
+          "label": "Compliance",
+          "value": "97%",
+          "trend": "Audit ready",
+          "icon": "✓",
+          "tone": "good"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Create Batch",
+        "Record QA",
+        "Add Delivery",
+        "Issue Report"
       ],
       "workflow": [
-        "Review Risk queue",
-        "Update Risk records",
-        "Publish Risk report"
+        "Review Compliance queue",
+        "Update Compliance records",
+        "Publish Compliance report"
       ]
     },
     {
-      "id": "automation",
-      "label": "Automation",
-      "description": "FoundCrypto automation workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "products",
+      "label": "Products",
+      "description": "FoundMeat products workspace for product creation, stock control, pricing, suppliers, and pictures.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
+          "label": "Products",
+          "value": "28",
+          "trend": "Live",
           "icon": "◍",
           "tone": "good"
         },
         {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
+          "label": "Low stock",
+          "value": "4",
+          "trend": "Needs review",
+          "icon": "!",
           "tone": "watch"
+        },
+        {
+          "label": "Suppliers",
+          "value": "12",
+          "trend": "Active",
+          "icon": "▣",
+          "tone": "good"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Add Product",
+        "Adjust Stock",
+        "Update Pricing",
+        "Review Suppliers"
       ],
       "workflow": [
-        "Review Automation queue",
-        "Update Automation records",
-        "Publish Automation report"
+        "Review Products queue",
+        "Update Products records",
+        "Publish Products report"
       ]
     }
   ,
-    {
-          "id": "marketing-suite",
-          "label": "Marketing Suite",
-          "description": "Plan, launch, and track marketing campaigns across every channel.",
+        {
+          "id": "order-cuts-manager",
+          "label": "Order Cuts Manager",
+          "description": "Manage cut orders, fulfilment, and butcher floor workflow in one place.",
           "metrics": [
                 {
-                      "label": "Campaigns Live",
-                      "value": "12",
-                      "trend": "+3 this week",
-                      "icon": "\u25b6",
+                      "label": "Cuts Ordered Today",
+                      "value": "58",
+                      "trend": "+6",
+                      "icon": "▶",
                       "tone": "good"
                 },
                 {
-                      "label": "Reach",
-                      "value": "48.2k",
-                      "trend": "+6%",
-                      "icon": "\u25c8",
-                      "tone": "good"
-                },
-                {
-                      "label": "Conversion",
-                      "value": "3.8%",
-                      "trend": "Stable",
-                      "icon": "%",
+                      "label": "Pending Orders",
+                      "value": "9",
+                      "trend": "Needs action",
+                      "icon": "!",
                       "tone": "watch"
+                },
+                {
+                      "label": "Fulfilled",
+                      "value": "94%",
+                      "trend": "+2%",
+                      "icon": "✓",
+                      "tone": "good"
                 }
           ],
           "actions": [
-                "Launch Campaign",
-                "Duplicate Template",
-                "Schedule Send",
-                "Review Analytics"
+                "Add Cut Order",
+                "Update Order",
+                "Mark Fulfilled",
+                "Export Order List"
           ],
           "workflow": [
-                "Draft Campaign",
-                "Approve Campaign",
-                "Publish Campaign"
+                "Review Order Cuts Manager queue",
+                "Update Order Cuts Manager records",
+                "Publish Order Cuts Manager report"
+          ]
+    },
+    {
+          "id": "supplier-sync",
+          "label": "Supplier Sync",
+          "description": "Keep supplier stock levels and pricing in sync automatically.",
+          "metrics": [
+                {
+                      "label": "Suppliers Synced",
+                      "value": "12",
+                      "trend": "Live",
+                      "icon": "◈",
+                      "tone": "good"
+                },
+                {
+                      "label": "Sync Errors",
+                      "value": "1",
+                      "trend": "Needs review",
+                      "icon": "!",
+                      "tone": "risk"
+                },
+                {
+                      "label": "Last Sync",
+                      "value": "4 min ago",
+                      "trend": "Automatic",
+                      "icon": "✓",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Run Sync",
+                "Resolve Conflict",
+                "Add Supplier",
+                "Export Sync Log"
+          ],
+          "workflow": [
+                "Review Supplier Sync queue",
+                "Update Supplier Sync records",
+                "Publish Supplier Sync report"
           ]
     },
     {
@@ -631,29 +670,29 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "crm": {
-    "title": "FoundCrypto CRM",
-    "summary": "FoundCrypto CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
+    "title": "FoundMeat CRM",
+    "summary": "FoundMeat CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
     "records": [
       {
-        "name": "BTC",
-        "type": "Wallets",
-        "stage": "Breakout",
-        "value": "34%",
-        "nextAction": "Add Wallet"
+        "name": "B-1042",
+        "type": "Farms",
+        "stage": "Ribeye",
+        "value": "North Farm",
+        "nextAction": "Create Batch"
       },
       {
-        "name": "ETH",
-        "type": "Wallets",
-        "stage": "Accumulation",
-        "value": "22%",
-        "nextAction": "Create Signal"
+        "name": "B-1043",
+        "type": "Farms",
+        "stage": "Brisket",
+        "value": "Hill Butchers",
+        "nextAction": "Record QA"
       },
       {
-        "name": "SOL",
-        "type": "Wallets",
-        "stage": "Volatile",
-        "value": "8%",
-        "nextAction": "Open Chart"
+        "name": "B-1044",
+        "type": "Farms",
+        "stage": "Sirloin",
+        "value": "Prime Supply",
+        "nextAction": "Add Delivery"
       }
     ],
     "pipeline": [
@@ -663,10 +702,10 @@ export const brandConfig: BrandConsoleConfig = {
       "Won"
     ],
     "tasks": [
-      "Add Wallet",
-      "Create Signal",
-      "Open Chart",
-      "Run Risk Check"
+      "Create Batch",
+      "Record QA",
+      "Add Delivery",
+      "Issue Report"
     ]
   },
   "navigation": [
@@ -683,44 +722,74 @@ export const brandConfig: BrandConsoleConfig = {
       "section": "Analytics"
     },
     {
-      "label": "CRM",
-      "href": "/crm",
-      "icon": "◎",
-      "section": "Core"
-    },
-    {
-      "label": "Wallets",
-      "href": "/modules/wallets",
+      "label": "Traceability",
+      "href": "/modules/traceability",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Charts",
-      "href": "/modules/charts",
+      "label": "QA",
+      "href": "/modules/qa",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Transactions",
-      "href": "/modules/transactions",
+      "label": "Batches",
+      "href": "/modules/batches",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Analytics",
-      "href": "/modules/analytics",
+      "label": "Cuts",
+      "href": "/modules/cuts",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Portfolio",
-      "href": "/modules/portfolio",
+      "label": "Suppliers",
+      "href": "/modules/suppliers",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Exchange",
-      "href": "/modules/exchange",
+      "label": "Orders",
+      "href": "/modules/orders",
+      "icon": "▣",
+      "section": "Modules"
+    },
+        {
+      "label": "Accounting",
+      "href": "/modules/accounting",
+      "icon": "banknotes",
+      "section": "Modules"
+    },
+    {
+      "label": "Messaging",
+      "href": "/modules/messaging",
+      "icon": "chat-bubble-left-right",
+      "section": "Modules"
+    },
+    {
+      "label": "Customer Service",
+      "href": "/modules/customer-service",
+      "icon": "lifebuoy",
+      "section": "Modules"
+    },
+    {
+      "label": "FoundAI Demo",
+      "href": "/modules/foundai-demo",
+      "icon": "sparkles",
+      "section": "Modules"
+    },
+    {
+      "label": "Order Cuts Manager",
+      "href": "/modules/order-cuts-manager",
+      "icon": "▣",
+      "section": "Modules"
+    },
+    {
+      "label": "Supplier Sync",
+      "href": "/modules/supplier-sync",
       "icon": "▣",
       "section": "Modules"
     },
@@ -732,17 +801,17 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "quickActions": [
-    "Add Wallet",
-    "Create Signal",
-    "Open Chart",
-    "Run Risk Check"
+    "Create Batch",
+    "Record QA",
+    "Add Delivery",
+    "Issue Report"
   ],
   "settings": [
-    "Wallet Security",
-    "Exchange Connections",
-    "Risk Limits",
-    "Alert Preferences",
-    "Portfolio Visibility",
+    "Compliance Profile",
+    "QA Thresholds",
+    "Batch Numbering",
+    "Traceability Rules",
+    "Supplier Approvals",
     "CRM Configuration"
   ]
 }

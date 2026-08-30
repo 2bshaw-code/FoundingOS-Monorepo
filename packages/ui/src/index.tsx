@@ -3,14 +3,17 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import Link from 'next/link'
-import { BobAI } from './bob-ai'
+import { FoundAI } from './found-ai'
 import { PremiumSocialLinks } from './social-links'
 import { ThemeToggle } from './theme'
+import { QuantumConsoleEntry } from './quantum-console-modal'
+import { QuantumSphereLogo } from './QuantumSphereLogo'
+import { CORE_MODULES } from '@foundingos/config/modules'
 
 type ComponentChildren = any
 // Widened to match @foundingos/config's BrandSlug so BrandDefinition values from
 // the config package remain structurally assignable to these component props.
-type BrandSlug = 'foundingos' | 'retail' | 'meat' | 'it' | 'talent' | 'crypto' | 'finance' | 'health' | 'logistics'
+type BrandSlug = 'foundingos' | 'retail' | 'meat' | 'foundthat' | 'talent' | 'crypto' | 'finance' | 'health' | 'logistics'
 type BrandDefinition = {
   slug: BrandSlug
   name: string
@@ -31,12 +34,12 @@ const brands: Record<BrandSlug, BrandDefinition> = {
     slug: 'foundingos',
     name: 'FoundingOS',
     legalName: 'FoundingOS',
-    accent: '#4A90E2',
-    brandColors: { primary: '#4A90E2', accent: '#4A90E2' },
-    webUrl: 'http://localhost:3000',
-    consoleUrl: 'http://localhost:4000',
-    starterConsoleUrl: 'http://localhost:4000',
-    dashboardUrl: 'http://localhost:4000/console',
+    accent: '#00E0FF',
+    brandColors: { primary: '#00E0FF', accent: '#00E0FF' },
+    webUrl: 'http://localhost:1000',
+    consoleUrl: 'http://localhost:8000',
+    starterConsoleUrl: 'http://localhost:8000',
+    dashboardUrl: 'http://localhost:8000/console',
     logo: '⌂',
     modules: ['Brand Registry', 'Subscriptions', 'Activity', 'Access Control'],
     summary: 'The core command layer for the multi-brand SaaS ecosystem.',
@@ -45,12 +48,12 @@ const brands: Record<BrandSlug, BrandDefinition> = {
     slug: 'retail',
     name: 'FoundRetail',
     legalName: 'FoundRetail',
-    accent: '#00C853',
-    brandColors: { primary: '#00C853', accent: '#00C853' },
-    webUrl: 'http://localhost:3001',
-    consoleUrl: 'http://localhost:4002',
-    starterConsoleUrl: 'http://localhost:4001',
-    dashboardUrl: 'http://localhost:4002/dashboard',
+    accent: '#00FF66',
+    brandColors: { primary: '#00FF66', accent: '#00FF66' },
+    webUrl: 'http://localhost:1001',
+    consoleUrl: 'http://localhost:8017',
+    starterConsoleUrl: 'http://localhost:8001',
+    dashboardUrl: 'http://localhost:8017/dashboard',
     logo: '◉',
     modules: ['Customers', 'Inventory', 'Orders', 'Products'],
     summary: 'Retail operations for catalogues, customers, orders, and teams.',
@@ -59,26 +62,26 @@ const brands: Record<BrandSlug, BrandDefinition> = {
     slug: 'meat',
     name: 'FoundMeat',
     legalName: 'FoundMeat',
-    accent: '#C62828',
-    brandColors: { primary: '#C62828', accent: '#C62828' },
-    webUrl: 'http://localhost:3002',
-    consoleUrl: 'http://localhost:4004',
-    starterConsoleUrl: 'http://localhost:4003',
-    dashboardUrl: 'http://localhost:4004/dashboard',
+    accent: '#FF0033',
+    brandColors: { primary: '#FF0033', accent: '#FF0033' },
+    webUrl: 'http://localhost:1002',
+    consoleUrl: 'http://localhost:8018',
+    starterConsoleUrl: 'http://localhost:8002',
+    dashboardUrl: 'http://localhost:8018/dashboard',
     logo: '◆',
     modules: ['Suppliers', 'Stock', 'Traceability', 'Orders'],
     summary: 'Trade and supply chain operating software for meat businesses.',
   },
-  it: {
-    slug: 'it',
+  foundthat: {
+    slug: 'foundthat',
     name: 'FoundThat',
     legalName: 'FoundThat',
-    accent: '#2962FF',
-    brandColors: { primary: '#2962FF', accent: '#2962FF' },
-    webUrl: 'http://localhost:3003',
-    consoleUrl: 'http://localhost:4006',
-    starterConsoleUrl: 'http://localhost:4005',
-    dashboardUrl: 'http://localhost:4006/dashboard',
+    accent: '#FFDD00',
+    brandColors: { primary: '#FFDD00', accent: '#FFDD00' },
+    webUrl: 'http://localhost:1003',
+    consoleUrl: 'http://localhost:8019',
+    starterConsoleUrl: 'http://localhost:8003',
+    dashboardUrl: 'http://localhost:8019/dashboard',
     logo: '✦',
     modules: ['Market Intel', 'Lead Capture', 'Data Quality', 'Reports'],
     summary: 'Discovery intelligence and data operations for local markets.',
@@ -87,12 +90,12 @@ const brands: Record<BrandSlug, BrandDefinition> = {
     slug: 'talent',
     name: 'FoundTalent',
     legalName: 'FoundTalent',
-    accent: '#FFB300',
-    brandColors: { primary: '#FFB300', accent: '#FFB300' },
-    webUrl: 'http://localhost:3004',
-    consoleUrl: 'http://localhost:4008',
-    starterConsoleUrl: 'http://localhost:4007',
-    dashboardUrl: 'http://localhost:4008/dashboard',
+    accent: '#FF8800',
+    brandColors: { primary: '#FF8800', accent: '#FF8800' },
+    webUrl: 'http://localhost:1004',
+    consoleUrl: 'http://localhost:8020',
+    starterConsoleUrl: 'http://localhost:8004',
+    dashboardUrl: 'http://localhost:8020/dashboard',
     logo: '⬢',
     modules: ['Applicants', 'Recruiters', 'Jobs', 'Workforce Intel'],
     summary: 'Hiring analytics and workforce intelligence for modern teams.',
@@ -101,12 +104,12 @@ const brands: Record<BrandSlug, BrandDefinition> = {
     slug: 'crypto',
     name: 'FoundCrypto',
     legalName: 'FoundCrypto',
-    accent: '#8E24AA',
-    brandColors: { primary: '#8E24AA', accent: '#8E24AA' },
-    webUrl: 'http://localhost:3005',
-    consoleUrl: 'http://localhost:4010',
-    starterConsoleUrl: 'http://localhost:4009',
-    dashboardUrl: 'http://localhost:4010/dashboard',
+    accent: '#9933FF',
+    brandColors: { primary: '#9933FF', accent: '#9933FF' },
+    webUrl: 'http://localhost:1005',
+    consoleUrl: 'http://localhost:8021',
+    starterConsoleUrl: 'http://localhost:8005',
+    dashboardUrl: 'http://localhost:8021/dashboard',
     logo: '∞',
     modules: ['Charts', 'Signals', 'Automation', 'Risk'],
     summary: 'Crypto intelligence, monitoring, and automation control.',
@@ -115,12 +118,12 @@ const brands: Record<BrandSlug, BrandDefinition> = {
     slug: 'finance',
     name: 'FoundFinance',
     legalName: 'FoundFinance',
-    accent: '#D4AF37',
-    brandColors: { primary: '#D4AF37', accent: '#D4AF37' },
-    webUrl: 'http://localhost:3006',
-    consoleUrl: 'http://localhost:4012',
-    starterConsoleUrl: 'http://localhost:4011',
-    dashboardUrl: 'http://localhost:4012/dashboard',
+    accent: '#0033AA',
+    brandColors: { primary: '#0033AA', accent: '#0033AA' },
+    webUrl: 'http://localhost:1006',
+    consoleUrl: 'http://localhost:8022',
+    starterConsoleUrl: 'http://localhost:8006',
+    dashboardUrl: 'http://localhost:8022/dashboard',
     logo: '£',
     modules: ['Cashflow', 'Invoicing', 'Reconciliation', 'Reporting'],
     summary: 'Finance operations, cashflow visibility, and reconciliation tooling.',
@@ -129,12 +132,12 @@ const brands: Record<BrandSlug, BrandDefinition> = {
     slug: 'health',
     name: 'FoundHealth',
     legalName: 'FoundHealth',
-    accent: '#00A896',
-    brandColors: { primary: '#00A896', accent: '#00A896' },
-    webUrl: 'http://localhost:3007',
-    consoleUrl: 'http://localhost:4014',
-    starterConsoleUrl: 'http://localhost:4013',
-    dashboardUrl: 'http://localhost:4014/dashboard',
+    accent: '#33CCFF',
+    brandColors: { primary: '#33CCFF', accent: '#33CCFF' },
+    webUrl: 'http://localhost:1007',
+    consoleUrl: 'http://localhost:8023',
+    starterConsoleUrl: 'http://localhost:8007',
+    dashboardUrl: 'http://localhost:8023/dashboard',
     logo: '✚',
     modules: ['Patients', 'Scheduling', 'Records', 'Compliance'],
     summary: 'Health operations, scheduling, and compliance tracking.',
@@ -143,12 +146,12 @@ const brands: Record<BrandSlug, BrandDefinition> = {
     slug: 'logistics',
     name: 'FoundLogistics',
     legalName: 'FoundLogistics',
-    accent: '#FF6F00',
-    brandColors: { primary: '#FF6F00', accent: '#FF6F00' },
-    webUrl: 'http://localhost:3008',
-    consoleUrl: 'http://localhost:4016',
-    starterConsoleUrl: 'http://localhost:4015',
-    dashboardUrl: 'http://localhost:4016/dashboard',
+    accent: '#DC143C',
+    brandColors: { primary: '#DC143C', accent: '#DC143C' },
+    webUrl: 'http://localhost:1008',
+    consoleUrl: 'http://localhost:8024',
+    starterConsoleUrl: 'http://localhost:8008',
+    dashboardUrl: 'http://localhost:8024/dashboard',
     logo: '▲',
     modules: ['Fleet', 'Routes', 'Warehousing', 'Deliveries'],
     summary: 'Logistics operations, fleet tracking, and delivery orchestration.',
@@ -172,14 +175,56 @@ const founderPackages = [
 
 const founderPackageUrl = (slug: string) => `${brands.foundingos.consoleUrl.replace(/\/+$/, '')}/console/packages/${slug}`
 
+const brandConsideration: Record<BrandSlug, { painPoints: string[]; outcomes: string[]; reasons: string[] }> = {
+  foundingos: { painPoints: [], outcomes: [], reasons: [] },
+  retail: {
+    painPoints: ['Stock levels are always a guess', 'Customer messages get lost across channels', 'Order and supplier data live in different systems'],
+    outcomes: ['Real-time stock visibility', 'One inbox for every channel', 'Orders, stock, and suppliers in one view'],
+    reasons: ['Retail moves too fast for spreadsheets', 'Customers expect instant replies everywhere', 'Store teams need one place to work from'],
+  },
+  meat: {
+    painPoints: ['Cold chain compliance is hard to prove', 'Supplier lead times are unpredictable', 'Spoilage risk is spotted too late'],
+    outcomes: ['Live cold chain compliance tracking', 'Supplier performance visibility', 'Early spoilage risk alerts'],
+    reasons: ['Trade margins are thin and unforgiving', 'Compliance failures are costly', 'Supply timing changes daily'],
+  },
+  foundthat: {
+    painPoints: ['Discovery signals are scattered', 'Lead capture is inconsistent', 'Data quality erodes trust in reports'],
+    outcomes: ['Unified market intelligence', 'Consistent lead capture', 'Clean, trusted reporting data'],
+    reasons: ['Local discovery needs constant signal', 'Leads are lost without fast follow-up', 'Bad data leads to bad decisions'],
+  },
+  talent: {
+    painPoints: ['Hiring pipelines stall without visibility', 'Recruiter and candidate data live apart', 'Workforce demand is hard to forecast'],
+    outcomes: ['Full pipeline visibility', 'Recruiters and candidates in one system', 'Workforce demand forecasting'],
+    reasons: ['Time-to-hire directly costs revenue', 'Candidates expect a smooth process', 'Workforce planning needs real data'],
+  },
+  crypto: {
+    painPoints: ['Market signals move faster than manual review', 'Wallets and exchanges are hard to track together', 'Risk exposure is discovered too late'],
+    outcomes: ['Live market signal monitoring', 'Unified wallet and exchange view', 'Early risk exposure alerts'],
+    reasons: ['Volatility punishes slow reactions', 'Portfolios span multiple platforms', 'Risk control needs to be continuous'],
+  },
+  finance: {
+    painPoints: ['Cashflow visibility lags reality', 'Invoicing and reconciliation take too long', 'Financial risk is spotted after the fact'],
+    outcomes: ['Real-time cashflow visibility', 'Faster invoicing and reconciliation', 'Earlier financial risk detection'],
+    reasons: ['Cash position drives every decision', 'Manual reconciliation doesn\u2019t scale', 'Risk needs to be caught early, not late'],
+  },
+  health: {
+    painPoints: ['Scheduling gaps hurt patient access', 'Records are hard to keep accurate and current', 'Compliance reporting takes too much manual effort'],
+    outcomes: ['Smarter appointment scheduling', 'Accurate, current patient records', 'Streamlined compliance reporting'],
+    reasons: ['Patient access depends on smooth scheduling', 'Records must be accurate and available', 'Compliance is non-negotiable'],
+  },
+  logistics: {
+    painPoints: ['Fleet visibility is incomplete', 'Route delays are caught too late', 'Warehousing and deliveries are hard to coordinate'],
+    outcomes: ['Full fleet visibility', 'Earlier route delay detection', 'Coordinated warehousing and delivery'],
+    reasons: ['Delivery delays cost customer trust', 'Fleet utilisation drives margin', 'Warehousing and routes must stay in sync'],
+  },
+}
+
 function consoleTitle(brand: BrandDefinition) {
   switch (brand.slug) {
     case 'retail':
       return 'Retail Manager Console'
     case 'meat':
       return 'Meat Operations Console'
-    case 'it':
-      return 'IT Command Console'
     case 'talent':
       return 'Talent Command Console'
     case 'crypto':
@@ -195,8 +240,6 @@ function brandBadge(brand: BrandDefinition) {
       return '◉'
     case 'meat':
       return '◆'
-    case 'it':
-      return '✦'
     case 'talent':
       return '⬢'
     case 'crypto':
@@ -280,7 +323,7 @@ export function Topbar({ brand }: { brand: BrandDefinition }) {
   return (
     <header className="topbar glow-premium" style={consoleStyle(brand)}>
       <div className="topbar-title">
-        <span className="brand-logo small">{brandBadge(brand)}</span>
+        <QuantumSphereLogo size={28} />
         <div>
           <strong>{consoleTitle(brand)}</strong>
           <span>{brand.name} command center</span>
@@ -311,7 +354,7 @@ export function Sidebar({ brand }: { brand: BrandDefinition }) {
   return (
     <aside className="sidebar glow-premium" style={consoleStyle(brand)}>
       <Link className="sidebar-brand" href="/console">
-        <span className="brand-logo">{brandBadge(brand)}</span>
+        <QuantumSphereLogo size={38} />
         <div>
           <strong>{consoleTitle(brand)}</strong>
           <span>{brand.summary}</span>
@@ -342,8 +385,6 @@ const brandGradient = (brand: BrandDefinition) => {
       return 'linear-gradient(135deg, color-mix(in srgb, #8E24AA 64%, var(--surface-strong)), color-mix(in srgb, #512DA8 32%, var(--surface)))'
     case 'meat':
       return 'linear-gradient(135deg, color-mix(in srgb, #C62828 64%, var(--surface-strong)), color-mix(in srgb, #7F1D1D 32%, var(--surface)))'
-    case 'it':
-      return 'linear-gradient(135deg, color-mix(in srgb, #2962FF 64%, var(--surface-strong)), color-mix(in srgb, #1D4ED8 32%, var(--surface)))'
     case 'talent':
       return 'linear-gradient(135deg, color-mix(in srgb, #FFB300 64%, var(--surface-strong)), color-mix(in srgb, #F59E0B 32%, var(--surface)))'
     default:
@@ -424,7 +465,7 @@ export function BrandMarketingPage({ brand, page = 'home' }: { brand: BrandDefin
       <footer className="site-footer">
         <PremiumSocialLinks accent={brand.accent} mode="full" label="Social & messaging" />
       </footer>
-      <BobAI brand={brand} />
+      <FoundAI brand={brand} />
     </main>
   )
 }
@@ -434,31 +475,71 @@ export function MarketingPage({ brand, page = 'home' }: { brand: BrandDefinition
 }
 
 export function FounderLauncher() {
-  const bobActions = ['Open Retail dashboard', 'Check Meat compliance', 'Review IT alerts', 'Find Talent candidates', 'Show Crypto wallet balance']
+  const foundAiActions = ['Open Retail dashboard', 'Check Meat compliance', 'Review FoundThat market intel', 'Find Talent candidates', 'Show Crypto wallet balance']
   const packagePlans = founderPackages
 
   return (
-    <main className="site-shell founder-shell" style={{ '--accent': '#4A90E2' } as React.CSSProperties}>
-      <nav>
+    <main className="site-shell founder-shell" style={{ '--accent': '#00E0FF' } as React.CSSProperties}>
+      <nav className="quantum-header quantum-ambient-grid">
         <Link href="/">FoundingOS</Link>
-        <div className="site-nav-links">
+        <div className="quantum-header-links">
+          <a href="#top">Home</a>
+          <a href="#pricing">Intelligence</a>
+          <a href="#found-ai">Insights</a>
           <a href={`${brands.foundingos.consoleUrl}/console`}>Console</a>
+          <a href="#contact">Support</a>
+        </div>
+        <div className="site-nav-links">
           <ThemeToggle />
         </div>
       </nav>
-      <section className="hero">
+      <section className="hero quantum-ambient-grid" id="top">
+        <div className="quantum-particle-drift"><span className="quantum-particle" /><span className="quantum-particle" /><span className="quantum-particle" /></div>
         <div className="hero-copy">
           <p className="eyebrow">FoundingOS</p>
           <h1>One ecosystem. Every brand connected.</h1>
           <p>Launch brand websites, govern subscriptions, and manage the shared SaaS platform from a single command layer.</p>
+          <p className="quantum-hero-promise">Powered by Quantum intelligence — real-time signals, always on.</p>
         </div>
         <div className="hero-visual" aria-label="FoundingOS overview">
-          <div className="hero-panel card-premium glow-premium" style={{ background: brandGradient(brands.foundingos) }}>
+          <div className="hero-panel card-premium glow-premium quantum-card" style={{ background: brandGradient(brands.foundingos) }}>
+            <span className="quantum-corner-marker">⌂</span>
             <span>Platform hub</span>
             <strong>FoundingOS</strong>
             <ul>{brandList.filter((brand) => brand.slug !== 'foundingos').map((brand) => <li key={brand.slug}>{brand.name}</li>)}</ul>
           </div>
         </div>
+      </section>
+      <section id="why-foundingos" className="module-grid">
+        <article className="card-premium" style={{ gridColumn: '1 / -1' }}>
+          <h2 className="header-premium">Why FoundingOS Exists</h2>
+          <p>Growing businesses hit the same wall — too many disconnected tools, no single source of truth, and no time left to actually run the business.</p>
+        </article>
+        <article className="card-premium quantum-card">
+          <span className="quantum-corner-marker">⌂</span>
+          <h3>The chaos problem</h3>
+          <p>Too many tools, too many dashboards — teams lose hours just switching between systems that don't talk to each other.</p>
+        </article>
+        <article className="card-premium quantum-card">
+          <span className="quantum-corner-marker">⌂</span>
+          <h3>The fragmentation problem</h3>
+          <p>Data silos and no single source of truth mean every team sees a different version of the same business.</p>
+        </article>
+        <article className="card-premium quantum-card">
+          <span className="quantum-corner-marker">⌂</span>
+          <h3>The intelligence gap</h3>
+          <p>Without unified insights, decisions get made on gut feel instead of what's actually happening across the brand.</p>
+        </article>
+        <article className="card-premium quantum-card">
+          <span className="quantum-corner-marker">⌂</span>
+          <h3>The automation gap</h3>
+          <p>Too much manual work still happens by hand, slowing teams down and leaving room for costly mistakes.</p>
+        </article>
+        <article className="card-premium quantum-card">
+          <span className="quantum-corner-marker">⌂</span>
+          <h3>The control problem</h3>
+          <p>Businesses feel overwhelmed, reacting to problems instead of steering the brand with confidence.</p>
+        </article>
       </section>
       <section id="pricing" className="module-grid">
         {packagePlans.map((plan) => (
@@ -482,9 +563,9 @@ export function FounderLauncher() {
           </div>
         </article>
       </section>
-      <section className="founder-bob-intro">
-        <div className="founder-bob-avatar">B</div>
-        <div className="founder-bob-copy">
+      <section id="found-ai" className="founder-found-ai-intro">
+        <div className="founder-found-ai-avatar">F</div>
+        <div className="founder-found-ai-copy">
           <p className="eyebrow">FoundAI</p>
           <h2>Meet FoundAI.</h2>
           <p>FoundAI — The Best Onboarding Bot in the World.</p>
@@ -498,18 +579,51 @@ export function FounderLauncher() {
               : <a className="btn btn-primary btn-premium" href={`${consoleDashboardUrl(brands.foundingos)}/console`}>Meet FoundAI</a>}
           </div>
         </div>
-        <div className="founder-bob-actions">
-          {bobActions.map((action) => <button key={action} type="button" className="bob-chip">{action}</button>)}
+        <div className="founder-found-ai-actions">
+          {foundAiActions.map((action) => <button key={action} type="button" className="found-ai-chip">{action}</button>)}
         </div>
       </section>
       <section className="module-grid">
         {brandList.filter((brand) => brand.slug !== 'foundingos').map((brand) => (
-          <article key={brand.slug} className="card-premium">
+          <article key={brand.slug} className="card-premium brand-directory-card">
+            <QuantumSphereLogo size={48} />
             <h2>{brand.name}</h2>
             <p>{brand.summary}</p>
-            {isInternalHref(brand.webUrl)
-              ? <Link className="btn btn-primary btn-premium" style={{ backgroundColor: brand.brandColors.primary, borderColor: brand.brandColors.accent }} href={brand.webUrl}>Open Website</Link>
-              : <a className="btn btn-primary btn-premium" style={{ backgroundColor: brand.brandColors.primary, borderColor: brand.brandColors.accent }} href={brand.webUrl}>Open Website</a>}
+            <details className="brand-read-more">
+              <summary>Read more</summary>
+              <div className="consideration-grid">
+                <div>
+                  <p className="quantum-nav-desc"><strong>Pain points</strong></p>
+                  <ul>{brandConsideration[brand.slug].painPoints.map((point) => <li key={point}>{point}</li>)}</ul>
+                </div>
+                <div>
+                  <p className="quantum-nav-desc"><strong>Outcomes</strong></p>
+                  <ul>{brandConsideration[brand.slug].outcomes.map((point) => <li key={point}>{point}</li>)}</ul>
+                </div>
+                <div>
+                  <p className="quantum-nav-desc"><strong>Why this console exists</strong></p>
+                  <ul>{brandConsideration[brand.slug].reasons.map((point) => <li key={point}>{point}</li>)}</ul>
+                </div>
+              </div>
+            </details>
+            <div className="hero-actions">
+              {isInternalHref(brand.webUrl)
+                ? <Link className="btn btn-primary btn-premium" style={{ backgroundColor: brand.brandColors.primary, borderColor: brand.brandColors.accent }} href={brand.webUrl}>{brand.name} Website</Link>
+                : <a className="btn btn-primary btn-premium" style={{ backgroundColor: brand.brandColors.primary, borderColor: brand.brandColors.accent }} href={brand.webUrl}>{brand.name} Website</a>}
+              <QuantumConsoleEntry brandName={brand.name} glyph={brand.logo} starterUrl={brand.starterConsoleUrl} growthUrl={brand.consoleUrl} />
+            </div>
+          </article>
+        ))}
+      </section>
+      <section id="core-modules" className="module-grid">
+        <article className="card-premium" style={{ gridColumn: '1 / -1' }}>
+          <h2 className="header-premium">Core Modules</h2>
+          <p>Every console in the FoundingOS ecosystem ships with these core modules.</p>
+        </article>
+        {CORE_MODULES.map((moduleItem) => (
+          <article key={moduleItem.id} className="card-premium premium-card premium-fade-in">
+            <h2>{moduleItem.label}</h2>
+            <p>{moduleItem.description}</p>
           </article>
         ))}
       </section>
@@ -517,18 +631,19 @@ export function FounderLauncher() {
         <article className="card-premium">
           <h2 className="header-premium">Connect with FoundingOS</h2>
           <p>Explore the full social and messaging network used throughout the platform.</p>
-          <PremiumSocialLinks accent="#4A90E2" mode="inline" label="Social & messaging" />
+          <PremiumSocialLinks accent="#00E0FF" mode="inline" label="Social & messaging" />
         </article>
       </section>
       <footer className="site-footer">
-        <PremiumSocialLinks accent="#4A90E2" mode="full" label="Social & messaging" />
+        <PremiumSocialLinks accent="#00E0FF" mode="full" label="Social & messaging" />
       </footer>
-      <BobAI brand={brands.foundingos} />
+      <FoundAI brand={brands.foundingos} />
     </main>
   )
 }
 
 export { PremiumSocialLinks } from './social-links'
+export { QuantumSphereLogo } from './QuantumSphereLogo'
 
 export function ConsoleDashboard({ brand }: { brand: BrandDefinition }) {
   const widgets = kpiWidgets(brand)

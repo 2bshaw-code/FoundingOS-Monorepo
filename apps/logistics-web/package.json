@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "next dev -p 6007",
+    "dev": "next dev -p 1008",
     "build": "next build",
-    "start": "next start -p 3008",
+    "start": "next start -p 1008",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },

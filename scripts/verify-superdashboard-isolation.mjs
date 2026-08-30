@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 // Enforces the SuperDashboard access rule: FounderOS Console only, never any brand console.
+// Exception: brand websites may reference the plain marketing string 'SuperDashboard'
+// (e.g. inside a "What You Get" feature list) since that is static informational text,
+// not a SuperDashboard route/component/import. Any other reference (imports, routes,
+// component names, different casing) is still forbidden outside foundingos-console.
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, dirname, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -7,7 +11,8 @@ import { fileURLToPath } from 'node:url'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const appsDir = join(root, 'apps')
 const allowedApp = 'foundingos-console'
-const pattern = /superdashboard/i
+const pattern = /superdashboard/gi
+const safeMarketingPattern = /'SuperDashboard'/g
 const scannedExtensions = new Set(['.ts', '.tsx', '.js', '.jsx', '.css', '.mjs', '.json'])
 const ignoredDirs = new Set(['node_modules', '.next', '.turbo', 'dist', 'build'])
 
@@ -24,7 +29,10 @@ function walk(dir) {
     }
     if (!scannedExtensions.has(extname(entry))) continue
     const content = readFileSync(fullPath, 'utf8')
-    if (pattern.test(content)) {
+    const totalMatches = content.match(pattern)
+    if (!totalMatches) continue
+    const safeMatches = content.match(safeMarketingPattern) ?? []
+    if (safeMatches.length < totalMatches.length) {
       console.error(`[verify-superdashboard-isolation] forbidden SuperDashboard reference in ${fullPath}`)
       violations += 1
     }

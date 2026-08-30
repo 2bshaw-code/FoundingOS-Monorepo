@@ -42,6 +42,7 @@ model User {
   activityLogs  ActivityLog[]
   accounts      Account[]
   sessions      Session[]
+  surveyResults SurveyResult[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
@@ -62,6 +63,13 @@ model Module {
   @@unique([brandId, slug])
 }
 
+enum BillingState {
+  trial
+  active
+  past_due
+  cancelled
+}
+
 model Subscription {
   id        String   @id @default(cuid())
   brandId   String
@@ -74,6 +82,24 @@ model Subscription {
   endsAt    DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Package Activation System (Model D) — additive fields for the commercial layer.
+  // All optional/defaulted so existing rows and existing code paths are unaffected.
+  baseTier            String?
+  industryPack        String?
+  hardwarePacks       Json?
+  quantumOSActive     Boolean       @default(false)
+  intelligenceOSActive Boolean      @default(false)
+  pricingModel        String?
+  billingState        BillingState  @default(trial)
+  stripeCustomerId    String?
+  stripeSubscriptionId String?
+  usageInsights       Int           @default(0)
+  usageSimulations    Int           @default(0)
+  usageAnomalyDetections Int        @default(0)
+  usageRiskModels     Int           @default(0)
+  usageScenarioPacks  Int           @default(0)
+  surveyResults       SurveyResult[]
 
   @@index([brandId])
   @@index([userId])
@@ -127,4 +153,35 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+enum SurveyType {
+  customer
+  buyer
+  investor
+}
+
+enum SurveySentiment {
+  positive
+  neutral
+  negative
+}
+
+model SurveyResult {
+  id             String          @id @default(cuid())
+  type           SurveyType
+  userId         String?
+  user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  subscriptionId String?
+  subscription   Subscription?   @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  answers        Json
+  score          Int
+  insight        String
+  risk           String
+  opportunity    String
+  sentiment      SurveySentiment
+  createdAt      DateTime        @default(now())
+
+  @@index([userId])
+  @@index([subscriptionId])
+  @@index([type])
 }

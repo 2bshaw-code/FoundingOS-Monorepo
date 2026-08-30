@@ -7,7 +7,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 export const brandConfig: BrandConsoleConfig = {
   "name": "FoundMeat",
   "logo": "◆",
-  "accent": "#A83F3F",
+  "accent": "#FF0033",
   "typography": {
     "heading": "Inter",
     "body": "Inter"
@@ -15,7 +15,7 @@ export const brandConfig: BrandConsoleConfig = {
   "colors": {
     "primary": "#A83F3F",
     "secondary": "#351A1A",
-    "accent": "#A83F3F",
+    "accent": "#FF0033",
     "background": "#0B0C10",
     "panel": "#141820",
     "text": "#FFFFFF",
@@ -434,43 +434,82 @@ export const brandConfig: BrandConsoleConfig = {
       ]
     }
   ,
-    {
-          "id": "marketing-suite",
-          "label": "Marketing Suite",
-          "description": "Plan, launch, and track marketing campaigns across every channel.",
+        {
+          "id": "order-cuts-manager",
+          "label": "Order Cuts Manager",
+          "description": "Manage cut orders, fulfilment, and butcher floor workflow in one place.",
           "metrics": [
                 {
-                      "label": "Campaigns Live",
-                      "value": "12",
-                      "trend": "+3 this week",
-                      "icon": "\u25b6",
+                      "label": "Cuts Ordered Today",
+                      "value": "58",
+                      "trend": "+6",
+                      "icon": "▶",
                       "tone": "good"
                 },
                 {
-                      "label": "Reach",
-                      "value": "48.2k",
-                      "trend": "+6%",
-                      "icon": "\u25c8",
-                      "tone": "good"
-                },
-                {
-                      "label": "Conversion",
-                      "value": "3.8%",
-                      "trend": "Stable",
-                      "icon": "%",
+                      "label": "Pending Orders",
+                      "value": "9",
+                      "trend": "Needs action",
+                      "icon": "!",
                       "tone": "watch"
+                },
+                {
+                      "label": "Fulfilled",
+                      "value": "94%",
+                      "trend": "+2%",
+                      "icon": "✓",
+                      "tone": "good"
                 }
           ],
           "actions": [
-                "Launch Campaign",
-                "Duplicate Template",
-                "Schedule Send",
-                "Review Analytics"
+                "Add Cut Order",
+                "Update Order",
+                "Mark Fulfilled",
+                "Export Order List"
           ],
           "workflow": [
-                "Draft Campaign",
-                "Approve Campaign",
-                "Publish Campaign"
+                "Review Order Cuts Manager queue",
+                "Update Order Cuts Manager records",
+                "Publish Order Cuts Manager report"
+          ]
+    },
+    {
+          "id": "supplier-sync",
+          "label": "Supplier Sync",
+          "description": "Keep supplier stock levels and pricing in sync automatically.",
+          "metrics": [
+                {
+                      "label": "Suppliers Synced",
+                      "value": "12",
+                      "trend": "Live",
+                      "icon": "◈",
+                      "tone": "good"
+                },
+                {
+                      "label": "Sync Errors",
+                      "value": "1",
+                      "trend": "Needs review",
+                      "icon": "!",
+                      "tone": "risk"
+                },
+                {
+                      "label": "Last Sync",
+                      "value": "4 min ago",
+                      "trend": "Automatic",
+                      "icon": "✓",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Run Sync",
+                "Resolve Conflict",
+                "Add Supplier",
+                "Export Sync Log"
+          ],
+          "workflow": [
+                "Review Supplier Sync queue",
+                "Update Supplier Sync records",
+                "Publish Supplier Sync report"
           ]
     },
     {
@@ -683,12 +722,6 @@ export const brandConfig: BrandConsoleConfig = {
       "section": "Analytics"
     },
     {
-      "label": "CRM",
-      "href": "/crm",
-      "icon": "◎",
-      "section": "Core"
-    },
-    {
       "label": "Traceability",
       "href": "/modules/traceability",
       "icon": "▣",
@@ -721,6 +754,42 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "label": "Orders",
       "href": "/modules/orders",
+      "icon": "▣",
+      "section": "Modules"
+    },
+        {
+      "label": "Accounting",
+      "href": "/modules/accounting",
+      "icon": "banknotes",
+      "section": "Modules"
+    },
+    {
+      "label": "Messaging",
+      "href": "/modules/messaging",
+      "icon": "chat-bubble-left-right",
+      "section": "Modules"
+    },
+    {
+      "label": "Customer Service",
+      "href": "/modules/customer-service",
+      "icon": "lifebuoy",
+      "section": "Modules"
+    },
+    {
+      "label": "FoundAI Demo",
+      "href": "/modules/foundai-demo",
+      "icon": "sparkles",
+      "section": "Modules"
+    },
+    {
+      "label": "Order Cuts Manager",
+      "href": "/modules/order-cuts-manager",
+      "icon": "▣",
+      "section": "Modules"
+    },
+    {
+      "label": "Supplier Sync",
+      "href": "/modules/supplier-sync",
       "icon": "▣",
       "section": "Modules"
     },

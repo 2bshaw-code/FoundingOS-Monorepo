@@ -48,6 +48,15 @@ export function findCredentialByPassword(password: string): Credential | null {
   return CREDENTIALS.find((credential) => credential.password === password) ?? null
 }
 
+// Super Founder Admin — full-access account, bypasses the tester credential pool above.
+// Password is intentionally kept out of source (env var only, dev fallback for local testing).
+export const SUPER_FOUNDER_ADMIN_EMAIL = '2bshaw@gmail.com'
+const SUPER_FOUNDER_ADMIN_PASSWORD = process.env.SUPER_FOUNDER_ADMIN_PASSWORD ?? 'founderos-super-admin-dev-only'
+
+export function isSuperFounderAdmin(email: string, password: string): boolean {
+  return email.trim().toLowerCase() === SUPER_FOUNDER_ADMIN_EMAIL && password === SUPER_FOUNDER_ADMIN_PASSWORD
+}
+
 // Every module a tester can be (re)assigned to, derived from the credential catalog
 // so admin reassignment can never point a tester at a module/survey pair that doesn't exist.
 export type ModuleOption = { moduleId: ModuleId; moduleLabel: string; surveyId: SurveyId }

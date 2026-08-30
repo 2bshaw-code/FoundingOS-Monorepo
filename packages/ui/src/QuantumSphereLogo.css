@@ -1,0 +1,15 @@
+/* 
+  © 2024–2026 FoundingOS. All rights reserved.
+  Unauthorized copying, distribution, or modification is strictly prohibited.
+*/
+.quantumSphereLogo {
+  display: block;
+  filter: drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.15));
+  animation: sphereBreath 6s ease-in-out infinite;
+}
+
+@keyframes sphereBreath {
+  0%   { transform: scale(1);   opacity: 1; }
+  50%  { transform: scale(1.04); opacity: 0.92; }
+  100% { transform: scale(1);   opacity: 1; }
+}

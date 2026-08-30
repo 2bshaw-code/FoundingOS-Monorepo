@@ -7,7 +7,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 export const brandConfig: BrandConsoleConfig = {
   "name": "FoundHealth",
   "logo": "✚",
-  "accent": "#00A896",
+  "accent": "#33CCFF",
   "typography": {
     "heading": "Inter",
     "body": "Inter"
@@ -15,462 +15,500 @@ export const brandConfig: BrandConsoleConfig = {
   "colors": {
     "primary": "#00A896",
     "secondary": "#0A3D38",
-    "accent": "#00A896",
+    "accent": "#33CCFF",
     "background": "#0B0C10",
     "panel": "#141820",
     "text": "#FFFFFF",
     "muted": "#A8B3C3"
   },
   "dashboard": {
-    "title": "Wallets, charts, transactions",
-    "subtitle": "Monitor portfolios, exchange connections, signals, transaction volume, automation, and risk exposure.",
-    "metrics": [
-      {
-        "label": "Wallet Balance",
-        "value": "£284k",
-        "trend": "+4.8%",
-        "icon": "£",
-        "tone": "good"
-      },
-      {
-        "label": "Trigger Activity",
-        "value": "26",
-        "trend": "Open",
-        "icon": "▦",
-        "tone": "watch"
-      },
-      {
-        "label": "Automation Status",
-        "value": "92%",
-        "trend": "Live",
-        "icon": "◍",
-        "tone": "good"
-      }
-    ],
-    "tableTitle": "Operational snapshot",
-    "tableHeaders": [
-      "Asset",
-      "Signal",
-      "Exposure",
-      "Action"
-    ],
-    "tableRows": [
-      [
-        "BTC",
-        "Breakout",
-        "34%",
-        "Watch"
+      "title": "Patients, scheduling, records",
+      "subtitle": "Track daily health operations across patients, appointments, records, staffing, and compliance.",
+      "metrics": [
+          {
+              "label": "Appointments Today",
+              "value": "142",
+              "trend": "+8",
+              "icon": "▶",
+              "tone": "good"
+          },
+          {
+              "label": "Avg Wait Time",
+              "value": "14 min",
+              "trend": "-4m",
+              "icon": "◈",
+              "tone": "good"
+          },
+          {
+              "label": "Compliance Score",
+              "value": "97%",
+              "trend": "+1%",
+              "icon": "✓",
+              "tone": "good"
+          }
       ],
-      [
-        "ETH",
-        "Accumulation",
-        "22%",
-        "Review"
+      "tableTitle": "Operational snapshot",
+      "tableHeaders": [
+          "Clinic",
+          "Status",
+          "Load",
+          "Action"
       ],
-      [
-        "SOL",
-        "Volatile",
-        "8%",
-        "Limit"
+      "tableRows": [
+          [
+              "Manchester Central",
+              "Healthy",
+              "82%",
+              "Monitor"
+          ],
+          [
+              "Leeds North",
+              "Busy",
+              "94%",
+              "Review"
+          ],
+          [
+              "Bristol West",
+              "Stable",
+              "68%",
+              "Monitor"
+          ]
+      ],
+      "workflows": [
+          "Review Appointments workflow active",
+          "Update Patient Record workflow active",
+          "Check Compliance workflow active",
+          "Run Staffing Review workflow active"
       ]
-    ],
-    "workflows": [
-      "Add Wallet workflow active",
-      "Create Signal workflow active",
-      "Open Chart workflow active",
-      "Run Risk Check workflow active"
-    ]
-  },
+    },
   "modules": [
     {
-      "id": "wallets",
-      "label": "Wallets",
-      "description": "FoundCrypto wallets workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Wallets queue",
-        "Update Wallets records",
-        "Publish Wallets report"
-      ]
-    },
-    {
-      "id": "charts",
-      "label": "Charts",
-      "description": "FoundCrypto charts workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Charts queue",
-        "Update Charts records",
-        "Publish Charts report"
-      ]
-    },
-    {
-      "id": "transactions",
-      "label": "Transactions",
-      "description": "FoundCrypto transactions workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Transactions queue",
-        "Update Transactions records",
-        "Publish Transactions report"
-      ]
-    },
-    {
-      "id": "analytics",
-      "label": "Analytics",
-      "description": "FoundCrypto analytics workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Analytics queue",
-        "Update Analytics records",
-        "Publish Analytics report"
-      ]
-    },
-    {
-      "id": "portfolio",
-      "label": "Portfolio",
-      "description": "FoundCrypto portfolio workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Portfolio queue",
-        "Update Portfolio records",
-        "Publish Portfolio report"
-      ]
-    },
-    {
-      "id": "exchange",
-      "label": "Exchange",
-      "description": "FoundCrypto exchange workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Exchange queue",
-        "Update Exchange records",
-        "Publish Exchange report"
-      ]
-    },
-    {
-      "id": "signals",
-      "label": "Signals",
-      "description": "FoundCrypto signals workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Signals queue",
-        "Update Signals records",
-        "Publish Signals report"
-      ]
-    },
-    {
-      "id": "risk",
-      "label": "Risk",
-      "description": "FoundCrypto risk workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Risk queue",
-        "Update Risk records",
-        "Publish Risk report"
-      ]
-    },
-    {
-      "id": "automation",
-      "label": "Automation",
-      "description": "FoundCrypto automation workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Automation queue",
-        "Update Automation records",
-        "Publish Automation report"
-      ]
-    }
-  ,
-    {
-          "id": "marketing-suite",
-          "label": "Marketing Suite",
-          "description": "Plan, launch, and track marketing campaigns across every channel.",
+          "id": "patients",
+          "label": "Patients",
+          "description": "FoundHealth patients workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
-                      "label": "Campaigns Live",
-                      "value": "12",
-                      "trend": "+3 this week",
-                      "icon": "\u25b6",
+                      "label": "Active Patients",
+                      "value": "1,284",
+                      "trend": "+22",
+                      "icon": "▶",
                       "tone": "good"
                 },
                 {
-                      "label": "Reach",
-                      "value": "48.2k",
-                      "trend": "+6%",
-                      "icon": "\u25c8",
+                      "label": "New This Week",
+                      "value": "36",
+                      "trend": "+4",
+                      "icon": "◈",
                       "tone": "good"
                 },
                 {
-                      "label": "Conversion",
-                      "value": "3.8%",
-                      "trend": "Stable",
-                      "icon": "%",
+                      "label": "Follow-ups Due",
+                      "value": "18",
+                      "trend": "Needs action",
+                      "icon": "!",
                       "tone": "watch"
                 }
           ],
           "actions": [
-                "Launch Campaign",
-                "Duplicate Template",
-                "Schedule Send",
-                "Review Analytics"
+                "Add Patient",
+                "Update Record",
+                "Schedule Follow-up",
+                "Export Summary"
           ],
           "workflow": [
-                "Draft Campaign",
-                "Approve Campaign",
-                "Publish Campaign"
+                "Review Patients queue",
+                "Update Patients records",
+                "Publish Patients report"
+          ]
+    },
+    {
+          "id": "appointments",
+          "label": "Appointments",
+          "description": "FoundHealth appointments workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Booked Today",
+                      "value": "142",
+                      "trend": "+8",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Fill Rate",
+                      "value": "91%",
+                      "trend": "+3%",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "No-shows",
+                      "value": "5",
+                      "trend": "This week",
+                      "icon": "!",
+                      "tone": "watch"
+                }
+          ],
+          "actions": [
+                "Book Appointment",
+                "Reschedule",
+                "Send Reminder",
+                "Export Schedule"
+          ],
+          "workflow": [
+                "Review Appointments queue",
+                "Update Appointments records",
+                "Publish Appointments report"
+          ]
+    },
+    {
+          "id": "records",
+          "label": "Records",
+          "description": "FoundHealth records workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Records Updated",
+                      "value": "312",
+                      "trend": "This week",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Pending Review",
+                      "value": "11",
+                      "trend": "Needs action",
+                      "icon": "!",
+                      "tone": "watch"
+                },
+                {
+                      "label": "Data Accuracy",
+                      "value": "98.6%",
+                      "trend": "+0.4%",
+                      "icon": "✓",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Update Record",
+                "Flag Discrepancy",
+                "Archive Record",
+                "Export Records"
+          ],
+          "workflow": [
+                "Review Records queue",
+                "Update Records records",
+                "Publish Records report"
+          ]
+    },
+    {
+          "id": "compliance",
+          "label": "Compliance",
+          "description": "FoundHealth compliance workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Audit Readiness",
+                      "value": "97%",
+                      "trend": "+1%",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Open Actions",
+                      "value": "3",
+                      "trend": "Due this month",
+                      "icon": "!",
+                      "tone": "watch"
+                },
+                {
+                      "label": "Policies Reviewed",
+                      "value": "21",
+                      "trend": "This quarter",
+                      "icon": "◈",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Review Policy",
+                "Log Audit Note",
+                "Assign Action",
+                "Export Compliance Report"
+          ],
+          "workflow": [
+                "Review Compliance queue",
+                "Update Compliance records",
+                "Publish Compliance report"
+          ]
+    },
+    {
+          "id": "billing",
+          "label": "Billing",
+          "description": "FoundHealth billing workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Claims Submitted",
+                      "value": "96",
+                      "trend": "This week",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Approved",
+                      "value": "89%",
+                      "trend": "+2%",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Pending",
+                      "value": "11",
+                      "trend": "Awaiting review",
+                      "icon": "!",
+                      "tone": "watch"
+                }
+          ],
+          "actions": [
+                "Submit Claim",
+                "Chase Payer",
+                "Apply Adjustment",
+                "Export Statement"
+          ],
+          "workflow": [
+                "Review Billing queue",
+                "Update Billing records",
+                "Publish Billing report"
+          ]
+    },
+    {
+          "id": "referrals",
+          "label": "Referrals",
+          "description": "FoundHealth referrals workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Active Referrals",
+                      "value": "58",
+                      "trend": "+6",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Avg Turnaround",
+                      "value": "3.2 days",
+                      "trend": "-0.3d",
+                      "icon": "◈",
+                      "tone": "good"
+                },
+                {
+                      "label": "Awaiting Specialist",
+                      "value": "9",
+                      "trend": "Needs follow-up",
+                      "icon": "!",
+                      "tone": "watch"
+                }
+          ],
+          "actions": [
+                "Send Referral",
+                "Update Status",
+                "Escalate Case",
+                "Export Referral List"
+          ],
+          "workflow": [
+                "Review Referrals queue",
+                "Update Referrals records",
+                "Publish Referrals report"
+          ]
+    },
+    {
+          "id": "staffing",
+          "label": "Staffing",
+          "description": "FoundHealth staffing workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "On Shift",
+                      "value": "38",
+                      "trend": "Today",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Coverage",
+                      "value": "94%",
+                      "trend": "+2%",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Open Shifts",
+                      "value": "4",
+                      "trend": "This week",
+                      "icon": "!",
+                      "tone": "watch"
+                }
+          ],
+          "actions": [
+                "Assign Shift",
+                "Approve Leave",
+                "Review Coverage",
+                "Export Roster"
+          ],
+          "workflow": [
+                "Review Staffing queue",
+                "Update Staffing records",
+                "Publish Staffing report"
+          ]
+    },
+    {
+          "id": "supplies",
+          "label": "Supplies",
+          "description": "FoundHealth supplies workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Stock Level",
+                      "value": "88%",
+                      "trend": "Healthy",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Low Stock Items",
+                      "value": "6",
+                      "trend": "Needs reorder",
+                      "icon": "!",
+                      "tone": "risk"
+                },
+                {
+                      "label": "Orders In Transit",
+                      "value": "3",
+                      "trend": "This week",
+                      "icon": "◈",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Reorder Supply",
+                "Log Delivery",
+                "Flag Shortage",
+                "Export Inventory"
+          ],
+          "workflow": [
+                "Review Supplies queue",
+                "Update Supplies records",
+                "Publish Supplies report"
+          ]
+    },
+    {
+          "id": "telehealth",
+          "label": "Telehealth",
+          "description": "FoundHealth telehealth workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Sessions Today",
+                      "value": "24",
+                      "trend": "+3",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Satisfaction",
+                      "value": "4.7/5",
+                      "trend": "+0.1",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Technical Issues",
+                      "value": "1",
+                      "trend": "This week",
+                      "icon": "!",
+                      "tone": "watch"
+                }
+          ],
+          "actions": [
+                "Start Session",
+                "Reschedule Call",
+                "Log Outcome",
+                "Export Session Notes"
+          ],
+          "workflow": [
+                "Review Telehealth queue",
+                "Update Telehealth records",
+                "Publish Telehealth report"
+          ]
+    },
+      {
+          "id": "appointment-manager",
+          "label": "Appointment Manager",
+          "description": "Book, reschedule, and track appointments across every clinic.",
+          "metrics": [
+                {
+                      "label": "Appointments Today",
+                      "value": "142",
+                      "trend": "+8",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Cancellations",
+                      "value": "4",
+                      "trend": "This week",
+                      "icon": "!",
+                      "tone": "watch"
+                },
+                {
+                      "label": "No-shows",
+                      "value": "2",
+                      "trend": "This week",
+                      "icon": "!",
+                      "tone": "risk"
+                }
+          ],
+          "actions": [
+                "Book Appointment",
+                "Reschedule",
+                "Cancel Appointment",
+                "Export Schedule"
+          ],
+          "workflow": [
+                "Review Appointment Manager queue",
+                "Update Appointment Manager records",
+                "Publish Appointment Manager report"
+          ]
+    },
+    {
+          "id": "patient-notes",
+          "label": "Patient Notes",
+          "description": "Keep clinical notes organised and accessible to the care team.",
+          "metrics": [
+                {
+                      "label": "Notes Added Today",
+                      "value": "48",
+                      "trend": "+6",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Pending Review",
+                      "value": "5",
+                      "trend": "Needs action",
+                      "icon": "!",
+                      "tone": "watch"
+                },
+                {
+                      "label": "Flagged",
+                      "value": "1",
+                      "trend": "Needs review",
+                      "icon": "!",
+                      "tone": "risk"
+                }
+          ],
+          "actions": [
+                "Add Note",
+                "Review Note",
+                "Flag Note",
+                "Export Notes"
+          ],
+          "workflow": [
+                "Review Patient Notes queue",
+                "Update Patient Notes records",
+                "Publish Patient Notes report"
           ]
     },
     {
@@ -631,44 +669,44 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "crm": {
-    "title": "FoundCrypto CRM",
-    "summary": "FoundCrypto CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
-    "records": [
-      {
-        "name": "BTC",
-        "type": "Wallets",
-        "stage": "Breakout",
-        "value": "34%",
-        "nextAction": "Add Wallet"
-      },
-      {
-        "name": "ETH",
-        "type": "Wallets",
-        "stage": "Accumulation",
-        "value": "22%",
-        "nextAction": "Create Signal"
-      },
-      {
-        "name": "SOL",
-        "type": "Wallets",
-        "stage": "Volatile",
-        "value": "8%",
-        "nextAction": "Open Chart"
-      }
-    ],
-    "pipeline": [
-      "New",
-      "Qualified",
-      "Active",
-      "Won"
-    ],
-    "tasks": [
-      "Add Wallet",
-      "Create Signal",
-      "Open Chart",
-      "Run Risk Check"
-    ]
-  },
+      "title": "FoundHealth CRM",
+      "summary": "FoundHealth CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
+      "records": [
+          {
+              "name": "Riverside Family Practice",
+              "type": "Partner Clinic",
+              "stage": "Active",
+              "value": "1,284 patients",
+              "nextAction": "Update Record"
+          },
+          {
+              "name": "Chen Physiotherapy Group",
+              "type": "Referral Partner",
+              "stage": "Active",
+              "value": "58 referrals",
+              "nextAction": "Send Referral"
+          },
+          {
+              "name": "MedSupply Direct",
+              "type": "Vendor",
+              "stage": "Order pending",
+              "value": "3 orders",
+              "nextAction": "Reorder Supply"
+          }
+      ],
+      "pipeline": [
+          "New",
+          "Qualified",
+          "Active",
+          "Won"
+      ],
+      "tasks": [
+          "Update Record",
+          "Send Referral",
+          "Reorder Supply",
+          "Review Compliance"
+      ]
+    },
   "navigation": [
     {
       "label": "Dashboard",
@@ -688,39 +726,75 @@ export const brandConfig: BrandConsoleConfig = {
       "icon": "◎",
       "section": "Core"
     },
-    {
-      "label": "Wallets",
-      "href": "/modules/wallets",
+        {
+      "label": "Patients",
+      "href": "/modules/patients",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Charts",
-      "href": "/modules/charts",
+      "label": "Appointments",
+      "href": "/modules/appointments",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Transactions",
-      "href": "/modules/transactions",
+      "label": "Records",
+      "href": "/modules/records",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Analytics",
-      "href": "/modules/analytics",
+      "label": "Compliance",
+      "href": "/modules/compliance",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Portfolio",
-      "href": "/modules/portfolio",
+      "label": "Billing",
+      "href": "/modules/billing",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Exchange",
-      "href": "/modules/exchange",
+      "label": "Referrals",
+      "href": "/modules/referrals",
+      "icon": "▣",
+      "section": "Modules"
+    },
+{
+      "label": "Accounting",
+      "href": "/modules/accounting",
+      "icon": "banknotes",
+      "section": "Modules"
+    },
+    {
+      "label": "Messaging",
+      "href": "/modules/messaging",
+      "icon": "chat-bubble-left-right",
+      "section": "Modules"
+    },
+    {
+      "label": "Customer Service",
+      "href": "/modules/customer-service",
+      "icon": "lifebuoy",
+      "section": "Modules"
+    },
+    {
+      "label": "FoundAI Demo",
+      "href": "/modules/foundai-demo",
+      "icon": "sparkles",
+      "section": "Modules"
+    },
+    {
+      "label": "Appointment Manager",
+      "href": "/modules/appointment-manager",
+      "icon": "▣",
+      "section": "Modules"
+    },
+    {
+      "label": "Patient Notes",
+      "href": "/modules/patient-notes",
       "icon": "▣",
       "section": "Modules"
     },
@@ -732,17 +806,17 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "quickActions": [
-    "Add Wallet",
-    "Create Signal",
-    "Open Chart",
-    "Run Risk Check"
+    "Book Appointment",
+    "Update Record",
+    "Send Referral",
+    "Review Compliance"
   ],
   "settings": [
-    "Wallet Security",
-    "Exchange Connections",
-    "Risk Limits",
+    "Data Access Controls",
+    "Appointment Rules",
+    "Compliance Thresholds",
     "Alert Preferences",
-    "Portfolio Visibility",
+    "Staffing Rota",
     "CRM Configuration"
   ]
 }

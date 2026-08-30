@@ -17,10 +17,8 @@ const legalSections = [
 ] as const
 
 const consoleLinks = [
-  { name: 'Talent Manager Console', href: 'http://localhost:3004' },
-  { name: 'Recruiter Console', href: 'http://localhost:3004/recruiter' },
-  { name: 'Applicant Console', href: 'http://localhost:3004/applicant' },
-  { name: 'Workforce Intelligence Console', href: 'http://localhost:3004/intel' },
+  { name: 'Talent Command Console', href: brands.talent.consoleUrl },
+  { name: 'Talent Starter Console', href: brands.talent.starterConsoleUrl },
 ] as const
 
 const talentHomeUrl = brands.talent.webUrl

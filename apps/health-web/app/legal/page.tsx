@@ -17,7 +17,8 @@ const legalSections = [
 ] as const
 
 const consoleLinks = [
-  { name: 'Health Operations & Compliance Console', href: 'http://localhost:3005' },
+  { name: 'Health Console', href: brands.health.consoleUrl },
+  { name: 'Health Starter Console', href: brands.health.starterConsoleUrl },
 ] as const
 
 const cryptoHomeUrl = brands.health.webUrl

@@ -5,7 +5,7 @@
 // Per-brand personality layer: KPIs, sparkline, and the three intelligence tiles.
 // 'finance' is included because Finance is an internal FounderOS module with its
 // own tester survey and signal — it has no standalone console or port.
-export type IntelBrandSlug = 'retail' | 'meat' | 'it' | 'talent' | 'crypto' | 'finance'
+export type IntelBrandSlug = 'retail' | 'meat' | 'foundthat' | 'talent' | 'crypto' | 'finance' | 'health' | 'logistics'
 
 export type PersonalityKpi = { label: string; value: string; trend?: string }
 
@@ -26,7 +26,7 @@ export const BRAND_PERSONALITIES: Record<IntelBrandSlug, PersonalityLayer> = {
   retail: {
     brand: 'retail',
     name: 'Commerce Pulse',
-    color: '#3A7BFF',
+    color: '#00FF66',
     basePulse: 62,
     microStory: 'Commerce Pulse: Retail\'s weekend momentum keeps building as repeat shoppers return faster than new ones arrive.',
     kpis: [
@@ -43,7 +43,7 @@ export const BRAND_PERSONALITIES: Record<IntelBrandSlug, PersonalityLayer> = {
   meat: {
     brand: 'meat',
     name: 'Supply Chain Heat',
-    color: '#FF4A4A',
+    color: '#FF0033',
     basePulse: 54,
     microStory: 'Supply Chain Heat: a second supplier lane cooled down lead times just as spoilage risk was creeping up.',
     kpis: [
@@ -56,10 +56,10 @@ export const BRAND_PERSONALITIES: Record<IntelBrandSlug, PersonalityLayer> = {
     riskTile: 'One cold-store zone is trending toward its compliance floor.',
     opportunityTile: 'Shift more volume to the faster supplier lane.',
   },
-  it: {
-    brand: 'it',
+  foundthat: {
+    brand: 'foundthat',
     name: 'System Integrity',
-    color: '#00D4FF',
+    color: '#FFDD00',
     basePulse: 71,
     microStory: "System Integrity: patch compliance snapped back to full health right after last week's rollout.",
     kpis: [
@@ -76,7 +76,7 @@ export const BRAND_PERSONALITIES: Record<IntelBrandSlug, PersonalityLayer> = {
   talent: {
     brand: 'talent',
     name: 'Recruitment Velocity',
-    color: '#A44AFF',
+    color: '#FF8800',
     basePulse: 48,
     microStory: 'Recruitment Velocity: revised comp bands turned hesitant offers into fast acceptances this quarter.',
     kpis: [
@@ -92,7 +92,7 @@ export const BRAND_PERSONALITIES: Record<IntelBrandSlug, PersonalityLayer> = {
   crypto: {
     brand: 'crypto',
     name: 'Market Volatility',
-    color: '#00FF7F',
+    color: '#9933FF',
     basePulse: 83,
     microStory: 'Market Volatility: the last volatility spike brought in the biggest wave of active traders yet.',
     kpis: [
@@ -108,7 +108,7 @@ export const BRAND_PERSONALITIES: Record<IntelBrandSlug, PersonalityLayer> = {
   finance: {
     brand: 'finance',
     name: 'Cashflow Stability',
-    color: '#FFD700',
+    color: '#0033AA',
     basePulse: 59,
     microStory: 'Cashflow Stability: automated reminders are quietly pulling DSO down month over month.',
     kpis: [
@@ -120,5 +120,37 @@ export const BRAND_PERSONALITIES: Record<IntelBrandSlug, PersonalityLayer> = {
     insightTile: 'DSO improved after automated invoice reminders launched.',
     riskTile: 'Burn multiple ticked up during the last hiring push.',
     opportunityTile: 'Extend automated reminders to the largest overdue accounts.',
+  },
+  health: {
+    brand: 'health',
+    name: 'Patient Flow Pulse',
+    color: '#33CCFF',
+    basePulse: 66,
+    microStory: 'Patient Flow Pulse: the new scheduling rules cut waiting-room overflow during peak hours.',
+    kpis: [
+      { label: 'Appointment fill rate', value: '91%', trend: '+3%' },
+      { label: 'Avg wait time', value: '14 min', trend: '-4m' },
+      { label: 'Compliance score', value: '97%', trend: '+1%' },
+    ],
+    sparkline: [70, 72, 74, 73, 77, 80],
+    insightTile: 'Waiting-room overflow dropped after the scheduling rule change.',
+    riskTile: 'One clinic is trending close to its compliance floor.',
+    opportunityTile: 'Roll the new scheduling rules out to the remaining clinics.',
+  },
+  logistics: {
+    brand: 'logistics',
+    name: 'Fleet Momentum',
+    color: '#DC143C',
+    basePulse: 57,
+    microStory: 'Fleet Momentum: route consolidation shaved a full day off average delivery time this month.',
+    kpis: [
+      { label: 'On-time delivery', value: '94%', trend: '+2%' },
+      { label: 'Fleet utilisation', value: '81%', trend: '+4%' },
+      { label: 'Avg delivery time', value: '2.3 days', trend: '-0.4d' },
+    ],
+    sparkline: [58, 60, 63, 62, 66, 69],
+    insightTile: 'Delivery time improved after consolidating overlapping routes.',
+    riskTile: 'Two depots are nearing peak fleet utilisation.',
+    opportunityTile: 'Add a depot in the highest-demand delivery zone.',
   },
 }

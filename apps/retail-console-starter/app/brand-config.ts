@@ -7,7 +7,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 export const brandConfig: BrandConsoleConfig = {
   "name": "FoundRetail",
   "logo": "◉",
-  "accent": "#00C853",
+  "accent": "#00FF66",
   "typography": {
     "heading": "Inter",
     "body": "Inter"
@@ -15,425 +15,464 @@ export const brandConfig: BrandConsoleConfig = {
   "colors": {
     "primary": "#00C853",
     "secondary": "#0A3D1F",
-    "accent": "#00C853",
+    "accent": "#00FF66",
     "background": "#0B0C10",
     "panel": "#141820",
     "text": "#FFFFFF",
     "muted": "#A8B3C3"
   },
   "dashboard": {
-    "title": "Wallets, charts, transactions",
-    "subtitle": "Monitor portfolios, exchange connections, signals, transaction volume, automation, and risk exposure.",
+    "title": "Inventory, sales, suppliers",
+    "subtitle": "Track daily retail operations across stock, stores, orders, customers, and supplier performance.",
     "metrics": [
       {
-        "label": "Wallet Balance",
-        "value": "£284k",
-        "trend": "+4.8%",
+        "label": "Sales",
+        "value": "£18.6k",
+        "trend": "Today",
         "icon": "£",
         "tone": "good"
       },
       {
-        "label": "Trigger Activity",
-        "value": "26",
+        "label": "Orders",
+        "value": "142",
         "trend": "Open",
         "icon": "▦",
         "tone": "watch"
       },
       {
-        "label": "Automation Status",
-        "value": "92%",
-        "trend": "Live",
+        "label": "Stock Levels",
+        "value": "87%",
+        "trend": "Healthy",
         "icon": "◍",
         "tone": "good"
       }
     ],
     "tableTitle": "Operational snapshot",
     "tableHeaders": [
-      "Asset",
-      "Signal",
-      "Exposure",
-      "Action"
+      "Store",
+      "Sales",
+      "Orders",
+      "Stock"
     ],
     "tableRows": [
       [
-        "BTC",
-        "Breakout",
-        "34%",
-        "Watch"
+        "Manchester",
+        "£4.2k",
+        "38",
+        "Healthy"
       ],
       [
-        "ETH",
-        "Accumulation",
-        "22%",
-        "Review"
+        "Leeds",
+        "£3.1k",
+        "24",
+        "Low dairy"
       ],
       [
-        "SOL",
-        "Volatile",
-        "8%",
-        "Limit"
+        "Bristol",
+        "£2.8k",
+        "19",
+        "Healthy"
       ]
     ],
     "workflows": [
-      "Add Wallet workflow active",
-      "Create Signal workflow active",
-      "Open Chart workflow active",
-      "Run Risk Check workflow active"
+      "Open POS workflow active",
+      "Add Product workflow active",
+      "Update Stock workflow active",
+      "Message Supplier workflow active"
     ]
   },
   "modules": [
     {
-      "id": "wallets",
-      "label": "Wallets",
-      "description": "FoundCrypto wallets workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "pos",
+      "label": "Pos",
+      "description": "FoundRetail pos workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
+          "label": "Sales",
+          "value": "£18.6k",
+          "trend": "Today",
           "icon": "£",
           "tone": "good"
         },
         {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
+          "label": "Orders",
+          "value": "142",
+          "trend": "32 open",
           "icon": "▦",
           "tone": "watch"
+        },
+        {
+          "label": "Low Stock",
+          "value": "18",
+          "trend": "Needs action",
+          "icon": "!",
+          "tone": "risk"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Open POS",
+        "Add Product",
+        "Update Stock",
+        "Message Supplier"
       ],
       "workflow": [
-        "Review Wallets queue",
-        "Update Wallets records",
-        "Publish Wallets report"
+        "Review Pos queue",
+        "Update Pos records",
+        "Publish Pos report"
       ]
     },
     {
-      "id": "charts",
-      "label": "Charts",
-      "description": "FoundCrypto charts workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "inventory",
+      "label": "Inventory",
+      "description": "FoundRetail inventory workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
+          "label": "Sales",
+          "value": "£18.6k",
+          "trend": "Today",
           "icon": "£",
           "tone": "good"
         },
         {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
+          "label": "Orders",
+          "value": "142",
+          "trend": "32 open",
           "icon": "▦",
           "tone": "watch"
+        },
+        {
+          "label": "Low Stock",
+          "value": "18",
+          "trend": "Needs action",
+          "icon": "!",
+          "tone": "risk"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Open POS",
+        "Add Product",
+        "Update Stock",
+        "Message Supplier"
       ],
       "workflow": [
-        "Review Charts queue",
-        "Update Charts records",
-        "Publish Charts report"
+        "Review Inventory queue",
+        "Update Inventory records",
+        "Publish Inventory report"
       ]
     },
     {
-      "id": "transactions",
-      "label": "Transactions",
-      "description": "FoundCrypto transactions workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "suppliers",
+      "label": "Suppliers",
+      "description": "FoundRetail suppliers workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
+          "label": "Sales",
+          "value": "£18.6k",
+          "trend": "Today",
           "icon": "£",
           "tone": "good"
         },
         {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
+          "label": "Orders",
+          "value": "142",
+          "trend": "32 open",
           "icon": "▦",
           "tone": "watch"
+        },
+        {
+          "label": "Low Stock",
+          "value": "18",
+          "trend": "Needs action",
+          "icon": "!",
+          "tone": "risk"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Open POS",
+        "Add Product",
+        "Update Stock",
+        "Message Supplier"
       ],
       "workflow": [
-        "Review Transactions queue",
-        "Update Transactions records",
-        "Publish Transactions report"
+        "Review Suppliers queue",
+        "Update Suppliers records",
+        "Publish Suppliers report"
       ]
     },
     {
-      "id": "analytics",
-      "label": "Analytics",
-      "description": "FoundCrypto analytics workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "sales",
+      "label": "Sales",
+      "description": "FoundRetail sales workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
+          "label": "Sales",
+          "value": "£18.6k",
+          "trend": "Today",
           "icon": "£",
           "tone": "good"
         },
         {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
+          "label": "Orders",
+          "value": "142",
+          "trend": "32 open",
           "icon": "▦",
           "tone": "watch"
+        },
+        {
+          "label": "Low Stock",
+          "value": "18",
+          "trend": "Needs action",
+          "icon": "!",
+          "tone": "risk"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Open POS",
+        "Add Product",
+        "Update Stock",
+        "Message Supplier"
       ],
       "workflow": [
-        "Review Analytics queue",
-        "Update Analytics records",
-        "Publish Analytics report"
+        "Review Sales queue",
+        "Update Sales records",
+        "Publish Sales report"
       ]
     },
     {
-      "id": "portfolio",
-      "label": "Portfolio",
-      "description": "FoundCrypto portfolio workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "customers",
+      "label": "Customers",
+      "description": "FoundRetail customers workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
+          "label": "Sales",
+          "value": "£18.6k",
+          "trend": "Today",
           "icon": "£",
           "tone": "good"
         },
         {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
+          "label": "Orders",
+          "value": "142",
+          "trend": "32 open",
           "icon": "▦",
           "tone": "watch"
+        },
+        {
+          "label": "Low Stock",
+          "value": "18",
+          "trend": "Needs action",
+          "icon": "!",
+          "tone": "risk"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Open POS",
+        "Add Product",
+        "Update Stock",
+        "Message Supplier"
       ],
       "workflow": [
-        "Review Portfolio queue",
-        "Update Portfolio records",
-        "Publish Portfolio report"
+        "Review Customers queue",
+        "Update Customers records",
+        "Publish Customers report"
       ]
     },
     {
-      "id": "exchange",
-      "label": "Exchange",
-      "description": "FoundCrypto exchange workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "orders",
+      "label": "Orders",
+      "description": "FoundRetail orders workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
+          "label": "Sales",
+          "value": "£18.6k",
+          "trend": "Today",
           "icon": "£",
           "tone": "good"
         },
         {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
+          "label": "Orders",
+          "value": "142",
+          "trend": "32 open",
           "icon": "▦",
           "tone": "watch"
+        },
+        {
+          "label": "Low Stock",
+          "value": "18",
+          "trend": "Needs action",
+          "icon": "!",
+          "tone": "risk"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Open POS",
+        "Add Product",
+        "Update Stock",
+        "Message Supplier"
       ],
       "workflow": [
-        "Review Exchange queue",
-        "Update Exchange records",
-        "Publish Exchange report"
+        "Review Orders queue",
+        "Update Orders records",
+        "Publish Orders report"
       ]
     },
     {
-      "id": "signals",
-      "label": "Signals",
-      "description": "FoundCrypto signals workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "products",
+      "label": "Products",
+      "description": "FoundRetail products workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
+          "label": "Sales",
+          "value": "£18.6k",
+          "trend": "Today",
           "icon": "£",
           "tone": "good"
         },
         {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
+          "label": "Orders",
+          "value": "142",
+          "trend": "32 open",
           "icon": "▦",
           "tone": "watch"
+        },
+        {
+          "label": "Low Stock",
+          "value": "18",
+          "trend": "Needs action",
+          "icon": "!",
+          "tone": "risk"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Open POS",
+        "Add Product",
+        "Update Stock",
+        "Message Supplier"
       ],
       "workflow": [
-        "Review Signals queue",
-        "Update Signals records",
-        "Publish Signals report"
+        "Review Products queue",
+        "Update Products records",
+        "Publish Products report"
       ]
     },
     {
-      "id": "risk",
-      "label": "Risk",
-      "description": "FoundCrypto risk workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "stores",
+      "label": "Stores",
+      "description": "FoundRetail stores workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
+          "label": "Sales",
+          "value": "£18.6k",
+          "trend": "Today",
           "icon": "£",
           "tone": "good"
         },
         {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
+          "label": "Orders",
+          "value": "142",
+          "trend": "32 open",
           "icon": "▦",
           "tone": "watch"
+        },
+        {
+          "label": "Low Stock",
+          "value": "18",
+          "trend": "Needs action",
+          "icon": "!",
+          "tone": "risk"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Open POS",
+        "Add Product",
+        "Update Stock",
+        "Message Supplier"
       ],
       "workflow": [
-        "Review Risk queue",
-        "Update Risk records",
-        "Publish Risk report"
-      ]
-    },
-    {
-      "id": "automation",
-      "label": "Automation",
-      "description": "FoundCrypto automation workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Automation queue",
-        "Update Automation records",
-        "Publish Automation report"
+        "Review Stores queue",
+        "Update Stores records",
+        "Publish Stores report"
       ]
     }
   ,
+        {
+          "id": "promotions-manager",
+          "label": "Promotions Manager",
+          "description": "Create, run, and measure promotions across every channel.",
+          "metrics": [
+                {
+                      "label": "Active Promotions",
+                      "value": "6",
+                      "trend": "Live",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Redemptions Today",
+                      "value": "84",
+                      "trend": "+12",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Revenue Impact",
+                      "value": "£4.8k",
+                      "trend": "This week",
+                      "icon": "£",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Create Promotion",
+                "Pause Promotion",
+                "Extend Promotion",
+                "Export Promotion Report"
+          ],
+          "workflow": [
+                "Review Promotions Manager queue",
+                "Update Promotions Manager records",
+                "Publish Promotions Manager report"
+          ]
+    },
+    {
+          "id": "inventory-alerts",
+          "label": "Inventory Alerts",
+          "description": "Get notified the moment stock runs low or out.",
+          "metrics": [
+                {
+                      "label": "Low Stock Alerts",
+                      "value": "9",
+                      "trend": "Needs action",
+                      "icon": "!",
+                      "tone": "watch"
+                },
+                {
+                      "label": "Out of Stock",
+                      "value": "2",
+                      "trend": "Needs restock",
+                      "icon": "!",
+                      "tone": "risk"
+                },
+                {
+                      "label": "Restock Scheduled",
+                      "value": "5",
+                      "trend": "This week",
+                      "icon": "✓",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Create Alert Rule",
+                "Acknowledge Alert",
+                "Schedule Restock",
+                "Export Alert Log"
+          ],
+          "workflow": [
+                "Review Inventory Alerts queue",
+                "Update Inventory Alerts records",
+                "Publish Inventory Alerts report"
+          ]
+    },
     {
           "id": "marketing-suite",
           "label": "Marketing Suite",
@@ -631,29 +670,29 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "crm": {
-    "title": "FoundCrypto CRM",
-    "summary": "FoundCrypto CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
+    "title": "FoundRetail CRM",
+    "summary": "FoundRetail CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
     "records": [
       {
-        "name": "BTC",
-        "type": "Wallets",
-        "stage": "Breakout",
-        "value": "34%",
-        "nextAction": "Add Wallet"
+        "name": "Manchester",
+        "type": "Suppliers",
+        "stage": "£4.2k",
+        "value": "38",
+        "nextAction": "Open POS"
       },
       {
-        "name": "ETH",
-        "type": "Wallets",
-        "stage": "Accumulation",
-        "value": "22%",
-        "nextAction": "Create Signal"
+        "name": "Leeds",
+        "type": "Suppliers",
+        "stage": "£3.1k",
+        "value": "24",
+        "nextAction": "Add Product"
       },
       {
-        "name": "SOL",
-        "type": "Wallets",
-        "stage": "Volatile",
-        "value": "8%",
-        "nextAction": "Open Chart"
+        "name": "Bristol",
+        "type": "Suppliers",
+        "stage": "£2.8k",
+        "value": "19",
+        "nextAction": "Update Stock"
       }
     ],
     "pipeline": [
@@ -663,10 +702,10 @@ export const brandConfig: BrandConsoleConfig = {
       "Won"
     ],
     "tasks": [
-      "Add Wallet",
-      "Create Signal",
-      "Open Chart",
-      "Run Risk Check"
+      "Open POS",
+      "Add Product",
+      "Update Stock",
+      "Message Supplier"
     ]
   },
   "navigation": [
@@ -689,42 +728,84 @@ export const brandConfig: BrandConsoleConfig = {
       "section": "Core"
     },
     {
-      "label": "Wallets",
-      "href": "/modules/wallets",
+      "label": "Pos",
+      "href": "/modules/pos",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Charts",
-      "href": "/modules/charts",
+      "label": "Inventory",
+      "href": "/modules/inventory",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Transactions",
-      "href": "/modules/transactions",
+      "label": "Suppliers",
+      "href": "/modules/suppliers",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Analytics",
-      "href": "/modules/analytics",
+      "label": "Sales",
+      "href": "/modules/sales",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Portfolio",
-      "href": "/modules/portfolio",
+      "label": "Customers",
+      "href": "/modules/customers",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Exchange",
-      "href": "/modules/exchange",
+      "label": "Orders",
+      "href": "/modules/orders",
+      "icon": "▣",
+      "section": "Modules"
+    },
+            {
+      "label": "Promotions Manager",
+      "href": "/modules/promotions-manager",
       "icon": "▣",
       "section": "Modules"
     },
     {
+      "label": "Inventory Alerts",
+      "href": "/modules/inventory-alerts",
+      "icon": "▣",
+      "section": "Modules"
+    },
+    {
+      "label": "Marketing",
+      "href": "/modules/marketing",
+      "icon": "megaphone",
+      "section": "Modules"
+    },
+    {
+      "label": "Accounting",
+      "href": "/modules/accounting",
+      "icon": "banknotes",
+      "section": "Modules"
+    },
+    {
+      "label": "Messaging",
+      "href": "/modules/messaging",
+      "icon": "chat-bubble-left-right",
+      "section": "Modules"
+    },
+    {
+      "label": "Customer Service",
+      "href": "/modules/customer-service",
+      "icon": "lifebuoy",
+      "section": "Modules"
+    },
+    {
+      "label": "FoundAI Demo",
+      "href": "/modules/foundai-demo",
+      "icon": "sparkles",
+      "section": "Modules"
+    },
+{
       "label": "Settings",
       "href": "/settings",
       "icon": "⚙",
@@ -732,17 +813,17 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "quickActions": [
-    "Add Wallet",
-    "Create Signal",
-    "Open Chart",
-    "Run Risk Check"
+    "Open POS",
+    "Add Product",
+    "Update Stock",
+    "Message Supplier"
   ],
   "settings": [
-    "Wallet Security",
-    "Exchange Connections",
-    "Risk Limits",
-    "Alert Preferences",
-    "Portfolio Visibility",
+    "Store Profile",
+    "POS Configuration",
+    "Inventory Thresholds",
+    "Supplier Rules",
+    "Payment Settings",
     "CRM Configuration"
   ]
 }

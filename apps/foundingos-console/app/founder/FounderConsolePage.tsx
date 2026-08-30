@@ -143,9 +143,9 @@ const sections: ControlSection[] = [
   { key: 'businesses', title: 'All businesses', summary: 'Portfolio structure, ownership, and operating health across the group.', amount: 5, status: 'Live' },
   { key: 'brands', title: 'All brands', summary: 'Brand registry, visual identity, and brand-level controls in one place.', amount: 5, status: 'Live' },
   { key: 'workflows', title: 'All workflows', summary: 'Active automations, approvals, and workflow orchestration for every brand.', amount: 18, status: 'Active' },
-  { key: 'whatsapp', title: 'All WhatsApp automation', summary: 'Messaging flows, inbox routing, and Bob-assisted automation across channels.', amount: 42, status: 'Live' },
+  { key: 'whatsapp', title: 'All WhatsApp automation', summary: 'Messaging flows, inbox routing, and FoundAI-assisted automation across channels.', amount: 42, status: 'Live' },
   { key: 'analytics', title: 'All analytics', summary: 'Revenue, product, order, customer, and AI metrics across the ecosystem.', amount: 24, status: 'Live' },
-  { key: 'ai', title: 'All AI onboarding', summary: 'Bob AI entry points, prompts, handoffs, and onboarding journeys for every brand.', amount: 12, status: 'Active' },
+  { key: 'ai', title: 'All AI onboarding', summary: 'FoundAI entry points, prompts, handoffs, and onboarding journeys for every brand.', amount: 12, status: 'Active' },
   { key: 'customers', title: 'All customers', summary: 'Customer records, segments, and service signals across the operating layer.', amount: 1284, status: 'Live' },
   { key: 'orders', title: 'All orders', summary: 'Order queues, fulfilment status, and region-based dispatch tracking.', amount: 458, status: 'Live' },
   { key: 'products', title: 'All products', summary: 'Product catalogues, pricing, and local market availability across brands.', amount: 932, status: 'Live' },
@@ -173,7 +173,8 @@ export default function FounderConsolePage() {
   ]
 
   return (
-    <section className="stack">
+    <section className="stack quantum-ambient-grid">
+      <div className="quantum-particle-drift"><span className="quantum-particle" /><span className="quantum-particle" /><span className="quantum-particle" /></div>
       <header className="module-header header-premium">
         <p>{copy.overview}</p>
         <h1>{copy.title}</h1>
@@ -188,7 +189,8 @@ export default function FounderConsolePage() {
         {sections.map((section, index) => {
           const statusText = section.status === 'Live' ? copy.live : section.status === 'Active' ? copy.active : section.status
           return (
-          <article key={section.key} className="module-card card-premium">
+          <article key={section.key} className="module-card card-premium quantum-card">
+            <span className="quantum-corner-marker">⌂</span>
             <div className="module-card-top">
               <span>{String(index + 1).padStart(2, '0')}</span>
               <strong>{copy[section.key as keyof typeof copy]}</strong>

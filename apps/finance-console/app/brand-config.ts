@@ -7,7 +7,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 export const brandConfig: BrandConsoleConfig = {
   "name": "FoundFinance",
   "logo": "£",
-  "accent": "#D4AF37",
+  "accent": "#0033AA",
   "typography": {
     "heading": "Inter",
     "body": "Inter"
@@ -15,462 +15,500 @@ export const brandConfig: BrandConsoleConfig = {
   "colors": {
     "primary": "#D4AF37",
     "secondary": "#4A3B0A",
-    "accent": "#D4AF37",
+    "accent": "#0033AA",
     "background": "#0B0C10",
     "panel": "#141820",
     "text": "#FFFFFF",
     "muted": "#A8B3C3"
   },
   "dashboard": {
-    "title": "Wallets, charts, transactions",
-    "subtitle": "Monitor portfolios, exchange connections, signals, transaction volume, automation, and risk exposure.",
-    "metrics": [
-      {
-        "label": "Wallet Balance",
-        "value": "£284k",
-        "trend": "+4.8%",
-        "icon": "£",
-        "tone": "good"
-      },
-      {
-        "label": "Trigger Activity",
-        "value": "26",
-        "trend": "Open",
-        "icon": "▦",
-        "tone": "watch"
-      },
-      {
-        "label": "Automation Status",
-        "value": "92%",
-        "trend": "Live",
-        "icon": "◍",
-        "tone": "good"
-      }
-    ],
-    "tableTitle": "Operational snapshot",
-    "tableHeaders": [
-      "Asset",
-      "Signal",
-      "Exposure",
-      "Action"
-    ],
-    "tableRows": [
-      [
-        "BTC",
-        "Breakout",
-        "34%",
-        "Watch"
+      "title": "Cashflow, invoicing, reconciliation",
+      "subtitle": "Track daily finance operations across cashflow, invoicing, payables, receivables, and compliance.",
+      "metrics": [
+          {
+              "label": "Cash Position",
+              "value": "£162.4k",
+              "trend": "+£4.1k",
+              "icon": "£",
+              "tone": "good"
+          },
+          {
+              "label": "Overdue Invoices",
+              "value": "7",
+              "trend": "Needs action",
+              "icon": "!",
+              "tone": "risk"
+          },
+          {
+              "label": "Reconciled",
+              "value": "94%",
+              "trend": "This month",
+              "icon": "✓",
+              "tone": "good"
+          }
       ],
-      [
-        "ETH",
-        "Accumulation",
-        "22%",
-        "Review"
+      "tableTitle": "Operational snapshot",
+      "tableHeaders": [
+          "Account",
+          "Status",
+          "Balance",
+          "Action"
       ],
-      [
-        "SOL",
-        "Volatile",
-        "8%",
-        "Limit"
+      "tableRows": [
+          [
+              "Operating",
+              "Healthy",
+              "£142k",
+              "Review"
+          ],
+          [
+              "Payroll",
+              "Due soon",
+              "£38k",
+              "Approve"
+          ],
+          [
+              "Reserve",
+              "Stable",
+              "£210k",
+              "Monitor"
+          ]
+      ],
+      "workflows": [
+          "Review Invoices workflow active",
+          "Reconcile Accounts workflow active",
+          "Update Forecast workflow active",
+          "Run Risk Check workflow active"
       ]
-    ],
-    "workflows": [
-      "Add Wallet workflow active",
-      "Create Signal workflow active",
-      "Open Chart workflow active",
-      "Run Risk Check workflow active"
-    ]
-  },
+    },
   "modules": [
     {
-      "id": "wallets",
-      "label": "Wallets",
-      "description": "FoundCrypto wallets workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Wallets queue",
-        "Update Wallets records",
-        "Publish Wallets report"
-      ]
-    },
-    {
-      "id": "charts",
-      "label": "Charts",
-      "description": "FoundCrypto charts workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Charts queue",
-        "Update Charts records",
-        "Publish Charts report"
-      ]
-    },
-    {
-      "id": "transactions",
-      "label": "Transactions",
-      "description": "FoundCrypto transactions workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Transactions queue",
-        "Update Transactions records",
-        "Publish Transactions report"
-      ]
-    },
-    {
-      "id": "analytics",
-      "label": "Analytics",
-      "description": "FoundCrypto analytics workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Analytics queue",
-        "Update Analytics records",
-        "Publish Analytics report"
-      ]
-    },
-    {
-      "id": "portfolio",
-      "label": "Portfolio",
-      "description": "FoundCrypto portfolio workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Portfolio queue",
-        "Update Portfolio records",
-        "Publish Portfolio report"
-      ]
-    },
-    {
-      "id": "exchange",
-      "label": "Exchange",
-      "description": "FoundCrypto exchange workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Exchange queue",
-        "Update Exchange records",
-        "Publish Exchange report"
-      ]
-    },
-    {
-      "id": "signals",
-      "label": "Signals",
-      "description": "FoundCrypto signals workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Signals queue",
-        "Update Signals records",
-        "Publish Signals report"
-      ]
-    },
-    {
-      "id": "risk",
-      "label": "Risk",
-      "description": "FoundCrypto risk workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Risk queue",
-        "Update Risk records",
-        "Publish Risk report"
-      ]
-    },
-    {
-      "id": "automation",
-      "label": "Automation",
-      "description": "FoundCrypto automation workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Automation queue",
-        "Update Automation records",
-        "Publish Automation report"
-      ]
-    }
-  ,
-    {
-          "id": "marketing-suite",
-          "label": "Marketing Suite",
-          "description": "Plan, launch, and track marketing campaigns across every channel.",
+          "id": "invoicing",
+          "label": "Invoicing",
+          "description": "FoundFinance invoicing workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
-                      "label": "Campaigns Live",
+                      "label": "Invoices Sent",
+                      "value": "48",
+                      "trend": "+6 this week",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Overdue",
+                      "value": "7",
+                      "trend": "Needs action",
+                      "icon": "!",
+                      "tone": "risk"
+                },
+                {
+                      "label": "Avg Days to Pay",
                       "value": "12",
-                      "trend": "+3 this week",
-                      "icon": "\u25b6",
+                      "trend": "-2d",
+                      "icon": "◈",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Send Invoice",
+                "Chase Overdue",
+                "Apply Payment",
+                "Export Statement"
+          ],
+          "workflow": [
+                "Review Invoicing queue",
+                "Update Invoicing records",
+                "Publish Invoicing report"
+          ]
+    },
+    {
+          "id": "cashflow",
+          "label": "Cashflow",
+          "description": "FoundFinance cashflow workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Cash Runway",
+                      "value": "11.4 months",
+                      "trend": "+0.6mo",
+                      "icon": "£",
                       "tone": "good"
                 },
                 {
-                      "label": "Reach",
-                      "value": "48.2k",
-                      "trend": "+6%",
-                      "icon": "\u25c8",
-                      "tone": "good"
-                },
-                {
-                      "label": "Conversion",
-                      "value": "3.8%",
+                      "label": "Burn Rate",
+                      "value": "£18.2k/mo",
                       "trend": "Stable",
-                      "icon": "%",
+                      "icon": "◈",
+                      "tone": "watch"
+                },
+                {
+                      "label": "Inflows",
+                      "value": "£62.4k",
+                      "trend": "This month",
+                      "icon": "▶",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Log Transaction",
+                "Adjust Forecast",
+                "Flag Anomaly",
+                "Export Report"
+          ],
+          "workflow": [
+                "Review Cashflow queue",
+                "Update Cashflow records",
+                "Publish Cashflow report"
+          ]
+    },
+    {
+          "id": "reconciliation",
+          "label": "Reconciliation",
+          "description": "FoundFinance reconciliation workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Matched",
+                      "value": "94%",
+                      "trend": "+2%",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Unmatched Items",
+                      "value": "9",
+                      "trend": "Needs review",
+                      "icon": "!",
+                      "tone": "risk"
+                },
+                {
+                      "label": "Avg Close Time",
+                      "value": "3.1 days",
+                      "trend": "-0.4d",
+                      "icon": "◈",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Match Transaction",
+                "Flag Discrepancy",
+                "Close Period",
+                "Export Ledger"
+          ],
+          "workflow": [
+                "Review Reconciliation queue",
+                "Update Reconciliation records",
+                "Publish Reconciliation report"
+          ]
+    },
+    {
+          "id": "reporting",
+          "label": "Reporting",
+          "description": "FoundFinance reporting workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Reports Generated",
+                      "value": "22",
+                      "trend": "This month",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Accuracy",
+                      "value": "99.1%",
+                      "trend": "+0.2%",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Distribution List",
+                      "value": "14",
+                      "trend": "Stakeholders",
+                      "icon": "◈",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Generate Report",
+                "Schedule Distribution",
+                "Annotate Variance",
+                "Archive Report"
+          ],
+          "workflow": [
+                "Review Reporting queue",
+                "Update Reporting records",
+                "Publish Reporting report"
+          ]
+    },
+    {
+          "id": "payables",
+          "label": "Payables",
+          "description": "FoundFinance payables workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Bills Due",
+                      "value": "16",
+                      "trend": "This week",
+                      "icon": "!",
+                      "tone": "watch"
+                },
+                {
+                      "label": "Approved",
+                      "value": "£38.2k",
+                      "trend": "Ready to pay",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Vendors",
+                      "value": "31",
+                      "trend": "Active",
+                      "icon": "◈",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Approve Bill",
+                "Schedule Payment",
+                "Dispute Charge",
+                "Export Ledger"
+          ],
+          "workflow": [
+                "Review Payables queue",
+                "Update Payables records",
+                "Publish Payables report"
+          ]
+    },
+    {
+          "id": "receivables",
+          "label": "Receivables",
+          "description": "FoundFinance receivables workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Outstanding",
+                      "value": "£89.6k",
+                      "trend": "-£4.2k",
+                      "icon": "£",
+                      "tone": "good"
+                },
+                {
+                      "label": "Days Sales Outstanding",
+                      "value": "28",
+                      "trend": "-2d",
+                      "icon": "◈",
+                      "tone": "good"
+                },
+                {
+                      "label": "At Risk",
+                      "value": "3",
+                      "trend": "Needs follow-up",
+                      "icon": "!",
+                      "tone": "risk"
+                }
+          ],
+          "actions": [
+                "Send Reminder",
+                "Apply Credit",
+                "Escalate Account",
+                "Export Aging Report"
+          ],
+          "workflow": [
+                "Review Receivables queue",
+                "Update Receivables records",
+                "Publish Receivables report"
+          ]
+    },
+    {
+          "id": "forecasting",
+          "label": "Forecasting",
+          "description": "FoundFinance forecasting workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Forecast Accuracy",
+                      "value": "91%",
+                      "trend": "+3%",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Scenarios Modelled",
+                      "value": "5",
+                      "trend": "This quarter",
+                      "icon": "◈",
+                      "tone": "good"
+                },
+                {
+                      "label": "Variance",
+                      "value": "4.1%",
+                      "trend": "Within range",
+                      "icon": "▶",
                       "tone": "watch"
                 }
           ],
           "actions": [
-                "Launch Campaign",
-                "Duplicate Template",
-                "Schedule Send",
-                "Review Analytics"
+                "Update Forecast",
+                "Run Scenario",
+                "Flag Variance",
+                "Share Forecast"
           ],
           "workflow": [
-                "Draft Campaign",
-                "Approve Campaign",
-                "Publish Campaign"
+                "Review Forecasting queue",
+                "Update Forecasting records",
+                "Publish Forecasting report"
+          ]
+    },
+    {
+          "id": "risk",
+          "label": "Risk",
+          "description": "FoundFinance risk workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Risk Score",
+                      "value": "Low",
+                      "trend": "Stable",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Open Flags",
+                      "value": "2",
+                      "trend": "Needs review",
+                      "icon": "!",
+                      "tone": "risk"
+                },
+                {
+                      "label": "Controls Passed",
+                      "value": "97%",
+                      "trend": "+1%",
+                      "icon": "◈",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Run Risk Check",
+                "Review Flag",
+                "Update Control",
+                "Escalate Issue"
+          ],
+          "workflow": [
+                "Review Risk queue",
+                "Update Risk records",
+                "Publish Risk report"
+          ]
+    },
+    {
+          "id": "compliance",
+          "label": "Compliance",
+          "description": "FoundFinance compliance workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Audit Readiness",
+                      "value": "96%",
+                      "trend": "+2%",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Open Actions",
+                      "value": "4",
+                      "trend": "Due this month",
+                      "icon": "!",
+                      "tone": "watch"
+                },
+                {
+                      "label": "Policies Reviewed",
+                      "value": "18",
+                      "trend": "This quarter",
+                      "icon": "◈",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Review Policy",
+                "Log Audit Note",
+                "Assign Action",
+                "Export Compliance Report"
+          ],
+          "workflow": [
+                "Review Compliance queue",
+                "Update Compliance records",
+                "Publish Compliance report"
+          ]
+    },
+      {
+          "id": "portfolio-alerts",
+          "label": "Portfolio Alerts",
+          "description": "Monitor portfolio risk and get notified the moment thresholds are crossed.",
+          "metrics": [
+                {
+                      "label": "Active Alerts",
+                      "value": "6",
+                      "trend": "Live",
+                      "icon": "◈",
+                      "tone": "good"
+                },
+                {
+                      "label": "Triggered Today",
+                      "value": "2",
+                      "trend": "Needs review",
+                      "icon": "!",
+                      "tone": "risk"
+                },
+                {
+                      "label": "Resolved",
+                      "value": "91%",
+                      "trend": "+2%",
+                      "icon": "✓",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Create Alert",
+                "Acknowledge Alert",
+                "Snooze Alert",
+                "Export Alert Log"
+          ],
+          "workflow": [
+                "Review Portfolio Alerts queue",
+                "Update Portfolio Alerts records",
+                "Publish Portfolio Alerts report"
+          ]
+    },
+    {
+          "id": "compliance-notes",
+          "label": "Compliance Notes",
+          "description": "Log and track compliance observations across every account.",
+          "metrics": [
+                {
+                      "label": "Open Notes",
+                      "value": "9",
+                      "trend": "This week",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Flagged Items",
+                      "value": "2",
+                      "trend": "Needs action",
+                      "icon": "!",
+                      "tone": "risk"
+                },
+                {
+                      "label": "Reviewed This Week",
+                      "value": "14",
+                      "trend": "+3",
+                      "icon": "✓",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Add Note",
+                "Flag Item",
+                "Mark Reviewed",
+                "Export Notes"
+          ],
+          "workflow": [
+                "Review Compliance Notes queue",
+                "Update Compliance Notes records",
+                "Publish Compliance Notes report"
           ]
     },
     {
@@ -631,44 +669,44 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "crm": {
-    "title": "FoundCrypto CRM",
-    "summary": "FoundCrypto CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
-    "records": [
-      {
-        "name": "BTC",
-        "type": "Wallets",
-        "stage": "Breakout",
-        "value": "34%",
-        "nextAction": "Add Wallet"
-      },
-      {
-        "name": "ETH",
-        "type": "Wallets",
-        "stage": "Accumulation",
-        "value": "22%",
-        "nextAction": "Create Signal"
-      },
-      {
-        "name": "SOL",
-        "type": "Wallets",
-        "stage": "Volatile",
-        "value": "8%",
-        "nextAction": "Open Chart"
-      }
-    ],
-    "pipeline": [
-      "New",
-      "Qualified",
-      "Active",
-      "Won"
-    ],
-    "tasks": [
-      "Add Wallet",
-      "Create Signal",
-      "Open Chart",
-      "Run Risk Check"
-    ]
-  },
+      "title": "FoundFinance CRM",
+      "summary": "FoundFinance CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
+      "records": [
+          {
+              "name": "Northgate Retail Group",
+              "type": "Client",
+              "stage": "Active",
+              "value": "£18.2k/mo",
+              "nextAction": "Send Invoice"
+          },
+          {
+              "name": "Bramwell & Co Suppliers",
+              "type": "Vendor",
+              "stage": "Payment due",
+              "value": "£6.4k",
+              "nextAction": "Schedule Payment"
+          },
+          {
+              "name": "Vantage Logistics Ltd",
+              "type": "Client",
+              "stage": "Overdue",
+              "value": "£2.1k",
+              "nextAction": "Send Reminder"
+          }
+      ],
+      "pipeline": [
+          "New",
+          "Qualified",
+          "Active",
+          "Won"
+      ],
+      "tasks": [
+          "Send Invoice",
+          "Chase Overdue",
+          "Reconcile Account",
+          "Update Forecast"
+      ]
+    },
   "navigation": [
     {
       "label": "Dashboard",
@@ -688,39 +726,75 @@ export const brandConfig: BrandConsoleConfig = {
       "icon": "◎",
       "section": "Core"
     },
-    {
-      "label": "Wallets",
-      "href": "/modules/wallets",
+        {
+      "label": "Invoicing",
+      "href": "/modules/invoicing",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Charts",
-      "href": "/modules/charts",
+      "label": "Cashflow",
+      "href": "/modules/cashflow",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Transactions",
-      "href": "/modules/transactions",
+      "label": "Reconciliation",
+      "href": "/modules/reconciliation",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Analytics",
-      "href": "/modules/analytics",
+      "label": "Reporting",
+      "href": "/modules/reporting",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Portfolio",
-      "href": "/modules/portfolio",
+      "label": "Payables",
+      "href": "/modules/payables",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Exchange",
-      "href": "/modules/exchange",
+      "label": "Receivables",
+      "href": "/modules/receivables",
+      "icon": "▣",
+      "section": "Modules"
+    },
+{
+      "label": "Accounting",
+      "href": "/modules/accounting",
+      "icon": "banknotes",
+      "section": "Modules"
+    },
+    {
+      "label": "Messaging",
+      "href": "/modules/messaging",
+      "icon": "chat-bubble-left-right",
+      "section": "Modules"
+    },
+    {
+      "label": "Customer Service",
+      "href": "/modules/customer-service",
+      "icon": "lifebuoy",
+      "section": "Modules"
+    },
+    {
+      "label": "FoundAI Demo",
+      "href": "/modules/foundai-demo",
+      "icon": "sparkles",
+      "section": "Modules"
+    },
+    {
+      "label": "Portfolio Alerts",
+      "href": "/modules/portfolio-alerts",
+      "icon": "▣",
+      "section": "Modules"
+    },
+    {
+      "label": "Compliance Notes",
+      "href": "/modules/compliance-notes",
       "icon": "▣",
       "section": "Modules"
     },
@@ -732,17 +806,17 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "quickActions": [
-    "Add Wallet",
-    "Create Signal",
-    "Open Chart",
+    "Send Invoice",
+    "Reconcile Account",
+    "Update Forecast",
     "Run Risk Check"
   ],
   "settings": [
-    "Wallet Security",
-    "Exchange Connections",
-    "Risk Limits",
+    "Payment Methods",
+    "Approval Limits",
+    "Risk Thresholds",
     "Alert Preferences",
-    "Portfolio Visibility",
+    "Reporting Schedule",
     "CRM Configuration"
   ]
 }

@@ -7,7 +7,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 export const brandConfig: BrandConsoleConfig = {
   "name": "FoundTalent",
   "logo": "⬢",
-  "accent": "#E2A84A",
+  "accent": "#FF8800",
   "typography": {
     "heading": "Inter",
     "body": "Inter"
@@ -15,7 +15,7 @@ export const brandConfig: BrandConsoleConfig = {
   "colors": {
     "primary": "#E2A84A",
     "secondary": "#3D2B12",
-    "accent": "#E2A84A",
+    "accent": "#FF8800",
     "background": "#0B0C10",
     "panel": "#141820",
     "text": "#FFFFFF",
@@ -395,43 +395,82 @@ export const brandConfig: BrandConsoleConfig = {
       ]
     }
   ,
-    {
-          "id": "marketing-suite",
-          "label": "Marketing Suite",
-          "description": "Plan, launch, and track marketing campaigns across every channel.",
+        {
+          "id": "candidate-pipeline",
+          "label": "Candidate Pipeline",
+          "description": "Track candidates from application through offer in one pipeline view.",
           "metrics": [
                 {
-                      "label": "Campaigns Live",
-                      "value": "12",
-                      "trend": "+3 this week",
-                      "icon": "\u25b6",
+                      "label": "Active Candidates",
+                      "value": "142",
+                      "trend": "+9",
+                      "icon": "▶",
                       "tone": "good"
                 },
                 {
-                      "label": "Reach",
-                      "value": "48.2k",
-                      "trend": "+6%",
-                      "icon": "\u25c8",
+                      "label": "Interviews Scheduled",
+                      "value": "18",
+                      "trend": "This week",
+                      "icon": "◈",
                       "tone": "good"
                 },
                 {
-                      "label": "Conversion",
-                      "value": "3.8%",
-                      "trend": "Stable",
-                      "icon": "%",
+                      "label": "Offers Extended",
+                      "value": "5",
+                      "trend": "Awaiting response",
+                      "icon": "!",
                       "tone": "watch"
                 }
           ],
           "actions": [
-                "Launch Campaign",
-                "Duplicate Template",
-                "Schedule Send",
-                "Review Analytics"
+                "Add Candidate",
+                "Schedule Interview",
+                "Extend Offer",
+                "Export Pipeline"
           ],
           "workflow": [
-                "Draft Campaign",
-                "Approve Campaign",
-                "Publish Campaign"
+                "Review Candidate Pipeline queue",
+                "Update Candidate Pipeline records",
+                "Publish Candidate Pipeline report"
+          ]
+    },
+    {
+          "id": "cv-parser",
+          "label": "CV Parser",
+          "description": "Automatically parse and structure incoming CVs for faster review.",
+          "metrics": [
+                {
+                      "label": "CVs Parsed Today",
+                      "value": "36",
+                      "trend": "+4",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Parse Accuracy",
+                      "value": "96%",
+                      "trend": "+1%",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Manual Reviews",
+                      "value": "3",
+                      "trend": "Needs review",
+                      "icon": "!",
+                      "tone": "watch"
+                }
+          ],
+          "actions": [
+                "Upload CV",
+                "Review Parse",
+                "Correct Field",
+                "Export Parsed Data"
+          ],
+          "workflow": [
+                "Review CV Parser queue",
+                "Update CV Parser records",
+                "Publish CV Parser report"
           ]
     },
     {
@@ -682,6 +721,42 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "label": "Pipelines",
       "href": "/modules/pipelines",
+      "icon": "▣",
+      "section": "Modules"
+    },
+        {
+      "label": "Accounting",
+      "href": "/modules/accounting",
+      "icon": "banknotes",
+      "section": "Modules"
+    },
+    {
+      "label": "Messaging",
+      "href": "/modules/messaging",
+      "icon": "chat-bubble-left-right",
+      "section": "Modules"
+    },
+    {
+      "label": "Customer Service",
+      "href": "/modules/customer-service",
+      "icon": "lifebuoy",
+      "section": "Modules"
+    },
+    {
+      "label": "FoundAI Demo",
+      "href": "/modules/foundai-demo",
+      "icon": "sparkles",
+      "section": "Modules"
+    },
+    {
+      "label": "Candidate Pipeline",
+      "href": "/modules/candidate-pipeline",
+      "icon": "▣",
+      "section": "Modules"
+    },
+    {
+      "label": "CV Parser",
+      "href": "/modules/cv-parser",
       "icon": "▣",
       "section": "Modules"
     },

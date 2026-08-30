@@ -17,11 +17,11 @@ const legalSections = [
 ] as const
 
 const consoleLinks = [
-  { name: 'Intelligence Console', href: 'http://localhost:3003' },
-  { name: 'Data Operations Console', href: 'http://localhost:3003/data' },
+  { name: 'FoundThat Console', href: brands.foundthat.consoleUrl },
+  { name: 'FoundThat Starter Console', href: brands.foundthat.starterConsoleUrl },
 ] as const
 
-const itHomeUrl = brands.it.webUrl
+const itHomeUrl = brands.foundthat.webUrl
 
 export default function Page() {
   return (

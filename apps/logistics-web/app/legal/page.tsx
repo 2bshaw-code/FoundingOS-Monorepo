@@ -17,7 +17,8 @@ const legalSections = [
 ] as const
 
 const consoleLinks = [
-  { name: 'Logistics Fleet & Route Console', href: 'http://localhost:3005' },
+  { name: 'Logistics Console', href: brands.logistics.consoleUrl },
+  { name: 'Logistics Starter Console', href: brands.logistics.starterConsoleUrl },
 ] as const
 
 const cryptoHomeUrl = brands.logistics.webUrl

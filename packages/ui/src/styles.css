@@ -5,13 +5,13 @@
 @import 'odometer/themes/odometer-theme-default.css';
 
 :root {
-  --bg: #07080d;
+  --bg: #05060a;
   --surface: rgba(17, 22, 31, 0.78);
   --surface-strong: rgba(22, 28, 39, 0.92);
   --surface-soft: rgba(255, 255, 255, 0.04);
   --line: rgba(166, 182, 204, 0.16);
-  --text: #f7fafc;
-  --muted: #a8b3c3;
+  --text: #ffffff;
+  --muted: #b9c2cf;
   --shadow: rgba(0, 0, 0, 0.22);
   --shell-shadow: rgba(0, 0, 0, 0.28);
   font-family: Inter, "Segoe UI", sans-serif;
@@ -69,7 +69,7 @@ body[data-sidebar-collapsed='true'] {
   100% { transform: scale(1); }
 }
 
-.bob-ai-circle {
+.found-ai-circle {
   animation: bobHeartbeat 1.2s ease-in-out infinite;
   transform-origin: center;
 }
@@ -516,6 +516,12 @@ body[data-sidebar-collapsed='true'] .nav-card {
   background: color-mix(in srgb, var(--accent) 10%, var(--surface));
   color: var(--text);
   font-weight: 700;
+  transition: box-shadow 150ms ease, border-color 150ms ease;
+}
+
+.topbar-chip:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .topbar-dropdown {
@@ -988,7 +994,7 @@ body[data-sidebar-collapsed='true'] .nav-card {
   line-height: 1.5;
 }
 
-.bob-fab {
+.found-ai-fab {
   position: fixed;
   right: 24px;
   bottom: 24px;
@@ -999,19 +1005,19 @@ body[data-sidebar-collapsed='true'] .nav-card {
   height: 64px;
   border: 0;
   border-radius: 999px;
-  background: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--bob-accent) 80%, white), var(--bob-accent));
+  background: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--found-ai-accent) 80%, white), var(--found-ai-accent));
   color: #061018;
   font-weight: 900;
-  box-shadow: 0 18px 40px var(--bob-glow), 0 10px 24px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 18px 40px var(--found-ai-glow), 0 10px 24px rgba(0, 0, 0, 0.28);
 }
 
-.bob-fab span {
+.found-ai-fab span {
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.bob-panel {
+.found-ai-panel {
   position: fixed;
   top: 104px;
   right: 24px;
@@ -1021,7 +1027,7 @@ body[data-sidebar-collapsed='true'] .nav-card {
   grid-template-rows: auto minmax(0, 1fr) auto auto auto;
   gap: 14px;
   padding: 18px;
-  border: 1px solid color-mix(in srgb, var(--bob-accent) 28%, var(--line));
+  border: 1px solid color-mix(in srgb, var(--found-ai-accent) 28%, var(--line));
   border-radius: 24px;
   background: var(--surface-strong);
   backdrop-filter: blur(20px);
@@ -1031,41 +1037,41 @@ body[data-sidebar-collapsed='true'] .nav-card {
   z-index: 54;
 }
 
-.bob-panel.open {
+.found-ai-panel.open {
   transform: translateX(0);
 }
 
-.bob-panel-header {
+.found-ai-panel-header {
   display: grid;
   grid-template-columns: 44px 1fr auto;
   align-items: center;
   gap: 12px;
 }
 
-.bob-avatar {
+.found-ai-avatar {
   display: grid;
   place-items: center;
   width: 44px;
   height: 44px;
   border-radius: 999px;
-  background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--bob-accent) 85%, white), var(--bob-accent));
+  background: radial-gradient(circle at 30% 30%, color-mix(in srgb, var(--found-ai-accent) 85%, white), var(--found-ai-accent));
   color: #071014;
   font-weight: 900;
 }
 
-.bob-panel-header strong,
-.bob-panel h3 {
+.found-ai-panel-header strong,
+.found-ai-panel h3 {
   display: block;
   margin: 0;
 }
 
-.bob-panel-header span,
-.bob-panel h3 {
+.found-ai-panel-header span,
+.found-ai-panel h3 {
   color: var(--muted);
   font-size: 12px;
 }
 
-.bob-close {
+.found-ai-close {
   width: 36px;
   height: 36px;
   border: 1px solid var(--line);
@@ -1075,7 +1081,7 @@ body[data-sidebar-collapsed='true'] .nav-card {
   font-size: 18px;
 }
 
-.bob-chat {
+.found-ai-chat {
   min-height: 0;
   overflow: auto;
   display: grid;
@@ -1083,7 +1089,7 @@ body[data-sidebar-collapsed='true'] .nav-card {
   padding-right: 4px;
 }
 
-.bob-message {
+.found-ai-message {
   max-width: 90%;
   padding: 12px 14px;
   border-radius: 16px;
@@ -1091,30 +1097,30 @@ body[data-sidebar-collapsed='true'] .nav-card {
   line-height: 1.55;
 }
 
-.bob-message.user {
+.found-ai-message.user {
   justify-self: end;
-  background: color-mix(in srgb, var(--bob-accent) 22%, var(--surface-soft));
+  background: color-mix(in srgb, var(--found-ai-accent) 22%, var(--surface-soft));
   color: var(--text);
 }
 
-.bob-message.assistant {
+.found-ai-message.assistant {
   background: var(--surface-soft);
   color: var(--text);
 }
 
-.bob-prompts,
-.bob-actions {
+.found-ai-prompts,
+.found-ai-actions {
   display: grid;
   gap: 10px;
 }
 
-.bob-chip-grid {
+.found-ai-chip-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.bob-chip {
+.found-ai-chip {
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--surface-soft);
@@ -1124,12 +1130,12 @@ body[data-sidebar-collapsed='true'] .nav-card {
   font-weight: 700;
 }
 
-.bob-compose {
+.found-ai-compose {
   display: grid;
   gap: 10px;
 }
 
-.bob-compose textarea {
+.found-ai-compose textarea {
   width: 100%;
   resize: none;
   border: 1px solid var(--line);
@@ -1608,7 +1614,7 @@ body[data-sidebar-collapsed='true'] .nav-card {
   border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
 }
 
-.founder-bob-intro {
+.founder-found-ai-intro {
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr) minmax(240px, 0.9fr);
   gap: 20px;
@@ -1621,7 +1627,7 @@ body[data-sidebar-collapsed='true'] .nav-card {
   box-shadow: 0 22px 54px var(--shadow);
 }
 
-.founder-bob-avatar {
+.founder-found-ai-avatar {
   display: grid;
   place-items: center;
   width: 72px;
@@ -1633,18 +1639,18 @@ body[data-sidebar-collapsed='true'] .nav-card {
   font-weight: 900;
 }
 
-.founder-bob-copy h2 {
+.founder-found-ai-copy h2 {
   margin: 6px 0 10px;
   font-size: clamp(24px, 2.6vw, 38px);
 }
 
-.founder-bob-copy p {
+.founder-found-ai-copy p {
   margin: 0;
   color: var(--muted);
   line-height: 1.65;
 }
 
-.founder-bob-actions {
+.founder-found-ai-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -1789,16 +1795,40 @@ body[data-sidebar-collapsed='true'] .nav-card {
   font-weight: 800;
 }
 
+@property --sphere-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
 .brand-logo {
+  position: relative;
   display: inline-grid;
   place-items: center;
   width: 38px;
   height: 38px;
-  border-radius: 12px;
-  background: var(--accent);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.85), transparent 42%),
+    conic-gradient(from var(--sphere-angle, 0deg), var(--accent), #9933ff, #00e0ff, #ff0033, var(--accent));
   color: #071014;
   font-weight: 900;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.22) inset,
+    0 0 14px color-mix(in srgb, var(--accent) 55%, transparent),
+    0 0 28px color-mix(in srgb, var(--accent) 30%, transparent),
+    0 4px 10px rgba(0, 0, 0, 0.15);
+  animation: quantumSphereRotate 14s linear infinite, quantumSphereBreathe 5s ease-in-out infinite;
+}
+
+@keyframes quantumSphereRotate {
+  from { --sphere-angle: 0deg; }
+  to { --sphere-angle: 360deg; }
+}
+
+@keyframes quantumSphereBreathe {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.12); }
 }
 
 .brand-logo.small {
@@ -1894,7 +1924,7 @@ body[data-sidebar-collapsed='true'] .nav-card {
     display: grid;
   }
 
-  .bob-panel {
+  .found-ai-panel {
     left: 12px;
     right: 12px;
     width: auto;
@@ -1902,17 +1932,17 @@ body[data-sidebar-collapsed='true'] .nav-card {
     bottom: 84px;
   }
 
-  .bob-fab {
+  .found-ai-fab {
     right: 12px;
     bottom: 12px;
   }
 
-  .founder-bob-intro {
+  .founder-found-ai-intro {
     grid-template-columns: 1fr;
     margin: 0 16px;
   }
 
-  .founder-bob-actions {
+  .founder-found-ai-actions {
     justify-content: flex-start;
   }
 }
@@ -1948,4 +1978,1080 @@ body[data-sidebar-collapsed='true'] .nav-card {
 
 .brand-spotlight-card {
   border-left: 3px solid var(--brand-color, var(--accent));
+}
+
+/* Additive premium polish utilities — safe, non-breaking, used by module cards */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.premium-card {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.premium-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+  transform: translateY(-2px) scale(1.01);
+}
+
+.premium-fade-in {
+  animation: fade-in-up 0.7s ease both;
+}
+
+/* Quantum heatmap tone overlays for SuperDashboard tiles */
+.quantum-heatmap {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  pointer-events: none;
+  transition: background 0.3s ease;
+}
+
+.quantum-heatmap-high { background: rgba(34, 197, 94, 0.16); }
+.quantum-heatmap-good { background: rgba(59, 130, 246, 0.14); }
+.quantum-heatmap-watch { background: rgba(234, 179, 8, 0.14); }
+.quantum-heatmap-low { background: rgba(239, 68, 68, 0.14); }
+
+.quantum-tile {
+  position: relative;
+  overflow: hidden;
+}
+
+.quantum-tile-border {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  pointer-events: none;
+  transition: border-color 0.3s ease;
+}
+
+.quantum-tile:hover .quantum-tile-border {
+  border-color: var(--accent, rgba(74, 144, 226, 0.4));
+}
+
+body.superdash-heatmap-off .quantum-heatmap {
+  display: none;
+}
+
+/* Cinematic mode — premium motion layer for SuperDashboard */
+.superdash-fade-in {
+  animation: superdashFadeIn 0.6s ease forwards;
+  opacity: 0;
+}
+
+@keyframes superdashFadeIn {
+  to { opacity: 1; }
+}
+
+.superdash-slide-up {
+  animation: superdashSlideUp 0.5s ease forwards;
+  transform: translateY(20px);
+  opacity: 0;
+}
+
+@keyframes superdashSlideUp {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.superdash-zoom {
+  animation: superdashZoom 0.4s ease forwards;
+  transform: scale(0.95);
+  opacity: 0;
+}
+
+@keyframes superdashZoom {
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.superdash-highlight {
+  animation: superdashHighlight 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes superdashHighlight {
+  from { box-shadow: 0 0 0px rgba(255, 255, 255, 0.1); }
+  to { box-shadow: 0 0 12px rgba(255, 255, 255, 0.25); }
+}
+/* ============================================================
+   QUANTUM UPGRADE PACK — premium visual layer (UI-only, no logic)
+   Applied via className hooks across brand websites, consoles,
+   FoundingOS, and SuperDashboard. Uses var(--accent) where a
+   wrapper already sets it; brand-signature classes below carry
+   their own hardcoded accent for standalone contexts.
+   ============================================================ */
+
+/* A. Quantum ambient grid — faint geometric grid overlay, slow drift */
+.quantum-ambient-grid {
+  position: relative;
+}
+.quantum-ambient-grid::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--accent, #4A90E2) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accent, #4A90E2) 4%, transparent) 1px, transparent 1px);
+  background-size: 42px 42px;
+  animation: quantumGridDrift 10s linear infinite;
+}
+.quantum-ambient-grid > *:not(.quantum-particle-drift) {
+  position: relative;
+  z-index: 1;
+}
+@keyframes quantumGridDrift {
+  0% { background-position: 0 0, 0 0; }
+  100% { background-position: 2px 1px, 1px 2px; }
+}
+
+/* B. Quantum particle drift — tiny particles behind hero text */
+.quantum-particle-drift {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.quantum-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent, #4A90E2) 28%, transparent);
+  animation: quantumParticleDrift 20s ease-in-out infinite;
+}
+.quantum-particle:nth-child(1) { top: 18%; left: 12%; animation-duration: 18s; }
+.quantum-particle:nth-child(2) { top: 62%; left: 24%; animation-duration: 22s; animation-delay: -4s; }
+.quantum-particle:nth-child(3) { top: 34%; left: 68%; animation-duration: 16s; animation-delay: -9s; }
+.quantum-particle:nth-child(4) { top: 78%; left: 54%; animation-duration: 24s; animation-delay: -2s; }
+.quantum-particle:nth-child(5) { top: 8%; left: 82%; animation-duration: 20s; animation-delay: -12s; }
+@keyframes quantumParticleDrift {
+  0%, 100% { transform: translate(0, 0); opacity: 0.6; }
+  50% { transform: translate(10px, -14px); opacity: 1; }
+}
+
+/* C. Quantum corner markers — brand glyph micro-interaction on hover */
+.quantum-corner-marker {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 13px;
+  opacity: 0;
+  color: color-mix(in srgb, var(--accent, #4A90E2) 90%, transparent);
+  text-shadow: 0 0 0 color-mix(in srgb, var(--accent, #4A90E2) 0%, transparent);
+  transition: opacity 150ms ease;
+  pointer-events: none;
+}
+.quantum-card:hover .quantum-corner-marker {
+  opacity: 1;
+  animation: quantumCornerPulse 150ms ease;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--accent, #4A90E2) 65%, transparent);
+}
+@keyframes quantumCornerPulse {
+  0% { transform: scale(0.7); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+/* D. Quantum motion rules — premium micro-motion */
+.quantum-btn {
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.quantum-btn:hover {
+  transform: translateY(-1px);
+}
+.quantum-card {
+  position: relative;
+  transition: transform 200ms ease;
+}
+.quantum-card:hover {
+  transform: rotate(0.5deg);
+}
+.module-card.quantum-card:hover {
+  transform: translateY(-3px) rotate(0.5deg);
+}
+.quantum-link-glow {
+  transition: text-shadow 120ms ease, color 120ms ease;
+}
+.quantum-link-glow:hover {
+  text-shadow: 0 0 10px color-mix(in srgb, var(--accent, #4A90E2) 60%, transparent);
+}
+.quantum-icon-pulse:hover {
+  animation: quantumIconPulseOnce 300ms ease;
+}
+@keyframes quantumIconPulseOnce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+.quantum-spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent, #4A90E2) 35%, transparent);
+  animation: quantumSpinnerPulse 1.1s ease-in-out infinite;
+}
+@keyframes quantumSpinnerPulse {
+  0%, 100% { transform: scale(0.85); opacity: 0.5; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+/* E. Quantum navigation cards — replaces plain technical links */
+.quantum-nav-card {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent, #4A90E2) 35%, transparent);
+  background: rgba(255, 255, 255, 0.03);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+.quantum-nav-card:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent, #4A90E2) 80%, transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--accent, #4A90E2) 25%, transparent);
+}
+.quantum-nav-card:hover .quantum-nav-glyph {
+  animation: quantumIconPulseOnce 300ms ease;
+}
+.quantum-nav-glyph {
+  font-weight: 900;
+  color: color-mix(in srgb, var(--accent, #4A90E2) 95%, transparent);
+}
+.quantum-nav-title {
+  font-weight: 800;
+}
+.quantum-nav-desc {
+  font-size: 12px;
+  opacity: 0.7;
+}
+.quantum-nav-cta {
+  font-size: 12px;
+  font-weight: 800;
+  color: color-mix(in srgb, var(--accent, #4A90E2) 95%, transparent);
+}
+
+/* F. Quantum ribbon navigation — premium top strip */
+.quantum-ribbon-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  justify-content: center;
+  padding: 8px 20px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.quantum-ribbon-nav a {
+  color: inherit;
+  text-decoration: none;
+  opacity: 0.75;
+  transition: opacity 150ms ease, text-shadow 150ms ease;
+}
+.quantum-ribbon-nav a:hover {
+  opacity: 1;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--accent, #4A90E2) 60%, transparent);
+}
+
+/* G. Content alignment helpers — premium hero/footer tone */
+.quantum-hero-promise {
+  margin-top: 10px;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  opacity: 0.75;
+}
+.quantum-footer-summary {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 6px;
+}
+.quantum-accent-glow {
+  text-shadow: 0 0 14px color-mix(in srgb, var(--accent, #4A90E2) 40%, transparent);
+}
+
+/* H. Brand-specific Quantum signatures — subtle per-brand uniqueness.
+   Each sets --quantum-accent-rgb so A–G above render in this brand's
+   color, plus one unique ambient pattern layered behind the content. */
+.quantum-sig-retail {
+  --quantum-accent-rgb: 0, 255, 102;
+  --accent: #00FF66;
+  position: relative;
+}
+.quantum-sig-retail::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: repeating-linear-gradient(to bottom, rgba(0, 255, 102, 0.0375) 0, rgba(0, 255, 102, 0.0375) 1px, transparent 1px, transparent 26px);
+  animation: quantumScanLines 12s linear infinite;
+}
+
+.quantum-sig-meat {
+  --quantum-accent-rgb: 255, 0, 51;
+  --accent: #FF0033;
+  position: relative;
+}
+.quantum-sig-meat::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(circle at 30% 20%, rgba(255, 0, 51, 0.075), transparent 55%);
+  animation: quantumWarmPulse 6s ease-in-out infinite;
+}
+
+.quantum-sig-foundthat {
+  --quantum-accent-rgb: 255, 221, 0;
+  --accent: #FFDD00;
+  position: relative;
+}
+.quantum-sig-foundthat::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(255, 221, 0, 0.09) 1px, transparent 1px) top left / 18px 18px no-repeat,
+    linear-gradient(90deg, rgba(255, 221, 0, 0.09) 1px, transparent 1px) top left / 18px 18px no-repeat,
+    linear-gradient(rgba(255, 221, 0, 0.09) 1px, transparent 1px) bottom right / 18px 18px no-repeat,
+    linear-gradient(90deg, rgba(255, 221, 0, 0.09) 1px, transparent 1px) bottom right / 18px 18px no-repeat;
+  background-repeat: no-repeat;
+}
+
+.quantum-sig-talent {
+  --quantum-accent-rgb: 255, 136, 0;
+  --accent: #FF8800;
+  position: relative;
+}
+.quantum-sig-talent::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(115deg, transparent 40%, rgba(255, 136, 0, 0.06) 50%, transparent 60%);
+  background-size: 220% 220%;
+  animation: quantumDiagonalShimmer 9s ease-in-out infinite;
+}
+
+.quantum-sig-crypto {
+  --quantum-accent-rgb: 153, 51, 255;
+  --accent: #9933FF;
+  position: relative;
+}
+.quantum-sig-crypto::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(circle at 50% 40%, rgba(153, 51, 255, 0.12), transparent 60%);
+  animation: quantumDeepPulse 5s ease-in-out infinite;
+}
+
+.quantum-sig-finance {
+  --quantum-accent-rgb: 0, 51, 170;
+  --accent: #0033AA;
+  position: relative;
+}
+.quantum-sig-finance::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: repeating-linear-gradient(to bottom, rgba(0, 51, 170, 0.06) 0, rgba(0, 51, 170, 0.06) 1px, transparent 1px, transparent 34px);
+}
+
+.quantum-sig-health {
+  --quantum-accent-rgb: 51, 204, 255;
+  --accent: #33CCFF;
+  position: relative;
+}
+.quantum-sig-health::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(rgba(51, 204, 255, 0.165) 1.5px, transparent 1.5px);
+  background-size: 60px 60px;
+  animation: quantumParticleDriftBg 24s linear infinite;
+}
+
+.quantum-sig-logistics {
+  --quantum-accent-rgb: 220, 20, 60;
+  --accent: #DC143C;
+  position: relative;
+}
+.quantum-sig-logistics::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: repeating-linear-gradient(115deg, rgba(220, 20, 60, 0.06) 0, rgba(220, 20, 60, 0.06) 2px, transparent 2px, transparent 30px);
+  animation: quantumAngularMotion 14s linear infinite;
+}
+
+.quantum-sig-retail > *, .quantum-sig-meat > *, .quantum-sig-foundthat > *,
+.quantum-sig-talent > *, .quantum-sig-crypto > *, .quantum-sig-finance > *,
+.quantum-sig-health > *, .quantum-sig-logistics > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes quantumScanLines {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 26px; }
+}
+@keyframes quantumWarmPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+@keyframes quantumDiagonalShimmer {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+@keyframes quantumDeepPulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 1; }
+}
+@keyframes quantumParticleDriftBg {
+  0% { background-position: 0 0; }
+  100% { background-position: 60px 60px; }
+}
+@keyframes quantumAngularMotion {
+  0% { background-position: 0 0; }
+  100% { background-position: 30px 30px; }
+}
+
+/* Quantum Console Modal — replaces direct console nav links */
+.quantum-console-entry {
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.quantum-console-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(4, 8, 14, 0.72);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  animation: quantumModalFadeIn 180ms ease;
+}
+
+@keyframes quantumModalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.quantum-console-modal {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--accent, #4A90E2) 35%, rgba(255, 255, 255, 0.1));
+  background: #0b0e14;
+  color: #edf7ff;
+  padding: 28px 24px 24px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+}
+
+.quantum-console-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: 20px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 150ms ease;
+}
+.quantum-console-modal-close:hover {
+  opacity: 1;
+}
+
+.quantum-console-modal-title {
+  margin: 0 0 20px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.quantum-console-modal-options {
+  display: grid;
+  gap: 12px;
+}
+
+/* Demo Message Board — read-only demo module (Growth consoles only) */
+.demo-message-board {
+  position: relative;
+  margin-top: 24px;
+  display: grid;
+  gap: 18px;
+}
+.demo-message-thread {
+  display: grid;
+  gap: 10px;
+}
+.demo-message-bubble {
+  align-items: flex-start;
+  text-align: left;
+  max-width: 640px;
+}
+.demo-message-customer {
+  justify-self: start;
+}
+.demo-message-staff,
+.demo-message-automation {
+  justify-self: end;
+}
+
+/* Enterprise Team Viewer — SuperDashboard module */
+.team-viewer-grid {
+  display: grid;
+  gap: 10px;
+}
+.team-viewer-row {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr 1fr 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--surface-strong), var(--surface));
+}
+.team-viewer-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.team-viewer-status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.team-viewer-status.active {
+  color: #2ecc71;
+}
+.team-viewer-status.inactive {
+  color: #8a94a6;
+}
+
+/* Quantum Header — single unified nav (replaces old header + separate ribbon-nav) */
+.quantum-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 24px;
+  background: rgba(7, 12, 20, 0.75);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.quantum-header-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+.quantum-header-links a {
+  color: inherit;
+  text-decoration: none;
+  opacity: 0.75;
+  transition: opacity 150ms ease, text-shadow 150ms ease;
+}
+.quantum-header-links a:hover {
+  opacity: 1;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--accent, #4A90E2) 60%, transparent);
+}
+
+/* Consideration layer — brand directory pain points/outcomes/reasons */
+.consideration-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.consideration-grid ul {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* Activation Layer — Get Started Checklist (Starter consoles) */
+.get-started-checklist {
+  position: relative;
+  margin-top: 24px;
+}
+.checklist-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--surface-strong), var(--surface));
+}
+.checklist-box {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 2px solid color-mix(in srgb, var(--accent) 55%, var(--line));
+  flex-shrink: 0;
+}
+
+/* Migration Layer — Data Migration Hub (Growth consoles) */
+.data-migration-hub {
+  position: relative;
+  margin-top: 24px;
+}
+.migration-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.migration-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--surface-strong), var(--surface));
+}
+
+/* Lockdown Layer — demo/locked mode overlay (Starter + Growth consoles) */
+.lockdown-overlay {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent, #4A90E2) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent, #4A90E2) 14%, var(--surface));
+  font-size: 14px;
+  font-weight: 700;
+}
+.lockdown-overlay p {
+  margin: 0;
+  flex: 1 1 260px;
+}
+.lockdown-overlay-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  pointer-events: auto;
+}
+.lockdown-banner-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent, #4A90E2);
+  flex-shrink: 0;
+}
+.lockdown-banner-logo {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--accent, #4A90E2);
+  flex-shrink: 0;
+}
+
+/* Read-only lockdown — disables interaction with console content, banner stays active */
+.lockdown-readonly {
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.88;
+  filter: saturate(0.85);
+}
+
+/* Brand Logo Grid — fixed-size logo boxes + pixel-perfect card alignment */
+.brand-directory-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.brand-logo-box {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.85), transparent 42%),
+    conic-gradient(from var(--sphere-angle, 0deg), currentColor, #9933ff, #00e0ff, #ff0033, currentColor);
+  font-size: 22px;
+  margin-bottom: 10px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.22) inset,
+    0 0 14px color-mix(in srgb, currentColor 55%, transparent),
+    0 0 28px color-mix(in srgb, currentColor 30%, transparent),
+    0 4px 10px rgba(0, 0, 0, 0.15);
+  animation: quantumSphereRotate 14s linear infinite, quantumSphereBreathe 5s ease-in-out infinite;
+}
+.brand-read-more {
+  margin: 6px 0;
+}
+.brand-read-more summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+.brand-read-more summary:hover {
+  opacity: 1;
+}
+.brand-directory-card .hero-actions {
+  margin-top: auto;
+}
+
+/* Rotating message feed — auto-scrolling example messages (brand websites) */
+.rotating-message-feed {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent, #4A90E2) 30%, rgba(255, 255, 255, 0.1));
+  background: rgba(255, 255, 255, 0.02);
+}
+.rotating-message-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent, #4A90E2);
+  flex-shrink: 0;
+  animation: quantumSpinnerPulse 1.6s ease-in-out infinite;
+}
+.rotating-message-text {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+.rotating-message-text.is-visible {
+  opacity: 1;
+}
+
+/* Package Modal — popup with AI assistant, replaces direct redirect-to-console */
+.package-modal-trigger {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
+.package-modal {
+  max-width: 480px;
+}
+.package-modal-ai {
+  margin: 16px 0;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+}
+.package-modal-ai-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.package-modal-ai-answer {
+  margin: 10px 0 0;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+/* Quantum Sphere Logo — shared treatment for inline-styled header logo boxes
+   (brand websites use raw style objects for sizing/color; this class overrides
+   shape/material/glow/animation only, without touching layout or spacing). */
+.quantum-sphere-logo {
+  border-radius: 50% !important;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.85), transparent 42%),
+    conic-gradient(from var(--sphere-angle, 0deg), var(--accent, currentColor), #9933ff, #00e0ff, #ff0033, var(--accent, currentColor)) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.22) inset,
+    0 0 14px color-mix(in srgb, var(--accent, currentColor) 55%, transparent),
+    0 0 28px color-mix(in srgb, var(--accent, currentColor) 30%, transparent),
+    0 4px 10px rgba(0, 0, 0, 0.15);
+  animation: quantumSphereRotate 14s linear infinite, quantumSphereBreathe 5s ease-in-out infinite;
+}
+
+/* Package Activation System — AI recommendation badge (subtle vs strong styles). */
+.quantum-recommendation {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin: 12px 0;
+}
+.quantum-recommendation p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--muted-foreground, #9ca3af);
+}
+.quantum-recommendation-icon {
+  color: var(--accent, #00e0ff);
+  font-size: 16px;
+}
+.quantum-recommendation-subtle {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+}
+.quantum-recommendation-strong {
+  border: 1px solid color-mix(in srgb, var(--accent, #00e0ff) 55%, transparent);
+  background: color-mix(in srgb, var(--accent, #00e0ff) 12%, transparent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent, #00e0ff) 25%, transparent);
+}
+.quantum-recommendation-strong strong {
+  color: var(--accent, #00e0ff);
+}
+
+/* Onboarding flow — multi-step form shell. */
+.onboarding-shell {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.onboarding-steps {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.onboarding-step-chip {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--muted-foreground, #9ca3af);
+}
+.onboarding-step-chip.active {
+  border-color: var(--accent, #00e0ff);
+  color: var(--accent, #00e0ff);
+}
+.onboarding-step-chip.done {
+  color: #00ff66;
+  border-color: rgba(0, 255, 102, 0.4);
+}
+.onboarding-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.onboarding-field label {
+  font-size: 12px;
+  color: var(--muted-foreground, #9ca3af);
+}
+.onboarding-field input,
+.onboarding-field select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+}
+.onboarding-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.onboarding-demo-notice {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px dashed rgba(255, 200, 0, 0.4);
+  background: rgba(255, 200, 0, 0.06);
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+.onboarding-summary-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 13px;
+}
+.onboarding-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* QuantumOS scenario lab — confidence meter, personality modes, forecast slider, scenarios. */
+.quantum-confidence-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  margin: 8px 0;
+}
+.quantum-confidence-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand-color, var(--accent, #00e0ff)), #ffffff);
+  box-shadow: 0 0 10px var(--brand-color, var(--accent, #00e0ff));
+  transition: width 0.4s ease;
+}
+.quantum-mode-switch {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+.quantum-mode-switch button {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.quantum-mode-switch button.active {
+  border-color: var(--brand-color, var(--accent, #00e0ff));
+  color: var(--brand-color, var(--accent, #00e0ff));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--brand-color, var(--accent, #00e0ff)) 35%, transparent);
+}
+.quantum-forecast-slider {
+  width: 100%;
+  margin: 10px 0;
+  accent-color: var(--brand-color, var(--accent, #00e0ff));
+}
+.quantum-scenario-card {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.quantum-scenario-card.active {
+  border-color: var(--brand-color, var(--accent, #00e0ff));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--brand-color, var(--accent, #00e0ff)) 30%, transparent);
+}
+.quantum-scenario-result {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 13px;
+}
+.quantum-insight-pack {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.quantum-anomaly-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 13px;
+}
+.quantum-anomaly-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brand-color, var(--accent, #00e0ff));
+  box-shadow: 0 0 8px var(--brand-color, var(--accent, #00e0ff));
+  flex-shrink: 0;
+  animation: quantumAnomalyPulse 2.4s ease-in-out infinite;
+}
+@keyframes quantumAnomalyPulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.3); }
+}
+
+/* SuperDash commercial panel — inactive add-on state (no pulse animation). */
+.quantum-anomaly-dot.inactive {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+  animation: none;
+}
+
+/* Tester Login — front-end-only demo access card. */
+.tester-login-card {
+  max-width: 560px;
+  padding: 28px 32px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--accent, #00e0ff) 18%, transparent);
+  animation: sphereBreath 6s ease-in-out infinite;
 }

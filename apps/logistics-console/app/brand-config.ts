@@ -7,7 +7,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 export const brandConfig: BrandConsoleConfig = {
   "name": "FoundLogistics",
   "logo": "▲",
-  "accent": "#FF6F00",
+  "accent": "#DC143C",
   "typography": {
     "heading": "Inter",
     "body": "Inter"
@@ -15,462 +15,500 @@ export const brandConfig: BrandConsoleConfig = {
   "colors": {
     "primary": "#FF6F00",
     "secondary": "#4A2400",
-    "accent": "#FF6F00",
+    "accent": "#DC143C",
     "background": "#0B0C10",
     "panel": "#141820",
     "text": "#FFFFFF",
     "muted": "#A8B3C3"
   },
   "dashboard": {
-    "title": "Wallets, charts, transactions",
-    "subtitle": "Monitor portfolios, exchange connections, signals, transaction volume, automation, and risk exposure.",
-    "metrics": [
-      {
-        "label": "Wallet Balance",
-        "value": "£284k",
-        "trend": "+4.8%",
-        "icon": "£",
-        "tone": "good"
-      },
-      {
-        "label": "Trigger Activity",
-        "value": "26",
-        "trend": "Open",
-        "icon": "▦",
-        "tone": "watch"
-      },
-      {
-        "label": "Automation Status",
-        "value": "92%",
-        "trend": "Live",
-        "icon": "◍",
-        "tone": "good"
-      }
-    ],
-    "tableTitle": "Operational snapshot",
-    "tableHeaders": [
-      "Asset",
-      "Signal",
-      "Exposure",
-      "Action"
-    ],
-    "tableRows": [
-      [
-        "BTC",
-        "Breakout",
-        "34%",
-        "Watch"
+      "title": "Fleet, routes, deliveries",
+      "subtitle": "Track daily logistics operations across fleet, routes, warehousing, dispatch, and deliveries.",
+      "metrics": [
+          {
+              "label": "On-time Delivery",
+              "value": "94%",
+              "trend": "+2%",
+              "icon": "✓",
+              "tone": "good"
+          },
+          {
+              "label": "Fleet Utilisation",
+              "value": "81%",
+              "trend": "+4%",
+              "icon": "◈",
+              "tone": "good"
+          },
+          {
+              "label": "Active Deliveries",
+              "value": "63",
+              "trend": "In transit",
+              "icon": "▶",
+              "tone": "watch"
+          }
       ],
-      [
-        "ETH",
-        "Accumulation",
-        "22%",
-        "Review"
+      "tableTitle": "Operational snapshot",
+      "tableHeaders": [
+          "Route",
+          "Status",
+          "ETA",
+          "Action"
       ],
-      [
-        "SOL",
-        "Volatile",
-        "8%",
-        "Limit"
+      "tableRows": [
+          [
+              "North Loop",
+              "On schedule",
+              "14:20",
+              "Monitor"
+          ],
+          [
+              "City Express",
+              "Delayed",
+              "16:05",
+              "Review"
+          ],
+          [
+              "Coastal Run",
+              "On schedule",
+              "18:40",
+              "Monitor"
+          ]
+      ],
+      "workflows": [
+          "Review Route workflow active",
+          "Dispatch Vehicle workflow active",
+          "Log Maintenance workflow active",
+          "Track Delivery workflow active"
       ]
-    ],
-    "workflows": [
-      "Add Wallet workflow active",
-      "Create Signal workflow active",
-      "Open Chart workflow active",
-      "Run Risk Check workflow active"
-    ]
-  },
+    },
   "modules": [
     {
-      "id": "wallets",
-      "label": "Wallets",
-      "description": "FoundCrypto wallets workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Wallets queue",
-        "Update Wallets records",
-        "Publish Wallets report"
-      ]
-    },
-    {
-      "id": "charts",
-      "label": "Charts",
-      "description": "FoundCrypto charts workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Charts queue",
-        "Update Charts records",
-        "Publish Charts report"
-      ]
-    },
-    {
-      "id": "transactions",
-      "label": "Transactions",
-      "description": "FoundCrypto transactions workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Transactions queue",
-        "Update Transactions records",
-        "Publish Transactions report"
-      ]
-    },
-    {
-      "id": "analytics",
-      "label": "Analytics",
-      "description": "FoundCrypto analytics workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Analytics queue",
-        "Update Analytics records",
-        "Publish Analytics report"
-      ]
-    },
-    {
-      "id": "portfolio",
-      "label": "Portfolio",
-      "description": "FoundCrypto portfolio workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Portfolio queue",
-        "Update Portfolio records",
-        "Publish Portfolio report"
-      ]
-    },
-    {
-      "id": "exchange",
-      "label": "Exchange",
-      "description": "FoundCrypto exchange workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Exchange queue",
-        "Update Exchange records",
-        "Publish Exchange report"
-      ]
-    },
-    {
-      "id": "signals",
-      "label": "Signals",
-      "description": "FoundCrypto signals workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Signals queue",
-        "Update Signals records",
-        "Publish Signals report"
-      ]
-    },
-    {
-      "id": "risk",
-      "label": "Risk",
-      "description": "FoundCrypto risk workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Risk queue",
-        "Update Risk records",
-        "Publish Risk report"
-      ]
-    },
-    {
-      "id": "automation",
-      "label": "Automation",
-      "description": "FoundCrypto automation workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Automation queue",
-        "Update Automation records",
-        "Publish Automation report"
-      ]
-    }
-  ,
-    {
-          "id": "marketing-suite",
-          "label": "Marketing Suite",
-          "description": "Plan, launch, and track marketing campaigns across every channel.",
+          "id": "fleet",
+          "label": "Fleet",
+          "description": "FoundLogistics fleet workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
-                      "label": "Campaigns Live",
-                      "value": "12",
-                      "trend": "+3 this week",
-                      "icon": "\u25b6",
+                      "label": "Vehicles Active",
+                      "value": "42",
+                      "trend": "+2",
+                      "icon": "▶",
                       "tone": "good"
                 },
                 {
-                      "label": "Reach",
-                      "value": "48.2k",
-                      "trend": "+6%",
-                      "icon": "\u25c8",
+                      "label": "Utilisation",
+                      "value": "81%",
+                      "trend": "+4%",
+                      "icon": "◈",
                       "tone": "good"
                 },
                 {
-                      "label": "Conversion",
-                      "value": "3.8%",
-                      "trend": "Stable",
-                      "icon": "%",
+                      "label": "In Maintenance",
+                      "value": "3",
+                      "trend": "This week",
+                      "icon": "!",
                       "tone": "watch"
                 }
           ],
           "actions": [
-                "Launch Campaign",
-                "Duplicate Template",
-                "Schedule Send",
-                "Review Analytics"
+                "Assign Vehicle",
+                "Schedule Maintenance",
+                "Flag Issue",
+                "Export Fleet Report"
           ],
           "workflow": [
-                "Draft Campaign",
-                "Approve Campaign",
-                "Publish Campaign"
+                "Review Fleet queue",
+                "Update Fleet records",
+                "Publish Fleet report"
+          ]
+    },
+    {
+          "id": "routes",
+          "label": "Routes",
+          "description": "FoundLogistics routes workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Active Routes",
+                      "value": "18",
+                      "trend": "Today",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "On Schedule",
+                      "value": "92%",
+                      "trend": "+1%",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Delayed",
+                      "value": "2",
+                      "trend": "Needs review",
+                      "icon": "!",
+                      "tone": "risk"
+                }
+          ],
+          "actions": [
+                "Plan Route",
+                "Reroute Vehicle",
+                "Flag Delay",
+                "Export Route Plan"
+          ],
+          "workflow": [
+                "Review Routes queue",
+                "Update Routes records",
+                "Publish Routes report"
+          ]
+    },
+    {
+          "id": "warehousing",
+          "label": "Warehousing",
+          "description": "FoundLogistics warehousing workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Capacity Used",
+                      "value": "76%",
+                      "trend": "Stable",
+                      "icon": "◈",
+                      "tone": "good"
+                },
+                {
+                      "label": "Inbound Today",
+                      "value": "24",
+                      "trend": "Shipments",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Outbound Today",
+                      "value": "31",
+                      "trend": "Shipments",
+                      "icon": "▶",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Receive Shipment",
+                "Pick Order",
+                "Flag Discrepancy",
+                "Export Warehouse Report"
+          ],
+          "workflow": [
+                "Review Warehousing queue",
+                "Update Warehousing records",
+                "Publish Warehousing report"
+          ]
+    },
+    {
+          "id": "deliveries",
+          "label": "Deliveries",
+          "description": "FoundLogistics deliveries workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Delivered Today",
+                      "value": "108",
+                      "trend": "+12",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "In Transit",
+                      "value": "63",
+                      "trend": "Live",
+                      "icon": "▶",
+                      "tone": "watch"
+                },
+                {
+                      "label": "Failed",
+                      "value": "2",
+                      "trend": "Needs follow-up",
+                      "icon": "!",
+                      "tone": "risk"
+                }
+          ],
+          "actions": [
+                "Confirm Delivery",
+                "Reschedule Delivery",
+                "Log Exception",
+                "Export Delivery Log"
+          ],
+          "workflow": [
+                "Review Deliveries queue",
+                "Update Deliveries records",
+                "Publish Deliveries report"
+          ]
+    },
+    {
+          "id": "dispatch",
+          "label": "Dispatch",
+          "description": "FoundLogistics dispatch workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Dispatched Today",
+                      "value": "76",
+                      "trend": "+9",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Avg Dispatch Time",
+                      "value": "8 min",
+                      "trend": "-1m",
+                      "icon": "◈",
+                      "tone": "good"
+                },
+                {
+                      "label": "Queued",
+                      "value": "5",
+                      "trend": "Awaiting driver",
+                      "icon": "!",
+                      "tone": "watch"
+                }
+          ],
+          "actions": [
+                "Dispatch Vehicle",
+                "Assign Driver",
+                "Flag Delay",
+                "Export Dispatch Log"
+          ],
+          "workflow": [
+                "Review Dispatch queue",
+                "Update Dispatch records",
+                "Publish Dispatch report"
+          ]
+    },
+    {
+          "id": "tracking",
+          "label": "Tracking",
+          "description": "FoundLogistics tracking workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Tracked Shipments",
+                      "value": "63",
+                      "trend": "Live",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "GPS Uptime",
+                      "value": "99.4%",
+                      "trend": "+0.1%",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Signal Gaps",
+                      "value": "1",
+                      "trend": "This week",
+                      "icon": "!",
+                      "tone": "watch"
+                }
+          ],
+          "actions": [
+                "View Live Map",
+                "Flag Signal Loss",
+                "Share Tracking Link",
+                "Export Tracking Report"
+          ],
+          "workflow": [
+                "Review Tracking queue",
+                "Update Tracking records",
+                "Publish Tracking report"
+          ]
+    },
+    {
+          "id": "maintenance",
+          "label": "Maintenance",
+          "description": "FoundLogistics maintenance workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Scheduled",
+                      "value": "6",
+                      "trend": "This week",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Overdue",
+                      "value": "1",
+                      "trend": "Needs action",
+                      "icon": "!",
+                      "tone": "risk"
+                },
+                {
+                      "label": "Fleet Health",
+                      "value": "96%",
+                      "trend": "+1%",
+                      "icon": "✓",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Schedule Service",
+                "Log Repair",
+                "Flag Overdue",
+                "Export Maintenance Log"
+          ],
+          "workflow": [
+                "Review Maintenance queue",
+                "Update Maintenance records",
+                "Publish Maintenance report"
+          ]
+    },
+    {
+          "id": "fuel",
+          "label": "Fuel",
+          "description": "FoundLogistics fuel workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Fuel Spend",
+                      "value": "£8.2k",
+                      "trend": "This week",
+                      "icon": "£",
+                      "tone": "watch"
+                },
+                {
+                      "label": "Efficiency",
+                      "value": "7.8 mpg",
+                      "trend": "+0.2",
+                      "icon": "◈",
+                      "tone": "good"
+                },
+                {
+                      "label": "Anomalies",
+                      "value": "1",
+                      "trend": "Needs review",
+                      "icon": "!",
+                      "tone": "risk"
+                }
+          ],
+          "actions": [
+                "Log Fuel Purchase",
+                "Flag Anomaly",
+                "Review Efficiency",
+                "Export Fuel Report"
+          ],
+          "workflow": [
+                "Review Fuel queue",
+                "Update Fuel records",
+                "Publish Fuel report"
+          ]
+    },
+    {
+          "id": "compliance",
+          "label": "Compliance",
+          "description": "FoundLogistics compliance workspace for daily operations, reporting, approvals, and team execution.",
+          "metrics": [
+                {
+                      "label": "Audit Readiness",
+                      "value": "95%",
+                      "trend": "+1%",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Open Actions",
+                      "value": "3",
+                      "trend": "Due this month",
+                      "icon": "!",
+                      "tone": "watch"
+                },
+                {
+                      "label": "Inspections Passed",
+                      "value": "19",
+                      "trend": "This quarter",
+                      "icon": "◈",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Review Policy",
+                "Log Inspection",
+                "Assign Action",
+                "Export Compliance Report"
+          ],
+          "workflow": [
+                "Review Compliance queue",
+                "Update Compliance records",
+                "Publish Compliance report"
+          ]
+    },
+      {
+          "id": "route-planner",
+          "label": "Route Planner",
+          "description": "Plan and optimise delivery routes across the whole fleet.",
+          "metrics": [
+                {
+                      "label": "Routes Planned",
+                      "value": "18",
+                      "trend": "Today",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Optimised Today",
+                      "value": "14",
+                      "trend": "+3",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Avg Distance Saved",
+                      "value": "8.2%",
+                      "trend": "+1.1%",
+                      "icon": "◈",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Plan Route",
+                "Optimise Route",
+                "Assign Driver",
+                "Export Route Plan"
+          ],
+          "workflow": [
+                "Review Route Planner queue",
+                "Update Route Planner records",
+                "Publish Route Planner report"
+          ]
+    },
+    {
+          "id": "fleet-status",
+          "label": "Fleet Status",
+          "description": "See live status for every vehicle in the fleet at a glance.",
+          "metrics": [
+                {
+                      "label": "Vehicles Online",
+                      "value": "39",
+                      "trend": "Live",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "In Maintenance",
+                      "value": "3",
+                      "trend": "This week",
+                      "icon": "!",
+                      "tone": "watch"
+                },
+                {
+                      "label": "Idle",
+                      "value": "2",
+                      "trend": "Needs assignment",
+                      "icon": "!",
+                      "tone": "risk"
+                }
+          ],
+          "actions": [
+                "View Fleet Map",
+                "Flag Vehicle",
+                "Schedule Service",
+                "Export Fleet Status"
+          ],
+          "workflow": [
+                "Review Fleet Status queue",
+                "Update Fleet Status records",
+                "Publish Fleet Status report"
           ]
     },
     {
@@ -631,44 +669,44 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "crm": {
-    "title": "FoundCrypto CRM",
-    "summary": "FoundCrypto CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
-    "records": [
-      {
-        "name": "BTC",
-        "type": "Wallets",
-        "stage": "Breakout",
-        "value": "34%",
-        "nextAction": "Add Wallet"
-      },
-      {
-        "name": "ETH",
-        "type": "Wallets",
-        "stage": "Accumulation",
-        "value": "22%",
-        "nextAction": "Create Signal"
-      },
-      {
-        "name": "SOL",
-        "type": "Wallets",
-        "stage": "Volatile",
-        "value": "8%",
-        "nextAction": "Open Chart"
-      }
-    ],
-    "pipeline": [
-      "New",
-      "Qualified",
-      "Active",
-      "Won"
-    ],
-    "tasks": [
-      "Add Wallet",
-      "Create Signal",
-      "Open Chart",
-      "Run Risk Check"
-    ]
-  },
+      "title": "FoundLogistics CRM",
+      "summary": "FoundLogistics CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
+      "records": [
+          {
+              "name": "Harborview Distribution",
+              "type": "Client",
+              "stage": "Active",
+              "value": "18 routes/wk",
+              "nextAction": "Plan Route"
+          },
+          {
+              "name": "Coastal Fuel Partners",
+              "type": "Vendor",
+              "stage": "Contract review",
+              "value": "£8.2k/wk",
+              "nextAction": "Log Fuel Purchase"
+          },
+          {
+              "name": "Midlands Freight Co",
+              "type": "Client",
+              "stage": "Delayed shipment",
+              "value": "£3.4k",
+              "nextAction": "Confirm Delivery"
+          }
+      ],
+      "pipeline": [
+          "New",
+          "Qualified",
+          "Active",
+          "Won"
+      ],
+      "tasks": [
+          "Plan Route",
+          "Dispatch Vehicle",
+          "Confirm Delivery",
+          "Schedule Maintenance"
+      ]
+    },
   "navigation": [
     {
       "label": "Dashboard",
@@ -688,39 +726,75 @@ export const brandConfig: BrandConsoleConfig = {
       "icon": "◎",
       "section": "Core"
     },
-    {
-      "label": "Wallets",
-      "href": "/modules/wallets",
+        {
+      "label": "Fleet",
+      "href": "/modules/fleet",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Charts",
-      "href": "/modules/charts",
+      "label": "Routes",
+      "href": "/modules/routes",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Transactions",
-      "href": "/modules/transactions",
+      "label": "Warehousing",
+      "href": "/modules/warehousing",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Analytics",
-      "href": "/modules/analytics",
+      "label": "Deliveries",
+      "href": "/modules/deliveries",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Portfolio",
-      "href": "/modules/portfolio",
+      "label": "Dispatch",
+      "href": "/modules/dispatch",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Exchange",
-      "href": "/modules/exchange",
+      "label": "Tracking",
+      "href": "/modules/tracking",
+      "icon": "▣",
+      "section": "Modules"
+    },
+{
+      "label": "Accounting",
+      "href": "/modules/accounting",
+      "icon": "banknotes",
+      "section": "Modules"
+    },
+    {
+      "label": "Messaging",
+      "href": "/modules/messaging",
+      "icon": "chat-bubble-left-right",
+      "section": "Modules"
+    },
+    {
+      "label": "Customer Service",
+      "href": "/modules/customer-service",
+      "icon": "lifebuoy",
+      "section": "Modules"
+    },
+    {
+      "label": "FoundAI Demo",
+      "href": "/modules/foundai-demo",
+      "icon": "sparkles",
+      "section": "Modules"
+    },
+    {
+      "label": "Route Planner",
+      "href": "/modules/route-planner",
+      "icon": "▣",
+      "section": "Modules"
+    },
+    {
+      "label": "Fleet Status",
+      "href": "/modules/fleet-status",
       "icon": "▣",
       "section": "Modules"
     },
@@ -732,17 +806,17 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "quickActions": [
-    "Add Wallet",
-    "Create Signal",
-    "Open Chart",
-    "Run Risk Check"
+    "Dispatch Vehicle",
+    "Plan Route",
+    "Confirm Delivery",
+    "Log Maintenance"
   ],
   "settings": [
-    "Wallet Security",
-    "Exchange Connections",
-    "Risk Limits",
+    "Fleet Access Controls",
+    "Route Rules",
+    "Maintenance Schedule",
     "Alert Preferences",
-    "Portfolio Visibility",
+    "Fuel Budget",
     "CRM Configuration"
   ]
 }

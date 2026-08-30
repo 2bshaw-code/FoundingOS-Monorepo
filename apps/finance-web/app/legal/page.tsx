@@ -17,7 +17,8 @@ const legalSections = [
 ] as const
 
 const consoleLinks = [
-  { name: 'Finance Intelligence & Reconciliation Console', href: 'http://localhost:3005' },
+  { name: 'Finance Console', href: brands.finance.consoleUrl },
+  { name: 'Finance Starter Console', href: brands.finance.starterConsoleUrl },
 ] as const
 
 const cryptoHomeUrl = brands.finance.webUrl

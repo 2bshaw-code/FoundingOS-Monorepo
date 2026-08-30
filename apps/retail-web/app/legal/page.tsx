@@ -18,8 +18,8 @@ const legalSections = [
 ] as const
 
 const consoleLinks = [
-  { name: 'Retail Manager Console', href: 'http://localhost:3001' },
-  { name: 'Retail Staff Console', href: 'http://localhost:3001/staff' },
+  { name: 'Retail Manager Console', href: brands.retail.consoleUrl },
+  { name: 'Retail Starter Console', href: brands.retail.starterConsoleUrl },
 ] as const
 
 const retailHomeUrl = brands.retail.webUrl

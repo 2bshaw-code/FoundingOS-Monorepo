@@ -7,7 +7,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 export const brandConfig: BrandConsoleConfig = {
   "name": "FoundingOS",
   "logo": "FO",
-  "accent": "#4A90E2",
+  "accent": "#00E0FF",
   "typography": {
     "heading": "Inter",
     "body": "Inter"
@@ -15,7 +15,7 @@ export const brandConfig: BrandConsoleConfig = {
   "colors": {
     "primary": "#4A90E2",
     "secondary": "#0F2742",
-    "accent": "#4A90E2",
+    "accent": "#00E0FF",
     "background": "#0B0C10",
     "panel": "#141820",
     "text": "#FFFFFF",
@@ -652,7 +652,37 @@ export const brandConfig: BrandConsoleConfig = {
       "icon": "▣",
       "section": "Modules"
     },
+        {
+      "label": "Marketing",
+      "href": "/modules/marketing",
+      "icon": "megaphone",
+      "section": "Modules"
+    },
     {
+      "label": "Accounting",
+      "href": "/modules/accounting",
+      "icon": "banknotes",
+      "section": "Modules"
+    },
+    {
+      "label": "Messaging",
+      "href": "/modules/messaging",
+      "icon": "chat-bubble-left-right",
+      "section": "Modules"
+    },
+    {
+      "label": "Customer Service",
+      "href": "/modules/customer-service",
+      "icon": "lifebuoy",
+      "section": "Modules"
+    },
+    {
+      "label": "FoundAI Demo",
+      "href": "/modules/foundai-demo",
+      "icon": "sparkles",
+      "section": "Modules"
+    },
+{
       "label": "Settings",
       "href": "/settings",
       "icon": "⚙",

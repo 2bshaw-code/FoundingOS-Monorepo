@@ -4,13 +4,15 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "next dev -p 6003",
+    "dev": "next dev -p 1000",
     "build": "next build",
-    "start": "next start -p 3000",
+    "start": "next start -p 1000",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@foundingos/billing": "*",
+    "@foundingos/config": "*",
     "@foundingos/ui": "*",
     "next": "^14.2.23",
     "react": "18.3.1",

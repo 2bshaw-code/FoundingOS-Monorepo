@@ -7,7 +7,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 export const brandConfig: BrandConsoleConfig = {
   "name": "FoundRetail",
   "logo": "◉",
-  "accent": "#00C853",
+  "accent": "#00FF66",
   "typography": {
     "heading": "Inter",
     "body": "Inter"
@@ -15,7 +15,7 @@ export const brandConfig: BrandConsoleConfig = {
   "colors": {
     "primary": "#00C853",
     "secondary": "#0B1F18",
-    "accent": "#00C853",
+    "accent": "#00FF66",
     "background": "#081120",
     "panel": "#101B2C",
     "text": "#FFFFFF",
@@ -395,6 +395,84 @@ export const brandConfig: BrandConsoleConfig = {
       ]
     }
   ,
+        {
+          "id": "promotions-manager",
+          "label": "Promotions Manager",
+          "description": "Create, run, and measure promotions across every channel.",
+          "metrics": [
+                {
+                      "label": "Active Promotions",
+                      "value": "6",
+                      "trend": "Live",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Redemptions Today",
+                      "value": "84",
+                      "trend": "+12",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Revenue Impact",
+                      "value": "£4.8k",
+                      "trend": "This week",
+                      "icon": "£",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Create Promotion",
+                "Pause Promotion",
+                "Extend Promotion",
+                "Export Promotion Report"
+          ],
+          "workflow": [
+                "Review Promotions Manager queue",
+                "Update Promotions Manager records",
+                "Publish Promotions Manager report"
+          ]
+    },
+    {
+          "id": "inventory-alerts",
+          "label": "Inventory Alerts",
+          "description": "Get notified the moment stock runs low or out.",
+          "metrics": [
+                {
+                      "label": "Low Stock Alerts",
+                      "value": "9",
+                      "trend": "Needs action",
+                      "icon": "!",
+                      "tone": "watch"
+                },
+                {
+                      "label": "Out of Stock",
+                      "value": "2",
+                      "trend": "Needs restock",
+                      "icon": "!",
+                      "tone": "risk"
+                },
+                {
+                      "label": "Restock Scheduled",
+                      "value": "5",
+                      "trend": "This week",
+                      "icon": "✓",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Create Alert Rule",
+                "Acknowledge Alert",
+                "Schedule Restock",
+                "Export Alert Log"
+          ],
+          "workflow": [
+                "Review Inventory Alerts queue",
+                "Update Inventory Alerts records",
+                "Publish Inventory Alerts report"
+          ]
+    },
     {
           "id": "marketing-suite",
           "label": "Marketing Suite",
@@ -685,7 +763,49 @@ export const brandConfig: BrandConsoleConfig = {
       "icon": "▣",
       "section": "Modules"
     },
+            {
+      "label": "Promotions Manager",
+      "href": "/modules/promotions-manager",
+      "icon": "▣",
+      "section": "Modules"
+    },
     {
+      "label": "Inventory Alerts",
+      "href": "/modules/inventory-alerts",
+      "icon": "▣",
+      "section": "Modules"
+    },
+    {
+      "label": "Marketing",
+      "href": "/modules/marketing",
+      "icon": "megaphone",
+      "section": "Modules"
+    },
+    {
+      "label": "Accounting",
+      "href": "/modules/accounting",
+      "icon": "banknotes",
+      "section": "Modules"
+    },
+    {
+      "label": "Messaging",
+      "href": "/modules/messaging",
+      "icon": "chat-bubble-left-right",
+      "section": "Modules"
+    },
+    {
+      "label": "Customer Service",
+      "href": "/modules/customer-service",
+      "icon": "lifebuoy",
+      "section": "Modules"
+    },
+    {
+      "label": "FoundAI Demo",
+      "href": "/modules/foundai-demo",
+      "icon": "sparkles",
+      "section": "Modules"
+    },
+{
       "label": "Settings",
       "href": "/settings",
       "icon": "⚙",

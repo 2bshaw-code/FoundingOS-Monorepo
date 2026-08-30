@@ -7,7 +7,7 @@ import './globals.css'
 import './theme.css'
 import type { ReactNode } from 'react'
 import { Sidebar } from '@foundingos/ui/sidebar'
-import { BobAI } from '@foundingos/ui/bob-ai'
+import { FoundAI } from '@foundingos/ui/found-ai'
 import { Topbar } from '@foundingos/ui/topbar'
 import { brandConfig } from './brand-config'
 
@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <Topbar config={brandConfig} />
           <main className="console-shell-content">{children}</main>
         </div>
-        <BobAI brand={brandConfig} />
+        <FoundAI brand={brandConfig} />
       <FoundingOSFooter /></body>
     </html>
   )

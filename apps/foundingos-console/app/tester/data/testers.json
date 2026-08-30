@@ -1,1 +1,14 @@
-{}
+{
+  "alpha": {
+    "id": "alpha",
+    "email": "test@example.com",
+    "moduleId": "marketing-suite",
+    "moduleLabel": "Marketing Suite",
+    "surveyId": "survey-a",
+    "status": "registered",
+    "currentAnswers": [],
+    "runs": [],
+    "createdAt": "2026-08-30T00:26:35.528Z",
+    "updatedAt": "2026-08-30T00:26:35.528Z"
+  }
+}

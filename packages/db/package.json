@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./survey-service": "./src/survey-service.ts"
   },
   "scripts": {
     "db:generate": "prisma generate",
@@ -12,6 +13,7 @@
     "build": "tsc --noEmit"
   },
   "dependencies": {
+    "@foundingos/config": "*",
     "@prisma/client": "^6.2.0"
   },
   "devDependencies": {

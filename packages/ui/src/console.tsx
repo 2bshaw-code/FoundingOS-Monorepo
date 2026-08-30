@@ -7,6 +7,12 @@
 import Link from 'next/link'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
+import { DemoMessageBoard } from './demo-message-board'
+import { GetStartedChecklist } from './get-started-checklist'
+import { DataMigrationHub } from './data-migration-hub'
+import { brands } from '@foundingos/config'
+import { recommendQuantumOS, type BusinessProfile } from '@foundingos/config/quantum-recommendation'
+import { RecommendationBadge } from './onboarding/RecommendationBadge'
 
 export type BrandMetric = { label: string; value: string; trend?: string; icon?: string; tone?: 'good' | 'watch' | 'risk' }
 export type BrandModule = { id: string; label: string; description: string; metrics: BrandMetric[]; actions: string[]; workflow?: string[] }
@@ -222,7 +228,7 @@ function consoleTitle(config: BrandConsoleConfig) {
     case 'FoundMeat':
       return 'Meat Operations Console'
     case 'FoundThat':
-      return 'IT Command Console'
+      return 'FoundThat Console'
     case 'FoundTalent':
       return 'Talent Command Console'
     case 'FoundCrypto':
@@ -490,7 +496,7 @@ function bobLabel(config: BrandConsoleConfig) {
     case 'FoundMeat':
       return 'Meat Operations Console'
     case 'FoundThat':
-      return 'IT Command Console'
+      return 'FoundThat Console'
     case 'FoundTalent':
       return 'Talent Command Console'
     case 'FoundCrypto':
@@ -642,12 +648,13 @@ export function ModuleHeader({ config, title, description }: { config: BrandCons
   return <header className="module-header header-premium" style={consoleStyle(config)}><p>{bobLabel(config)}</p><h1>{title}</h1><span>{description}</span></header>
 }
 
-export function BrandDashboard({ config }: { config: BrandConsoleConfig }) {
+export function BrandDashboard({ config, variant = 'growth' }: { config: BrandConsoleConfig; variant?: 'growth' | 'starter' }) {
   const crm = config.crm ?? defaultCRM(config)
   const moduleCards = consoleModules(config)
   const accentStyle = consoleStyle(config)
   return (
-    <section className="console-page" style={accentStyle}>
+    <section className="console-page quantum-ambient-grid" style={accentStyle}>
+      <div className="quantum-particle-drift"><span className="quantum-particle" /><span className="quantum-particle" /><span className="quantum-particle" /></div>
       <ModuleHeader config={config} title={config.dashboard.title} description={config.dashboard.subtitle} />
 
       <div className="kpi-grid">
@@ -656,7 +663,8 @@ export function BrandDashboard({ config }: { config: BrandConsoleConfig }) {
 
       <div className="module-card-grid">
         {moduleCards.map((module, index) => (
-          <Link key={module.href} className="module-card card-premium" href={module.href}>
+          <Link key={module.href} className="module-card card-premium quantum-card" href={module.href}>
+            <span className="quantum-corner-marker">{config.logo}</span>
             <div className="module-card-top">
               <span>{String(index + 1).padStart(2, '0')}</span>
               <strong>{module.label}</strong>
@@ -669,6 +677,11 @@ export function BrandDashboard({ config }: { config: BrandConsoleConfig }) {
           </Link>
         ))}
       </div>
+
+      {variant === 'growth' && <DemoMessageBoard config={config} variant="full" />}
+      {variant === 'growth' && <DataMigrationHub config={config} />}
+      {variant === 'starter' && <GetStartedChecklist config={config} />}
+      {variant === 'starter' && <DemoMessageBoard config={config} variant="limited" />}
 
       <div className="console-grid">
         <article className="panel panel-premium wide">
@@ -1284,7 +1297,18 @@ export function CRMBoard({ config }: { config: BrandConsoleConfig }) {
         </article>
         <article className="module-card card-premium module-card-static">
           <strong>Brand extensions</strong>
-          <p>{config.name === 'FoundRetail' ? 'Customers, suppliers, and stores.' : config.name === 'FoundMeat' ? 'Farms, processors, logistics partners, and products.' : config.name === 'FoundThat' ? 'Clients, systems, and integrations.' : config.name === 'FoundTalent' ? 'Candidates, employers, jobs, and intelligence.' : 'Wallets, exchanges, triggers, and portfolio intelligence.'}</p>
+          <p>{
+            {
+              FoundRetail: 'Customers, suppliers, and stores.',
+              FoundMeat: 'Farms, processors, logistics partners, and products.',
+              FoundThat: 'Clients, systems, and integrations.',
+              FoundTalent: 'Candidates, employers, jobs, and intelligence.',
+              FoundCrypto: 'Wallets, exchanges, triggers, and portfolio intelligence.',
+              FoundFinance: 'Accounts, invoices, reconciliations, and cashflow.',
+              FoundHealth: 'Patients, appointments, records, and compliance.',
+              FoundLogistics: 'Fleets, routes, warehouses, and deliveries.',
+            }[config.name] ?? 'Contacts, companies, deals, tasks, notes, and activity.'
+          }</p>
         </article>
       </div>
 
@@ -1321,10 +1345,25 @@ export function packageCatalogForBrand(name: string) {
   return packageCatalog[name] ?? packageCatalog.FoundingOS
 }
 
+// Baseline profile used to compute a recommendation on the package page, where no onboarding
+// quiz has been answered yet. The onboarding form recomputes this from the customer's real answers.
+const BASELINE_PROFILE: BusinessProfile = {
+  businessSize: 'small',
+  industry: 'retail',
+  dataVolume: 'medium',
+  intelligenceNeeds: 'moderate',
+  riskLevel: 'medium',
+  growthTrajectory: 'steady',
+  consoleCount: 1,
+  expectedMonthlyUsage: 200,
+}
+
 export function BrandPackagePage({ config, packageSlug }: { config: BrandConsoleConfig; packageSlug?: string }) {
   const packages = packageCatalogForBrand(config.name)
   const activePackage = packages.find((entry) => entry.slug === packageSlug) ?? packages[0]
   const [formState, setFormState] = useState({ name: '', email: '', company: '', teamSize: '', notes: '' })
+  const isRecommendableAddOn = activePackage?.slug === 'quantumos' || activePackage?.slug === 'intelligenceos'
+  const recommendation = useMemo(() => recommendQuantumOS(BASELINE_PROFILE), [])
 
   if (!activePackage) return null
 
@@ -1376,7 +1415,7 @@ export function BrandPackagePage({ config, packageSlug }: { config: BrandConsole
             </label>
           </div>
           <div className="action-list">
-            <button type="button">Continue onboarding</button>
+            <a className="btn btn-primary quantum-btn" href={`${brands.foundingos.webUrl}/onboarding`}>Continue onboarding</a>
             <Link className="btn btn-secondary" href="/console">Back to console</Link>
           </div>
         </article>
@@ -1386,6 +1425,7 @@ export function BrandPackagePage({ config, packageSlug }: { config: BrandConsole
           <h2>{activePackage.name}</h2>
           <p>{activePackage.description}</p>
           <strong className="package-price">{activePackage.price}</strong>
+          {isRecommendableAddOn && <RecommendationBadge recommendation={recommendation} />}
           <div className="package-block">
             <h3>Features</h3>
             <ul>{activePackage.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>

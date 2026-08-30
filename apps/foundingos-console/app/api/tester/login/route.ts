@@ -3,8 +3,8 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { NextResponse } from 'next/server'
-import { SESSION_COOKIE, signToken } from '../../../tester/session'
-import { findCredentialByPassword } from '../../../tester/tester-data'
+import { SESSION_COOKIE, ADMIN_COOKIE, signToken } from '../../../tester/session'
+import { findCredentialByPassword, isSuperFounderAdmin } from '../../../tester/tester-data'
 import { getTester, upsertTester } from '../../../tester/store.server'
 
 export async function POST(request: Request) {
@@ -14,6 +14,16 @@ export async function POST(request: Request) {
 
   if (!email || !password) {
     return NextResponse.json({ error: 'Email and access code are required.' }, { status: 400 })
+  }
+
+  // Super Founder Admin: bypasses the tester credential pool, gets an admin-scoped
+  // session (full access to /tester/admin survey results + tester data), and lands
+  // directly on SuperDashboard instead of the tester survey flow.
+  if (isSuperFounderAdmin(email, password)) {
+    const token = await signToken('admin', 'super-founder-admin')
+    const response = NextResponse.json({ ok: true, redirect: '/superdashboard' })
+    response.cookies.set(ADMIN_COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 8 })
+    return response
   }
 
   const credential = findCredentialByPassword(password)

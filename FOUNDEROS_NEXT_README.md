@@ -6,8 +6,8 @@ This scaffold adds a production-oriented Turborepo layout beside the existing im
 
 - `apps/foundingos-web` - public FoundingOS launcher.
 - `apps/foundingos-console` - private FoundingOS console.
-- `apps/retail-web`, `apps/meat-web`, `apps/it-web`, `apps/talent-web`, `apps/crypto-web` - public brand websites.
-- `apps/retail-console`, `apps/meat-console`, `apps/it-console`, `apps/talent-console`, `apps/crypto-console` - private brand consoles.
+- `apps/retail-web`, `apps/meat-web`, `apps/talent-web`, `apps/crypto-web` - public brand websites.
+- `apps/retail-console`, `apps/meat-console`, `apps/talent-console`, `apps/crypto-console` - private brand consoles.
 - `packages/ui` - shared design system, marketing pages, console shell, and route screens.
 - `packages/auth` - shared NextAuth configuration with Credentials and Google providers.
 - `packages/db` - Prisma schema and singleton client.

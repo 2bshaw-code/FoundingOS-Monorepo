@@ -5,7 +5,10 @@
 // Single-brand micro-dashboard shared by every brand console. Renders only the
 // data it's given (its own brand's personality layer + AI output) — never
 // cross-brand data, so this never touches FounderOS SuperDashboard isolation.
+import { QuantumScenarioPanel } from './quantum-scenario-panel'
+
 export type BrandMicroDashboardProps = {
+  brandSlug: string
   brandName: string
   color: string
   pulse: number
@@ -46,6 +49,7 @@ function MicroSparkline({ points }: { points: number[] }) {
 }
 
 export function BrandMicroDashboard({
+  brandSlug,
   brandName,
   color,
   pulse,
@@ -153,6 +157,9 @@ export function BrandMicroDashboard({
           )}
         </div>
       )}
+
+      <h2 style={{ marginTop: 24 }}>QuantumOS scenario lab</h2>
+      <QuantumScenarioPanel brandSlug={brandSlug} pulse={pulse} />
     </section>
   )
 }

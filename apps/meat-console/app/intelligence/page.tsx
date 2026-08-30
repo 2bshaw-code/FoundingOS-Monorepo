@@ -15,6 +15,7 @@ export default async function IntelligencePage() {
   const quantum = await enrichBrandSignalWithQuantum(buildBrandSignal('meat'))
   return (
     <BrandMicroDashboard
+      brandSlug="meat"
       brandName={layer.name}
       color={layer.color}
       pulse={ai.pulse}

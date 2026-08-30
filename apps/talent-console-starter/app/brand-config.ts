@@ -7,7 +7,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 export const brandConfig: BrandConsoleConfig = {
   "name": "FoundTalent",
   "logo": "⬢",
-  "accent": "#FFB300",
+  "accent": "#FF8800",
   "typography": {
     "heading": "Inter",
     "body": "Inter"
@@ -15,462 +15,462 @@ export const brandConfig: BrandConsoleConfig = {
   "colors": {
     "primary": "#FFB300",
     "secondary": "#4A3300",
-    "accent": "#FFB300",
+    "accent": "#FF8800",
     "background": "#0B0C10",
     "panel": "#141820",
     "text": "#FFFFFF",
     "muted": "#A8B3C3"
   },
   "dashboard": {
-    "title": "Wallets, charts, transactions",
-    "subtitle": "Monitor portfolios, exchange connections, signals, transaction volume, automation, and risk exposure.",
+    "title": "Candidates, jobs, pipelines",
+    "subtitle": "Coordinate candidates, roles, recruiter activity, interviews, offers, and onboarding progress.",
     "metrics": [
       {
-        "label": "Wallet Balance",
-        "value": "£284k",
-        "trend": "+4.8%",
-        "icon": "£",
+        "label": "Applicants",
+        "value": "1,284",
+        "trend": "Active",
+        "icon": "◍",
         "tone": "good"
       },
       {
-        "label": "Trigger Activity",
-        "value": "26",
-        "trend": "Open",
+        "label": "Jobs Active",
+        "value": "38",
+        "trend": "Hiring now",
         "icon": "▦",
-        "tone": "watch"
+        "tone": "good"
       },
       {
-        "label": "Automation Status",
-        "value": "92%",
-        "trend": "Live",
-        "icon": "◍",
+        "label": "Recruiter Pipeline",
+        "value": "72%",
+        "trend": "Moving",
+        "icon": "◌",
         "tone": "good"
       }
     ],
     "tableTitle": "Operational snapshot",
     "tableHeaders": [
-      "Asset",
-      "Signal",
-      "Exposure",
-      "Action"
+      "Role",
+      "Pipeline",
+      "Interviews",
+      "Owner"
     ],
     "tableRows": [
       [
-        "BTC",
-        "Breakout",
-        "34%",
-        "Watch"
+        "Store Manager",
+        "42 candidates",
+        "8",
+        "Ava"
       ],
       [
-        "ETH",
-        "Accumulation",
-        "22%",
-        "Review"
+        "Data Analyst",
+        "31 candidates",
+        "5",
+        "Noah"
       ],
       [
-        "SOL",
-        "Volatile",
-        "8%",
-        "Limit"
+        "Recruiter",
+        "22 candidates",
+        "4",
+        "Mia"
       ]
     ],
     "workflows": [
-      "Add Wallet workflow active",
-      "Create Signal workflow active",
-      "Open Chart workflow active",
-      "Run Risk Check workflow active"
+      "Add Candidate workflow active",
+      "Create Job workflow active",
+      "Schedule Interview workflow active",
+      "Start Onboarding workflow active"
     ]
   },
   "modules": [
     {
-      "id": "wallets",
-      "label": "Wallets",
-      "description": "FoundCrypto wallets workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "ats",
+      "label": "Ats",
+      "description": "FoundTalent ats workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
+          "label": "Candidates",
+          "value": "1,284",
+          "trend": "Active",
           "icon": "◍",
           "tone": "good"
         },
         {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
+          "label": "Open Jobs",
+          "value": "38",
+          "trend": "Hiring now",
           "icon": "▦",
+          "tone": "good"
+        },
+        {
+          "label": "Interviews",
+          "value": "72",
+          "trend": "This week",
+          "icon": "◌",
           "tone": "watch"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Add Candidate",
+        "Create Job",
+        "Schedule Interview",
+        "Start Onboarding"
       ],
       "workflow": [
-        "Review Wallets queue",
-        "Update Wallets records",
-        "Publish Wallets report"
+        "Review Ats queue",
+        "Update Ats records",
+        "Publish Ats report"
       ]
     },
     {
-      "id": "charts",
-      "label": "Charts",
-      "description": "FoundCrypto charts workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "crm",
+      "label": "CRM",
+      "description": "FoundTalent crm workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
+          "label": "Candidates",
+          "value": "1,284",
+          "trend": "Active",
           "icon": "◍",
           "tone": "good"
         },
         {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
+          "label": "Open Jobs",
+          "value": "38",
+          "trend": "Hiring now",
           "icon": "▦",
+          "tone": "good"
+        },
+        {
+          "label": "Interviews",
+          "value": "72",
+          "trend": "This week",
+          "icon": "◌",
           "tone": "watch"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Add Candidate",
+        "Create Job",
+        "Schedule Interview",
+        "Start Onboarding"
       ],
       "workflow": [
-        "Review Charts queue",
-        "Update Charts records",
-        "Publish Charts report"
+        "Review CRM queue",
+        "Update CRM records",
+        "Publish CRM report"
       ]
     },
     {
-      "id": "transactions",
-      "label": "Transactions",
-      "description": "FoundCrypto transactions workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "onboarding",
+      "label": "Onboarding",
+      "description": "FoundTalent onboarding workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
+          "label": "Candidates",
+          "value": "1,284",
+          "trend": "Active",
           "icon": "◍",
           "tone": "good"
         },
         {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
+          "label": "Open Jobs",
+          "value": "38",
+          "trend": "Hiring now",
           "icon": "▦",
+          "tone": "good"
+        },
+        {
+          "label": "Interviews",
+          "value": "72",
+          "trend": "This week",
+          "icon": "◌",
           "tone": "watch"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Add Candidate",
+        "Create Job",
+        "Schedule Interview",
+        "Start Onboarding"
       ],
       "workflow": [
-        "Review Transactions queue",
-        "Update Transactions records",
-        "Publish Transactions report"
+        "Review Onboarding queue",
+        "Update Onboarding records",
+        "Publish Onboarding report"
       ]
     },
     {
-      "id": "analytics",
-      "label": "Analytics",
-      "description": "FoundCrypto analytics workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "candidates",
+      "label": "Candidates",
+      "description": "FoundTalent candidates workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
+          "label": "Candidates",
+          "value": "1,284",
+          "trend": "Active",
           "icon": "◍",
           "tone": "good"
         },
         {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
+          "label": "Open Jobs",
+          "value": "38",
+          "trend": "Hiring now",
           "icon": "▦",
+          "tone": "good"
+        },
+        {
+          "label": "Interviews",
+          "value": "72",
+          "trend": "This week",
+          "icon": "◌",
           "tone": "watch"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Add Candidate",
+        "Create Job",
+        "Schedule Interview",
+        "Start Onboarding"
       ],
       "workflow": [
-        "Review Analytics queue",
-        "Update Analytics records",
-        "Publish Analytics report"
+        "Review Candidates queue",
+        "Update Candidates records",
+        "Publish Candidates report"
       ]
     },
     {
-      "id": "portfolio",
-      "label": "Portfolio",
-      "description": "FoundCrypto portfolio workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "jobs",
+      "label": "Jobs",
+      "description": "FoundTalent jobs workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
+          "label": "Candidates",
+          "value": "1,284",
+          "trend": "Active",
           "icon": "◍",
           "tone": "good"
         },
         {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
+          "label": "Open Jobs",
+          "value": "38",
+          "trend": "Hiring now",
           "icon": "▦",
+          "tone": "good"
+        },
+        {
+          "label": "Interviews",
+          "value": "72",
+          "trend": "This week",
+          "icon": "◌",
           "tone": "watch"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Add Candidate",
+        "Create Job",
+        "Schedule Interview",
+        "Start Onboarding"
       ],
       "workflow": [
-        "Review Portfolio queue",
-        "Update Portfolio records",
-        "Publish Portfolio report"
+        "Review Jobs queue",
+        "Update Jobs records",
+        "Publish Jobs report"
       ]
     },
     {
-      "id": "exchange",
-      "label": "Exchange",
-      "description": "FoundCrypto exchange workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "pipelines",
+      "label": "Pipelines",
+      "description": "FoundTalent pipelines workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
+          "label": "Candidates",
+          "value": "1,284",
+          "trend": "Active",
           "icon": "◍",
           "tone": "good"
         },
         {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
+          "label": "Open Jobs",
+          "value": "38",
+          "trend": "Hiring now",
           "icon": "▦",
+          "tone": "good"
+        },
+        {
+          "label": "Interviews",
+          "value": "72",
+          "trend": "This week",
+          "icon": "◌",
           "tone": "watch"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Add Candidate",
+        "Create Job",
+        "Schedule Interview",
+        "Start Onboarding"
       ],
       "workflow": [
-        "Review Exchange queue",
-        "Update Exchange records",
-        "Publish Exchange report"
+        "Review Pipelines queue",
+        "Update Pipelines records",
+        "Publish Pipelines report"
       ]
     },
     {
-      "id": "signals",
-      "label": "Signals",
-      "description": "FoundCrypto signals workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "interviews",
+      "label": "Interviews",
+      "description": "FoundTalent interviews workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
+          "label": "Candidates",
+          "value": "1,284",
+          "trend": "Active",
           "icon": "◍",
           "tone": "good"
         },
         {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
+          "label": "Open Jobs",
+          "value": "38",
+          "trend": "Hiring now",
           "icon": "▦",
+          "tone": "good"
+        },
+        {
+          "label": "Interviews",
+          "value": "72",
+          "trend": "This week",
+          "icon": "◌",
           "tone": "watch"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Add Candidate",
+        "Create Job",
+        "Schedule Interview",
+        "Start Onboarding"
       ],
       "workflow": [
-        "Review Signals queue",
-        "Update Signals records",
-        "Publish Signals report"
+        "Review Interviews queue",
+        "Update Interviews records",
+        "Publish Interviews report"
       ]
     },
     {
-      "id": "risk",
-      "label": "Risk",
-      "description": "FoundCrypto risk workspace for daily operations, reporting, approvals, and team execution.",
+      "id": "offers",
+      "label": "Offers",
+      "description": "FoundTalent offers workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
+          "label": "Candidates",
+          "value": "1,284",
+          "trend": "Active",
           "icon": "◍",
           "tone": "good"
         },
         {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
+          "label": "Open Jobs",
+          "value": "38",
+          "trend": "Hiring now",
           "icon": "▦",
+          "tone": "good"
+        },
+        {
+          "label": "Interviews",
+          "value": "72",
+          "trend": "This week",
+          "icon": "◌",
           "tone": "watch"
         }
       ],
       "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
+        "Add Candidate",
+        "Create Job",
+        "Schedule Interview",
+        "Start Onboarding"
       ],
       "workflow": [
-        "Review Risk queue",
-        "Update Risk records",
-        "Publish Risk report"
-      ]
-    },
-    {
-      "id": "automation",
-      "label": "Automation",
-      "description": "FoundCrypto automation workspace for daily operations, reporting, approvals, and team execution.",
-      "metrics": [
-        {
-          "label": "Portfolio",
-          "value": "£284k",
-          "trend": "+4.8%",
-          "icon": "£",
-          "tone": "good"
-        },
-        {
-          "label": "Wallets",
-          "value": "18",
-          "trend": "Connected",
-          "icon": "◍",
-          "tone": "good"
-        },
-        {
-          "label": "Signals",
-          "value": "26",
-          "trend": "Open",
-          "icon": "▦",
-          "tone": "watch"
-        }
-      ],
-      "actions": [
-        "Add Wallet",
-        "Create Signal",
-        "Open Chart",
-        "Run Risk Check"
-      ],
-      "workflow": [
-        "Review Automation queue",
-        "Update Automation records",
-        "Publish Automation report"
+        "Review Offers queue",
+        "Update Offers records",
+        "Publish Offers report"
       ]
     }
   ,
-    {
-          "id": "marketing-suite",
-          "label": "Marketing Suite",
-          "description": "Plan, launch, and track marketing campaigns across every channel.",
+        {
+          "id": "candidate-pipeline",
+          "label": "Candidate Pipeline",
+          "description": "Track candidates from application through offer in one pipeline view.",
           "metrics": [
                 {
-                      "label": "Campaigns Live",
-                      "value": "12",
-                      "trend": "+3 this week",
-                      "icon": "\u25b6",
+                      "label": "Active Candidates",
+                      "value": "142",
+                      "trend": "+9",
+                      "icon": "▶",
                       "tone": "good"
                 },
                 {
-                      "label": "Reach",
-                      "value": "48.2k",
-                      "trend": "+6%",
-                      "icon": "\u25c8",
+                      "label": "Interviews Scheduled",
+                      "value": "18",
+                      "trend": "This week",
+                      "icon": "◈",
                       "tone": "good"
                 },
                 {
-                      "label": "Conversion",
-                      "value": "3.8%",
-                      "trend": "Stable",
-                      "icon": "%",
+                      "label": "Offers Extended",
+                      "value": "5",
+                      "trend": "Awaiting response",
+                      "icon": "!",
                       "tone": "watch"
                 }
           ],
           "actions": [
-                "Launch Campaign",
-                "Duplicate Template",
-                "Schedule Send",
-                "Review Analytics"
+                "Add Candidate",
+                "Schedule Interview",
+                "Extend Offer",
+                "Export Pipeline"
           ],
           "workflow": [
-                "Draft Campaign",
-                "Approve Campaign",
-                "Publish Campaign"
+                "Review Candidate Pipeline queue",
+                "Update Candidate Pipeline records",
+                "Publish Candidate Pipeline report"
+          ]
+    },
+    {
+          "id": "cv-parser",
+          "label": "CV Parser",
+          "description": "Automatically parse and structure incoming CVs for faster review.",
+          "metrics": [
+                {
+                      "label": "CVs Parsed Today",
+                      "value": "36",
+                      "trend": "+4",
+                      "icon": "▶",
+                      "tone": "good"
+                },
+                {
+                      "label": "Parse Accuracy",
+                      "value": "96%",
+                      "trend": "+1%",
+                      "icon": "✓",
+                      "tone": "good"
+                },
+                {
+                      "label": "Manual Reviews",
+                      "value": "3",
+                      "trend": "Needs review",
+                      "icon": "!",
+                      "tone": "watch"
+                }
+          ],
+          "actions": [
+                "Upload CV",
+                "Review Parse",
+                "Correct Field",
+                "Export Parsed Data"
+          ],
+          "workflow": [
+                "Review CV Parser queue",
+                "Update CV Parser records",
+                "Publish CV Parser report"
           ]
     },
     {
@@ -631,29 +631,29 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "crm": {
-    "title": "FoundCrypto CRM",
-    "summary": "FoundCrypto CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
+    "title": "FoundTalent CRM",
+    "summary": "FoundTalent CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
     "records": [
       {
-        "name": "BTC",
-        "type": "Wallets",
-        "stage": "Breakout",
-        "value": "34%",
-        "nextAction": "Add Wallet"
+        "name": "Store Manager",
+        "type": "Candidates",
+        "stage": "42 candidates",
+        "value": "8",
+        "nextAction": "Add Candidate"
       },
       {
-        "name": "ETH",
-        "type": "Wallets",
-        "stage": "Accumulation",
-        "value": "22%",
-        "nextAction": "Create Signal"
+        "name": "Data Analyst",
+        "type": "Candidates",
+        "stage": "31 candidates",
+        "value": "5",
+        "nextAction": "Create Job"
       },
       {
-        "name": "SOL",
-        "type": "Wallets",
-        "stage": "Volatile",
-        "value": "8%",
-        "nextAction": "Open Chart"
+        "name": "Recruiter",
+        "type": "Candidates",
+        "stage": "22 candidates",
+        "value": "4",
+        "nextAction": "Schedule Interview"
       }
     ],
     "pipeline": [
@@ -663,10 +663,10 @@ export const brandConfig: BrandConsoleConfig = {
       "Won"
     ],
     "tasks": [
-      "Add Wallet",
-      "Create Signal",
-      "Open Chart",
-      "Run Risk Check"
+      "Add Candidate",
+      "Create Job",
+      "Schedule Interview",
+      "Start Onboarding"
     ]
   },
   "navigation": [
@@ -689,38 +689,74 @@ export const brandConfig: BrandConsoleConfig = {
       "section": "Core"
     },
     {
-      "label": "Wallets",
-      "href": "/modules/wallets",
+      "label": "Ats",
+      "href": "/modules/ats",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Charts",
-      "href": "/modules/charts",
+      "label": "CRM",
+      "href": "/modules/crm",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Transactions",
-      "href": "/modules/transactions",
+      "label": "Onboarding",
+      "href": "/modules/onboarding",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Analytics",
-      "href": "/modules/analytics",
+      "label": "Candidates",
+      "href": "/modules/candidates",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Portfolio",
-      "href": "/modules/portfolio",
+      "label": "Jobs",
+      "href": "/modules/jobs",
       "icon": "▣",
       "section": "Modules"
     },
     {
-      "label": "Exchange",
-      "href": "/modules/exchange",
+      "label": "Pipelines",
+      "href": "/modules/pipelines",
+      "icon": "▣",
+      "section": "Modules"
+    },
+        {
+      "label": "Accounting",
+      "href": "/modules/accounting",
+      "icon": "banknotes",
+      "section": "Modules"
+    },
+    {
+      "label": "Messaging",
+      "href": "/modules/messaging",
+      "icon": "chat-bubble-left-right",
+      "section": "Modules"
+    },
+    {
+      "label": "Customer Service",
+      "href": "/modules/customer-service",
+      "icon": "lifebuoy",
+      "section": "Modules"
+    },
+    {
+      "label": "FoundAI Demo",
+      "href": "/modules/foundai-demo",
+      "icon": "sparkles",
+      "section": "Modules"
+    },
+    {
+      "label": "Candidate Pipeline",
+      "href": "/modules/candidate-pipeline",
+      "icon": "▣",
+      "section": "Modules"
+    },
+    {
+      "label": "CV Parser",
+      "href": "/modules/cv-parser",
       "icon": "▣",
       "section": "Modules"
     },
@@ -732,17 +768,17 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "quickActions": [
-    "Add Wallet",
-    "Create Signal",
-    "Open Chart",
-    "Run Risk Check"
+    "Add Candidate",
+    "Create Job",
+    "Schedule Interview",
+    "Start Onboarding"
   ],
   "settings": [
-    "Wallet Security",
-    "Exchange Connections",
-    "Risk Limits",
-    "Alert Preferences",
-    "Portfolio Visibility",
+    "Hiring Workflow",
+    "Pipeline Stages",
+    "Recruiter Permissions",
+    "Candidate Messaging",
+    "Offer Templates",
     "CRM Configuration"
   ]
 }

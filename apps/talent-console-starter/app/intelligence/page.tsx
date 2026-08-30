@@ -10,11 +10,12 @@ import { buildQuantumDemoCtaLabel } from '@foundingos/config/quantum-defined-eng
 import { BrandMicroDashboard } from '@foundingos/ui/brand-micro-dashboard'
 
 export default async function IntelligencePage() {
-  const layer = BRAND_PERSONALITIES.crypto
-  const ai = generateBrandAIOutput('crypto')
-  const quantum = await enrichBrandSignalWithQuantum(buildBrandSignal('crypto'))
+  const layer = BRAND_PERSONALITIES.talent
+  const ai = generateBrandAIOutput('talent')
+  const quantum = await enrichBrandSignalWithQuantum(buildBrandSignal('talent'))
   return (
     <BrandMicroDashboard
+      brandSlug="talent"
       brandName={layer.name}
       color={layer.color}
       pulse={ai.pulse}
