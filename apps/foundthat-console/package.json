@@ -12,6 +12,7 @@
   "dependencies": {
     "@foundingos/auth": "*",
     "@foundingos/config": "*",
+    "@foundingos/db": "*",
     "@foundingos/ui": "*",
     "next": "^14.2.23",
     "next-auth": "^4.24.11",
