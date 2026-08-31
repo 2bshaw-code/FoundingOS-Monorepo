@@ -1,0 +1,113 @@
+/* 
+  © 2024–2026 FoundingOS. All rights reserved.
+  Unauthorized copying, distribution, or modification is strictly prohibited.
+*/
+/* Quantum-branded colour version of the login screen — the sole entry point at
+   www.foundingos.com. Scoped to this page only; does not touch any shared global
+   classes also used elsewhere (e.g. retail-web's own Landing page). */
+
+.quantumShell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  background: linear-gradient(160deg, #0D0D0D 0%, #111827 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.quantumGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.05) 1px, transparent 1px);
+  background-size: 42px 42px;
+  animation: quantumGridDrift 24s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes quantumGridDrift {
+  from { background-position: 0 0; }
+  to { background-position: 42px 42px; }
+}
+
+.quantumHeader {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+  text-align: center;
+}
+
+.quantumLogo {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 18px;
+  color: #0D0D0D;
+  background: linear-gradient(135deg, #00E5FF, #2EE6D6);
+  box-shadow: 0 0 24px rgba(0, 229, 255, 0.45);
+}
+
+.quantumStrapline {
+  color: #F5F7FA;
+  opacity: 0.75;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.quantumCardWrap {
+  position: relative;
+  z-index: 1;
+}
+
+.quantumCardWrap::before {
+  content: '';
+  position: absolute;
+  inset: -40px;
+  background: radial-gradient(circle, rgba(0, 229, 255, 0.22), transparent 65%);
+  filter: blur(10px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.quantumCard {
+  width: min(420px, calc(100vw - 32px));
+  display: grid;
+  gap: 18px;
+  border-radius: 20px;
+  padding: 28px;
+  background: #1B212C;
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  backdrop-filter: blur(18px);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.quantumCard:hover,
+.quantumCard:focus-within {
+  border-color: #2EE6D6;
+  box-shadow: 0 0 32px rgba(46, 230, 214, 0.25);
+}
+
+.quantumCard input:focus {
+  outline: none;
+  border-color: #00E5FF !important;
+  box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.35);
+}
+
+.quantumButton {
+  background: linear-gradient(135deg, #00E5FF, #2EE6D6) !important;
+  color: #0D0D0D !important;
+  border: none !important;
+  animation: quantumPulse 3.2s ease-in-out infinite;
+}
+
+@keyframes quantumPulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(0, 229, 255, 0.35); }
+  50% { box-shadow: 0 0 22px rgba(46, 230, 214, 0.6); }
+}

@@ -42,10 +42,64 @@ export const CREDENTIALS: Credential[] = [
   { id: 'juliet', password: 'juliet-3410', moduleId: 'superdashboard-demo', moduleLabel: 'SuperDashboard Demo (read-only)', surveyId: 'survey-j' },
   { id: 'finance', password: 'finance-5511', moduleId: 'finance', moduleLabel: 'Finance', surveyId: 'survey-k' },
   { id: 'crypto', password: 'crypto-6622', moduleId: 'crypto', moduleLabel: 'Crypto', surveyId: 'survey-l' },
+
+  // Tester access codes (batch 2) — reuse the existing module/survey pairs above (survey-a
+  // through survey-j) rather than inventing new, unpopulated surveys. Each password is an
+  // independent access code into the same real, working tester experience.
+  { id: 'tester-1', password: 'TST-91XQ', moduleId: 'marketing-suite', moduleLabel: 'Marketing Suite', surveyId: 'survey-a' },
+  { id: 'tester-2', password: 'TST-44MZ', moduleId: 'accounting', moduleLabel: 'Accounting', surveyId: 'survey-b' },
+  { id: 'tester-3', password: 'TST-77PL', moduleId: 'customer-service', moduleLabel: 'Customer Service', surveyId: 'survey-c' },
+  { id: 'tester-4', password: 'TST-20RB', moduleId: 'messaging', moduleLabel: 'Messaging', surveyId: 'survey-d' },
+  { id: 'tester-5', password: 'TST-63KV', moduleId: 'ai-automation', moduleLabel: 'AI Automation', surveyId: 'survey-e' },
+  { id: 'tester-6', password: 'TST-85NJ', moduleId: 'operations', moduleLabel: 'Operations', surveyId: 'survey-f' },
+  { id: 'tester-7', password: 'TST-52WA', moduleId: 'sales', moduleLabel: 'Sales', surveyId: 'survey-g' },
+  { id: 'tester-8', password: 'TST-18CY', moduleId: 'branding', moduleLabel: 'Branding', surveyId: 'survey-h' },
+  { id: 'tester-9', password: 'TST-39HF', moduleId: 'console-navigation', moduleLabel: 'Console Navigation', surveyId: 'survey-i' },
+  { id: 'tester-10', password: 'TST-04DS', moduleId: 'superdashboard-demo', moduleLabel: 'SuperDashboard Demo (read-only)', surveyId: 'survey-j' },
+
+  // Investor / lawyer review access — routed to the existing read-only SuperDashboard demo
+  // tier (same experience as 'juliet' above), since that is the only existing whole-ecosystem,
+  // read-only overview available without creating a new route or dashboard.
+  { id: 'investor-alpha', password: 'INV-ALPHA', moduleId: 'superdashboard-demo', moduleLabel: 'SuperDashboard Demo (read-only)', surveyId: 'survey-j' },
+  { id: 'investor-omega', password: 'INV-OMEGA', moduleId: 'superdashboard-demo', moduleLabel: 'SuperDashboard Demo (read-only)', surveyId: 'survey-j' },
+  { id: 'lawyer-review', password: 'LAW-REVIEW', moduleId: 'superdashboard-demo', moduleLabel: 'SuperDashboard Demo (read-only)', surveyId: 'survey-j' },
+
+  // Tester access codes (batch 3) — plain, memorable "SURVEY-*" passwords for the
+  // email+password login flow. Reuse the existing module/survey pairs above rather than
+  // inventing new, unpopulated surveys; these coexist with every earlier batch through
+  // the same findCredentialByPassword lookup, so access-code-only login is unaffected.
+  { id: 'survey-1', password: 'SURVEY-1', moduleId: 'marketing-suite', moduleLabel: 'Marketing Suite', surveyId: 'survey-a' },
+  { id: 'survey-2', password: 'SURVEY-2', moduleId: 'accounting', moduleLabel: 'Accounting', surveyId: 'survey-b' },
+  { id: 'survey-3', password: 'SURVEY-3', moduleId: 'customer-service', moduleLabel: 'Customer Service', surveyId: 'survey-c' },
+  { id: 'survey-4', password: 'SURVEY-4', moduleId: 'messaging', moduleLabel: 'Messaging', surveyId: 'survey-d' },
+  { id: 'survey-5', password: 'SURVEY-5', moduleId: 'ai-automation', moduleLabel: 'AI Automation', surveyId: 'survey-e' },
+  { id: 'survey-6', password: 'SURVEY-6', moduleId: 'operations', moduleLabel: 'Operations', surveyId: 'survey-f' },
+  { id: 'survey-7', password: 'SURVEY-7', moduleId: 'sales', moduleLabel: 'Sales', surveyId: 'survey-g' },
+  { id: 'survey-8', password: 'SURVEY-8', moduleId: 'branding', moduleLabel: 'Branding', surveyId: 'survey-h' },
+  { id: 'survey-9', password: 'SURVEY-9', moduleId: 'console-navigation', moduleLabel: 'Console Navigation', surveyId: 'survey-i' },
+  { id: 'survey-fin', password: 'SURVEY-FIN', moduleId: 'finance', moduleLabel: 'Finance', surveyId: 'survey-k' },
+  { id: 'survey-crypto', password: 'SURVEY-CRYPTO', moduleId: 'crypto', moduleLabel: 'Crypto', surveyId: 'survey-l' },
+  { id: 'survey-demo', password: 'SURVEY-DEMO', moduleId: 'superdashboard-demo', moduleLabel: 'SuperDashboard Demo (read-only)', surveyId: 'survey-j' },
 ]
 
 export function findCredentialByPassword(password: string): Credential | null {
   return CREDENTIALS.find((credential) => credential.password === password) ?? null
+}
+
+// Post-login destination category, keyed off the real credential id — not the moduleId,
+// since juliet/tester-10/survey-demo/investor-*/lawyer-review all currently share the same
+// 'superdashboard-demo' moduleId but must route to different real destinations from the
+// root-domain (www.foundingos.com) login gate.
+export type CredentialCategory = 'survey' | 'tester' | 'investor' | 'lawyer' | 'free-roam'
+
+const FREE_ROAM_IDS = new Set(['juliet', 'tester-10', 'survey-demo'])
+
+export function categorizeCredential(id: string): CredentialCategory {
+  if (id === 'investor-alpha' || id === 'investor-omega') return 'investor'
+  if (id === 'lawyer-review') return 'lawyer'
+  if (FREE_ROAM_IDS.has(id)) return 'free-roam'
+  if (id.startsWith('survey-')) return 'survey'
+  return 'tester'
 }
 
 // Super Founder Admin — full-access account, bypasses the tester credential pool above.
@@ -61,11 +115,13 @@ export function isSuperFounderAdmin(email: string, password: string): boolean {
 // so admin reassignment can never point a tester at a module/survey pair that doesn't exist.
 export type ModuleOption = { moduleId: ModuleId; moduleLabel: string; surveyId: SurveyId }
 
-export const MODULE_OPTIONS: ModuleOption[] = CREDENTIALS.map((credential) => ({
-  moduleId: credential.moduleId,
-  moduleLabel: credential.moduleLabel,
-  surveyId: credential.surveyId,
-}))
+export const MODULE_OPTIONS: ModuleOption[] = Array.from(
+  new Map(CREDENTIALS.map((credential) => [credential.moduleId, {
+    moduleId: credential.moduleId,
+    moduleLabel: credential.moduleLabel,
+    surveyId: credential.surveyId,
+  }])).values(),
+)
 
 export function findModuleOption(moduleId: string): ModuleOption | null {
   return MODULE_OPTIONS.find((option) => option.moduleId === moduleId) ?? null
