@@ -9,156 +9,14 @@ import { ThemeToggle } from './theme'
 import { QuantumConsoleEntry } from './quantum-console-modal'
 import { QuantumSphereLogo } from './QuantumSphereLogo'
 import { CORE_MODULES } from '@foundingos/config/modules'
+// Real, env-var-driven brand config (webUrl/consoleUrl/etc. read from each deployed
+// app's NEXT_PUBLIC_*_URL vars, with the localhost-safety wrapper already applied).
+// This replaces a previously-local, fully-hardcoded duplicate of this same data that
+// never read any env var — every "Website"/"Console" link on this page was silently
+// pointing at localhost in every production deployment until this fix.
+import { brands, brandList, type BrandSlug, type BrandDefinition } from '@foundingos/config'
 
 type ComponentChildren = any
-// Widened to match @foundingos/config's BrandSlug so BrandDefinition values from
-// the config package remain structurally assignable to these component props.
-type BrandSlug = 'foundingos' | 'retail' | 'meat' | 'foundthat' | 'talent' | 'crypto' | 'finance' | 'health' | 'logistics'
-type BrandDefinition = {
-  slug: BrandSlug
-  name: string
-  legalName: string
-  accent: string
-  brandColors: { primary: string; accent: string }
-  logo: string
-  webUrl: string
-  consoleUrl: string
-  starterConsoleUrl: string
-  dashboardUrl: string
-  modules: string[]
-  summary: string
-}
-
-const brands: Record<BrandSlug, BrandDefinition> = {
-  foundingos: {
-    slug: 'foundingos',
-    name: 'FoundingOS',
-    legalName: 'FoundingOS',
-    accent: '#00E0FF',
-    brandColors: { primary: '#00E0FF', accent: '#00E0FF' },
-    webUrl: 'http://localhost:1000',
-    consoleUrl: 'http://localhost:8000',
-    starterConsoleUrl: 'http://localhost:8000',
-    dashboardUrl: 'http://localhost:8000/console',
-    logo: '⌂',
-    modules: ['Brand Registry', 'Subscriptions', 'Activity', 'Access Control'],
-    summary: 'The core command layer for the multi-brand SaaS ecosystem.',
-  },
-  retail: {
-    slug: 'retail',
-    name: 'FoundRetail',
-    legalName: 'FoundRetail',
-    accent: '#00FF66',
-    brandColors: { primary: '#00FF66', accent: '#00FF66' },
-    webUrl: 'http://localhost:1001',
-    consoleUrl: 'http://localhost:8017',
-    starterConsoleUrl: 'http://localhost:8001',
-    dashboardUrl: 'http://localhost:8017/dashboard',
-    logo: '◉',
-    modules: ['Customers', 'Inventory', 'Orders', 'Products'],
-    summary: 'Retail operations for catalogues, customers, orders, and teams.',
-  },
-  meat: {
-    slug: 'meat',
-    name: 'FoundMeat',
-    legalName: 'FoundMeat',
-    accent: '#FF0033',
-    brandColors: { primary: '#FF0033', accent: '#FF0033' },
-    webUrl: 'http://localhost:1002',
-    consoleUrl: 'http://localhost:8018',
-    starterConsoleUrl: 'http://localhost:8002',
-    dashboardUrl: 'http://localhost:8018/dashboard',
-    logo: '◆',
-    modules: ['Suppliers', 'Stock', 'Traceability', 'Orders'],
-    summary: 'Trade and supply chain operating software for meat businesses.',
-  },
-  foundthat: {
-    slug: 'foundthat',
-    name: 'FoundThat',
-    legalName: 'FoundThat',
-    accent: '#FFDD00',
-    brandColors: { primary: '#FFDD00', accent: '#FFDD00' },
-    webUrl: 'http://localhost:1003',
-    consoleUrl: 'http://localhost:8019',
-    starterConsoleUrl: 'http://localhost:8003',
-    dashboardUrl: 'http://localhost:8019/dashboard',
-    logo: '✦',
-    modules: ['Market Intel', 'Lead Capture', 'Data Quality', 'Reports'],
-    summary: 'Discovery intelligence and data operations for local markets.',
-  },
-  talent: {
-    slug: 'talent',
-    name: 'FoundTalent',
-    legalName: 'FoundTalent',
-    accent: '#FF8800',
-    brandColors: { primary: '#FF8800', accent: '#FF8800' },
-    webUrl: 'http://localhost:1004',
-    consoleUrl: 'http://localhost:8020',
-    starterConsoleUrl: 'http://localhost:8004',
-    dashboardUrl: 'http://localhost:8020/dashboard',
-    logo: '⬢',
-    modules: ['Applicants', 'Recruiters', 'Jobs', 'Workforce Intel'],
-    summary: 'Hiring analytics and workforce intelligence for modern teams.',
-  },
-  crypto: {
-    slug: 'crypto',
-    name: 'FoundCrypto',
-    legalName: 'FoundCrypto',
-    accent: '#9933FF',
-    brandColors: { primary: '#9933FF', accent: '#9933FF' },
-    webUrl: 'http://localhost:1005',
-    consoleUrl: 'http://localhost:8021',
-    starterConsoleUrl: 'http://localhost:8005',
-    dashboardUrl: 'http://localhost:8021/dashboard',
-    logo: '∞',
-    modules: ['Charts', 'Signals', 'Automation', 'Risk'],
-    summary: 'Crypto intelligence, monitoring, and automation control.',
-  },
-  finance: {
-    slug: 'finance',
-    name: 'FoundFinance',
-    legalName: 'FoundFinance',
-    accent: '#0033AA',
-    brandColors: { primary: '#0033AA', accent: '#0033AA' },
-    webUrl: 'http://localhost:1006',
-    consoleUrl: 'http://localhost:8022',
-    starterConsoleUrl: 'http://localhost:8006',
-    dashboardUrl: 'http://localhost:8022/dashboard',
-    logo: '£',
-    modules: ['Cashflow', 'Invoicing', 'Reconciliation', 'Reporting'],
-    summary: 'Finance operations, cashflow visibility, and reconciliation tooling.',
-  },
-  health: {
-    slug: 'health',
-    name: 'FoundHealth',
-    legalName: 'FoundHealth',
-    accent: '#33CCFF',
-    brandColors: { primary: '#33CCFF', accent: '#33CCFF' },
-    webUrl: 'http://localhost:1007',
-    consoleUrl: 'http://localhost:8023',
-    starterConsoleUrl: 'http://localhost:8007',
-    dashboardUrl: 'http://localhost:8023/dashboard',
-    logo: '✚',
-    modules: ['Patients', 'Scheduling', 'Records', 'Compliance'],
-    summary: 'Health operations, scheduling, and compliance tracking.',
-  },
-  logistics: {
-    slug: 'logistics',
-    name: 'FoundLogistics',
-    legalName: 'FoundLogistics',
-    accent: '#DC143C',
-    brandColors: { primary: '#DC143C', accent: '#DC143C' },
-    webUrl: 'http://localhost:1008',
-    consoleUrl: 'http://localhost:8024',
-    starterConsoleUrl: 'http://localhost:8008',
-    dashboardUrl: 'http://localhost:8024/dashboard',
-    logo: '▲',
-    modules: ['Fleet', 'Routes', 'Warehousing', 'Deliveries'],
-    summary: 'Logistics operations, fleet tracking, and delivery orchestration.',
-  },
-}
-
-const brandList = Object.values(brands)
 const consoleDashboardUrl = (brand: BrandDefinition) => brand.consoleUrl.replace(/\/+$/, '')
 const isInternalHref = (href: string) => href.startsWith('/') || href.startsWith('#')
 const signupOptions = [
@@ -486,7 +344,10 @@ export function FounderLauncher() {
           <a href="#top">Home</a>
           <a href="#pricing">Intelligence</a>
           <a href="#found-ai">Insights</a>
-          <a href={`${brands.foundingos.consoleUrl}/console`}>Console</a>
+          {/* Sole entry point into FoundingOS Console: routes to the real Quantum-styled
+              tester/admin sign-in (not the unauthenticated /console demo route) — the
+              Homepage must be the only path in, per the single-entry-point requirement. */}
+          <a href={`${brands.foundingos.consoleUrl}/tester/login`}>Console</a>
           <a href="#contact">Support</a>
         </div>
         <div className="site-nav-links">
