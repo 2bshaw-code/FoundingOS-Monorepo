@@ -4,7 +4,6 @@
 */
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import type { BrandConsoleConfig } from './console'
 import { ThemeToggle } from './theme'
@@ -55,19 +54,13 @@ function ActualTopbar({ config, variant = 'console' }: { config?: BrandConsoleCo
        <div>
          <strong>{consoleTitle(config?.name, variant)}</strong>
          <span>{config?.name ?? 'Workspace'} command center</span>
+         <small style={{ display: 'block', opacity: 0.6, fontSize: 11 }}>FoundingOS — The Operating System for WhatsApp, Telegram, and global message-based businesses.</small>
        </div>
      </div>
      <div className="topbar-nav">
        <button type="button" className="sidebar-toggle" onClick={() => setCollapsed((value) => !value)} aria-label={toggleLabel}>
          ☰
        </button>
-       <Link className="topbar-chip" href="/dashboard">Dashboard</Link>
-       <details className="topbar-dropdown">
-         <summary className="topbar-chip">Modules</summary>
-         <div className="topbar-dropdown-panel">
-           <span>Use the sidebar for module navigation.</span>
-         </div>
-       </details>
      </div>
      <div className="topbar-actions">
        <ThemeToggle />

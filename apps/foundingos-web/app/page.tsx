@@ -65,7 +65,7 @@ export default function RootLoginPage() {
         <div className={styles.quantumHeader}>
           <div className={styles.quantumLogo} aria-hidden="true">FO</div>
           <strong style={{ color: '#F5F7FA', fontSize: 15, letterSpacing: '0.03em' }}>FoundingOS</strong>
-          <p className={styles.quantumStrapline}>The Operating System for Founders.</p>
+          <p className={styles.quantumStrapline}>FoundingOS — The Operating System for WhatsApp, Telegram, and global message-based businesses.</p>
         </div>
 
         <div className={styles.quantumCardWrap}>

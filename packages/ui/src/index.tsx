@@ -359,6 +359,7 @@ export function FounderLauncher() {
         <div className="hero-copy">
           <p className="eyebrow">FoundingOS</p>
           <h1>One ecosystem. Every brand connected.</h1>
+          <p className="quantum-positioning-statement">FoundingOS — The Operating System for WhatsApp, Telegram, and global message-based businesses.</p>
           <p>Launch brand websites, govern subscriptions, and manage the shared SaaS platform from a single command layer.</p>
           <p className="quantum-hero-promise">Powered by Quantum intelligence — real-time signals, always on.</p>
         </div>

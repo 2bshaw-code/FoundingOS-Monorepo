@@ -49,14 +49,14 @@ export default function TesterLoginPage() {
         <div className={styles.quantumHeader}>
           <div className={styles.quantumLogo} aria-hidden="true">FO</div>
           <strong style={{ color: '#F5F7FA', fontSize: 15, letterSpacing: '0.03em' }}>FoundingOS</strong>
-          <p className={styles.quantumStrapline}>The Operating System for Founders.</p>
+          <p className={styles.quantumStrapline}>FoundingOS — The Operating System for WhatsApp, Telegram, and global message-based businesses.</p>
         </div>
 
         <div className={styles.quantumCardWrap}>
           <form className={`login-card fo-card fo-panel-glow tester-login-card ${styles.quantumCard}`} onSubmit={onSubmit}>
             <div className="tester-login-logo" aria-hidden="true">FO</div>
             <h1>FounderOS Tester Access</h1>
-            <p>Sign in with your email and pre-issued access code to begin your tailored survey.</p>
+            <p>Sign in with your email and your password or pre-issued access code to begin your tailored survey.</p>
 
             <label className="manager-field">
               <span>Email</span>
@@ -64,7 +64,7 @@ export default function TesterLoginPage() {
             </label>
 
             <label className="manager-field">
-              <span>Access code</span>
+              <span>Password or access code</span>
               <div className="tester-password-row">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -77,7 +77,7 @@ export default function TesterLoginPage() {
                   type="button"
                   className="tester-eye-toggle"
                   onClick={() => setShowPassword((current) => !current)}
-                  aria-label={showPassword ? 'Hide access code' : 'Show access code'}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? '◑' : '◉'}
                 </button>
