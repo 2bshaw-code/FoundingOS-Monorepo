@@ -6,6 +6,7 @@
 
 import { useState } from 'react'
 import styles from './page.module.css'
+import { AnimatedMessageFlow } from '@foundingos/ui/animated-message-flow'
 
 // The sole real entry point at www.foundingos.com. Submits cross-origin (with
 // credentials) to the real, existing /api/tester/login endpoint in foundingos-console —
@@ -71,6 +72,10 @@ export default function RootLoginPage() {
           <div className={styles.quantumLogo} aria-hidden="true">FO</div>
           <strong style={{ color: '#F5F7FA', fontSize: 15, letterSpacing: '0.03em' }}>FoundingOS</strong>
           <p className={styles.quantumStrapline}>FoundingOS — The Operating System for WhatsApp, Telegram, and global message-based businesses.</p>
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <AnimatedMessageFlow />
         </div>
 
         <div className={styles.quantumCardWrap}>

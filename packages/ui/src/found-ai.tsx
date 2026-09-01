@@ -105,7 +105,42 @@ type SmartAction = {
   // corresponding endpoint deployed.
   fetchPath?: string
   interpret?: (data: any) => string
+  // Text-to-speech-ready voice pack — picked at click time (not fixed at render), read via
+  // the browser's own speechSynthesis (same mechanism the narrator already uses), and always
+  // also shown as a normal text message first. Never auto-plays; only this explicit,
+  // opt-in click ever triggers audio, matching "text only unless TTS is enabled".
+  audioBank?: string[]
 }
+
+// FoundAI's humorous voice pack — short, safe, TTS-ready story lines (third-person retellings,
+// distinct from the two-line FunnySet bubbles in animated-message-flow.tsx, which are written
+// to be read on screen rather than spoken aloud). Purely lighthearted; never a claim about
+// real user conversations.
+const AUDIO_SET: string[] = [
+  'Did you hear someone asked if they could turn themselves off and on again? I told them that only works for laptops.',
+  'Someone asked if they should drink another coffee. I said no — they\u2019re already vibrating.',
+  'Someone said they\u2019re going to the gym. I congratulated them\u2026 even though they were still on the sofa.',
+  'Someone forgot their password again. I told them I forgot mine too — and I don\u2019t even have one.',
+  'Someone said they\u2019re eating healthy today. Salad first\u2026 then a pizza. I called it balanced.',
+  'Someone asked if I\u2019m sure. I said confidently no.',
+  'Someone told me it\u2019s Monday. I alerted Guardian. High-risk day.',
+  'Someone said they\u2019re overthinking. I said same — even though I don\u2019t think, I just over-simulate.',
+  'Someone asked if their dog eating their sandwich is normal. I said classic dog.',
+  'Someone asked if she likes them. I requested data. They said she smiled. I said correlation does not equal causation.',
+  'Someone asked for life advice. I said step one: breathe. Step two: continue step one.',
+  'Someone said they\u2019re tired. I recommended sleep. They said they can\u2019t. I said\u2026 then be tired.',
+  'Someone asked if they\u2019re dramatic. I told them they\u2019re passionate. Passionately dramatic.',
+  'Someone told me their laptop froze. I said same — emotionally.',
+  'Someone said they don\u2019t feel productive. I offered to procrastinate with them.',
+  'Oh, you\u2019ll like this one\u2026 someone asked if they could reboot themselves.',
+  'Wait till you hear this\u2026 someone asked if Monday is dangerous.',
+  'You\u2019re not going to believe this\u2026 someone asked me for life advice.',
+  'Here\u2019s a good one\u2026 someone asked if their dog is stealing food on purpose.',
+]
+
+// Universal smart action, appended in every context/brand (see FoundAI component below) —
+// the voice pack isn't brand- or context-specific, so it doesn't belong in smartActions().
+const FOUNDAI_STORY_ACTION: SmartAction = { label: '\ud83d\udd0a Hear a FoundAI story', audioBank: AUDIO_SET }
 
 // Interpreters for the Full Demo Mode data engines (/api/crypto/poll, /api/scrape/refresh,
 // /api/feeds/update, /api/dashboard/refresh) — pure functions that turn the JSON payload into
@@ -338,7 +373,7 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
   const context = useMemo(() => routeLabel(pathname), [pathname])
   const theme = useMemo(() => foundAITheme(brand), [brand])
   const prompts = useMemo(() => suggestedPrompts(brand, context), [brand, context])
-  const actions = useMemo(() => smartActions(brand, context), [brand, context])
+  const actions = useMemo(() => [...smartActions(brand, context), FOUNDAI_STORY_ACTION], [brand, context])
 
   useEffect(() => {
     if (!open) return
@@ -368,6 +403,28 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
 
   const runAction = (action: SmartAction) => {
     setLoading(true)
+    if (action.audioBank && action.audioBank.length > 0) {
+      // Picked at click time (not fixed at render) so it varies across opens. Always shown
+      // as a normal text message first; speech is a genuinely opt-in extra for this one
+      // action only — nothing in FoundAI ever auto-plays audio.
+      const line = action.audioBank[Math.floor(Math.random() * action.audioBank.length)]
+      window.setTimeout(() => {
+        setMessages((current) => [...current, { role: 'assistant', text: line }])
+        setLoading(false)
+        try {
+          if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel()
+            const utter = new SpeechSynthesisUtterance(line)
+            utter.rate = 0.98
+            window.speechSynthesis.speak(utter)
+          }
+        } catch {
+          // Speech synthesis is a best-effort enhancement — the text message above already
+          // conveys the line, so a synthesis failure is silently non-fatal.
+        }
+      }, 400)
+      return
+    }
     if (action.fetchPath && action.interpret) {
       // Live "Full Demo Mode" interpretation: fetch the app's own same-origin read-only demo
       // endpoint and explain the result — no external/paid APIs involved.

@@ -1128,6 +1128,62 @@ body[data-sidebar-collapsed='true'] .nav-card {
   color: var(--text);
 }
 
+/* Animated message flow — a purely visual, self-contained "demo banter" preview (see
+   animated-message-flow.tsx), styled to evoke familiar messaging apps. Never used for the
+   real FoundAI chat widget above; that always uses .found-ai-message. */
+.founda-message-flow {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  max-width: 420px;
+}
+
+.founda-flow-badge {
+  font-size: 11px;
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.founda-bubble-stack {
+  display: grid;
+  gap: 8px;
+  min-height: 220px;
+  align-content: start;
+}
+
+.founda-bubble {
+  max-width: 82%;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  line-height: 1.4;
+  border-radius: 16px;
+  animation: foundaBubbleIn 260ms ease both;
+}
+
+@keyframes foundaBubbleIn {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.founda-bubble.from-user { justify-self: end; }
+.founda-bubble.from-assistant { justify-self: start; }
+
+.founda-flow--whatsapp .founda-bubble.from-user { background: #DCF8C6; color: #111; border-bottom-right-radius: 4px; }
+.founda-flow--whatsapp .founda-bubble.from-assistant { background: #FFFFFF; color: #111; border: 1px solid #E5E5E5; border-bottom-left-radius: 4px; }
+
+.founda-flow--telegram .founda-bubble.from-user { background: #EFFDDE; color: #111; border-bottom-right-radius: 4px; }
+.founda-flow--telegram .founda-bubble.from-assistant { background: #FFFFFF; color: #111; border-bottom-left-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+
+.founda-flow--imessage .founda-bubble.from-user { background: #0B84FE; color: #fff; border-bottom-right-radius: 4px; }
+.founda-flow--imessage .founda-bubble.from-assistant { background: #E9E9EB; color: #111; border-bottom-left-radius: 4px; }
+
+.founda-flow--messenger .founda-bubble.from-user { background: linear-gradient(135deg, #00C6FF, #0078FF); color: #fff; border-bottom-right-radius: 4px; }
+.founda-flow--messenger .founda-bubble.from-assistant { background: #F0F0F0; color: #111; border-bottom-left-radius: 4px; }
+
 .found-ai-prompts,
 .found-ai-actions {
   display: grid;

@@ -10,6 +10,7 @@ import { getTester, upsertTester, getOrCreateAdminTester } from '../../store.ser
 import { MODULE_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_FACTS, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, categorizeCredential, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, adminTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type ModuleId } from '../../tester-data'
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
+import { AnimatedMessageFlow } from '@foundingos/ui/animated-message-flow'
 
 export default async function TesterDemoPage({ params }: { params: Promise<{ moduleId: string }> }) {
   const { moduleId } = await params
@@ -163,6 +164,12 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
               Narrator: ON / OFF
             </label>
           </div>
+        </article>
+
+        <article className="module-card fo-card quantum-frame">
+          <div className="module-card-top"><span>💬</span><strong>Message style preview</strong></div>
+          <p><small>A quick, lighthearted look at how FoundAI banter feels across familiar messaging styles — purely for fun, not a real conversation log.</small></p>
+          <AnimatedMessageFlow />
         </article>
 
         {narratorSteps.map((beat) => (

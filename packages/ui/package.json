@@ -39,6 +39,7 @@
     "./found-ai-context": "./src/found-ai-context.tsx",
     "./package-data": "./src/package-data.ts",
     "./found-ai": "./src/found-ai.tsx",
+    "./animated-message-flow": "./src/animated-message-flow.tsx",
     "./crm": "./src/crm.tsx",
     "./module-loader": "./src/module-loader.tsx",
     "./sidebar": "./src/sidebar.tsx",
