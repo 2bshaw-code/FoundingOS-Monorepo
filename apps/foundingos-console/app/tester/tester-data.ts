@@ -569,47 +569,66 @@ const MODULE_REAL_ACTIONS: Partial<Record<ModuleId, string[]>> = {
 
 export type NarratorStep = { step: string; text: string; detail: string }
 
+// Modules whose real, checked actions are inherently message/conversation-driven — used only
+// to pick a more relevant "Animated message flow" step detail below; every module still gets
+// the same step, just worded honestly for whether messaging is central to it or not.
+const MESSAGE_DRIVEN_MODULE_IDS = new Set<ModuleId>(['messaging', 'customer-service', 'ai-automation'])
+
 // The AI narrator's personality: warm, human, reactive — a short (3–10 word) spoken reaction
 // for every beat, never a long scripted paragraph. The practical substance (what the module
-// does, how to use it, what happens, what the OS does behind the scenes, a real example, and a
-// short summary) lives in "detail" and renders as the card's own body copy; "text" is only the
-// narrator's own short reaction to that beat, read aloud by the same voice everywhere.
+// does, why it exists, its features, real-time behaviour, cross-brand integration, the AI
+// guidance moment, the animated message flow, and a short summary) lives in "detail" and
+// renders as the card's own body copy; "text" is only the narrator's own short reaction to
+// that beat, read aloud by the same voice everywhere.
 function buildNarratorSteps(moduleLabel: string, moduleDetail: string, moduleId?: ModuleId): NarratorStep[] {
   const actions = (moduleId && MODULE_REAL_ACTIONS[moduleId]) || null
+  const messageDriven = moduleId ? MESSAGE_DRIVEN_MODULE_IDS.has(moduleId) : false
   return [
     {
-      step: '1 · What it does',
+      step: '1 · Overview',
       text: 'Alright, here\'s the fun part.',
       detail: `${moduleLabel}: ${moduleDetail}`,
     },
     {
-      step: '2 · How to use it',
+      step: '2 · Why it exists',
+      text: "Here's why this matters.",
+      detail: `Every module here exists to turn real (or synthetic, for demo sessions) activity into a live signal the rest of the OS can act on — ${moduleLabel} is no different.`,
+    },
+    {
+      step: '3 · Key features',
       text: 'Let me walk you through it.',
       detail: actions
         ? `Try ${actions[0]} below, then ${actions[1].toLowerCase()} — that's the whole flow.`
         : `Open ${moduleLabel} below and try whatever's on screen — it's all real and clickable.`,
     },
     {
-      step: '3 · What happens',
+      step: '4 · Real-time behaviour',
       text: 'Watch what happens next.',
       detail: `Every action in ${moduleLabel} updates its numbers live — nothing here is a static screenshot.`,
     },
     {
-      step: '4 · Behind the scenes',
+      step: '5 · Cross-brand integration',
       text: "Here's the clever part.",
       detail: 'That same activity becomes a BrandMetric signal — Guardian keeps it in its own lane, Autonomous reacts to it, and SuperDash rolls it up live.',
     },
     {
-      step: '5 · A real example',
-      text: 'Nice — that worked perfectly.',
-      detail: actions
-        ? `Try ${actions[2]} now — you'll see it reflected the moment you use it.`
-        : `Try one real action in ${moduleLabel} now — you'll see it reflected the moment you use it.`,
+      step: '6 · AI guidance',
+      text: "FoundAI's got thoughts on this too.",
+      detail: `Open FoundAI (bottom-right) while you're here — it already knows it's watching ${moduleLabel} and can answer real questions about it.`,
     },
     {
-      step: '6 · Summary',
+      step: '7 · Animated message flow',
+      text: "Here's how it feels in the wild.",
+      detail: messageDriven
+        ? `This is exactly the kind of exchange ${moduleLabel} powers — see the Message style preview above for a taste, cycling through WhatsApp, Telegram, iMessage, and Messenger styling.`
+        : `${moduleLabel} works more through its own real actions than chat — but the same OS-wide message engine (see the Message style preview above) is what powers the brands that do.`,
+    },
+    {
+      step: '8 · Summary + next action',
       text: "That's the gist — nice work.",
-      detail: `That's ${moduleLabel}, in short. Your survey's up next.`,
+      detail: actions
+        ? `Try ${actions[2]} now, then head to your survey — you'll see it reflected the moment you use it.`
+        : `That's ${moduleLabel}, in short. Your survey's up next.`,
     },
   ]
 }
