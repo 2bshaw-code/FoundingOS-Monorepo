@@ -140,7 +140,7 @@ export default async function TesterSurveyPage({ searchParams }: { searchParams:
         <p>{BRAND_ROW_NARRATOR_LINE}</p>
       </div>
       <div className="quantum-brand-row">
-        {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat'] as const).map((slug) => (
+        {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat', 'finance', 'health', 'logistics'] as const).map((slug) => (
           <a key={slug} href={brands[slug].webUrl} className="quantum-brand-card" style={{ ['--brand-glow' as string]: brands[slug].accent }}>
             <span className="quantum-brand-card-dot" />
             {brands[slug].name}

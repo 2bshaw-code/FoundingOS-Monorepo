@@ -159,6 +159,10 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
               <input type="checkbox" id="demo-autoplay-toggle" />
               Auto-play next time
             </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+              <input type="checkbox" id="narrator-enabled-toggle" defaultChecked />
+              Narrator: ON / OFF
+            </label>
           </div>
         </article>
 
@@ -255,7 +259,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
         <p>{BRAND_ROW_NARRATOR_LINE}</p>
       </div>
       <div className="quantum-brand-row">
-        {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat'] as const).map((slug) => (
+        {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat', 'finance', 'health', 'logistics'] as const).map((slug) => (
           <a key={slug} href={brands[slug].webUrl} className="quantum-brand-card" style={{ ['--brand-glow' as string]: brands[slug].accent }}>
             <span className="quantum-brand-card-dot" />
             {brands[slug].name}

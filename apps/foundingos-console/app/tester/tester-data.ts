@@ -330,8 +330,7 @@ export const TARGET_JOKES: Record<string, string> = {
 
 // Shown once, at the very top of the survey (before any question) — the mission framing that
 // explains why this ecosystem-wide survey exists at all.
-export const SURVEY_MISSION_NARRATOR_LINE =
-  "This isn't a normal survey — you're helping shape a global operating system. We're building the Quantum WhatsApp OS, designed to be simple enough for anyone, anywhere, even on low-end devices. That's why we ask about every website, every console, and every POS flow. Your answers don't need to be long — just honest."
+export const SURVEY_MISSION_NARRATOR_LINE = "You're helping shape a global OS. Short, honest answers are perfect."
 
 export const SURVEYS: Record<SurveyId, Survey> = {
   'survey-a': {
@@ -534,14 +533,9 @@ export const SURVEYS: Record<SurveyId, Survey> = {
 // SystemOS, Guardian, Autonomous, SuperDash, and Package Model D pricing, regardless of their
 // assigned module. Grounded in what the ecosystem actually does today, not invented claims.
 export const BUSINESS_PLAN_NARRATION =
-  'FoundingOS is a multi-brand SaaS ecosystem — twenty-six interconnected apps across eight-plus brands, each with its own public website and its own console, all sharing one architecture. ' +
-  'Two layers sit underneath every brand: SystemOS, which handles tiers, industry packs, and hardware packs; and IntelligenceOS, the layer that reads live signals and turns them into decisions. ' +
-  'Every brand website feeds real user behaviour back into the OS — engagement events are ingested in real time, scored, and watched for anomalies by real scrapers and brand-signal feeds. ' +
-  'Guardian is the safety layer: it enforces category-level isolation, lockdown, and brand consistency, so no brand can bleed into another and every UI boundary stays intact. ' +
-  'Autonomous intelligence watches that same engagement data and reacts on its own — auto-optimizing a module that is surging, and auto-coaching one that is degrading, without a human in the loop. ' +
-  'SuperDash brings all of it together in one unified, cross-brand dashboard, so an operator can see every brand, every module, and every anomaly in a single live view. ' +
-  'Pricing adapts to match: Package Model D layers SystemOS tiers, industry packs, hardware packs, and QuantumOS and IntelligenceOS add-ons on top of a SuperDash view that always stays unrestricted. ' +
-  'The quantum-styled visuals across the ecosystem are not decoration — they are the live representation of that same real-time engagement and anomaly data moving through the system right now.'
+  'FoundingOS is a multi-brand SaaS ecosystem — twenty-six apps across eight-plus brands, each with its own website and console, sharing one architecture. ' +
+  'Guardian keeps every brand in its own lane; Autonomous auto-optimizes or auto-coaches modules on its own, using real engagement data. ' +
+  "SuperDash brings every brand and module into one live view, and pricing (Package Model D) adapts on top of it."
 
 const MODULE_NARRATION_DETAIL: Partial<Record<ModuleId, string>> = {
   'marketing-suite': 'Plan, launch, and track campaigns across the ecosystem, feeding engagement signals straight into SuperDash.',
@@ -652,8 +646,7 @@ export const INVESTOR_NARRATION = INVESTOR_NARRATOR_STEPS.map((s) => s.text).joi
 // Shown once, at the very first moment a real tester/investor/buyer/customer session enters
 // the OS (the top of their first demo/briefing page) — before DEMO_INTRO's more instructional
 // copy. The narrator's own personal greeting, distinct from the business-y walkthrough intro.
-export const OPENING_NARRATOR_LINE =
-  "Welcome to the Quantum WhatsApp OS — you're stepping into a living system built for real people, everywhere. I'll walk with you through everything… and don't worry, it's all simple, human, and honestly pretty fun. Ready."
+export const OPENING_NARRATOR_LINE = "Welcome to the Quantum WhatsApp OS. Let's jump in — it's simple and fun."
 
 // Shown alongside OPENING_NARRATOR_LINE, only on a genuine first visit (status ===
 // 'registered') — a plain, honest orientation card. The login-details line is worded
@@ -726,11 +719,9 @@ export const FREE_ROAM_FIRST_STEP_LINE = "Go explore — nothing you click can b
 // Universal intro copy shown once, before any demo/briefing content and before any survey,
 // for every real tester/investor/buyer/customer session — identical wording everywhere per the
 // consistency requirement.
-export const DEMO_INTRO =
-  "Welcome to your guided module demo. This walkthrough gives you a clear, simple preview of how this part of the FoundingOS ecosystem works. You'll see how real engagement, real behaviour, and real intelligence flow through the OS — exactly as described in our business plan. Once you finish the demo, you'll move straight into a short survey so we can understand your reactions, expectations, and insights."
+export const DEMO_INTRO = "Quick preview of how this part of the OS works. Demo first, then a short survey."
 
-export const SURVEY_INTRO =
-  "Thanks for completing the demo. Before we jump into Free Roam, let's get your thoughts — they help shape the Quantum WhatsApp OS. This survey now covers your module plus every brand website, console, and POS flow across the ecosystem, so quick, honest answers are perfect — no need to write an essay for each one."
+export const SURVEY_INTRO = "Thanks for the demo — a few quick thoughts next. Short, honest answers are perfect."
 
 // Shown the moment a survey run is submitted — the narrator's own line, followed by the
 // Quantum Free Roam invitation. Same voice, carried through from the demo into the survey step.
@@ -753,9 +744,10 @@ export const FREE_ROAM_TIPS = [
 ]
 
 // Short, reactive line shown once above the brand-cards row (FoundingOS, FoundRetail,
-// FoundMeat, FoundTalent, FoundCrypto, FoundThat) on demo/survey/investor/dashboard screens —
-// introduces the six real brands without altering the row/cards themselves.
-export const BRAND_ROW_NARRATOR_LINE = 'Six real brands, one OS.'
+// FoundMeat, FoundTalent, FoundCrypto, FoundThat, FoundFinance, FoundHealth,
+// FoundLogistics) on demo/survey/investor/dashboard screens — introduces the real brands
+// without altering the row/cards themselves.
+export const BRAND_ROW_NARRATOR_LINE = 'Eight real brands, one OS.'
 
 // "Free Roam" for a tester/investor/buyer/customer session means real, read-only revisiting of
 // whatever real page their module already unlocks — there is no separate /free-roam route.
@@ -860,31 +852,62 @@ export const SWITCHER_CODE_SCRIPT = `
 // manual button is always the reliable path). Rendered once per page via a plain <script> tag.
 export const NARRATION_PLAYER_SCRIPT = `
 (function () {
-  function speak(text) {
+  function speak(text, onEnd) {
     try {
       if (!text || !('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
       var utter = new SpeechSynthesisUtterance(text);
       utter.rate = 0.98;
+      if (onEnd) utter.onend = onEnd;
       window.speechSynthesis.speak(utter);
     } catch (err) {}
   }
   function narrationFor(el) { return el ? el.getAttribute('data-narration') : ''; }
+  function setButtonLabel(btn, label) { if (btn) btn.textContent = label; }
+
+  // Play / Stop toggle — the same button now genuinely stops mid-sentence instead of only
+  // ever offering Play.
   document.addEventListener('click', function (e) {
     var btn = e.target.closest('[data-narrate-btn]');
     if (!btn) return;
-    speak(narrationFor(btn.closest('[data-narration]')));
+    if (window.speechSynthesis && window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+      setButtonLabel(btn, '▶ Play narration');
+      return;
+    }
+    speak(narrationFor(btn.closest('[data-narration]')), function () { setButtonLabel(btn, '▶ Play narration'); });
+    setButtonLabel(btn, '■ Stop narration');
   });
+
   document.addEventListener('change', function (e) {
     if (e.target && e.target.id === 'demo-autoplay-toggle') {
       try { localStorage.setItem('fo-demo-autoplay', e.target.checked ? '1' : '0'); } catch (err) {}
     }
+    if (e.target && e.target.id === 'narrator-enabled-toggle') {
+      setNarratorEnabled(e.target.checked);
+    }
   });
+
+  // Narrator ON/OFF — OFF hides every narrator panel on the page entirely (not just mutes
+  // audio) and stops any speech in progress; persisted so it stays off across pages.
+  function setNarratorEnabled(enabled) {
+    var panels = document.querySelectorAll('.quantum-narrator-panel');
+    for (var i = 0; i < panels.length; i += 1) panels[i].style.display = enabled ? '' : 'none';
+    if (!enabled) { try { window.speechSynthesis.cancel(); } catch (err) {} }
+    try { localStorage.setItem('fo-narrator-enabled', enabled ? '1' : '0'); } catch (err) {}
+  }
+
+  var narratorToggle = document.getElementById('narrator-enabled-toggle');
+  var narratorEnabled = true;
+  try { narratorEnabled = localStorage.getItem('fo-narrator-enabled') !== '0'; } catch (err) {}
+  if (narratorToggle) narratorToggle.checked = narratorEnabled;
+  setNarratorEnabled(narratorEnabled);
+
   var toggle = document.getElementById('demo-autoplay-toggle');
   var wantsAutoplay = false;
   try { wantsAutoplay = localStorage.getItem('fo-demo-autoplay') === '1'; } catch (err) {}
   if (toggle) toggle.checked = wantsAutoplay;
-  if (wantsAutoplay) {
+  if (wantsAutoplay && narratorEnabled) {
     var card = document.querySelector('[data-narration]');
     setTimeout(function () { speak(narrationFor(card)); }, 500);
   }
