@@ -131,6 +131,16 @@ export function findModuleOption(moduleId: string): ModuleOption | null {
 export type SurveyQuestion = { id: string; prompt: string }
 export type Survey = { id: SurveyId; title: string; moduleLabel: string; questions: SurveyQuestion[] }
 
+// Appended to every module survey (survey-a through survey-l) so each one — not just the
+// dedicated investor survey — also evaluates comprehension of the business plan concepts
+// covered in the demo narration: multi-brand architecture, IntelligenceOS/SystemOS, Guardian,
+// Autonomous intelligence, SuperDash, and adaptive (Package Model D) pricing.
+export const BUSINESS_PLAN_QUESTIONS: SurveyQuestion[] = [
+  { id: 'bp1', prompt: 'Based on the demo, how would you describe the multi-brand FoundingOS ecosystem (26 interconnected apps, each with its own console) in your own words?' },
+  { id: 'bp2', prompt: 'Did the demo make it clear how IntelligenceOS and SystemOS work together, and how Guardian and Autonomous intelligence react to real engagement data?' },
+  { id: 'bp3', prompt: 'How clearly did SuperDash, real-time engagement ingestion, and the adaptive Package Model D pricing come across as one connected system, rather than separate features?' },
+]
+
 export const SURVEYS: Record<SurveyId, Survey> = {
   'survey-a': {
     id: 'survey-a',
@@ -141,6 +151,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'a2', prompt: 'Which marketing metric matters most to you day-to-day (reach, conversion, ROI, engagement)?' },
       { id: 'a3', prompt: 'Did the marketing dashboard load fast enough for daily use?' },
       { id: 'a4', prompt: 'What is one marketing workflow you wish was automated?' },
+      ...BUSINESS_PLAN_QUESTIONS,
     ],
   },
   'survey-b': {
@@ -152,6 +163,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'b2', prompt: 'Did the accounting health indicators match what you expected for your business?' },
       { id: 'b3', prompt: 'What financial report do you check most often?' },
       { id: 'b4', prompt: 'Any friction points when exporting accounting data?' },
+      ...BUSINESS_PLAN_QUESTIONS,
     ],
   },
   'survey-c': {
@@ -162,6 +174,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'c1', prompt: 'How well did the ticket queue reflect real customer urgency?' },
       { id: 'c2', prompt: 'Was the service load indicator useful for staffing decisions?' },
       { id: 'c3', prompt: 'What is missing from the customer service workflow today?' },
+      ...BUSINESS_PLAN_QUESTIONS,
     ],
   },
   'survey-d': {
@@ -173,6 +186,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'd2', prompt: 'Was message routing to the right team member clear?' },
       { id: 'd3', prompt: 'What messaging volume would break this system in your view?' },
       { id: 'd4', prompt: 'Did you notice any delay between sending and delivery?' },
+      ...BUSINESS_PLAN_QUESTIONS,
     ],
   },
   'survey-e': {
@@ -184,6 +198,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'e2', prompt: 'How much would you trust an autonomous AI action without manual review?' },
       { id: 'e3', prompt: "What's one task you'd want FoundAI to fully automate?" },
       { id: 'e4', prompt: 'Did any AI suggestion feel wrong or risky?' },
+      ...BUSINESS_PLAN_QUESTIONS,
     ],
   },
   'survey-f': {
@@ -194,6 +209,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'f1', prompt: 'How clear was the operational health view across teams?' },
       { id: 'f2', prompt: 'Which operational bottleneck shows up most in your day?' },
       { id: 'f3', prompt: 'Did the operations dashboard reflect real-time state accurately?' },
+      ...BUSINESS_PLAN_QUESTIONS,
     ],
   },
   'survey-g': {
@@ -205,6 +221,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'g2', prompt: 'What sales metric do you check first each morning?' },
       { id: 'g3', prompt: 'Was pipeline forecasting believable based on your own numbers?' },
       { id: 'g4', prompt: "What's missing from the sales workflow?" },
+      ...BUSINESS_PLAN_QUESTIONS,
     ],
   },
   'survey-h': {
@@ -215,6 +232,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'h1', prompt: 'Did the brand accent colors and identity feel consistent across screens?' },
       { id: 'h2', prompt: 'How important is per-brand visual customization to you?' },
       { id: 'h3', prompt: 'Any place where branding felt inconsistent or off-brand?' },
+      ...BUSINESS_PLAN_QUESTIONS,
     ],
   },
   'survey-i': {
@@ -226,6 +244,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'i2', prompt: 'Was the sidebar grouping (Core/Operations/Analytics/Settings) intuitive?' },
       { id: 'i3', prompt: "What's one navigation shortcut you wish existed?" },
       { id: 'i4', prompt: 'Did any page take too long to load while navigating?' },
+      ...BUSINESS_PLAN_QUESTIONS,
     ],
   },
   'survey-j': {
@@ -237,6 +256,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'j2', prompt: 'Which SuperDashboard module (marketing, accounting, service, messaging, AI, system health) matters most to you?' },
       { id: 'j3', prompt: 'Did the real-time Quantum Sync indicator feel meaningful or just decorative?' },
       { id: 'j4', prompt: "What's one metric missing from the cross-brand view?" },
+      ...BUSINESS_PLAN_QUESTIONS,
     ],
   },
   'survey-k': {
@@ -247,6 +267,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'k1', prompt: 'What accounting tools do you use?' },
       { id: 'k2', prompt: 'How often do you review cashflow?' },
       { id: 'k3', prompt: 'What slows down your finance team?' },
+      ...BUSINESS_PLAN_QUESTIONS,
     ],
   },
   'survey-l': {
@@ -257,6 +278,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'l1', prompt: 'Do you trade crypto?' },
       { id: 'l2', prompt: 'What platforms do you use?' },
       { id: 'l3', prompt: 'What is your biggest challenge in crypto operations?' },
+      ...BUSINESS_PLAN_QUESTIONS,
     ],
   },
   'survey-investor': {
@@ -278,30 +300,45 @@ export const SURVEYS: Record<SurveyId, Survey> = {
 }
 
 // A single, shared narration voice/storyline used across every module demo and the investor
-// briefing — grounded in what each module actually does today, not invented claims. Keyed by
-// ModuleId so the demo page can look up the right script; INVESTOR_NARRATION is the dedicated,
-// business-plan-aligned script for the /investor briefing.
-export const MODULE_NARRATION: Partial<Record<ModuleId, string>> = {
-  'marketing-suite': 'Marketing Suite lets a brand plan, launch, and track campaigns across the FoundingOS ecosystem, feeding engagement signals straight into SuperDash.',
-  'accounting': 'Accounting brings invoices, revenue, and financial health into one streamlined view for each brand, powering the adaptive pricing and finance layers above it.',
-  'customer-service': 'Customer Service tracks tickets, service-level agreements, and customer happiness, so support quality becomes another live signal the OS can measure.',
-  'messaging': 'Messaging unifies conversations, notifications, and outreach across every channel a brand uses, so nothing falls outside the intelligence layer.',
-  'ai-automation': 'This is FoundAI — AI-powered workflows and suggestions tailored to this console, the automation layer that turns raw signals into recommended actions.',
-  'finance': 'The Finance module gives each brand a real, working view of cash flow and financial operations, one of the core inputs the OS uses to score brand health.',
-  'crypto': 'The Crypto module tracks brand-specific crypto operations and market exposure as its own real, live data stream inside the ecosystem.',
-  'superdashboard-demo': 'SuperDash is the single cross-brand view: every module — marketing, accounting, service, messaging, AI, and system health — rolled up into one live intelligence layer for a founder or operator.',
-}
-
-export const INVESTOR_NARRATION =
+// briefing — grounded in what each module actually does today, not invented claims. Every
+// module's narration begins with the same BUSINESS_PLAN_NARRATION story (so the "single
+// narrator" storyline is identical everywhere), followed by a module-specific detail sentence.
+export const BUSINESS_PLAN_NARRATION =
   'FoundingOS is a multi-brand SaaS ecosystem — twenty-six interconnected apps across eight-plus brands, each with its own public website and its own console, all sharing one architecture. ' +
   'Two layers sit underneath every brand: SystemOS, which handles tiers, industry packs, and hardware packs; and IntelligenceOS, the layer that reads live signals and turns them into decisions. ' +
-  'Every brand website feeds real user behaviour back into the OS — engagement events are ingested in real time, scored, and watched for anomalies. ' +
+  'Every brand website feeds real user behaviour back into the OS — engagement events are ingested in real time, scored, and watched for anomalies by real scrapers and brand-signal feeds. ' +
   'Guardian is the safety layer: it enforces category-level isolation, lockdown, and brand consistency, so no brand can bleed into another and every UI boundary stays intact. ' +
   'Autonomous intelligence watches that same engagement data and reacts on its own — auto-optimizing a module that is surging, and auto-coaching one that is degrading, without a human in the loop. ' +
-  'SuperDash brings all of it together in one unified, cross-brand dashboard, so an operator or investor can see every brand, every module, and every anomaly in a single live view. ' +
+  'SuperDash brings all of it together in one unified, cross-brand dashboard, so an operator can see every brand, every module, and every anomaly in a single live view. ' +
   'Pricing adapts to match: Package Model D layers SystemOS tiers, industry packs, hardware packs, and QuantumOS and IntelligenceOS add-ons on top of a SuperDash view that always stays unrestricted. ' +
-  'The quantum-styled visuals across the ecosystem are not decoration — they are the live representation of that same real-time engagement and anomaly data moving through the system right now. ' +
-  'What you are about to see below is real, live brand engagement data — the same data that powers SuperDash — read-only, exactly as an investor should see it.'
+  'The quantum-styled visuals across the ecosystem are not decoration — they are the live representation of that same real-time engagement and anomaly data moving through the system right now.'
+
+const MODULE_NARRATION_DETAIL: Partial<Record<ModuleId, string>> = {
+  'marketing-suite': 'This module, Marketing Suite, lets a brand plan, launch, and track campaigns across the ecosystem, feeding engagement signals straight into SuperDash.',
+  'accounting': 'This module, Accounting, brings invoices, revenue, and financial health into one streamlined view for each brand, powering the adaptive pricing and finance layers above it.',
+  'customer-service': 'This module, Customer Service, tracks tickets, service-level agreements, and customer happiness, so support quality becomes another live signal the OS can measure.',
+  'messaging': 'This module, Messaging, unifies conversations, notifications, and outreach across every channel a brand uses, so nothing falls outside the intelligence layer.',
+  'ai-automation': 'This module is FoundAI — AI-powered workflows and suggestions tailored to this console, the automation layer that turns raw signals into recommended actions.',
+  'finance': 'This module, Finance, gives each brand a real, working view of cash flow and financial operations, one of the core inputs the OS uses to score brand health.',
+  'crypto': 'This module, Crypto, tracks brand-specific crypto operations and market exposure as its own real, live data stream inside the ecosystem.',
+  'superdashboard-demo': 'This module is SuperDash itself: every module — marketing, accounting, service, messaging, AI, and system health — rolled up into one live intelligence layer for a founder or operator.',
+}
+
+export const MODULE_NARRATION: Partial<Record<ModuleId, string>> = Object.fromEntries(
+  Object.entries(MODULE_NARRATION_DETAIL).map(([id, detail]) => [id, `${BUSINESS_PLAN_NARRATION} ${detail}`]),
+) as Partial<Record<ModuleId, string>>
+
+export const INVESTOR_NARRATION =
+  `${BUSINESS_PLAN_NARRATION} What you are about to see below is real, live brand engagement data — the same data that powers SuperDash — read-only, exactly as an investor should see it.`
+
+// Universal intro copy shown once, before any demo/briefing content and before any survey,
+// for every real tester/investor session — identical wording everywhere per the single
+// narrator/consistency requirement.
+export const DEMO_INTRO =
+  "Welcome to your guided module demo. This walkthrough gives you a clear, simple preview of how this part of the FoundingOS ecosystem works. You'll see how real engagement, real behaviour, and real intelligence flow through the OS — exactly as described in our business plan. Once you finish the demo, you'll move straight into a short survey so we can understand your reactions, expectations, and insights."
+
+export const SURVEY_INTRO =
+  "Thanks for completing the demo. This quick survey helps us understand how clearly the module's purpose, value, and intelligence came across. Your feedback directly shapes how FoundingOS evolves across its multi-brand ecosystem, IntelligenceOS layer, and autonomous decision engine. The survey takes less than a minute — and your input is genuinely valuable."
 
 // Shared, no-new-file audio narration engine: reads MODULE_NARRATION / INVESTOR_NARRATION text
 // aloud via the browser's built-in speech synthesis (works on desktop and mobile with zero

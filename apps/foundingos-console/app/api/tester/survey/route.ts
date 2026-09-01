@@ -29,11 +29,13 @@ export async function POST(request: Request) {
 
   // Demo must always come before the survey for real testers/survey-takers/investors — block a
   // direct API call attempting to bypass the page-level redirect in survey/page.tsx. Free
-  // roam / lawyer sessions never take a survey, so they're exempt.
+  // roam / lawyer sessions never take a survey, so they're exempt. For investors, still being
+  // mid-briefing ('briefing-viewed') also counts as not having reached the demo step yet.
   const category = categorizeCredential(testerId)
   const isSurveyTaker = category === 'tester' || category === 'survey' || category === 'investor'
   const demoPath = category === 'investor' ? '/investor' : `/tester/demo/${tester.moduleId}`
-  if (isSurveyTaker && tester.status === 'registered') {
+  const demoNotYetViewed = tester.status === 'registered' || tester.status === 'briefing-viewed'
+  if (isSurveyTaker && demoNotYetViewed) {
     return NextResponse.json({ error: 'Complete the module demo before starting the survey.', redirect: demoPath }, { status: 403 })
   }
 

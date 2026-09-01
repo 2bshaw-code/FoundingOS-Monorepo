@@ -7,7 +7,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, verifyToken } from '../../session'
 import { getTester, upsertTester } from '../../store.server'
-import { MODULE_NARRATION, NARRATION_PLAYER_SCRIPT, type ModuleId } from '../../tester-data'
+import { MODULE_NARRATION, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_NARRATION, DEMO_INTRO, type ModuleId } from '../../tester-data'
 
 export default async function TesterDemoPage({ params }: { params: Promise<{ moduleId: string }> }) {
   const { moduleId } = await params
@@ -47,8 +47,13 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
     : moduleId === 'ai-automation' ? '/modules/foundai-demo'
     : null
   const hasCompletedSurvey = tester.runs.length > 0
+  // Every module's narration embeds the same full business-plan story (MODULE_NARRATION
+  // already does this for the modules with a dedicated detail sentence); modules with no
+  // dedicated detail (operations/sales/branding/console-navigation) still get the full
+  // business-plan story plus a generic module line, so every demo — with no exceptions —
+  // covers the business plan.
   const narration = MODULE_NARRATION[moduleId as ModuleId]
-    ?? `This is your assigned ${tester.moduleLabel} module — part of the FoundingOS multi-brand operating system.`
+    ?? `${BUSINESS_PLAN_NARRATION} This module, ${tester.moduleLabel}, is your assigned part of that same FoundingOS multi-brand operating system.`
 
   return (
     <section className="stack">
@@ -63,6 +68,11 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
       </header>
 
       <div className="module-card-grid">
+        <article className="module-card fo-card">
+          <div className="module-card-top"><span>ℹ</span><strong>Before you begin</strong></div>
+          <p>{DEMO_INTRO}</p>
+        </article>
+
         <article className="module-card fo-card" data-narration={narration}>
           <div className="module-card-top"><span>🔊</span><strong>Narration</strong></div>
           <p>{narration}</p>
