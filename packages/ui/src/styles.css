@@ -2585,12 +2585,25 @@ body.superdash-heatmap-off .quantum-heatmap {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(4, 8, 14, 0.72);
-  backdrop-filter: blur(6px);
+  /* Darker + more opaque than before, so bright brand gradients/neon text behind the modal
+     never bleed through — backdrop-filter blur is a progressive enhancement on top of this,
+     not the only thing keeping the page content hidden. */
+  background: rgba(3, 6, 11, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: grid;
   place-items: center;
   padding: 20px;
   animation: quantumModalFadeIn 180ms ease;
+}
+
+/* Browsers/devices without backdrop-filter support (or where it's disabled, e.g. reduced-
+   transparency settings) previously relied solely on the 72%-opacity background above, which
+   let page content show through — this fallback makes the dimming layer fully opaque instead. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .quantum-console-modal-backdrop {
+    background: rgba(3, 6, 11, 0.97);
+  }
 }
 
 @keyframes quantumModalFadeIn {
@@ -2603,11 +2616,12 @@ body.superdash-heatmap-off .quantum-heatmap {
   width: 100%;
   max-width: 460px;
   border-radius: 20px;
-  border: 1px solid color-mix(in srgb, var(--accent, #4A90E2) 35%, rgba(255, 255, 255, 0.1));
+  border: 1px solid color-mix(in srgb, var(--accent, #4A90E2) 45%, rgba(255, 255, 255, 0.14));
+  /* Fully solid, no alpha — text and package options always sit on a clean, opaque surface. */
   background: #0b0e14;
   color: #edf7ff;
-  padding: 28px 24px 24px;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  padding: 28px 28px 28px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.3);
 }
 
 .quantum-console-modal-close {
@@ -2636,7 +2650,7 @@ body.superdash-heatmap-off .quantum-heatmap {
 
 .quantum-console-modal-options {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 /* Demo Message Board — read-only demo module (Growth consoles only) */
@@ -2935,11 +2949,14 @@ body.superdash-heatmap-off .quantum-heatmap {
   max-width: 480px;
 }
 .package-modal-ai {
-  margin: 16px 0;
-  padding: 14px;
+  margin: 18px 0;
+  padding: 16px;
   border-radius: 12px;
   border: 1px solid var(--line);
-  background: var(--surface-soft);
+  /* Was var(--surface-soft) (~4% opacity) — too close to transparent against the modal's own
+     dark background, reading as washed-out/low-contrast. --surface-strong is a genuinely solid
+     nested panel instead, matching the "no transparency inside the box" requirement. */
+  background: var(--surface-strong);
 }
 .package-modal-ai-chips {
   display: flex;
