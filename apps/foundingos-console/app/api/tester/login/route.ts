@@ -119,6 +119,8 @@ export async function POST(request: Request) {
     survey: '/tester/survey',
     tester: '/tester/dashboard',
     investor: '/investor',
+    buyer: '/tester/dashboard',
+    customer: '/tester/dashboard',
     lawyer: '/legal',
     'free-roam': '/tester/dashboard',
   }

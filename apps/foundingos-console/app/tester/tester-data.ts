@@ -19,8 +19,10 @@ export type ModuleId =
   | 'finance'
   | 'crypto'
   | 'investor-overview'
+  | 'buyer-overview'
+  | 'customer-overview'
 
-export type SurveyId = 'survey-a' | 'survey-b' | 'survey-c' | 'survey-d' | 'survey-e' | 'survey-f' | 'survey-g' | 'survey-h' | 'survey-i' | 'survey-j' | 'survey-k' | 'survey-l' | 'survey-investor'
+export type SurveyId = 'survey-a' | 'survey-b' | 'survey-c' | 'survey-d' | 'survey-e' | 'survey-f' | 'survey-g' | 'survey-h' | 'survey-i' | 'survey-j' | 'survey-k' | 'survey-l' | 'survey-investor' | 'survey-buyer' | 'survey-customer'
 
 export type Credential = {
   id: string
@@ -81,6 +83,15 @@ export const CREDENTIALS: Credential[] = [
   { id: 'survey-fin', password: 'SURVEY-FIN', moduleId: 'finance', moduleLabel: 'Finance', surveyId: 'survey-k' },
   { id: 'survey-crypto', password: 'SURVEY-CRYPTO', moduleId: 'crypto', moduleLabel: 'Crypto', surveyId: 'survey-l' },
   { id: 'survey-demo', password: 'SURVEY-DEMO', moduleId: 'superdashboard-demo', moduleLabel: 'SuperDashboard Demo (read-only)', surveyId: 'survey-j' },
+
+  // Buyer / Customer access — real, dedicated tiers (own module, own survey), mirroring the
+  // tester program exactly: demo -> survey -> submit, gated by the same demo-viewed status.
+  // "Buyer" previews the real end-consumer experience of a live brand website; "Customer"
+  // previews the real Customer Service module a brand uses to support that same buyer.
+  { id: 'buyer-1', password: 'BUYER-1', moduleId: 'buyer-overview', moduleLabel: 'Buyer Overview', surveyId: 'survey-buyer' },
+  { id: 'buyer-2', password: 'BUYER-2', moduleId: 'buyer-overview', moduleLabel: 'Buyer Overview', surveyId: 'survey-buyer' },
+  { id: 'customer-1', password: 'CUSTOMER-1', moduleId: 'customer-overview', moduleLabel: 'Customer Overview', surveyId: 'survey-customer' },
+  { id: 'customer-2', password: 'CUSTOMER-2', moduleId: 'customer-overview', moduleLabel: 'Customer Overview', surveyId: 'survey-customer' },
 ]
 
 export function findCredentialByPassword(password: string): Credential | null {
@@ -91,12 +102,14 @@ export function findCredentialByPassword(password: string): Credential | null {
 // since juliet/tester-10/survey-demo/investor-*/lawyer-review all currently share the same
 // 'superdashboard-demo' moduleId but must route to different real destinations from the
 // root-domain (www.foundingos.com) login gate.
-export type CredentialCategory = 'survey' | 'tester' | 'investor' | 'lawyer' | 'free-roam'
+export type CredentialCategory = 'survey' | 'tester' | 'investor' | 'buyer' | 'customer' | 'lawyer' | 'free-roam'
 
 const FREE_ROAM_IDS = new Set(['juliet', 'tester-10', 'survey-demo'])
 
 export function categorizeCredential(id: string): CredentialCategory {
   if (id === 'investor-alpha' || id === 'investor-omega') return 'investor'
+  if (id.startsWith('buyer-')) return 'buyer'
+  if (id.startsWith('customer-')) return 'customer'
   if (id === 'lawyer-review') return 'lawyer'
   if (FREE_ROAM_IDS.has(id)) return 'free-roam'
   if (id.startsWith('survey-')) return 'survey'
@@ -297,6 +310,28 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'inv9', prompt: 'What is the single strongest signal from this briefing that FoundingOS is a real, differentiated platform rather than a collection of separate brand sites?' },
     ],
   },
+  'survey-buyer': {
+    id: 'survey-buyer',
+    title: 'Survey — Buyer Overview',
+    moduleLabel: 'Buyer Overview',
+    questions: [
+      { id: 'buy1', prompt: 'As a buyer, how clear and trustworthy did the brand website feel to shop or browse on?' },
+      { id: 'buy2', prompt: 'Was anything confusing or slow in the buying experience you just saw?' },
+      { id: 'buy3', prompt: 'What would make you more likely to return to this brand?' },
+      ...BUSINESS_PLAN_QUESTIONS,
+    ],
+  },
+  'survey-customer': {
+    id: 'survey-customer',
+    title: 'Survey — Customer Overview',
+    moduleLabel: 'Customer Overview',
+    questions: [
+      { id: 'cust1', prompt: 'How confident would you feel getting support through this Customer Service experience?' },
+      { id: 'cust2', prompt: 'Did the ticket/response flow feel fast and human, or slow and robotic?' },
+      { id: 'cust3', prompt: 'What is the one thing that would most improve how a brand supports you as a customer?' },
+      ...BUSINESS_PLAN_QUESTIONS,
+    ],
+  },
 }
 
 // A single, shared narration voice/storyline used across every module demo and the investor
@@ -322,23 +357,109 @@ const MODULE_NARRATION_DETAIL: Partial<Record<ModuleId, string>> = {
   'finance': 'This module, Finance, gives each brand a real, working view of cash flow and financial operations, one of the core inputs the OS uses to score brand health.',
   'crypto': 'This module, Crypto, tracks brand-specific crypto operations and market exposure as its own real, live data stream inside the ecosystem.',
   'superdashboard-demo': 'This module is SuperDash itself: every module — marketing, accounting, service, messaging, AI, and system health — rolled up into one live intelligence layer for a founder or operator.',
+  'buyer-overview': "This is the buyer's-eye view — the real brand website a customer actually lands on, browses, and buys from, which is where all of this real engagement data starts.",
+  'customer-overview': 'This is Customer Service from the other side of the counter — the real support experience a customer gets, and another live signal the OS folds straight into brand health.',
 }
 
+export type NarratorStep = { step: string; text: string }
+
+// The AI narrator's personality, applied identically everywhere: warm, confident, a little
+// funny, talks like a founder who genuinely loves this product and knows every corner of it —
+// speaking as part of the Quantum WhatsApp OS itself. Every demo — every tester module, the
+// investor briefing, buyer, customer — gets the same six beats, so the guided, step-by-step
+// feel (and the voice) never changes, only the module detail slotted into "Explanation".
+function buildNarratorSteps(moduleLabel: string, moduleDetail: string): NarratorStep[] {
+  return [
+    {
+      step: '1 · Intro',
+      text: `Welcome inside the Quantum WhatsApp OS — let me show you around. Alright, let me show you something cool about ${moduleLabel}.`,
+    },
+    {
+      step: '2 · Explanation',
+      text: `${BUSINESS_PLAN_NARRATION} ${moduleDetail}`,
+    },
+    {
+      step: '3 · Humour',
+      text: "This module is one of my favourites. Don't tell Guardian. Watch how IntelligenceOS reacts here — it's like magic, but with maths. Guardian gets a little dramatic about isolation and lockdown sometimes, but honestly? We love that about it.",
+    },
+    {
+      step: '4 · Insight',
+      text: "You're inside the OS now. Everything you see is live, real, and reactive — every click, every message flows straight into a BrandMetric signal, scored, watched for anomalies by real scrapers, and rolled into SuperDash in real time. No vanity numbers, no guesswork.",
+    },
+    {
+      step: '5 · Mission',
+      text: "And here's the whole point of it, honestly: we're building the WhatsApp OS — the operating system for real human engagement. Everything you see here is designed to understand people, react to behaviour, and help brands operate in real time.",
+    },
+    {
+      step: '6 · Wrap-up',
+      text: `That's ${moduleLabel}, in a nutshell. Take your time exploring, and when you're ready, I'll walk you into a quick survey — thanks for sticking with me this far.`,
+    },
+  ]
+}
+
+export const MODULE_NARRATOR_STEPS: Partial<Record<ModuleId, NarratorStep[]>> = Object.fromEntries(
+  Object.entries(MODULE_NARRATION_DETAIL).map(([id, detail]) => {
+    const label = MODULE_OPTIONS.find((option) => option.moduleId === id)?.moduleLabel ?? id
+    return [id, buildNarratorSteps(label, detail)]
+  }),
+) as Partial<Record<ModuleId, NarratorStep[]>>
+
+// Full, joined script per module — what the "Play narration" button reads aloud in one go.
 export const MODULE_NARRATION: Partial<Record<ModuleId, string>> = Object.fromEntries(
-  Object.entries(MODULE_NARRATION_DETAIL).map(([id, detail]) => [id, `${BUSINESS_PLAN_NARRATION} ${detail}`]),
+  Object.entries(MODULE_NARRATOR_STEPS).map(([id, steps]) => [id, (steps as NarratorStep[]).map((s) => s.text).join(' ')]),
 ) as Partial<Record<ModuleId, string>>
 
-export const INVESTOR_NARRATION =
-  `${BUSINESS_PLAN_NARRATION} What you are about to see below is real, live brand engagement data — the same data that powers SuperDash — read-only, exactly as an investor should see it.`
+export const INVESTOR_NARRATOR_STEPS = buildNarratorSteps(
+  'Investor Briefing',
+  'This briefing walks you through the live, cross-brand engagement data behind FoundingOS — the same numbers SuperDash uses, read-only, exactly as an investor should see them.',
+)
+export const INVESTOR_NARRATION = INVESTOR_NARRATOR_STEPS.map((s) => s.text).join(' ')
 
 // Universal intro copy shown once, before any demo/briefing content and before any survey,
-// for every real tester/investor session — identical wording everywhere per the single
-// narrator/consistency requirement.
+// for every real tester/investor/buyer/customer session — identical wording everywhere per the
+// consistency requirement.
 export const DEMO_INTRO =
   "Welcome to your guided module demo. This walkthrough gives you a clear, simple preview of how this part of the FoundingOS ecosystem works. You'll see how real engagement, real behaviour, and real intelligence flow through the OS — exactly as described in our business plan. Once you finish the demo, you'll move straight into a short survey so we can understand your reactions, expectations, and insights."
 
 export const SURVEY_INTRO =
-  "Thanks for completing the demo. This quick survey helps us understand how clearly the module's purpose, value, and intelligence came across. Your feedback directly shapes how FoundingOS evolves across its multi-brand ecosystem, IntelligenceOS layer, and autonomous decision engine. The survey takes less than a minute — and your input is genuinely valuable."
+  "Thanks for completing the demo. Before we jump into Free Roam, let's get your thoughts — they help shape the Quantum WhatsApp OS. This quick survey takes less than a minute, and your input is genuinely valuable."
+
+// Shown the moment a survey run is submitted — the narrator's own line, followed by the
+// Quantum Free Roam invitation. Same voice, carried through from the demo into the survey step.
+export const NARRATOR_SURVEY_LINE = "Thanks for sticking with me — now let's see what you thought."
+
+export const SURVEY_COMPLETE_NARRATOR_LINE =
+  "You've done your part — now the OS evolves. Want to explore the system live? Free Roam is waiting."
+
+export const FREE_ROAM_INVITE_LINES = [
+  "Alright, ready to explore the OS in 360°? Free Roam is your playground — nothing you click can break anything.",
+  "Go ahead, jump in. I'll be right here if you need me.",
+  "If you want to see how everything connects, Free Roam is where the magic is.",
+]
+
+export const FREE_ROAM_TIPS = [
+  "Check out SuperDash — it's the brain of the whole OS.",
+  "Guardian gets dramatic, but it's worth a look.",
+  "Autonomous reacts to real engagement in real time — go see it.",
+  "BrandMetric shows you the heartbeat of every brand.",
+]
+
+// "Free Roam" for a tester/investor/buyer/customer session means real, read-only revisiting of
+// whatever real page their module already unlocks — there is no separate /free-roam route.
+// Shared so the demo page and the post-survey completion state always agree on the destination.
+export function getFreeRoamHref(moduleId: string): string {
+  if (moduleId === 'superdashboard-demo') return '/superdashboard?readOnly=1'
+  if (moduleId === 'finance') return '/finance'
+  if (moduleId === 'crypto') return '/crypto'
+  if (moduleId === 'marketing-suite') return '/modules/marketing'
+  if (moduleId === 'accounting') return '/modules/accounting'
+  if (moduleId === 'customer-service' || moduleId === 'customer-overview') return '/modules/customer-service'
+  if (moduleId === 'messaging') return '/modules/messaging'
+  if (moduleId === 'ai-automation') return '/modules/foundai-demo'
+  if (moduleId === 'buyer-overview') return 'https://retail.foundingos.com'
+  if (moduleId === 'investor-overview') return '/investor'
+  return `/tester/demo/${moduleId}`
+}
 
 // Shared, no-new-file audio narration engine: reads MODULE_NARRATION / INVESTOR_NARRATION text
 // aloud via the browser's built-in speech synthesis (works on desktop and mobile with zero

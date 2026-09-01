@@ -21,6 +21,8 @@ const CATEGORY_DESTINATIONS: Record<string, string> = {
   survey: `${CONSOLE_URL}/tester/survey`,
   tester: `${CONSOLE_URL}/tester/dashboard`,
   investor: `${CONSOLE_URL}/investor`,
+  buyer: `${CONSOLE_URL}/tester/dashboard`,
+  customer: `${CONSOLE_URL}/tester/dashboard`,
   lawyer: `${CONSOLE_URL}/legal`,
 }
 

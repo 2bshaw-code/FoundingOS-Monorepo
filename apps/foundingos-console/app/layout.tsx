@@ -15,16 +15,16 @@ import { SESSION_COOKIE, verifyToken } from './tester/session'
 import { categorizeCredential } from './tester/tester-data'
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  // Real testers/survey-takers/investors must NEVER see the console sidebar, topbar, or
-  // FoundAI panel — no console navigation, no dashboard tiles, nothing beyond their assigned
-  // demo/briefing and survey. Every real tester/survey/investor session is, by this point,
-  // always redirected to /tester/demo/*, /tester/survey, or /investor — so this check alone
-  // (independent of path) is enough to guarantee the console chrome never renders for them.
-  // Free roam / lawyer / admin sessions are unaffected and see the full console shell as before.
+  // Real testers/survey-takers/investors/buyers/customers must NEVER see the console sidebar,
+  // topbar, or FoundAI panel — no console navigation, no dashboard tiles, nothing beyond their
+  // assigned demo/briefing and survey. Every real session of these categories is, by this
+  // point, always redirected to /tester/demo/*, /tester/survey, or /investor — so this check
+  // alone (independent of path) is enough to guarantee the console chrome never renders for
+  // them. Free roam / lawyer / admin sessions are unaffected and see the full console shell.
   const token = cookies().get(SESSION_COOKIE)?.value
   const testerId = token ? await verifyToken('tester', token) : null
   const category = testerId ? categorizeCredential(testerId) : null
-  const isRealTesterSession = category === 'tester' || category === 'survey' || category === 'investor'
+  const isRealTesterSession = category === 'tester' || category === 'survey' || category === 'investor' || category === 'buyer' || category === 'customer'
 
   if (isRealTesterSession) {
     return (

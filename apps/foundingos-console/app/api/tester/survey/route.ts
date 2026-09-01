@@ -27,12 +27,13 @@ export async function POST(request: Request) {
   const tester = await getTester(testerId)
   if (!tester) return NextResponse.json({ error: 'Tester not found' }, { status: 404 })
 
-  // Demo must always come before the survey for real testers/survey-takers/investors — block a
-  // direct API call attempting to bypass the page-level redirect in survey/page.tsx. Free
-  // roam / lawyer sessions never take a survey, so they're exempt. For investors, still being
-  // mid-briefing ('briefing-viewed') also counts as not having reached the demo step yet.
+  // Demo must always come before the survey for real testers/survey-takers/investors/buyers/
+  // customers — block a direct API call attempting to bypass the page-level redirect in
+  // survey/page.tsx. Free roam / lawyer sessions never take a survey, so they're exempt. For
+  // investors, still being mid-briefing ('briefing-viewed') also counts as not having reached
+  // the demo step yet.
   const category = categorizeCredential(testerId)
-  const isSurveyTaker = category === 'tester' || category === 'survey' || category === 'investor'
+  const isSurveyTaker = category === 'tester' || category === 'survey' || category === 'investor' || category === 'buyer' || category === 'customer'
   const demoPath = category === 'investor' ? '/investor' : `/tester/demo/${tester.moduleId}`
   const demoNotYetViewed = tester.status === 'registered' || tester.status === 'briefing-viewed'
   if (isSurveyTaker && demoNotYetViewed) {
