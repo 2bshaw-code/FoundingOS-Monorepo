@@ -141,7 +141,7 @@ function SuperKPICard({ label, value, trend, icon, tone, history }: { label: str
   )
 }
 
-export default function SuperDashboardPage({ readOnly = false, quantumSignals = [], verificationStatus }: { readOnly?: boolean; quantumSignals?: Array<BrandSignal & QuantumEnrichedFields>; verificationStatus?: { lastRun: string | null; driftCount: number; safeFixCount: number; pendingGuardian: number } }) {
+export default function SuperDashboardPage({ readOnly = false, quantumSignals = [], verificationStatus, testerSummary }: { readOnly?: boolean; quantumSignals?: Array<BrandSignal & QuantumEnrichedFields>; verificationStatus?: { lastRun: string | null; driftCount: number; safeFixCount: number; pendingGuardian: number }; testerSummary?: { activation: string; engagement: number; retention: number; stability: number; autonomy: string } }) {
   const handleCommand = useSuperDashCommandHandler()
   const superDashTiles = useMemo(() => getSuperDashTiles(), [])
   const autoActions = useMemo(
@@ -493,6 +493,12 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
         {verificationStatus && (
           <footer style={{ fontSize: 11, opacity: 0.6, marginTop: 24, paddingTop: 12, borderTop: '1px solid var(--line)' }}>
             Verification: {verificationStatus.lastRun ? new Date(verificationStatus.lastRun).toLocaleString() : 'never run'} • {verificationStatus.driftCount} drift • {verificationStatus.safeFixCount} safe-fixed • {verificationStatus.pendingGuardian} pending Guardian
+          </footer>
+        )}
+
+        {testerSummary && (
+          <footer style={{ fontSize: 11, opacity: 0.6, marginTop: 4, paddingTop: 4 }}>
+            Testers: {testerSummary.activation} activation • {testerSummary.engagement} engagement • {testerSummary.retention} retention • {testerSummary.stability} stability • {testerSummary.autonomy} autonomy
           </footer>
         )}
         </SuperDashCinematic>
