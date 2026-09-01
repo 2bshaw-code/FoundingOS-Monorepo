@@ -141,7 +141,7 @@ function SuperKPICard({ label, value, trend, icon, tone, history }: { label: str
   )
 }
 
-export default function SuperDashboardPage({ readOnly = false, quantumSignals = [] }: { readOnly?: boolean; quantumSignals?: Array<BrandSignal & QuantumEnrichedFields> }) {
+export default function SuperDashboardPage({ readOnly = false, quantumSignals = [], verificationStatus }: { readOnly?: boolean; quantumSignals?: Array<BrandSignal & QuantumEnrichedFields>; verificationStatus?: { lastRun: string | null; driftCount: number; safeFixCount: number; pendingGuardian: number } }) {
   const handleCommand = useSuperDashCommandHandler()
   const superDashTiles = useMemo(() => getSuperDashTiles(), [])
   const autoActions = useMemo(
@@ -489,6 +489,12 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
             <div key={i}>{g}</div>
           ))}
         </div>
+
+        {verificationStatus && (
+          <footer style={{ fontSize: 11, opacity: 0.6, marginTop: 24, paddingTop: 12, borderTop: '1px solid var(--line)' }}>
+            Verification: {verificationStatus.lastRun ? new Date(verificationStatus.lastRun).toLocaleString() : 'never run'} • {verificationStatus.driftCount} drift • {verificationStatus.safeFixCount} safe-fixed • {verificationStatus.pendingGuardian} pending Guardian
+          </footer>
+        )}
         </SuperDashCinematic>
       </article>
     </section>

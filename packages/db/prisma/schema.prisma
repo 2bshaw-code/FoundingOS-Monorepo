@@ -185,3 +185,129 @@ model SurveyResult {
   @@index([subscriptionId])
   @@index([type])
 }
+
+model LegalAcceptance {
+  id           String   @id @default(cuid())
+  email        String
+  passwordUsed String
+  version      String
+  timestamp    DateTime @default(now())
+
+  @@index([email])
+}
+
+// --- Real, persistent backing for the cross-app SuperDash survey feed (previously a
+// dormant-safe JSON file in foundingos-console, replaced now that a real DATABASE_URL
+// exists). One row per tester survey submission from any brand website.
+model SurveyEntry {
+  id         String   @id @default(cuid())
+  brand      String
+  category   String
+  tester     String?
+  responses  Json
+  timestamp  BigInt
+  receivedAt DateTime @default(now())
+
+  @@index([category])
+  @@index([brand])
+  @@map("survey_entries")
+}
+
+// Persisted tester program state (previously a dormant-safe JSON file in
+// foundingos-console/app/tester/store.server.ts). One row per pre-issued tester credential.
+model TesterSession {
+  id                 String   @id
+  email              String
+  moduleId           String
+  moduleLabel        String
+  surveyId           String
+  status             String
+  currentAnswers     Json
+  runs               Json
+  // The literal password/access code used at the most recent login — additive, nullable
+  // so existing rows (created before this field existed) remain valid without backfill.
+  lastCredentialUsed String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("tester_sessions")
+}
+
+// Historical anomaly detections (SuperDashAnomaly output for category tiles, plus brand-
+// level high/low-engagement Autonomous triggers). category/message/score cover the
+// existing category-level use; brandName/totalEngagement/categoryBreakdown are additive,
+// nullable fields used only by the newer brand-level trigger (see
+// brand-metric-store.server.ts). "triggeredAt" from the spec maps onto detectedAt — a
+// second, duplicate timestamp field would be redundant.
+model AnomalyLog {
+  id                String   @id @default(cuid())
+  category          String?
+  message           String
+  score             Float
+  detectedAt        DateTime @default(now())
+  brandName         String?
+  totalEngagement   Int?
+  categoryBreakdown Json?
+
+  @@index([category])
+  @@index([brandName])
+  @@map("anomaly_logs")
+}
+
+// Historical engagement snapshots — category/submissionCount/score cover the existing
+// category-level use; brandName/totalEngagement/categoryBreakdown are additive, nullable
+// fields used only by the newer brand-level high-engagement trigger. "triggeredAt" from the
+// spec maps onto recordedAt.
+model EngagementLog {
+  id                String   @id @default(cuid())
+  category          String?
+  submissionCount   Int?
+  score             Float
+  recordedAt        DateTime @default(now())
+  brandName         String?
+  totalEngagement   Int?
+  categoryBreakdown Json?
+
+  @@index([category])
+  @@index([brandName])
+  @@map("engagement_logs")
+}
+
+// Persisted, live per-brand engagement snapshot backing the new real-data SuperDash brand
+// panel — one row per brand, updated on every survey submission for that brand. Kept
+// separate from (additive to) the existing mock portfolio table in SuperDashboardPage.tsx,
+// since only brands with a working survey-feed pipeline (currently just retail) have any
+// real data source; the other 7 brands would otherwise show as blank/zero.
+model BrandMetric {
+  id                String   @id @default(cuid())
+  brandName         String   @unique
+  totalEngagement   Int      @default(0)
+  anomalyScore      Float    @default(1.0)
+  categoryBreakdown Json     @default("{}")
+  lastUpdated       DateTime @default(now())
+
+  @@map("brand_metrics")
+}
+
+// Autonomous Verification Layer (AVL) — a single flexible log table covering every kind of
+// row the verification loop writes: 'snapshot' (last-known-good module map, one per run),
+// 'drift' (a detected difference from the prior snapshot), 'safeFix' (a deterministic,
+// reversible action AVL actually took), 'needsApproval' (a high-risk item sitting in the
+// GuardianQueue until a human resolves it), and 'freezePass' (the result of a post-fix
+// health check). Kept as one table (matching the existing AnomalyLog/EngagementLog
+// "flexible, additive fields" pattern) rather than several near-empty tables.
+model DriftLog {
+  id        String   @id @default(cuid())
+  runId     String
+  kind      String
+  app       String?
+  path      String?
+  message   String
+  detail    Json?
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([runId])
+  @@index([kind])
+  @@map("drift_logs")
+}
