@@ -7,10 +7,11 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../../session'
 import { getTester, upsertTester, getOrCreateAdminTester } from '../../store.server'
-import { MODULE_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_FACTS, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, categorizeCredential, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, adminTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type ModuleId } from '../../tester-data'
+import { MODULE_NARRATOR_STEPS, buildNarratorSteps, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_FACTS, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, categorizeCredential, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, adminTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type ModuleId } from '../../tester-data'
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
 import { AnimatedMessageFlow } from '@foundingos/ui/animated-message-flow'
+import { buildDemoCurrencyPanel } from '../../demo-currency'
 
 export default async function TesterDemoPage({ params }: { params: Promise<{ moduleId: string }> }) {
   const { moduleId } = await params
@@ -82,15 +83,13 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
   // voice-line per beat; modules with no dedicated detail sentence (operations/sales/branding/
   // console-navigation) still get the full treatment via the generic fallback below, so no demo
   // is left without the narrator.
-  const narratorSteps = MODULE_NARRATOR_STEPS[moduleId as ModuleId] ?? [
-    { step: '1 · What it does', text: "Alright, here's the fun part.", detail: `${tester.moduleLabel}: your assigned part of the FoundingOS multi-brand operating system.` },
-    { step: '2 · How to use it', text: 'Let me walk you through it.', detail: `Open ${tester.moduleLabel} below and try whatever's on screen — it's all real and clickable.` },
-    { step: '3 · What happens', text: 'Watch what happens next.', detail: `Every action in ${tester.moduleLabel} updates its numbers live — nothing here is a static screenshot.` },
-    { step: '4 · Behind the scenes', text: "Here's the clever part.", detail: 'That same activity becomes a BrandMetric signal — Guardian keeps it in its own lane, Autonomous reacts to it, and SuperDash rolls it up live.' },
-    { step: '5 · A real example', text: 'Nice — that worked perfectly.', detail: `Try one real action in ${tester.moduleLabel} now — you'll see it reflected the moment you use it.` },
-    { step: '6 · Summary', text: "That's the gist — nice work.", detail: `That's ${tester.moduleLabel}, in short. Your survey's up next.` },
-  ]
+  const narratorSteps = MODULE_NARRATOR_STEPS[moduleId as ModuleId] ?? buildNarratorSteps(
+    tester.moduleLabel,
+    `your assigned part of the FoundingOS multi-brand operating system`,
+    moduleId as ModuleId,
+  )
   const switcherOptions = buildSwitcherOptions(isSuperFounderAdminSession ? 'admin' : categorizeCredential(testerId))
+  const currencyPanel = buildDemoCurrencyPanel(moduleId)
 
   return (
     <section className="stack">
@@ -170,6 +169,17 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
           <div className="module-card-top"><span>💬</span><strong>Message style preview</strong></div>
           <p><small>A quick, lighthearted look at how FoundAI banter feels across familiar messaging styles — purely for fun, not a real conversation log.</small></p>
           <AnimatedMessageFlow />
+        </article>
+
+        <article className="module-card fo-card quantum-frame">
+          <div className="module-card-top"><span>🌍</span><strong>Demo currency simulation</strong></div>
+          <p><small>Synthetic demo values only — not real prices, not a real conversion rate, never shown inside a real module.</small></p>
+          <p style={{ fontSize: 20, fontWeight: 700, margin: '4px 0' }}>{currencyPanel.primary.formatted} <small style={{ fontWeight: 400, opacity: 0.6 }}>({currencyPanel.primary.code} · simulated locale)</small></p>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 13, opacity: 0.75 }}>
+            {currencyPanel.secondary.map((c) => (
+              <span key={c.code}>{c.formatted} <small>({c.code})</small></span>
+            ))}
+          </div>
         </article>
 
         {narratorSteps.map((beat) => (

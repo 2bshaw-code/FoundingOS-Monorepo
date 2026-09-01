@@ -580,7 +580,7 @@ const MESSAGE_DRIVEN_MODULE_IDS = new Set<ModuleId>(['messaging', 'customer-serv
 // guidance moment, the animated message flow, and a short summary) lives in "detail" and
 // renders as the card's own body copy; "text" is only the narrator's own short reaction to
 // that beat, read aloud by the same voice everywhere.
-function buildNarratorSteps(moduleLabel: string, moduleDetail: string, moduleId?: ModuleId): NarratorStep[] {
+export function buildNarratorSteps(moduleLabel: string, moduleDetail: string, moduleId?: ModuleId): NarratorStep[] {
   const actions = (moduleId && MODULE_REAL_ACTIONS[moduleId]) || null
   const messageDriven = moduleId ? MESSAGE_DRIVEN_MODULE_IDS.has(moduleId) : false
   return [
