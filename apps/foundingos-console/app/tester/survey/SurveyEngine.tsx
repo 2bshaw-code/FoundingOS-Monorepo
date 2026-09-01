@@ -140,7 +140,10 @@ export function SurveyEngine({
     const response = await fetch('/api/tester/survey', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      // moduleId is only ever used server-side for a real Super Founder Admin session (which
+      // has no single assigned survey the way a real tester does) — harmless extra field for
+      // every real tester/buyer/customer/investor session, which resolves via its own cookie.
+      body: JSON.stringify({ ...payload, moduleId }),
     })
     return response.json()
   }

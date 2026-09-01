@@ -102,7 +102,12 @@ export function findCredentialByPassword(password: string): Credential | null {
 // since juliet/tester-10/survey-demo/investor-*/lawyer-review all currently share the same
 // 'superdashboard-demo' moduleId but must route to different real destinations from the
 // root-domain (www.foundingos.com) login gate.
-export type CredentialCategory = 'survey' | 'tester' | 'investor' | 'buyer' | 'customer' | 'lawyer' | 'free-roam'
+// 'admin' is a distinct category from the real credential pool above — never returned by
+// categorizeCredential (which only classifies real CREDENTIALS ids). It's assigned directly,
+// by page-level code, only for the real Super Founder Admin identity (id === 'super-founder-
+// admin'), never for the separate passcode-only /tester/admin reviewer (id === 'admin', which
+// keeps its original, unchanged, review-only access).
+export type CredentialCategory = 'survey' | 'tester' | 'investor' | 'buyer' | 'customer' | 'lawyer' | 'free-roam' | 'admin'
 
 const FREE_ROAM_IDS = new Set(['juliet', 'tester-10', 'survey-demo'])
 
@@ -114,6 +119,15 @@ export function categorizeCredential(id: string): CredentialCategory {
   if (FREE_ROAM_IDS.has(id)) return 'free-roam'
   if (id.startsWith('survey-')) return 'survey'
   return 'tester'
+}
+
+// Admin's own per-module progress lives in a distinct, namespaced pseudo-tester id
+// ("admin-<moduleId>") — never collides with any real credential id (none start with
+// "admin-"), so admin running/replaying every demo and survey never touches or overwrites a
+// single real tester's row. Each one carries the admin's own real email, so it shows up
+// exactly like tester activity for monitoring (see store.server.ts's getOrCreateAdminTester).
+export function adminTesterId(moduleId: string): string {
+  return `admin-${moduleId}`
 }
 
 // Super Founder Admin — full-access account, bypasses the tester credential pool above.
@@ -775,6 +789,11 @@ export function getFreeRoamHref(moduleId: string): string {
 //   own SURVEYS[tester.surveyId] — there is no way to view a different role's distinct survey
 //   without actually being that role. Only the option matching the session's real category is
 //   ever marked available; the other three are shown as informational only.
+// - Admin (the real Super Founder Admin identity only): every option is unlocked, exactly as
+//   requested — nothing hidden, nothing gated. The S1/S2/S3 survey shortcuts carry a
+//   moduleId so /tester/survey knows which one to render (admin has no single assigned
+//   module the way a real tester does); admin's own full module-by-module grid on
+//   /tester/dashboard covers every other module beyond these 9 quick shortcuts.
 export const SWITCHER_PANEL_TITLE = 'Explore Another Part of the OS'
 export const SWITCHER_PANEL_NARRATOR_LINE =
   'Jump anywhere you like — everything here is safe, guided, and read-only.'
@@ -787,7 +806,8 @@ export const FREE_ROAM_UNLOCK_LINE =
 export type SwitcherOption = { code: string; label: string; href: string; available: boolean; note?: string }
 
 export function buildSwitcherOptions(category: CredentialCategory): SwitcherOption[] {
-  const superDashAllowed = category === 'free-roam' || category === 'investor' || category === 'lawyer'
+  const isAdmin = category === 'admin'
+  const superDashAllowed = isAdmin || category === 'free-roam' || category === 'investor' || category === 'lawyer'
   const superDashNote = 'Read-only for admin, free-roam, and investor sessions — conceptual for yours right now.'
   return [
     { code: 'R1', label: 'Retail Demo', href: 'https://retail.foundingos.com', available: true },
@@ -795,10 +815,10 @@ export function buildSwitcherOptions(category: CredentialCategory): SwitcherOpti
     { code: 'G1', label: 'Guardian Demo', href: '/system/guardian', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
     { code: 'A1', label: 'Autonomous Demo', href: '/superdashboard?readOnly=1', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
     { code: 'B1', label: 'BrandMetric Demo', href: '/superdashboard?readOnly=1', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
-    { code: 'S1', label: 'Tester Survey', href: '/tester/survey', available: category === 'tester' || category === 'survey', note: 'Only available while signed in with a tester access code.' },
-    { code: 'S2', label: 'Buyer Survey', href: '/tester/survey', available: category === 'buyer', note: 'Only available while signed in with a buyer access code.' },
-    { code: 'S3', label: 'Customer Survey', href: '/tester/survey', available: category === 'customer', note: 'Only available while signed in with a customer access code.' },
-    { code: 'S4', label: 'Investor Survey', href: '/investor', available: category === 'investor', note: 'Only available while signed in with an investor access code.' },
+    { code: 'S1', label: 'Tester Survey', href: isAdmin ? '/tester/survey?moduleId=marketing-suite' : '/tester/survey', available: isAdmin || category === 'tester' || category === 'survey', note: 'Only available while signed in with a tester access code.' },
+    { code: 'S2', label: 'Buyer Survey', href: isAdmin ? '/tester/survey?moduleId=buyer-overview' : '/tester/survey', available: isAdmin || category === 'buyer', note: 'Only available while signed in with a buyer access code.' },
+    { code: 'S3', label: 'Customer Survey', href: isAdmin ? '/tester/survey?moduleId=customer-overview' : '/tester/survey', available: isAdmin || category === 'customer', note: 'Only available while signed in with a customer access code.' },
+    { code: 'S4', label: 'Investor Survey', href: '/investor', available: isAdmin || category === 'investor', note: 'Only available while signed in with an investor access code.' },
   ]
 }
 

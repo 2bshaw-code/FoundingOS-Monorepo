@@ -5,14 +5,118 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { SESSION_COOKIE, verifyToken } from '../session'
+import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../session'
 import { getTester } from '../store.server'
-import { SURVEYS, categorizeCredential, getFreeRoamHref, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, type SurveyId } from '../tester-data'
+import { SURVEYS, categorizeCredential, getFreeRoamHref, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, MODULE_OPTIONS, adminTesterId, type SurveyId } from '../tester-data'
 import { buildQuantumDemoCtaLabel } from '@foundingos/config/quantum-defined-engine'
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
 
 export default async function TesterDashboardPage() {
+  // Real Super Founder Admin only (see tester-data.ts's adminTesterId doc comment) — never the
+  // separate passcode-only /tester/admin reviewer (id === 'admin'), whose access is unchanged.
+  // Admin has no single assigned module the way a real tester does, so its Switcher hub shows
+  // every real demo/survey unlocked, with its own real per-module progress underneath.
+  const adminToken = cookies().get(ADMIN_COOKIE)?.value
+  const adminId = adminToken ? await verifyToken('admin', adminToken) : null
+  if (adminId === 'super-founder-admin') {
+    const switcherOptions = buildSwitcherOptions('admin')
+    // "Investor Briefing" is its own module — a real, dedicated page/flow (/investor), not a
+    // /tester/demo/[moduleId] route — so it's shown as its own card, not in the generic grid.
+    const gridModules = MODULE_OPTIONS.filter((option) => option.moduleId !== 'investor-overview')
+    const progress = await Promise.all(
+      gridModules.map((option) => getTester(adminTesterId(option.moduleId))),
+    )
+
+    return (
+      <section className="stack">
+        <div className="quantum-brand-header">
+          <QuantumSphereLogo size={48} />
+          <div className="quantum-gradient-bar" />
+        </div>
+        <header className="module-header">
+          <p>FounderOS Tester Program</p>
+          <h1>Admin — full access</h1>
+          <span>Every demo and every survey, unlocked — nothing hidden, nothing gated.</span>
+        </header>
+
+        <article className="module-card fo-card quantum-frame">
+          <div className="module-card-top"><span>◈</span><strong>All modules</strong></div>
+          <p>Run or replay any real module's demo, unlimited times — each one tracked under your own admin account.</p>
+          <div className="module-card-grid">
+            {gridModules.map((option, index) => {
+              const record = progress[index]
+              const label = !record || record.status === 'registered'
+                ? 'Not started'
+                : record.runs.length > 0
+                  ? `${record.runs.length} survey ${record.runs.length === 1 ? 'run' : 'runs'} completed`
+                  : 'Demo viewed'
+              return (
+                <article key={option.moduleId} className="module-card fo-card">
+                  <div className="module-card-top"><span>▣</span><strong>{option.moduleLabel}</strong></div>
+                  <p><small>{label}</small></p>
+                  <Link className="btn btn-primary quantum-btn" href={`/tester/demo/${option.moduleId}`}>
+                    {record && record.runs.length > 0 ? 'Revisit demo' : 'Open demo'}
+                  </Link>
+                </article>
+              )
+            })}
+            <article className="module-card fo-card">
+              <div className="module-card-top"><span>◇</span><strong>Investor Briefing</strong></div>
+              <p><small>Real briefing → demo → survey flow, same as an investor session.</small></p>
+              <Link className="btn btn-primary quantum-btn" href="/investor">Open investor briefing</Link>
+            </article>
+          </div>
+        </article>
+
+        <article className="module-card fo-card quantum-frame">
+          <div className="module-card-top"><span>🧭</span><strong>{SWITCHER_PANEL_TITLE}</strong></div>
+          <div className="quantum-narrator-panel">
+            <p>{SWITCHER_PANEL_NARRATOR_LINE}</p>
+          </div>
+          <form data-switcher-form style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {switcherOptions.map((option) => (
+                <div key={option.code} data-code={option.code} data-href={option.href} data-available={String(option.available)} data-note={option.note ?? ''}>
+                  <Link href={option.href} className="btn btn-secondary quantum-btn" style={{ width: '100%', justifyContent: 'flex-start' }}>{option.code} · {option.label}</Link>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <input type="text" data-switcher-code placeholder="Enter a code (e.g. R1, M1, S1)" style={{ padding: '10px 14px', borderRadius: 999, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)' }} />
+              <button type="submit" className="btn btn-primary quantum-btn">Go</button>
+            </div>
+            <p data-switcher-message><small></small></p>
+          </form>
+        </article>
+
+        <article className="module-card fo-card quantum-frame">
+          <div className="module-card-top"><span>◆</span><strong>Back to SuperDash</strong></div>
+          <p>Your admin tools (SuperDash, Guardian, tester results) are always one click away.</p>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <Link className="btn btn-secondary quantum-btn" href="/superdashboard">Open SuperDash</Link>
+            <Link className="btn btn-secondary quantum-btn" href="/tester/admin">Tester results</Link>
+          </div>
+        </article>
+
+        <div className="quantum-narrator-panel">
+          <p>{BRAND_ROW_NARRATOR_LINE}</p>
+        </div>
+        <div className="quantum-brand-row">
+          {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat'] as const).map((slug) => (
+            <a key={slug} href={brands[slug].webUrl} className="quantum-brand-card" style={{ ['--brand-glow' as string]: brands[slug].accent }}>
+              <span className="quantum-brand-card-dot" />
+              {brands[slug].name}
+            </a>
+          ))}
+        </div>
+
+        <script dangerouslySetInnerHTML={{ __html: GLOBAL_ACCESSIBILITY_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: SWITCHER_CODE_SCRIPT }} />
+      </section>
+    )
+  }
+
   const token = cookies().get(SESSION_COOKIE)?.value
   const testerId = token ? await verifyToken('tester', token) : null
   if (!testerId) redirect('/tester/login')

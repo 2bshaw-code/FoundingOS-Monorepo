@@ -4,9 +4,9 @@
 */
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { SESSION_COOKIE, verifyToken } from '../../../tester/session'
-import { getTester, upsertTester, type SurveyRun } from '../../../tester/store.server'
-import { SURVEYS, categorizeCredential, type SurveyId } from '../../../tester/tester-data'
+import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../../../tester/session'
+import { getTester, upsertTester, getOrCreateAdminTester, type SurveyRun } from '../../../tester/store.server'
+import { SURVEYS, categorizeCredential, adminTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type CredentialCategory, type SurveyId } from '../../../tester/tester-data'
 import { buildSignalFromSurveyRun, type IntelBrandSlug } from '@foundingos/config/brandSignalFeed'
 import { enrichBrandSignalWithQuantum } from '@foundingos/config/quantum-orchestration-layer'
 
@@ -20,29 +20,47 @@ function buildFollowUp(questionId: string, answer: string) {
 }
 
 export async function POST(request: Request) {
-  const token = cookies().get(SESSION_COOKIE)?.value
-  const testerId = token ? await verifyToken('tester', token) : null
-  if (!testerId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+  const body = await request.json().catch(() => null)
+  if (!body || typeof body.questionId !== 'string' || typeof body.answer !== 'string') {
+    return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
+  }
 
-  const tester = await getTester(testerId)
-  if (!tester) return NextResponse.json({ error: 'Tester not found' }, { status: 404 })
+  // Real Super Founder Admin only (see tester-data.ts's adminTesterId doc comment) — never the
+  // separate passcode-only /tester/admin reviewer (id === 'admin'), whose access is unchanged.
+  const adminToken = cookies().get(ADMIN_COOKIE)?.value
+  const adminId = adminToken ? await verifyToken('admin', adminToken) : null
+  const isSuperFounderAdminSession = adminId === 'super-founder-admin'
+
+  let testerId: string
+  let tester: Awaited<ReturnType<typeof getTester>>
+  let category: CredentialCategory
+  if (isSuperFounderAdminSession) {
+    const moduleOption = typeof body.moduleId === 'string' ? findModuleOption(body.moduleId) : null
+    if (!moduleOption) return NextResponse.json({ error: 'A valid moduleId is required for admin survey submissions.' }, { status: 400 })
+    testerId = adminTesterId(moduleOption.moduleId)
+    tester = await getOrCreateAdminTester(testerId, moduleOption.moduleId, moduleOption.moduleLabel, moduleOption.surveyId, SUPER_FOUNDER_ADMIN_EMAIL)
+    category = 'admin'
+  } else {
+    const token = cookies().get(SESSION_COOKIE)?.value
+    const realTesterId = token ? await verifyToken('tester', token) : null
+    if (!realTesterId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    testerId = realTesterId
+
+    tester = await getTester(testerId)
+    if (!tester) return NextResponse.json({ error: 'Tester not found' }, { status: 404 })
+    category = categorizeCredential(testerId)
+  }
 
   // Demo must always come before the survey for real testers/survey-takers/investors/buyers/
-  // customers — block a direct API call attempting to bypass the page-level redirect in
+  // customers/admin — block a direct API call attempting to bypass the page-level redirect in
   // survey/page.tsx. Free roam / lawyer sessions never take a survey, so they're exempt. For
   // investors, still being mid-briefing ('briefing-viewed') also counts as not having reached
   // the demo step yet.
-  const category = categorizeCredential(testerId)
-  const isSurveyTaker = category === 'tester' || category === 'survey' || category === 'investor' || category === 'buyer' || category === 'customer'
+  const isSurveyTaker = category === 'tester' || category === 'survey' || category === 'investor' || category === 'buyer' || category === 'customer' || category === 'admin'
   const demoPath = category === 'investor' ? '/investor' : `/tester/demo/${tester.moduleId}`
   const demoNotYetViewed = tester.status === 'registered' || tester.status === 'briefing-viewed'
   if (isSurveyTaker && demoNotYetViewed) {
     return NextResponse.json({ error: 'Complete the module demo before starting the survey.', redirect: demoPath }, { status: 403 })
-  }
-
-  const body = await request.json().catch(() => null)
-  if (!body || typeof body.questionId !== 'string' || typeof body.answer !== 'string') {
-    return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
   }
 
   const survey = SURVEYS[tester.surveyId as SurveyId]

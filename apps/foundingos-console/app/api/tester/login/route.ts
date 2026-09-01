@@ -56,14 +56,27 @@ export async function POST(request: Request) {
     return withCors(NextResponse.json({ error: 'Email and password/access code are required.' }, { status: 400 }))
   }
 
-  // Super Founder Admin: bypasses the tester credential pool, gets an admin-scoped
-  // session (full access to /tester/admin survey results + tester data), and lands
-  // directly on SuperDashboard instead of the tester survey flow. Explicitly clears any
+  // Super Founder Admin: bypasses the tester credential pool, but goes through the exact same
+  // legal-acceptance gate as every real tester/investor/lawyer session (previously bypassed it
+  // entirely) and lands on the same Demo & Survey Switcher hub (/tester/dashboard) instead of
+  // jumping straight to SuperDashboard — admin can always reach SuperDash/Guardian/tester
+  // results from a link on that hub, or by navigating there directly (middleware still grants
+  // admin full, unrestricted access to those routes exactly as before). Explicitly clears any
   // pre-existing tester SESSION_COOKIE on this browser so a leftover tester session can
   // never coexist with — or be mistaken for — the admin session.
   if (isSuperFounderAdmin(email, password)) {
+    if (!agreedToLegalTerms) {
+      return withCors(NextResponse.json({ error: 'You must review and accept the agreements before signing in.' }, { status: 403 }))
+    }
+
+    try {
+      await logLegalAcceptance({ email, passwordUsed: '(admin)', version: LEGAL_CONTENT_VERSION, timestamp: new Date() })
+    } catch (error) {
+      console.error('logLegalAcceptance failed (admin login proceeds regardless):', error)
+    }
+
     const token = await signToken('admin', 'super-founder-admin')
-    const response = NextResponse.json({ ok: true, redirect: '/superdashboard', category: 'admin' })
+    const response = NextResponse.json({ ok: true, redirect: '/tester/dashboard', category: 'admin' })
     response.cookies.set(ADMIN_COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', domain: '.foundingos.com', maxAge: 60 * 60 * 8 })
     response.cookies.set(SESSION_COOKIE, '', { path: '/', domain: '.foundingos.com', maxAge: 0 })
     return withCors(response)
@@ -123,6 +136,10 @@ export async function POST(request: Request) {
     customer: '/tester/dashboard',
     lawyer: '/legal',
     'free-roam': '/tester/dashboard',
+    // Never actually reached — the real Super Founder Admin returns early above — but
+    // CredentialCategory now includes 'admin' for buildSwitcherOptions' sake, so this map
+    // must stay exhaustive. Kept consistent with where admin actually lands.
+    admin: '/tester/dashboard',
   }
 
   const token = await signToken('tester', tester.id)

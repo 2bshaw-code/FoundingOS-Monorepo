@@ -5,54 +5,75 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { SESSION_COOKIE, verifyToken } from '../tester/session'
-import { getTester, upsertTester } from '../tester/store.server'
-import { categorizeCredential, INVESTOR_NARRATION, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, DEMO_INTRO, BUSINESS_PLAN_NARRATION, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SURVEY_COMPLETE_NARRATOR_LINE, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE } from '../tester/tester-data'
+import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../tester/session'
+import { getTester, upsertTester, getOrCreateAdminTester } from '../tester/store.server'
+import { categorizeCredential, INVESTOR_NARRATION, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, DEMO_INTRO, BUSINESS_PLAN_NARRATION, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SURVEY_COMPLETE_NARRATOR_LINE, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, adminTesterId, SUPER_FOUNDER_ADMIN_EMAIL, type CredentialCategory } from '../tester/tester-data'
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands as brandRegistry } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
 import { readBrandMetrics } from '../superdashboard/brand-metric-store.server'
 
+const ADMIN_INVESTOR_MODULE_ID = 'investor-overview'
+
 // Real, read-only Investor briefing — reuses the same live BrandMetric data that powers
 // SuperDashboard, gated to sessions whose credential category is genuinely 'investor'
-// (INV-ALPHA / INV-OMEGA). No write actions, no Guardian/Autonomous internals exposed.
+// (INV-ALPHA / INV-OMEGA), or the real Super Founder Admin (see tester-data.ts's
+// adminTesterId doc comment — never the separate passcode-only /tester/admin reviewer).
 // Investors get a dedicated two-phase sequence — briefing (the business-plan narration),
 // then demo (the live cross-brand data) — before the survey unlocks, matching the explicit
 // "briefing → demo → survey" investor flow (one step more than the plain tester sequence).
+// Admin gets the exact same two-phase flow, with its own real progress under its own email.
 export default async function InvestorPage() {
-  const token = cookies().get(SESSION_COOKIE)?.value
-  const testerId = token ? await verifyToken('tester', token) : null
-  if (!testerId) redirect('/tester/login')
+  const adminToken = cookies().get(ADMIN_COOKIE)?.value
+  const adminId = adminToken ? await verifyToken('admin', adminToken) : null
+  const isSuperFounderAdminSession = adminId === 'super-founder-admin'
 
-  const tester = await getTester(testerId)
-  if (!tester || categorizeCredential(testerId) !== 'investor') redirect('/tester/login')
+  let testerId: string
+  let tester: Awaited<ReturnType<typeof getTester>>
+  let category: CredentialCategory
+  if (isSuperFounderAdminSession) {
+    testerId = adminTesterId(ADMIN_INVESTOR_MODULE_ID)
+    tester = await getOrCreateAdminTester(testerId, ADMIN_INVESTOR_MODULE_ID, 'Investor Briefing', 'survey-investor', SUPER_FOUNDER_ADMIN_EMAIL)
+    category = 'admin'
+  } else {
+    const token = cookies().get(SESSION_COOKIE)?.value
+    const realTesterId = token ? await verifyToken('tester', token) : null
+    if (!realTesterId) redirect('/tester/login')
+    testerId = realTesterId
+
+    tester = await getTester(testerId)
+    if (!tester || categorizeCredential(testerId) !== 'investor') redirect('/tester/login')
+    category = 'investor'
+  }
 
   // Only force the investor into the survey while it's genuinely still outstanding
   // ('demo-viewed' or mid-run 'in-progress'). Once a run is submitted, status becomes
   // 'complete' — at that point this page renders again (the live-data phase) so the Quantum
   // Free Roam invitation has a real place to live, instead of bouncing back to the survey.
-  if (tester.status === 'demo-viewed' || tester.status === 'in-progress') redirect('/tester/survey')
+  if (tester.status === 'demo-viewed' || tester.status === 'in-progress') {
+    redirect(isSuperFounderAdminSession ? `/tester/survey?moduleId=${ADMIN_INVESTOR_MODULE_ID}` : '/tester/survey')
+  }
 
   async function continueToDemo() {
     'use server'
-    const current = await getTester(testerId!)
+    const current = await getTester(testerId)
     if (current && current.status === 'registered') {
-      await upsertTester(testerId!, { status: 'briefing-viewed' })
+      await upsertTester(testerId, { status: 'briefing-viewed' })
     }
     redirect('/investor')
   }
 
   async function continueToSurvey() {
     'use server'
-    const current = await getTester(testerId!)
+    const current = await getTester(testerId)
     if (current && (current.status === 'registered' || current.status === 'briefing-viewed')) {
-      await upsertTester(testerId!, { status: 'demo-viewed' })
+      await upsertTester(testerId, { status: 'demo-viewed' })
     }
-    redirect('/tester/survey')
+    redirect(isSuperFounderAdminSession ? `/tester/survey?moduleId=${ADMIN_INVESTOR_MODULE_ID}` : '/tester/survey')
   }
 
   const isBriefingPhase = tester.status === 'registered'
   const hasCompletedSurvey = tester.runs.length > 0
-  const switcherOptions = buildSwitcherOptions('investor')
+  const switcherOptions = buildSwitcherOptions(category)
 
   const brands = isBriefingPhase ? [] : await readBrandMetrics()
   const totalEngagement = brands.reduce((sum, brand) => sum + brand.totalEngagement, 0)

@@ -5,32 +5,53 @@
 import { cookies } from 'next/headers'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
-import { SESSION_COOKIE, verifyToken } from '../../session'
-import { getTester, upsertTester } from '../../store.server'
-import { MODULE_NARRATION, MODULE_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_NARRATION, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, categorizeCredential, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, type ModuleId } from '../../tester-data'
+import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../../session'
+import { getTester, upsertTester, getOrCreateAdminTester } from '../../store.server'
+import { MODULE_NARRATION, MODULE_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_NARRATION, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, categorizeCredential, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, adminTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type ModuleId } from '../../tester-data'
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
 
 export default async function TesterDemoPage({ params }: { params: Promise<{ moduleId: string }> }) {
   const { moduleId } = await params
-  const token = cookies().get(SESSION_COOKIE)?.value
-  const testerId = token ? await verifyToken('tester', token) : null
-  if (!testerId) redirect('/tester/login')
 
-  const tester = await getTester(testerId)
-  if (!tester) redirect('/tester/login')
-  if (tester.moduleId !== moduleId) notFound()
+  // Real Super Founder Admin gets its own pseudo-tester row per module (see adminTesterId's
+  // doc comment) so it can run/replay every real module's demo, with real tracking under its
+  // own email — never the separate passcode-only /tester/admin reviewer (id === 'admin'),
+  // whose access is completely unchanged.
+  const adminToken = cookies().get(ADMIN_COOKIE)?.value
+  const adminId = adminToken ? await verifyToken('admin', adminToken) : null
+  const isSuperFounderAdminSession = adminId === 'super-founder-admin'
+
+  let testerId: string
+  let tester: Awaited<ReturnType<typeof getTester>>
+  if (isSuperFounderAdminSession) {
+    const moduleOption = findModuleOption(moduleId)
+    if (!moduleOption) notFound()
+    testerId = adminTesterId(moduleId)
+    tester = await getOrCreateAdminTester(testerId, moduleOption.moduleId, moduleOption.moduleLabel, moduleOption.surveyId, SUPER_FOUNDER_ADMIN_EMAIL)
+  } else {
+    const token = cookies().get(SESSION_COOKIE)?.value
+    const realTesterId = token ? await verifyToken('tester', token) : null
+    if (!realTesterId) redirect('/tester/login')
+    testerId = realTesterId
+
+    tester = await getTester(testerId)
+    if (!tester) redirect('/tester/login')
+    if (tester.moduleId !== moduleId) notFound()
+  }
 
   // Marks the demo as viewed (first time only — never regresses a tester who has already
   // progressed past this point) and sends them on to their real survey. Demo must always
-  // come before the survey now, so this is the only way forward from here.
+  // come before the survey now, so this is the only way forward from here. Admin's redirect
+  // carries moduleId — its survey isn't tied to one single assigned session the way a real
+  // tester's is, so /tester/survey needs it to know which one to render.
   async function continueToSurvey() {
     'use server'
-    const current = await getTester(testerId!)
+    const current = await getTester(testerId)
     if (current && current.status === 'registered') {
-      await upsertTester(testerId!, { status: 'demo-viewed' })
+      await upsertTester(testerId, { status: 'demo-viewed' })
     }
-    redirect('/tester/survey')
+    redirect(isSuperFounderAdminSession ? `/tester/survey?moduleId=${moduleId}` : '/tester/survey')
   }
 
   const isSuperDashboardDemo = moduleId === 'superdashboard-demo'
@@ -69,7 +90,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
     { step: '6 · Summary', text: "That's the gist — nice work.", detail: `That's ${tester.moduleLabel}, in short. Your survey's up next.` },
   ]
   const fullNarration = MODULE_NARRATION[moduleId as ModuleId] ?? narratorSteps.map((s) => s.text).join(' ')
-  const switcherOptions = buildSwitcherOptions(categorizeCredential(testerId))
+  const switcherOptions = buildSwitcherOptions(isSuperFounderAdminSession ? 'admin' : categorizeCredential(testerId))
 
   return (
     <section className="stack">

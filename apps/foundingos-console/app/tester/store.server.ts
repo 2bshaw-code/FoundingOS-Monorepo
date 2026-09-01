@@ -125,3 +125,15 @@ export async function upsertTester(id: string, patch: Partial<TesterRecord>): Pr
   })
   return next
 }
+
+// Real Super Founder Admin only (see tester-data.ts's adminTesterId doc comment) — gives
+// admin a genuine, real per-module progress row (own email, own runs, own status) so admin
+// can run/replay every demo and every survey with real tracking, exactly like a tester,
+// without ever creating, reading, or overwriting any real tester's row (the "admin-<moduleId>"
+// id namespace never collides with a real credential id). Read-only if the row already
+// exists — never resets an in-progress or completed admin run just by revisiting a page.
+export async function getOrCreateAdminTester(id: string, moduleId: string, moduleLabel: string, surveyId: string, email: string): Promise<TesterRecord> {
+  const existing = await getTester(id)
+  if (existing) return existing
+  return upsertTester(id, { email, moduleId, moduleLabel, surveyId, status: 'registered', currentAnswers: [], runs: [] })
+}
