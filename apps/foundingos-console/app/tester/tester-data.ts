@@ -256,6 +256,18 @@ export const PACING_REASSURANCE_LINES = [
   "We keep everything bite-sized so it's easy.",
 ]
 
+// Micro-break narrator line shown once at every section boundary — after the previous
+// section's last question, before the next section's Quantum-framed header. Rotated so it
+// never repeats back-to-back across a typical survey's six sections.
+export const MICRO_BREAK_LINES = [
+  "Nice, that section's done — quick breather.",
+  "Grab a sip of water if you want — next part is tiny.",
+  "Alright, ready for the next bit? It's easy.",
+  "You're flying through this — let's keep going.",
+  "Short answers are perfect — let's jump to the next part.",
+  "This OS is huge, but I promise the sections stay small.",
+]
+
 // Developing-country / low-digital-literacy accessibility reminders, rotated for the
 // website/console/pos/intelligence sections (the sections this actually applies to).
 export const ACCESSIBILITY_REMINDER_LINES = [
