@@ -141,7 +141,7 @@ export function findModuleOption(moduleId: string): ModuleOption | null {
   return MODULE_OPTIONS.find((option) => option.moduleId === moduleId) ?? null
 }
 
-export type SurveyQuestion = { id: string; prompt: string }
+export type SurveyQuestion = { id: string; prompt: string; section?: string; sectionKind?: 'website' | 'console' | 'pos' }
 export type Survey = { id: SurveyId; title: string; moduleLabel: string; questions: SurveyQuestion[] }
 
 // Appended to every module survey (survey-a through survey-l) so each one — not just the
@@ -154,6 +154,82 @@ export const BUSINESS_PLAN_QUESTIONS: SurveyQuestion[] = [
   { id: 'bp3', prompt: 'How clearly did SuperDash, real-time engagement ingestion, and the adaptive Package Model D pricing come across as one connected system, rather than separate features?' },
 ]
 
+// Real, existing brand websites/consoles/POS-style flows in this codebase — no invented
+// brands. "Marketplace" maps to the real FoundThat app (this ecosystem's actual
+// marketplace-style brand); there is no separate "Marketplace" app. SuperDash/Guardian/
+// Autonomous/BrandMetric are real systems inside foundingos-console, not separate consoles —
+// labelled honestly as such rather than implied to be standalone apps.
+const BRAND_WEBSITE_TARGETS = [
+  'Retail website', 'Meat website', 'Logistics website', 'Talent website', 'Crypto website',
+  'Finance website', 'Health website', 'FoundThat (Marketplace) website', 'FoundingOS website',
+  'WhatsApp OS landing pages',
+]
+const CONSOLE_TARGETS = [
+  'Retail console', 'Meat console', 'Logistics console', 'Talent console', 'Crypto console',
+  'Finance console', 'Health console', 'Messaging module', 'Customer Service module',
+  'SuperDash', 'Guardian (system safety layer)', 'Autonomous (auto-optimize/auto-coach)',
+  'BrandMetric (live brand data)',
+]
+const POS_TARGETS = [
+  'Retail POS', 'Meat POS', 'Logistics POS', 'Talent ATS', 'FoundThat seller flow', 'Crypto compliance flow',
+]
+
+function slugify(label: string): string {
+  return label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+}
+
+function buildWebsiteQuestions(label: string): SurveyQuestion[] {
+  const slug = slugify(label)
+  return [
+    { id: `web-${slug}-1`, prompt: `${label}: Is the message clear?`, section: label, sectionKind: 'website' },
+    { id: `web-${slug}-2`, prompt: `${label}: Is the purpose easy to understand?`, section: label, sectionKind: 'website' },
+    { id: `web-${slug}-3`, prompt: `${label}: Is navigation simple?`, section: label, sectionKind: 'website' },
+    { id: `web-${slug}-4`, prompt: `${label}: Would someone in a developing country understand this easily?`, section: label, sectionKind: 'website' },
+    { id: `web-${slug}-5`, prompt: `${label}: Does it feel like part of the Quantum WhatsApp OS?`, section: label, sectionKind: 'website' },
+  ]
+}
+
+function buildConsoleQuestions(label: string): SurveyQuestion[] {
+  const slug = slugify(label)
+  return [
+    { id: `con-${slug}-1`, prompt: `${label}: Is it easy to use?`, section: label, sectionKind: 'console' },
+    { id: `con-${slug}-2`, prompt: `${label}: Are buttons and labels clear?`, section: label, sectionKind: 'console' },
+    { id: `con-${slug}-3`, prompt: `${label}: Does the layout feel simple and familiar?`, section: label, sectionKind: 'console' },
+    { id: `con-${slug}-4`, prompt: `${label}: Does it feel WhatsApp-like?`, section: label, sectionKind: 'console' },
+    { id: `con-${slug}-5`, prompt: `${label}: Would someone with low digital literacy understand it?`, section: label, sectionKind: 'console' },
+  ]
+}
+
+function buildPosQuestions(label: string): SurveyQuestion[] {
+  const slug = slugify(label)
+  return [
+    { id: `pos-${slug}-1`, prompt: `${label}: Is the workflow simple?`, section: label, sectionKind: 'pos' },
+    { id: `pos-${slug}-2`, prompt: `${label}: Are the steps easy to follow?`, section: label, sectionKind: 'pos' },
+    { id: `pos-${slug}-3`, prompt: `${label}: Does it feel intuitive?`, section: label, sectionKind: 'pos' },
+    { id: `pos-${slug}-4`, prompt: `${label}: Would someone in a developing country understand it?`, section: label, sectionKind: 'pos' },
+  ]
+}
+
+// Appended to every survey (module, buyer, customer, and investor alike) so every real tester
+// validates clarity, messaging, ease of use, and global/low-literacy accessibility across every
+// real brand website, console, and POS-style flow in the ecosystem — not just their own
+// assigned module. These are opinion/impression questions grounded in what the narrator
+// explained about the wider ecosystem, not a claim that the tester has hands-on used every
+// single one of these (only their own assigned module demo is hands-on).
+export const ECOSYSTEM_VALIDATION_QUESTIONS: SurveyQuestion[] = [
+  ...BRAND_WEBSITE_TARGETS.flatMap(buildWebsiteQuestions),
+  ...CONSOLE_TARGETS.flatMap(buildConsoleQuestions),
+  ...POS_TARGETS.flatMap(buildPosQuestions),
+]
+
+// One narrator line per section kind — explains why that category of question matters, in the
+// same warm founder-style voice used throughout the demo.
+export const SECTION_NARRATOR_LINES: Record<'website' | 'console' | 'pos', string> = {
+  website: "If this website's message doesn't land, I need to know. We're building the WhatsApp OS — it must be simple enough for anyone, anywhere, even on low-end devices.",
+  console: "Tell me if this console feels clear — we want zero confusion. Would someone with low digital literacy understand it?",
+  pos: "Your feedback helps us make the OS accessible globally — even for someone in a developing country picking this up for the first time.",
+}
+
 export const SURVEYS: Record<SurveyId, Survey> = {
   'survey-a': {
     id: 'survey-a',
@@ -165,6 +241,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'a3', prompt: 'Did the marketing dashboard load fast enough for daily use?' },
       { id: 'a4', prompt: 'What is one marketing workflow you wish was automated?' },
       ...BUSINESS_PLAN_QUESTIONS,
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
   'survey-b': {
@@ -177,6 +254,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'b3', prompt: 'What financial report do you check most often?' },
       { id: 'b4', prompt: 'Any friction points when exporting accounting data?' },
       ...BUSINESS_PLAN_QUESTIONS,
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
   'survey-c': {
@@ -188,6 +266,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'c2', prompt: 'Was the service load indicator useful for staffing decisions?' },
       { id: 'c3', prompt: 'What is missing from the customer service workflow today?' },
       ...BUSINESS_PLAN_QUESTIONS,
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
   'survey-d': {
@@ -200,6 +279,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'd3', prompt: 'What messaging volume would break this system in your view?' },
       { id: 'd4', prompt: 'Did you notice any delay between sending and delivery?' },
       ...BUSINESS_PLAN_QUESTIONS,
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
   'survey-e': {
@@ -212,6 +292,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'e3', prompt: "What's one task you'd want FoundAI to fully automate?" },
       { id: 'e4', prompt: 'Did any AI suggestion feel wrong or risky?' },
       ...BUSINESS_PLAN_QUESTIONS,
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
   'survey-f': {
@@ -223,6 +304,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'f2', prompt: 'Which operational bottleneck shows up most in your day?' },
       { id: 'f3', prompt: 'Did the operations dashboard reflect real-time state accurately?' },
       ...BUSINESS_PLAN_QUESTIONS,
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
   'survey-g': {
@@ -235,6 +317,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'g3', prompt: 'Was pipeline forecasting believable based on your own numbers?' },
       { id: 'g4', prompt: "What's missing from the sales workflow?" },
       ...BUSINESS_PLAN_QUESTIONS,
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
   'survey-h': {
@@ -246,6 +329,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'h2', prompt: 'How important is per-brand visual customization to you?' },
       { id: 'h3', prompt: 'Any place where branding felt inconsistent or off-brand?' },
       ...BUSINESS_PLAN_QUESTIONS,
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
   'survey-i': {
@@ -258,6 +342,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'i3', prompt: "What's one navigation shortcut you wish existed?" },
       { id: 'i4', prompt: 'Did any page take too long to load while navigating?' },
       ...BUSINESS_PLAN_QUESTIONS,
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
   'survey-j': {
@@ -270,6 +355,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'j3', prompt: 'Did the real-time Quantum Sync indicator feel meaningful or just decorative?' },
       { id: 'j4', prompt: "What's one metric missing from the cross-brand view?" },
       ...BUSINESS_PLAN_QUESTIONS,
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
   'survey-k': {
@@ -281,6 +367,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'k2', prompt: 'How often do you review cashflow?' },
       { id: 'k3', prompt: 'What slows down your finance team?' },
       ...BUSINESS_PLAN_QUESTIONS,
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
   'survey-l': {
@@ -292,6 +379,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'l2', prompt: 'What platforms do you use?' },
       { id: 'l3', prompt: 'What is your biggest challenge in crypto operations?' },
       ...BUSINESS_PLAN_QUESTIONS,
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
   'survey-investor': {
@@ -308,6 +396,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'inv7', prompt: 'In your own words, how does real user behaviour on each brand website feed data back into the OS (scrapers, anomaly detection, brand signals)?' },
       { id: 'inv8', prompt: 'Did the real-time engagement ingestion and Quantum visuals feel credible as evidence of a live, working system?' },
       { id: 'inv9', prompt: 'What is the single strongest signal from this briefing that FoundingOS is a real, differentiated platform rather than a collection of separate brand sites?' },
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
   'survey-buyer': {
@@ -319,6 +408,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'buy2', prompt: 'Was anything confusing or slow in the buying experience you just saw?' },
       { id: 'buy3', prompt: 'What would make you more likely to return to this brand?' },
       ...BUSINESS_PLAN_QUESTIONS,
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
   'survey-customer': {
@@ -330,6 +420,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'cust2', prompt: 'Did the ticket/response flow feel fast and human, or slow and robotic?' },
       { id: 'cust3', prompt: 'What is the one thing that would most improve how a brand supports you as a customer?' },
       ...BUSINESS_PLAN_QUESTIONS,
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
 }
@@ -422,7 +513,7 @@ export const DEMO_INTRO =
   "Welcome to your guided module demo. This walkthrough gives you a clear, simple preview of how this part of the FoundingOS ecosystem works. You'll see how real engagement, real behaviour, and real intelligence flow through the OS — exactly as described in our business plan. Once you finish the demo, you'll move straight into a short survey so we can understand your reactions, expectations, and insights."
 
 export const SURVEY_INTRO =
-  "Thanks for completing the demo. Before we jump into Free Roam, let's get your thoughts — they help shape the Quantum WhatsApp OS. This quick survey takes less than a minute, and your input is genuinely valuable."
+  "Thanks for completing the demo. Before we jump into Free Roam, let's get your thoughts — they help shape the Quantum WhatsApp OS. This survey now covers your module plus every brand website, console, and POS flow across the ecosystem, so quick, honest answers are perfect — no need to write an essay for each one."
 
 // Shown the moment a survey run is submitted — the narrator's own line, followed by the
 // Quantum Free Roam invitation. Same voice, carried through from the demo into the survey step.

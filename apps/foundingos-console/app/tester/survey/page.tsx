@@ -6,7 +6,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { SESSION_COOKIE, verifyToken } from '../session'
 import { getTester } from '../store.server'
-import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, SURVEY_COMPLETE_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, type SurveyId } from '../tester-data'
+import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, SURVEY_COMPLETE_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SECTION_NARRATOR_LINES, getFreeRoamHref, type SurveyId } from '../tester-data'
 import { SurveyEngine } from './SurveyEngine'
 
 export default async function TesterSurveyPage() {
@@ -57,6 +57,7 @@ export default async function TesterSurveyPage() {
         completeNarratorLine={SURVEY_COMPLETE_NARRATOR_LINE}
         freeRoamInviteLines={FREE_ROAM_INVITE_LINES}
         freeRoamTips={FREE_ROAM_TIPS}
+        sectionNarratorLines={SECTION_NARRATOR_LINES}
       />
     </section>
   )
