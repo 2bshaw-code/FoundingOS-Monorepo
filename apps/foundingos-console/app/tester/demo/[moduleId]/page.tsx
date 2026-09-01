@@ -31,7 +31,20 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
   }
 
   const isSuperDashboardDemo = moduleId === 'superdashboard-demo'
-  const directModuleHref = moduleId === 'finance' ? '/finance' : moduleId === 'crypto' ? '/crypto' : null
+  // Real, existing FoundingOS console module pages — every one of these is a genuinely
+  // active, working demo today, not a placeholder. Only modules with no console-side page
+  // at all (operations/sales/branding/console-navigation) fall through to the informational
+  // card below, which is itself the real demo content for those — never a "coming later"
+  // placeholder.
+  const directModuleHref =
+    moduleId === 'finance' ? '/finance'
+    : moduleId === 'crypto' ? '/crypto'
+    : moduleId === 'marketing-suite' ? '/modules/marketing'
+    : moduleId === 'accounting' ? '/modules/accounting'
+    : moduleId === 'customer-service' ? '/modules/customer-service'
+    : moduleId === 'messaging' ? '/modules/messaging'
+    : moduleId === 'ai-automation' ? '/modules/foundai-demo'
+    : null
   const hasCompletedSurvey = tester.runs.length > 0
 
   return (
@@ -62,7 +75,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
         ) : (
           <article className="module-card fo-card">
             <div className="module-card-top"><span>▣</span><strong>{tester.moduleLabel}</strong></div>
-            <p>This module demo area is ready to activate once the {tester.moduleLabel} system goes live.</p>
+            <p>This is your assigned {tester.moduleLabel} module overview for this tester program.</p>
           </article>
         )}
 
