@@ -52,22 +52,37 @@ const QUANTUM_LOGIN_URL = 'https://www.foundingos.com/'
 const SURVEY_URL = 'https://console.foundingos.com/tester/survey'
 const FREE_ROAM_IDS = new Set(['juliet', 'tester-10', 'survey-demo', 'investor-alpha', 'investor-omega', 'lawyer-review'])
 
-async function enforceQuantumGate() {
+async function enforceQuantumGate(): Promise<'admin' | 'free-roam'> {
   const jar = cookies()
   const adminToken = jar.get(ADMIN_COOKIE)?.value
   const adminId = adminToken ? await verifyToken('admin', adminToken) : null
-  if (adminId) return // Admin: unrestricted, full access.
+  if (adminId) return 'admin' // Admin: unrestricted, full access.
 
   const sessionToken = jar.get(SESSION_COOKIE)?.value
   const testerId = sessionToken ? await verifyToken('tester', sessionToken) : null
   if (!testerId) redirect(QUANTUM_LOGIN_URL)
   if (!FREE_ROAM_IDS.has(testerId)) redirect(SURVEY_URL) // Tester/Survey: survey only, never this site.
-  // Free Roam (+ investor/lawyer): read-only view — allowed to render.
+  return 'free-roam' // Free Roam (+ investor/lawyer): read-only view — allowed to render.
+}
+
+// Small persistent session bar — logout + a way back to the FoundingOS Homepage, visible
+// to whichever real session (admin/free roam) is allowed to see this page at all (testers
+// are always redirected away before reaching here).
+function SessionBar({ role }: { role: 'admin' | 'free-roam' }) {
+  return (
+    <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'flex-end', padding: '8px 16px', fontSize: 12, opacity: 0.8 }}>
+      <span>{role === 'admin' ? 'Admin session' : 'Free roam session (read-only)'}</span>
+      <a href="https://www.foundingos.com/home">FoundingOS Homepage</a>
+      <form action="https://console.foundingos.com/api/tester/logout" method="POST" style={{ display: 'inline' }}>
+        <button type="submit" style={{ background: 'none', border: 'none', color: 'inherit', textDecoration: 'underline', cursor: 'pointer', padding: 0, font: 'inherit' }}>Log out</button>
+      </form>
+    </div>
+  )
 }
 
 export const metadata = { title: 'FoundTalent', description: 'FoundTalent public website.' }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  await enforceQuantumGate()
-  return <html lang="en"><body>{children}<FoundingOSFooter /></body></html>
+  const role = await enforceQuantumGate()
+  return <html lang="en"><body><SessionBar role={role} />{children}<FoundingOSFooter /></body></html>
 }

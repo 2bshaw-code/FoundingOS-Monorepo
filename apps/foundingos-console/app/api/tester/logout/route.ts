@@ -8,8 +8,16 @@ import { SESSION_COOKIE, ADMIN_COOKIE } from '../../../tester/session'
 // Single shared logout — clears both the tester and admin session cookies (whichever is
 // present) using the same shared domain they were set with, so "manually logged out"
 // actually works across every *.foundingos.com subdomain, not just this one.
-export async function POST() {
-  const response = NextResponse.json({ ok: true })
+//
+// Supports both a plain HTML <form method="POST"> submission (the real logout buttons on
+// every brand website's session bar) and a fetch-based caller: a browser's own top-level
+// form navigation sends "Accept: text/html" first, so that case gets a real redirect back
+// to the Quantum login; any other caller (a JSON fetch) gets the JSON response instead.
+export async function POST(request: Request) {
+  const wantsHtml = (request.headers.get('accept') ?? '').includes('text/html')
+  const response = wantsHtml
+    ? NextResponse.redirect('https://www.foundingos.com/')
+    : NextResponse.json({ ok: true })
   response.cookies.set(SESSION_COOKIE, '', { path: '/', domain: '.foundingos.com', maxAge: 0 })
   response.cookies.set(ADMIN_COOKIE, '', { path: '/', domain: '.foundingos.com', maxAge: 0 })
   return response

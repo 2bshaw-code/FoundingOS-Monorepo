@@ -63,6 +63,10 @@ function ActualTopbar({ config, variant = 'console' }: { config?: BrandConsoleCo
        </button>
      </div>
      <div className="topbar-actions">
+       <a href="https://www.foundingos.com/home" style={{ fontSize: 12, opacity: 0.8 }}>FoundingOS Homepage</a>
+       <form action="https://console.foundingos.com/api/tester/logout" method="POST" style={{ display: 'inline' }}>
+         <button type="submit" style={{ background: 'none', border: 'none', color: 'inherit', textDecoration: 'underline', cursor: 'pointer', padding: 0, font: 'inherit', fontSize: 12, opacity: 0.8 }}>Log out</button>
+       </form>
        <ThemeToggle />
      </div>
     </header>
