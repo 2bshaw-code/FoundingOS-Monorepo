@@ -2493,17 +2493,17 @@ body.superdash-heatmap-off .quantum-heatmap {
   box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 30%, transparent), 0 28px 64px color-mix(in srgb, var(--accent) 18%, var(--shadow));
 }
 
+/* Narrator lines render inline with the surrounding content — no border, no background tint,
+   no padding/frame. Only italic + accent color remain, so the warm founder-style voice still
+   reads as a distinct "spoken" line without ever looking like a boxed script/callout. */
 .quantum-narrator-panel {
-  border-left: 3px solid var(--accent);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
-  padding: 14px 16px;
-  margin: 0 0 14px;
+  margin: 0 0 12px;
 }
 
 .quantum-narrator-panel p {
   margin: 0;
   font-style: italic;
+  color: color-mix(in srgb, var(--accent) 70%, var(--text));
 }
 
 .quantum-step-badge {
