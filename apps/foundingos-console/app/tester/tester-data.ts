@@ -968,9 +968,18 @@ export const NARRATION_PLAYER_SCRIPT = `
   var narratorToggle = document.getElementById('narrator-enabled-toggle');
   var narratorEnabled = true;
   try { narratorEnabled = localStorage.getItem('fo-narrator-enabled') !== '0'; } catch (err) {}
-  if (narratorToggle) narratorToggle.checked = narratorEnabled;
-  setNarratorEnabled(narratorEnabled);
-  setAudioButtonLabels();
+
+  // Deferred to a macrotask (not run synchronously at script-parse time): these mutate real
+  // DOM nodes (button text, checked state, display style) that React also renders on the
+  // server. Running them synchronously here raced with React's hydration pass on the same
+  // elements and threw a real hydration-mismatch error (React #425/#329) — deferring by one
+  // tick lets hydration finish first, so these become a normal post-hydration DOM update
+  // instead of a race.
+  window.setTimeout(function () {
+    if (narratorToggle) narratorToggle.checked = narratorEnabled;
+    setNarratorEnabled(narratorEnabled);
+    setAudioButtonLabels();
+  }, 0)
 
   // Opt-in-only auto-audio: 15 seconds after this narrator surface loads, if Audio was
   // already ON (the user toggled it on previously — never on by default), speak the page's
