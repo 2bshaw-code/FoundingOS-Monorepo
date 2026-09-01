@@ -63,7 +63,13 @@
     "./onboarding/OnboardingGate": "./src/onboarding/OnboardingGate.tsx",
     "./surveys/SurveyForm": "./src/surveys/SurveyForm.tsx",
     "./surveys/SurveysOverview": "./src/surveys/SurveysOverview.tsx",
-    "./superdash/SuperDashSurveyPanel": "./src/superdash/SuperDashSurveyPanel.tsx"
+    "./superdash/SuperDashSurveyPanel": "./src/superdash/SuperDashSurveyPanel.tsx",
+    "./superdash/getSurveyFeedTiles": "./src/superdash/getSurveyFeedTiles.ts",
+    "./superdash/SuperDashSurveyGuardian": "./src/superdash/SuperDashSurveyGuardian.ts",
+    "./superdash/SuperDashSurveyFeedPanel": "./src/superdash/SuperDashSurveyFeedPanel.tsx",
+    "./superdash/SuperDashBrandMetricsPanel": "./src/superdash/SuperDashBrandMetricsPanel.tsx",
+    "./superdash/ScrapingDashboard": "./src/superdash/ScrapingDashboard.tsx",
+    "./superdash/CustomerPipelinePanel": "./src/superdash/CustomerPipelinePanel.tsx"
   },
   "dependencies": {
     "@foundingos/config": "*",

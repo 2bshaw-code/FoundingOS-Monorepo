@@ -59,6 +59,17 @@ const SURVEY_URL = 'https://console.foundingos.com/tester/survey'
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Self-contained synthetic data generators (this brand's own /api/scrape/refresh,
+  // /api/feeds/update, /api/dashboard/refresh) must be reachable with NO session at all —
+  // that's exactly how Vercel's own cron jobs invoke them on schedule (crons carry no
+  // browser cookie), and it's the same real endpoint SuperDash's admin-only "Run Scrape"
+  // trigger calls on demand. Each one only ever mutates this brand's own BrandMetric row
+  // via a deterministic, seeded, no-external-network generator — there is no real data
+  // exposure or write risk from leaving these specific, exact paths open. Every other route
+  // (including the free-roam-blocking checks below) is completely unaffected.
+  const SYNTHETIC_GENERATOR_PATHS = new Set(['/api/scrape/refresh', '/api/feeds/update', '/api/dashboard/refresh'])
+  if (SYNTHETIC_GENERATOR_PATHS.has(pathname)) return NextResponse.next()
+
   const adminToken = request.cookies.get(ADMIN_COOKIE)?.value
   const adminId = adminToken ? await verifyToken('admin', adminToken) : null
   if (adminId) return NextResponse.next() // Admin: unrestricted, full access.

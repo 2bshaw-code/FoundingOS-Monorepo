@@ -5,6 +5,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import Link from 'next/link'
 import { QuantumSyncStatus } from './QuantumSyncStatus'
 import { Sparkline } from './Sparkline'
 import { aggregateBrandSignals, type BrandSignal } from '@foundingos/config/brandSignalFeed'
@@ -240,6 +241,12 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
               <li key={anomaly.brand}><strong>{anomaly.brand}</strong> — {anomaly.signal}</li>
             ))}
           </ul>
+        </article>
+
+        <article className="module-card fo-card panel-premium">
+          <div className="module-card-top"><span>◈</span><strong>Scraping & Customer Pipeline</strong></div>
+          <p><small>Real synthetic engagement data across all 8 brands, a manual "Run Scrape" trigger, and a customer pipeline view built from real survey submissions.</small></p>
+          <Link className="btn btn-primary" href={readOnly ? '/superdashboard/scraping?readOnly=1' : '/superdashboard/scraping'}>Open Scraping Dashboard</Link>
         </article>
 
         <article className="module-card fo-card panel-premium">
