@@ -4,6 +4,7 @@
 */
 'use client'
 
+import Link from 'next/link'
 import KPIWidget from '../components/KPIWidget'
 import { ClientDate } from './ClientDate'
 import { useFounderGlobalisation, currencyOptions, languageOptions } from './founder-globalisation'
@@ -14,6 +15,7 @@ type ControlSection = {
   summary: string
   amount: number
   status: string
+  href?: string
 }
 
 const translations = {
@@ -46,6 +48,7 @@ const translations = {
     permissions: 'All permissions',
     settings: 'All settings',
     open: 'Open',
+    comingSoon: 'Overview only',
     live: 'Live',
     active: 'Active',
     totalRevenue: 'Total revenue',
@@ -86,6 +89,7 @@ const translations = {
     permissions: 'Todos los permisos',
     settings: 'Todos los ajustes',
     open: 'Abrir',
+    comingSoon: 'Solo resumen',
     live: 'En vivo',
     active: 'Activo',
     totalRevenue: 'Ingresos totales',
@@ -126,6 +130,7 @@ const translations = {
     permissions: 'Toutes les autorisations',
     settings: 'Tous les paramètres',
     open: 'Ouvrir',
+    comingSoon: 'Aperçu uniquement',
     live: 'En direct',
     active: 'Actif',
     totalRevenue: 'Revenu total',
@@ -140,18 +145,18 @@ const translations = {
 } as const
 
 const sections: ControlSection[] = [
-  { key: 'businesses', title: 'All businesses', summary: 'Portfolio structure, ownership, and operating health across the group.', amount: 5, status: 'Live' },
-  { key: 'brands', title: 'All brands', summary: 'Brand registry, visual identity, and brand-level controls in one place.', amount: 5, status: 'Live' },
-  { key: 'workflows', title: 'All workflows', summary: 'Active automations, approvals, and workflow orchestration for every brand.', amount: 18, status: 'Active' },
-  { key: 'whatsapp', title: 'All WhatsApp automation', summary: 'Messaging flows, inbox routing, and FoundAI-assisted automation across channels.', amount: 42, status: 'Live' },
-  { key: 'analytics', title: 'All analytics', summary: 'Revenue, product, order, customer, and AI metrics across the ecosystem.', amount: 24, status: 'Live' },
-  { key: 'ai', title: 'All AI onboarding', summary: 'FoundAI entry points, prompts, handoffs, and onboarding journeys for every brand.', amount: 12, status: 'Active' },
-  { key: 'customers', title: 'All customers', summary: 'Customer records, segments, and service signals across the operating layer.', amount: 1284, status: 'Live' },
-  { key: 'orders', title: 'All orders', summary: 'Order queues, fulfilment status, and region-based dispatch tracking.', amount: 458, status: 'Live' },
-  { key: 'products', title: 'All products', summary: 'Product catalogues, pricing, and local market availability across brands.', amount: 932, status: 'Live' },
-  { key: 'employees', title: 'All employees', summary: 'Staff, permissions, teams, and access governance in one central view.', amount: 73, status: 'Active' },
-  { key: 'permissions', title: 'All permissions', summary: 'Role scopes, approvals, and access policy controls for the FoundingOS stack.', amount: 36, status: 'Live' },
-  { key: 'settings', title: 'All settings', summary: 'Theme, language, currency, tax, and shipping controls for the full system.', amount: 14, status: 'Active' },
+  { key: 'businesses', title: 'All businesses', summary: 'Portfolio structure, ownership, and operating health across the group.', amount: 5, status: 'Live', href: '/superdashboard' },
+  { key: 'brands', title: 'All brands', summary: 'Brand registry, visual identity, and brand-level controls in one place.', amount: 5, status: 'Live', href: '/superdashboard' },
+  { key: 'workflows', title: 'All workflows', summary: 'Active automations, approvals, and workflow orchestration for every brand.', amount: 18, status: 'Active', href: '/superdashboard/scraping' },
+  { key: 'whatsapp', title: 'All WhatsApp automation', summary: 'Messaging flows, inbox routing, and FoundAI-assisted automation across channels.', amount: 42, status: 'Live', href: '/modules/messaging' },
+  { key: 'analytics', title: 'All analytics', summary: 'Revenue, product, order, customer, and AI metrics across the ecosystem.', amount: 24, status: 'Live', href: '/superdashboard' },
+  { key: 'ai', title: 'All AI onboarding', summary: 'FoundAI entry points, prompts, handoffs, and onboarding journeys for every brand.', amount: 12, status: 'Active', href: '/modules/foundai-demo' },
+  { key: 'customers', title: 'All customers', summary: 'Customer records, segments, and service signals across the operating layer.', amount: 1284, status: 'Live', href: '/crm' },
+  { key: 'orders', title: 'All orders', summary: 'Order queues, fulfilment status, and region-based dispatch tracking.', amount: 458, status: 'Live', href: '/superdashboard' },
+  { key: 'products', title: 'All products', summary: 'Product catalogues, pricing, and local market availability across brands.', amount: 932, status: 'Live', href: '/superdashboard' },
+  { key: 'employees', title: 'All employees', summary: 'Staff, permissions, teams, and access governance in one central view.', amount: 73, status: 'Active', href: '/settings' },
+  { key: 'permissions', title: 'All permissions', summary: 'Role scopes, approvals, and access policy controls for the FoundingOS stack.', amount: 36, status: 'Live', href: '/settings' },
+  { key: 'settings', title: 'All settings', summary: 'Theme, language, currency, tax, and shipping controls for the full system.', amount: 14, status: 'Active', href: '/settings' },
 ]
 
 function langKey(locale: string) {
@@ -188,19 +193,31 @@ export default function FounderConsolePage() {
       <div className="module-card-grid">
         {sections.map((section, index) => {
           const statusText = section.status === 'Live' ? copy.live : section.status === 'Active' ? copy.active : section.status
+          const cardBody = (
+            <>
+              <span className="quantum-corner-marker">⌂</span>
+              <div className="module-card-top">
+                <span>{String(index + 1).padStart(2, '0')}</span>
+                <strong>{copy[section.key as keyof typeof copy]}</strong>
+              </div>
+              <p>{section.summary}</p>
+              <div className="module-card-meta">
+                <small>{section.href ? copy.open : copy.comingSoon}</small>
+                <small>{statusText}</small>
+              </div>
+            </>
+          )
+          if (section.href) {
+            return (
+              <Link key={section.key} href={section.href} className="module-card card-premium quantum-card module-card-link">
+                {cardBody}
+              </Link>
+            )
+          }
           return (
-          <article key={section.key} className="module-card card-premium quantum-card">
-            <span className="quantum-corner-marker">⌂</span>
-            <div className="module-card-top">
-              <span>{String(index + 1).padStart(2, '0')}</span>
-              <strong>{copy[section.key as keyof typeof copy]}</strong>
-            </div>
-            <p>{section.summary}</p>
-            <div className="module-card-meta">
-              <small>{copy.open}</small>
-              <small>{statusText}</small>
-            </div>
-          </article>
+            <article key={section.key} className="module-card card-premium quantum-card">
+              {cardBody}
+            </article>
           )
         })}
       </div>
