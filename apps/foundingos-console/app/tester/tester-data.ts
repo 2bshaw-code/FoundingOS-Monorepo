@@ -969,17 +969,18 @@ export const NARRATION_PLAYER_SCRIPT = `
   var narratorEnabled = true;
   try { narratorEnabled = localStorage.getItem('fo-narrator-enabled') !== '0'; } catch (err) {}
 
-  // Deferred to a macrotask (not run synchronously at script-parse time): these mutate real
-  // DOM nodes (button text, checked state, display style) that React also renders on the
-  // server. Running them synchronously here raced with React's hydration pass on the same
-  // elements and threw a real hydration-mismatch error (React #425/#329) — deferring by one
-  // tick lets hydration finish first, so these become a normal post-hydration DOM update
-  // instead of a race.
-  window.setTimeout(function () {
-    if (narratorToggle) narratorToggle.checked = narratorEnabled;
-    setNarratorEnabled(narratorEnabled);
-    setAudioButtonLabels();
-  }, 0)
+  // Re-applied at several delays (not just once): a separate, pre-existing app-wide hydration
+  // quirk (present even on pages with no narrator content at all — not something this script
+  // causes) can make React re-commit its own server-rendered DOM shortly after this script's
+  // first pass, silently reverting these mutations back to their static default text. Re-
+  // asserting the correct state a few times over ~2 seconds reliably wins against that,
+  // without needing to first solve that separate, broader issue.
+  function applyInitialState() {
+    if (narratorToggle) narratorToggle.checked = narratorEnabled
+    setNarratorEnabled(narratorEnabled)
+    setAudioButtonLabels()
+  }
+  ;[0, 60, 200, 500, 1200, 2000].forEach(function (delay) { window.setTimeout(applyInitialState, delay) })
 
   // Opt-in-only auto-audio: 15 seconds after this narrator surface loads, if Audio was
   // already ON (the user toggled it on previously — never on by default), speak the page's

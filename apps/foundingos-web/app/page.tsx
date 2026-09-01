@@ -107,14 +107,15 @@ const NARRATION_PLAYER_SCRIPT = `
   var narratorEnabled = true;
   try { narratorEnabled = localStorage.getItem('fo-narrator-enabled') !== '0'; } catch (err) {}
 
-  // Deferred to a macrotask so these real DOM mutations run after React's hydration pass
-  // completes, avoiding a hydration-mismatch race (see tester-data.ts's NARRATION_PLAYER_SCRIPT
-  // for the full explanation — kept in sync here).
-  window.setTimeout(function () {
-    if (narratorToggle) narratorToggle.checked = narratorEnabled;
-    setNarratorEnabled(narratorEnabled);
-    setAudioButtonLabels();
-  }, 0)
+  // Re-applied at several delays — see tester-data.ts's NARRATION_PLAYER_SCRIPT for the full
+  // explanation (kept in sync here): a separate, pre-existing app-wide hydration quirk can
+  // make React silently revert these mutations shortly after the first pass.
+  function applyInitialState() {
+    if (narratorToggle) narratorToggle.checked = narratorEnabled
+    setNarratorEnabled(narratorEnabled)
+    setAudioButtonLabels()
+  }
+  ;[0, 60, 200, 500, 1200, 2000].forEach(function (delay) { window.setTimeout(applyInitialState, delay) })
 
   window.setTimeout(function () {
     if (!audioEnabled) return;
