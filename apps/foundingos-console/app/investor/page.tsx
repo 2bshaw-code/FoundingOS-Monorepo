@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, verifyToken } from '../tester/session'
 import { getTester, upsertTester } from '../tester/store.server'
-import { categorizeCredential, INVESTOR_NARRATION, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, OPENING_NARRATOR_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SURVEY_COMPLETE_NARRATOR_LINE } from '../tester/tester-data'
+import { categorizeCredential, INVESTOR_NARRATION, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, OPENING_NARRATOR_LINE, WELCOME_BACK_NARRATOR_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SURVEY_COMPLETE_NARRATOR_LINE } from '../tester/tester-data'
 import { GLOBAL_ACCESSIBILITY_SCRIPT } from '@foundingos/config'
 import { readBrandMetrics } from '../superdashboard/brand-metric-store.server'
 
@@ -106,6 +106,7 @@ export default async function InvestorPage() {
           <article className="module-card fo-card quantum-frame">
             <div className="module-card-top"><span>→</span><strong>Ready for the live demo?</strong></div>
             <p>Once you've reviewed the briefing above, continue to the live cross-brand data demo.</p>
+            <p><small>{DEMO_END_BELONGING_LINE}</small></p>
             <form action={continueToDemo}>
               <button type="submit" className="btn btn-primary quantum-btn">Continue to demo</button>
             </form>
@@ -114,6 +115,12 @@ export default async function InvestorPage() {
       ) : (
         <>
           <div className="module-card-grid">
+            <article className="module-card fo-card quantum-frame">
+              <div className="module-card-top"><span>👋</span><strong>Welcome back</strong></div>
+              <div className="quantum-narrator-panel">
+                <p>{WELCOME_BACK_NARRATOR_LINE}</p>
+              </div>
+            </article>
             <article className="module-card fo-card quantum-frame">
               <div className="module-card-top"><span>🔊</span><strong>Your narrator</strong></div>
               <div className="quantum-narrator-panel">
@@ -160,20 +167,25 @@ export default async function InvestorPage() {
             <div className="stack" style={{ marginTop: 24 }}>
               <div className="quantum-narrator-panel">
                 <p>{SURVEY_COMPLETE_NARRATOR_LINE}</p>
+                <p>{SURVEY_COMPLETE_CELEBRATION_LINE}</p>
                 <p>{FREE_ROAM_INVITE_LINES[0]}</p>
                 <p>{FREE_ROAM_INVITE_LINES[1]} {FREE_ROAM_INVITE_LINES[2]}</p>
                 <p><small>{FREE_ROAM_TIPS.join(' ')}</small></p>
               </div>
               <Link href="/superdashboard?readOnly=1" className="quantum-freeroam-box">
                 <strong data-simple-label="Explore Now">Jump Into Free Roam — Explore the Quantum WhatsApp OS</strong>
-                <small>Read-only exploration of SuperDash — nothing you click can break anything.</small>
+                <small>{FREE_ROAM_ENTERED_LINE} Read-only exploration of SuperDash — nothing you click can break anything.</small>
               </Link>
+              <div className="quantum-narrator-panel">
+                <p>{EMOTIONAL_CLOSING_LINE}</p>
+              </div>
             </div>
           ) : (
             <div className="module-card-grid">
               <article className="module-card fo-card quantum-frame">
                 <div className="module-card-top"><span>→</span><strong>Ready for the investor survey?</strong></div>
                 <p>Once you've reviewed the live data above, continue to the investor survey.</p>
+                <p><small>{DEMO_END_BELONGING_LINE}</small></p>
                 <form action={continueToSurvey}>
                   <button type="submit" className="btn btn-primary quantum-btn">Continue to survey</button>
                 </form>

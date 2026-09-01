@@ -6,7 +6,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { SESSION_COOKIE, verifyToken } from '../session'
 import { getTester } from '../store.server'
-import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, SURVEY_COMPLETE_NARRATOR_LINE, SURVEY_MISSION_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SECTION_NARRATOR_LINES, PACING_REASSURANCE_LINES, ACCESSIBILITY_REMINDER_LINES, TARGET_JOKES, MICRO_BREAK_LINES, getFreeRoamHref, type SurveyId } from '../tester-data'
+import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, DEMO_COMPLETE_CELEBRATION_LINE, SURVEY_COMPLETE_NARRATOR_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, SURVEY_MISSION_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, SECTION_NARRATOR_LINES, PACING_REASSURANCE_LINES, ACCESSIBILITY_REMINDER_LINES, TARGET_JOKES, MICRO_BREAK_LINES, getFreeRoamHref, type SurveyId } from '../tester-data'
 import { SurveyEngine } from './SurveyEngine'
 
 export default async function TesterSurveyPage() {
@@ -44,6 +44,7 @@ export default async function TesterSurveyPage() {
         <article className="module-card fo-card quantum-frame">
           <div className="module-card-top"><span>ℹ</span><strong>Before you start</strong></div>
           <div className="quantum-narrator-panel">
+            <p>{DEMO_COMPLETE_CELEBRATION_LINE}</p>
             <p>{NARRATOR_SURVEY_LINE}</p>
           </div>
           <p>{SURVEY_INTRO}</p>
@@ -55,6 +56,9 @@ export default async function TesterSurveyPage() {
         moduleId={tester.moduleId}
         freeRoamHref={freeRoamHref}
         completeNarratorLine={SURVEY_COMPLETE_NARRATOR_LINE}
+        completeCelebrationLine={SURVEY_COMPLETE_CELEBRATION_LINE}
+        freeRoamEnteredLine={FREE_ROAM_ENTERED_LINE}
+        emotionalClosingLine={EMOTIONAL_CLOSING_LINE}
         freeRoamInviteLines={FREE_ROAM_INVITE_LINES}
         freeRoamTips={FREE_ROAM_TIPS}
         sectionNarratorLines={SECTION_NARRATOR_LINES}

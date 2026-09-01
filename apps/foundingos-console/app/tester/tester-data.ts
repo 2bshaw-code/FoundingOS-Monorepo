@@ -261,17 +261,23 @@ export const SECTION_NARRATOR_LINES: Record<SectionKind, string> = {
   intelligence: "Now let's peek at one of the intelligence systems — this one's fun.",
 }
 
-// Narrator reassurance, rotated section-by-section so the survey never feels overwhelming.
+// Narrator reassurance, rotated section-by-section so the survey never feels overwhelming —
+// includes the "OS breathing moments" (subtle companion lines meant to appear sparingly, once
+// per macro-section, which this rotation already does by design).
 export const PACING_REASSURANCE_LINES = [
   "You're doing great — these sections are small.",
   "Short answers are perfect.",
   "This isn't a test — it's feedback.",
   "We keep everything bite-sized so it's easy.",
+  "I'm right here with you.",
+  "Take your time — the OS isn't rushing.",
+  "This system grows with every person who touches it.",
 ]
 
 // Micro-break narrator line shown once at every section boundary — after the previous
 // section's last question, before the next section's Quantum-framed header. Rotated so it
-// never repeats back-to-back across a typical survey's six sections.
+// never repeats back-to-back across a typical survey's six sections. Includes the "user
+// belonging" lines for the end of each survey section.
 export const MICRO_BREAK_LINES = [
   "Nice, that section's done — quick breather.",
   "Grab a sip of water if you want — next part is tiny.",
@@ -279,6 +285,9 @@ export const MICRO_BREAK_LINES = [
   "You're flying through this — let's keep going.",
   "Short answers are perfect — let's jump to the next part.",
   "This OS is huge, but I promise the sections stay small.",
+  "Great progress — this OS is huge, but you're moving through it smoothly.",
+  "People like you shape this OS.",
+  "Your perspective matters here.",
 ]
 
 // Developing-country / low-digital-literacy accessibility reminders, rotated for the
@@ -292,12 +301,14 @@ export const ACCESSIBILITY_REMINDER_LINES = [
 // One-off humour + mini-demo narrative lines for specific targets — a small "conceptual demo"
 // moment for systems without a real dedicated tester module page (POS/ATS/compliance flows,
 // Guardian/Autonomous/BrandMetric), grounded honestly in what each one actually is, not
-// invented functionality. Not every target gets one, just the ones called out by name.
+// invented functionality. Not every target gets one, just the ones called out by name. The
+// named intelligence systems also get a short "Quantum delight" quip appended, for a lighter,
+// more playful second beat alongside the longer explanatory line.
 export const TARGET_JOKES: Record<string, string> = {
-  'Guardian (system safety layer)': "Guardian gets dramatic here, but we love it — think of it as the bouncer that keeps every brand's UI and data in its own lane.",
-  'Autonomous (auto-optimize/auto-coach)': "Autonomous is about to make a decision — don't blink. It watches engagement scores and reacts on its own: auto-optimize when a module surges, auto-coach when one dips.",
-  'BrandMetric (live brand data)': "This is the heartbeat of every brand — the live engagement and anomaly numbers everything else in the OS is built on top of.",
-  'SuperDash': "SuperDash is the brain of the whole OS — every brand, every module, rolled into one live view.",
+  'Guardian (system safety layer)': "Guardian gets dramatic here, but we love it — think of it as the bouncer that keeps every brand's UI and data in its own lane. Guardian gets dramatic here — don't mind it.",
+  'Autonomous (auto-optimize/auto-coach)': "Autonomous is about to make a decision — don't blink. It watches engagement scores and reacts on its own: auto-optimize when a module surges, auto-coach when one dips. Autonomous is thinking… it does that.",
+  'BrandMetric (live brand data)': "This is the heartbeat of every brand — the live engagement and anomaly numbers everything else in the OS is built on top of. BrandMetric is basically the OS's heartbeat.",
+  'SuperDash': "SuperDash is the brain of the whole OS — every brand, every module, rolled into one live view. SuperDash loves showing off.",
   'Retail POS': "Retail POS is the diva of the group — let's see how it behaves. (Conceptual for now — no live checkout screen exists yet, just the idea of one.)",
   'Meat POS': "Meat POS keeps a different rhythm — weights and cuts instead of SKUs. (Conceptual for now, not a live screen yet.)",
   'Logistics POS': "Logistics POS is all about handoffs — parcel in, parcel out. (Conceptual for now, not a live screen yet.)",
@@ -592,6 +603,33 @@ export const INVESTOR_NARRATION = INVESTOR_NARRATOR_STEPS.map((s) => s.text).joi
 // copy. The narrator's own personal greeting, distinct from the business-y walkthrough intro.
 export const OPENING_NARRATOR_LINE =
   "Welcome to the Quantum WhatsApp OS — you're stepping into a living system built for real people, everywhere. I'll walk with you through everything… and don't worry, it's all simple, human, and honestly pretty fun. Ready."
+
+// Shown instead of OPENING_NARRATOR_LINE whenever a session returns after making real
+// progress (status !== 'registered' — i.e. the demo has been viewed and/or a survey run
+// exists) — never shown on a genuine first visit.
+export const WELCOME_BACK_NARRATOR_LINE =
+  "Welcome back — the Quantum WhatsApp OS remembers you. Let's pick up right where you left off."
+
+// Micro-celebration: shown on the survey page's intro, since reaching the survey always means
+// the demo gate was just cleared.
+export const DEMO_COMPLETE_CELEBRATION_LINE = "Nice — you just unlocked a new part of the OS."
+
+// Micro-celebration: shown alongside the "end of demo" belonging moment on the demo page's
+// final "Ready for your survey?" card.
+export const DEMO_END_BELONGING_LINE = "Thanks for being part of this."
+
+// Micro-celebration: shown in the survey's completed state, alongside SURVEY_COMPLETE_NARRATOR_LINE.
+export const SURVEY_COMPLETE_CELEBRATION_LINE = "You did it — that was a big one. Thanks for helping shape the OS."
+
+// Shown as a caption directly on the Quantum Free Roam box itself — the closest real,
+// honest placement for an "entering Free Roam" moment, since Free Roam links out to a real
+// destination page this system doesn't control (so nothing can fire "after" that navigation).
+export const FREE_ROAM_ENTERED_LINE = "Alright, explorer — the OS is yours now."
+
+// Shown alongside the Free Roam box as the closing/farewell note — the honest placement for
+// "end of Free Roam or extended exploration," for the same reason as FREE_ROAM_ENTERED_LINE.
+export const EMOTIONAL_CLOSING_LINE =
+  "That's the full Quantum WhatsApp OS — alive, evolving, and built for real people everywhere. Thanks for exploring. Whenever you're ready, I'll be here to guide you through whatever comes next."
 
 // Universal intro copy shown once, before any demo/briefing content and before any survey,
 // for every real tester/investor/buyer/customer session — identical wording everywhere per the

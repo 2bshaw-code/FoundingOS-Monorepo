@@ -7,7 +7,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, verifyToken } from '../../session'
 import { getTester, upsertTester } from '../../store.server'
-import { MODULE_NARRATION, MODULE_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_NARRATION, OPENING_NARRATOR_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, type ModuleId } from '../../tester-data'
+import { MODULE_NARRATION, MODULE_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_NARRATION, OPENING_NARRATOR_LINE, WELCOME_BACK_NARRATOR_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, type ModuleId } from '../../tester-data'
 import { GLOBAL_ACCESSIBILITY_SCRIPT } from '@foundingos/config'
 
 export default async function TesterDemoPage({ params }: { params: Promise<{ moduleId: string }> }) {
@@ -81,11 +81,18 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
       </header>
 
       <div className="module-card-grid">
-        {tester.status === 'registered' && (
+        {tester.status === 'registered' ? (
           <article className="module-card fo-card quantum-frame">
             <div className="module-card-top"><span>👋</span><strong>Welcome</strong></div>
             <div className="quantum-narrator-panel">
               <p>{OPENING_NARRATOR_LINE}</p>
+            </div>
+          </article>
+        ) : (
+          <article className="module-card fo-card quantum-frame">
+            <div className="module-card-top"><span>👋</span><strong>Welcome back</strong></div>
+            <div className="quantum-narrator-panel">
+              <p>{WELCOME_BACK_NARRATOR_LINE}</p>
             </div>
           </article>
         )}
@@ -144,6 +151,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
           <article className="module-card fo-card quantum-frame">
             <div className="module-card-top"><span>→</span><strong>Ready for your survey?</strong></div>
             <p>Once you've explored the demo above, continue to your tailored {tester.moduleLabel} survey.</p>
+            <p><small>{DEMO_END_BELONGING_LINE}</small></p>
             <form action={continueToSurvey}>
               <button type="submit" className="btn btn-primary quantum-btn">Continue to survey</button>
             </form>
@@ -160,8 +168,11 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
           </div>
           <Link href={freeRoamHref} className="quantum-freeroam-box">
             <strong data-simple-label="Explore Now">Jump Into Free Roam — Explore the Quantum WhatsApp OS</strong>
-            <small>Read-only exploration of your unlocked module — nothing you click can break anything.</small>
+            <small>{FREE_ROAM_ENTERED_LINE} Read-only exploration of your unlocked module — nothing you click can break anything.</small>
           </Link>
+          <div className="quantum-narrator-panel">
+            <p>{EMOTIONAL_CLOSING_LINE}</p>
+          </div>
         </div>
       )}
       <script dangerouslySetInnerHTML={{ __html: NARRATION_PLAYER_SCRIPT }} />

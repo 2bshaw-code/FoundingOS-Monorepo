@@ -32,6 +32,9 @@ export function SurveyEngine({
   moduleId,
   freeRoamHref,
   completeNarratorLine,
+  completeCelebrationLine,
+  freeRoamEnteredLine,
+  emotionalClosingLine,
   freeRoamInviteLines,
   freeRoamTips,
   sectionNarratorLines,
@@ -46,6 +49,9 @@ export function SurveyEngine({
   moduleId: string
   freeRoamHref: string
   completeNarratorLine: string
+  completeCelebrationLine: string
+  freeRoamEnteredLine: string
+  emotionalClosingLine: string
   freeRoamInviteLines: string[]
   freeRoamTips: string[]
   sectionNarratorLines: Record<SectionKind, string>
@@ -153,6 +159,7 @@ export function SurveyEngine({
           <p>Thanks — your {survey.title.replace(/^Survey [A-Z—]*\s*—?\s*/, '') || 'survey'} answers are saved.</p>
         </article>
         <div className="quantum-narrator-panel">
+          <p>{completeCelebrationLine}</p>
           <p>{completeNarratorLine}</p>
           <p>{freeRoamInviteLines[0]}</p>
           <p>{freeRoamInviteLines[1]} {freeRoamInviteLines[2]}</p>
@@ -160,8 +167,11 @@ export function SurveyEngine({
         </div>
         <Link href={freeRoamHref} className="quantum-freeroam-box">
           <strong>{simplified ? 'Explore Now' : 'Jump Into Free Roam — Explore the Quantum WhatsApp OS'}</strong>
-          <small>Read-only exploration of your unlocked module — nothing you click can break anything.</small>
+          <small>{freeRoamEnteredLine} Read-only exploration of your unlocked module — nothing you click can break anything.</small>
         </Link>
+        <div className="quantum-narrator-panel">
+          <p>{emotionalClosingLine}</p>
+        </div>
       </div>
     )
   }
