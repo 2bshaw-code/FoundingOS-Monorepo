@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { SESSION_COOKIE, verifyToken } from '../../session'
 import { getTester, upsertTester } from '../../store.server'
 import { MODULE_NARRATION, MODULE_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_NARRATION, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, type ModuleId } from '../../tester-data'
+import { GLOBAL_ACCESSIBILITY_SCRIPT } from '@foundingos/config'
 
 export default async function TesterDemoPage({ params }: { params: Promise<{ moduleId: string }> }) {
   const { moduleId } = await params
@@ -149,12 +150,13 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
             <p><small>{FREE_ROAM_TIPS.join(' ')}</small></p>
           </div>
           <Link href={freeRoamHref} className="quantum-freeroam-box">
-            <strong>Jump Into Free Roam — Explore the Quantum WhatsApp OS</strong>
+            <strong data-simple-label="Explore Now">Jump Into Free Roam — Explore the Quantum WhatsApp OS</strong>
             <small>Read-only exploration of your unlocked module — nothing you click can break anything.</small>
           </Link>
         </div>
       )}
       <script dangerouslySetInnerHTML={{ __html: NARRATION_PLAYER_SCRIPT }} />
+      <script dangerouslySetInnerHTML={{ __html: GLOBAL_ACCESSIBILITY_SCRIPT }} />
     </section>
   )
 }

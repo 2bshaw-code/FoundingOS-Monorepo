@@ -3210,3 +3210,19 @@ body.superdash-heatmap-off .quantum-heatmap {
   margin-top: 10px;
   font-size: 12px;
 }
+
+/* Geo-based accessibility mode — larger tap targets for mobile / low-end-device use, plus an
+   even larger baseline once GLOBAL_ACCESSIBILITY_SCRIPT flags a simplified-copy region via
+   documentElement[data-accessibility-simplified]. Frontend-only, no new dependencies. */
+@media (max-width: 900px) {
+  .btn {
+    min-height: 46px;
+    padding: 0 20px;
+  }
+}
+
+html[data-accessibility-simplified='true'] .btn {
+  min-height: 50px;
+  padding: 0 22px;
+  font-size: 16px;
+}

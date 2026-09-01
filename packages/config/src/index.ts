@@ -245,3 +245,118 @@ export const brandList = Object.values(brands)
 export function getBrand(slug: BrandSlug) {
   return brands[slug]
 }
+
+// Geo-based currency/locale/accessibility formatting — shared across every brand website,
+// console, and intelligence system (not just foundingos-console's founder section, which had
+// its own equivalent, app-local copy of this same real logic). Client-side only
+// (navigator/Intl), zero new dependencies, matches the existing real currency-mapping pattern.
+const LOCALE_CURRENCY_MAP: Record<string, string> = {
+  'en-GB': 'GBP', 'en-US': 'USD', 'en-ZA': 'ZAR', 'en-AU': 'AUD', 'en-CA': 'CAD',
+  'en-NG': 'NGN', 'en-KE': 'KES', 'en-IN': 'INR', 'en-PH': 'PHP', 'en-GH': 'GHS',
+  'pt-BR': 'BRL', 'es-MX': 'MXN', 'fr-FR': 'EUR', 'es-ES': 'EUR', 'ur-PK': 'PKR',
+  default: 'USD',
+}
+
+// Regions this ecosystem explicitly targets for simplified, WhatsApp-style, fewer-words
+// copy (lower-typical-bandwidth / low-end-device markets) — a short, honest, non-exhaustive
+// starting set, not an exact market-research list.
+const SIMPLIFIED_REGIONS = new Set(['NG', 'KE', 'IN', 'ZA', 'GH', 'PK', 'BD', 'PH'])
+
+export function detectLocale(): string {
+  if (typeof navigator === 'undefined') return 'en-US'
+  return navigator.languages?.[0] || navigator.language || 'en-US'
+}
+
+export function regionForLocale(locale: string): string {
+  try {
+    return new Intl.Locale(locale).region || locale.split('-')[1] || 'US'
+  } catch {
+    return locale.split('-')[1] || 'US'
+  }
+}
+
+export function currencyForLocale(locale: string): string {
+  return LOCALE_CURRENCY_MAP[locale] || LOCALE_CURRENCY_MAP.default
+}
+
+export function formatCurrency(amount: number, locale?: string): string {
+  const resolvedLocale = locale || detectLocale()
+  try {
+    return new Intl.NumberFormat(resolvedLocale, { style: 'currency', currency: currencyForLocale(resolvedLocale) }).format(amount)
+  } catch {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
+  }
+}
+
+export function formatLocaleNumber(amount: number, locale?: string): string {
+  const resolvedLocale = locale || detectLocale()
+  try {
+    return new Intl.NumberFormat(resolvedLocale).format(amount)
+  } catch {
+    return new Intl.NumberFormat('en-US').format(amount)
+  }
+}
+
+// Whether the detected/given locale is one of the regions this OS treats as needing simpler,
+// WhatsApp-style copy — real signal any component can use to swap in a shorter label, not a
+// claim of a fully translated experience.
+export function isSimplifiedRegion(locale?: string): boolean {
+  return SIMPLIFIED_REGIONS.has(regionForLocale(locale || detectLocale()))
+}
+
+// Minimal locale-string wrapper for UI labels: returns a real translation only if one is
+// actually supplied, otherwise always falls back to the given English label. There are no real
+// translated dictionaries anywhere in this codebase yet — this establishes the seam any caller
+// can pass real translations through later without fabricating unverified translated text now.
+export function t(englishLabel: string, translations?: Partial<Record<string, string>>, locale?: string): string {
+  const resolvedLocale = locale || detectLocale()
+  return translations?.[resolvedLocale] ?? translations?.[resolvedLocale.split('-')[0]] ?? englishLabel
+}
+
+// No-new-file client script covering the two things a server component genuinely cannot do
+// with real navigator.language detection (the server has no navigator):
+// 1. Reformats any element marked data-locale-number="<raw value>" (optionally
+//    data-locale-currency="true") using the visitor's real locale/currency — for
+//    server-rendered numeric tables (SuperDash/investor/BrandMetric-style displays).
+// 2. Swaps any element marked data-simple-label="<short text>" to that shorter, WhatsApp-style
+//    label when the visitor's region is one of SIMPLIFIED_REGIONS, and flags
+//    documentElement[data-accessibility-simplified] so CSS can react (larger tap targets, etc).
+// Embedded once per page via a plain <script> tag — same pattern as the narration player.
+export const GLOBAL_ACCESSIBILITY_SCRIPT = `
+(function () {
+  function run() {
+    var currencyMap = ${JSON.stringify(LOCALE_CURRENCY_MAP)};
+    var simplifiedRegions = ${JSON.stringify(Array.from(SIMPLIFIED_REGIONS))};
+    var locale = (navigator.languages && navigator.languages[0]) || navigator.language || 'en-US';
+    var region = locale.split('-')[1] || '';
+    try { region = (new Intl.Locale(locale)).region || region; } catch (e) {}
+    var isSimplified = simplifiedRegions.indexOf(region) !== -1;
+
+    var numberEls = document.querySelectorAll('[data-locale-number]');
+    for (var i = 0; i < numberEls.length; i++) {
+      var el = numberEls[i];
+      var raw = Number(el.getAttribute('data-locale-number'));
+      if (isNaN(raw)) continue;
+      try {
+        if (el.getAttribute('data-locale-currency') === 'true') {
+          var currency = currencyMap[locale] || currencyMap['default'];
+          el.textContent = new Intl.NumberFormat(locale, { style: 'currency', currency: currency }).format(raw);
+        } else {
+          el.textContent = new Intl.NumberFormat(locale).format(raw);
+        }
+      } catch (err) {}
+    }
+
+    if (isSimplified) {
+      var simpleEls = document.querySelectorAll('[data-simple-label]');
+      for (var j = 0; j < simpleEls.length; j++) {
+        var simpleLabel = simpleEls[j].getAttribute('data-simple-label');
+        if (simpleLabel) simpleEls[j].textContent = simpleLabel;
+      }
+      document.documentElement.setAttribute('data-accessibility-simplified', 'true');
+    }
+  }
+  if (document.readyState === 'complete' || document.readyState === 'interactive') run();
+  else document.addEventListener('DOMContentLoaded', run);
+})();
+`

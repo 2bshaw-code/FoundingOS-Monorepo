@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { SESSION_COOKIE, verifyToken } from '../tester/session'
 import { getTester, upsertTester } from '../tester/store.server'
 import { categorizeCredential, INVESTOR_NARRATION, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SURVEY_COMPLETE_NARRATOR_LINE } from '../tester/tester-data'
+import { GLOBAL_ACCESSIBILITY_SCRIPT } from '@foundingos/config'
 import { readBrandMetrics } from '../superdashboard/brand-metric-store.server'
 
 // Real, read-only Investor briefing — reuses the same live BrandMetric data that powers
@@ -121,8 +122,8 @@ export default async function InvestorPage() {
             </article>
             <article className="dashboard-card fo-card good">
               <span>Σ</span>
-              <strong>{totalEngagement}</strong>
-              <small>Total engagement (all brands)</small>
+              <strong data-locale-number={totalEngagement}>{totalEngagement}</strong>
+              <small>Total engagement (all brands) — shown in your local number format</small>
             </article>
           </div>
 
@@ -137,14 +138,14 @@ export default async function InvestorPage() {
                   {brands.map((brand) => (
                     <tr key={brand.brandName}>
                       <td>{brand.brandName}</td>
-                      <td>{brand.totalEngagement}</td>
-                      <td>{brand.anomalyScore.toFixed(2)}</td>
+                      <td data-locale-number={brand.totalEngagement}>{brand.totalEngagement}</td>
+                      <td data-locale-number={brand.anomalyScore}>{brand.anomalyScore.toFixed(2)}</td>
                       <td>{brand.lastUpdated.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <p><small>This table is the same live BrandMetric data referenced in the briefing narration — real engagement and anomaly scores, not illustrative numbers.</small></p>
+              <p><small>This table is the same live BrandMetric data referenced in the briefing narration — real engagement and anomaly scores, not illustrative numbers. Numbers reformat to your local number format automatically.</small></p>
             </article>
           </div>
 
@@ -157,7 +158,7 @@ export default async function InvestorPage() {
                 <p><small>{FREE_ROAM_TIPS.join(' ')}</small></p>
               </div>
               <Link href="/superdashboard?readOnly=1" className="quantum-freeroam-box">
-                <strong>Jump Into Free Roam — Explore the Quantum WhatsApp OS</strong>
+                <strong data-simple-label="Explore Now">Jump Into Free Roam — Explore the Quantum WhatsApp OS</strong>
                 <small>Read-only exploration of SuperDash — nothing you click can break anything.</small>
               </Link>
             </div>
@@ -175,6 +176,7 @@ export default async function InvestorPage() {
         </>
       )}
       <script dangerouslySetInnerHTML={{ __html: NARRATION_PLAYER_SCRIPT }} />
+      <script dangerouslySetInnerHTML={{ __html: GLOBAL_ACCESSIBILITY_SCRIPT }} />
     </section>
   )
 }

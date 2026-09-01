@@ -4,8 +4,9 @@
 */
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { isSimplifiedRegion } from '@foundingos/config'
 
 type SectionKind = 'module' | 'businessplan' | 'website' | 'console' | 'pos' | 'intelligence'
 type Question = { id: string; prompt: string; section?: string; sectionKind?: SectionKind; target?: string }
@@ -67,6 +68,11 @@ export function SurveyEngine({
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState('')
   const [completed, setCompleted] = useState(false)
+  // Real geo-based content simplification: detected once, client-side, via the visitor's real
+  // navigator.language (through the shared @foundingos/config utility) — WhatsApp-style shorter
+  // button labels for the regions this OS targets for simplified copy.
+  const [simplified, setSimplified] = useState(false)
+  useEffect(() => { setSimplified(isSimplifiedRegion()) }, [])
 
   const question = survey.questions[index]
   const progress = Math.round((index / survey.questions.length) * 100)
@@ -153,7 +159,7 @@ export function SurveyEngine({
           <p><small>{freeRoamTips.join(' ')}</small></p>
         </div>
         <Link href={freeRoamHref} className="quantum-freeroam-box">
-          <strong>Jump Into Free Roam — Explore the Quantum WhatsApp OS</strong>
+          <strong>{simplified ? 'Explore Now' : 'Jump Into Free Roam — Explore the Quantum WhatsApp OS'}</strong>
           <small>Read-only exploration of your unlocked module — nothing you click can break anything.</small>
         </Link>
       </div>
@@ -225,7 +231,9 @@ export function SurveyEngine({
             <p><small>{saving ? 'Saving…' : savedAt ? `Auto-saved ${savedAt}` : 'Answers auto-save as you type.'}</small></p>
             <div className="tester-survey-actions">
               <button type="button" className="btn btn-primary" disabled={!draft.trim()} onClick={submitAnswer}>
-                {index + 1 === survey.questions.length ? 'Finish survey' : 'Next question'}
+                {simplified
+                  ? (index + 1 === survey.questions.length ? 'Send' : 'Next')
+                  : (index + 1 === survey.questions.length ? 'Finish survey' : 'Next question')}
               </button>
             </div>
           </>
