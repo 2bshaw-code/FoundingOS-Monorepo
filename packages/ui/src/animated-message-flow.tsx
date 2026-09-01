@@ -4,7 +4,7 @@
 */
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 // Purely a visual "message flow" preview — short, clearly-fictional demo banter styled like
 // familiar messaging apps, cycling automatically. Never real user data, never a claim about
@@ -40,11 +40,16 @@ function parseLine(line: string): { role: 'user' | 'assistant'; text: string } {
   return { role: 'assistant', text: line.replace(/^FoundAI:/, '').trim() }
 }
 
-// Randomized order (not sequential 0..14) so the rotation doesn't feel scripted on a loop —
-// still deterministic per page load (no external randomness dependency, no hydration mismatch
-// risk since this only ever runs client-side after mount).
+// Sequential order used for the very first render (server AND client must produce identical
+// initial output, or React throws a hydration mismatch) — real shuffling happens after mount
+// (see the useEffect below), which is a safe post-hydration state update, not part of the
+// initial render.
+function sequentialIndexes(length: number): number[] {
+  return Array.from({ length }, (_, i) => i)
+}
+
 function shuffledIndexes(length: number): number[] {
-  const order = Array.from({ length }, (_, i) => i)
+  const order = sequentialIndexes(length)
   for (let i = order.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[order[i], order[j]] = [order[j], order[i]]
@@ -53,9 +58,17 @@ function shuffledIndexes(length: number): number[] {
 }
 
 export function AnimatedMessageFlow() {
-  const order = useMemo(() => shuffledIndexes(FUNNY_SET.length), [])
+  const [order, setOrder] = useState(() => sequentialIndexes(FUNNY_SET.length))
   const [step, setStep] = useState(0)
   const [visibleCount, setVisibleCount] = useState(1)
+
+  // Shuffle only after mount (client-only) — the initial render (server + client hydration)
+  // always uses the same deterministic sequential order first, so there's nothing for React
+  // to mismatch on. This one-time reshuffle right after mount is what actually varies the
+  // rotation across page loads.
+  useEffect(() => {
+    setOrder(shuffledIndexes(FUNNY_SET.length))
+  }, [])
 
   const sequence = FUNNY_SET[order[step % order.length]]
   const platform = PLATFORM_SKINS[step % PLATFORM_SKINS.length]
