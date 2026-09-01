@@ -18,8 +18,9 @@ export type ModuleId =
   | 'superdashboard-demo'
   | 'finance'
   | 'crypto'
+  | 'investor-overview'
 
-export type SurveyId = 'survey-a' | 'survey-b' | 'survey-c' | 'survey-d' | 'survey-e' | 'survey-f' | 'survey-g' | 'survey-h' | 'survey-i' | 'survey-j' | 'survey-k' | 'survey-l'
+export type SurveyId = 'survey-a' | 'survey-b' | 'survey-c' | 'survey-d' | 'survey-e' | 'survey-f' | 'survey-g' | 'survey-h' | 'survey-i' | 'survey-j' | 'survey-k' | 'survey-l' | 'survey-investor'
 
 export type Credential = {
   id: string
@@ -57,11 +58,11 @@ export const CREDENTIALS: Credential[] = [
   { id: 'tester-9', password: 'TST-39HF', moduleId: 'console-navigation', moduleLabel: 'Console Navigation', surveyId: 'survey-i' },
   { id: 'tester-10', password: 'TST-04DS', moduleId: 'superdashboard-demo', moduleLabel: 'SuperDashboard Demo (read-only)', surveyId: 'survey-j' },
 
-  // Investor / lawyer review access — routed to the existing read-only SuperDashboard demo
-  // tier (same experience as 'juliet' above), since that is the only existing whole-ecosystem,
-  // read-only overview available without creating a new route or dashboard.
-  { id: 'investor-alpha', password: 'INV-ALPHA', moduleId: 'superdashboard-demo', moduleLabel: 'SuperDashboard Demo (read-only)', surveyId: 'survey-j' },
-  { id: 'investor-omega', password: 'INV-OMEGA', moduleId: 'superdashboard-demo', moduleLabel: 'SuperDashboard Demo (read-only)', surveyId: 'survey-j' },
+  // Investor access — a dedicated business-plan-aligned briefing (the existing, real
+  // /investor page) plus its own comprehension survey (survey-investor), distinct from the
+  // generic SuperDashboard demo tier. Lawyer review keeps the original read-only tier.
+  { id: 'investor-alpha', password: 'INV-ALPHA', moduleId: 'investor-overview', moduleLabel: 'Investor Briefing', surveyId: 'survey-investor' },
+  { id: 'investor-omega', password: 'INV-OMEGA', moduleId: 'investor-overview', moduleLabel: 'Investor Briefing', surveyId: 'survey-investor' },
   { id: 'lawyer-review', password: 'LAW-REVIEW', moduleId: 'superdashboard-demo', moduleLabel: 'SuperDashboard Demo (read-only)', surveyId: 'survey-j' },
 
   // Tester access codes (batch 3) — plain, memorable "SURVEY-*" passwords for the
@@ -258,4 +259,84 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       { id: 'l3', prompt: 'What is your biggest challenge in crypto operations?' },
     ],
   },
+  'survey-investor': {
+    id: 'survey-investor',
+    title: 'Investor Survey — FoundingOS Business Plan',
+    moduleLabel: 'Investor Briefing',
+    questions: [
+      { id: 'inv1', prompt: 'In your own words, what is the multi-brand SaaS ecosystem FoundingOS operates (the 26 interconnected apps and multi-console structure)?' },
+      { id: 'inv2', prompt: 'How would you describe the difference between the IntelligenceOS and SystemOS layers?' },
+      { id: 'inv3', prompt: 'What did the demo show you about Autonomous intelligence (auto-optimize / auto-coach) reacting to high or low engagement?' },
+      { id: 'inv4', prompt: "What is Guardian's role in enforcing category-level isolation and brand consistency across the ecosystem?" },
+      { id: 'inv5', prompt: 'How useful is SuperDash as a single, unified cross-brand intelligence view for an investor or operator?' },
+      { id: 'inv6', prompt: 'How would you describe the adaptive pricing model (Package Model D — SystemOS tiers, industry packs, hardware packs, QuantumOS/IntelligenceOS add-ons)?' },
+      { id: 'inv7', prompt: 'In your own words, how does real user behaviour on each brand website feed data back into the OS (scrapers, anomaly detection, brand signals)?' },
+      { id: 'inv8', prompt: 'Did the real-time engagement ingestion and Quantum visuals feel credible as evidence of a live, working system?' },
+      { id: 'inv9', prompt: 'What is the single strongest signal from this briefing that FoundingOS is a real, differentiated platform rather than a collection of separate brand sites?' },
+    ],
+  },
 }
+
+// A single, shared narration voice/storyline used across every module demo and the investor
+// briefing — grounded in what each module actually does today, not invented claims. Keyed by
+// ModuleId so the demo page can look up the right script; INVESTOR_NARRATION is the dedicated,
+// business-plan-aligned script for the /investor briefing.
+export const MODULE_NARRATION: Partial<Record<ModuleId, string>> = {
+  'marketing-suite': 'Marketing Suite lets a brand plan, launch, and track campaigns across the FoundingOS ecosystem, feeding engagement signals straight into SuperDash.',
+  'accounting': 'Accounting brings invoices, revenue, and financial health into one streamlined view for each brand, powering the adaptive pricing and finance layers above it.',
+  'customer-service': 'Customer Service tracks tickets, service-level agreements, and customer happiness, so support quality becomes another live signal the OS can measure.',
+  'messaging': 'Messaging unifies conversations, notifications, and outreach across every channel a brand uses, so nothing falls outside the intelligence layer.',
+  'ai-automation': 'This is FoundAI — AI-powered workflows and suggestions tailored to this console, the automation layer that turns raw signals into recommended actions.',
+  'finance': 'The Finance module gives each brand a real, working view of cash flow and financial operations, one of the core inputs the OS uses to score brand health.',
+  'crypto': 'The Crypto module tracks brand-specific crypto operations and market exposure as its own real, live data stream inside the ecosystem.',
+  'superdashboard-demo': 'SuperDash is the single cross-brand view: every module — marketing, accounting, service, messaging, AI, and system health — rolled up into one live intelligence layer for a founder or operator.',
+}
+
+export const INVESTOR_NARRATION =
+  'FoundingOS is a multi-brand SaaS ecosystem — twenty-six interconnected apps across eight-plus brands, each with its own public website and its own console, all sharing one architecture. ' +
+  'Two layers sit underneath every brand: SystemOS, which handles tiers, industry packs, and hardware packs; and IntelligenceOS, the layer that reads live signals and turns them into decisions. ' +
+  'Every brand website feeds real user behaviour back into the OS — engagement events are ingested in real time, scored, and watched for anomalies. ' +
+  'Guardian is the safety layer: it enforces category-level isolation, lockdown, and brand consistency, so no brand can bleed into another and every UI boundary stays intact. ' +
+  'Autonomous intelligence watches that same engagement data and reacts on its own — auto-optimizing a module that is surging, and auto-coaching one that is degrading, without a human in the loop. ' +
+  'SuperDash brings all of it together in one unified, cross-brand dashboard, so an operator or investor can see every brand, every module, and every anomaly in a single live view. ' +
+  'Pricing adapts to match: Package Model D layers SystemOS tiers, industry packs, hardware packs, and QuantumOS and IntelligenceOS add-ons on top of a SuperDash view that always stays unrestricted. ' +
+  'The quantum-styled visuals across the ecosystem are not decoration — they are the live representation of that same real-time engagement and anomaly data moving through the system right now. ' +
+  'What you are about to see below is real, live brand engagement data — the same data that powers SuperDash — read-only, exactly as an investor should see it.'
+
+// Shared, no-new-file audio narration engine: reads MODULE_NARRATION / INVESTOR_NARRATION text
+// aloud via the browser's built-in speech synthesis (works on desktop and mobile with zero
+// external audio assets). One "Play narration" click always works; the auto-play checkbox is a
+// best-effort convenience (mobile browsers may still block audio without a user gesture — the
+// manual button is always the reliable path). Rendered once per page via a plain <script> tag.
+export const NARRATION_PLAYER_SCRIPT = `
+(function () {
+  function speak(text) {
+    try {
+      if (!text || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      var utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 0.98;
+      window.speechSynthesis.speak(utter);
+    } catch (err) {}
+  }
+  function narrationFor(el) { return el ? el.getAttribute('data-narration') : ''; }
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-narrate-btn]');
+    if (!btn) return;
+    speak(narrationFor(btn.closest('[data-narration]')));
+  });
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.id === 'demo-autoplay-toggle') {
+      try { localStorage.setItem('fo-demo-autoplay', e.target.checked ? '1' : '0'); } catch (err) {}
+    }
+  });
+  var toggle = document.getElementById('demo-autoplay-toggle');
+  var wantsAutoplay = false;
+  try { wantsAutoplay = localStorage.getItem('fo-demo-autoplay') === '1'; } catch (err) {}
+  if (toggle) toggle.checked = wantsAutoplay;
+  if (wantsAutoplay) {
+    var card = document.querySelector('[data-narration]');
+    setTimeout(function () { speak(narrationFor(card)); }, 500);
+  }
+})();
+`

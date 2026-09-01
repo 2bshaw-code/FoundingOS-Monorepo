@@ -492,6 +492,26 @@ body[data-sidebar-collapsed='true'] .nav-card {
   padding: 28px;
 }
 
+/* Minimal shell for real tester/survey/investor sessions — deliberately has no sidebar or
+   topbar (and so no --sidebar-width margin / --topbar-height padding to reserve), since those
+   elements never render for these sessions. Same padding rhythm as .console-shell-content so
+   the demo/survey/investor pages still look consistent, just without any console chrome. */
+.tester-shell {
+  min-height: 100vh;
+}
+
+.tester-shell-content {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px;
+}
+
+@media (max-width: 900px) {
+  .tester-shell-content {
+    padding: 20px 16px 28px;
+  }
+}
+
 .topbar-nav {
   display: flex;
   align-items: center;

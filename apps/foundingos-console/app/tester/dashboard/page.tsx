@@ -18,12 +18,15 @@ export default async function TesterDashboardPage() {
   const tester = await getTester(testerId)
   if (!tester) redirect('/tester/login')
 
-  // Demo must always come before the survey for real testers/survey-takers — send them
-  // straight there on first arrival, no dashboard detour. Free roam / investor / lawyer
-  // sessions never take a survey at all, so they're exempt and see the dashboard as-is.
+  // Real testers/survey-takers must never land on this console dashboard at all — not on
+  // first arrival, and not on any later visit either. They're always bounced straight to
+  // their assigned module demo (if not yet viewed) or straight to the survey (once the demo
+  // has been viewed), so they never see the module tiles, KPI cards, or survey history below.
+  // Free roam / investor / lawyer sessions never take a survey at all, so they're exempt and
+  // see the dashboard as-is.
   const category = categorizeCredential(testerId)
   const isSurveyTaker = category === 'tester' || category === 'survey'
-  if (isSurveyTaker && tester.status === 'registered') redirect(`/tester/demo/${tester.moduleId}`)
+  if (isSurveyTaker) redirect(tester.status === 'registered' ? `/tester/demo/${tester.moduleId}` : '/tester/survey')
 
   const survey = SURVEYS[tester.surveyId as SurveyId]
   const baseAnswered = survey.questions.filter((question) => tester.currentAnswers.some((answer) => answer.questionId === question.id)).length

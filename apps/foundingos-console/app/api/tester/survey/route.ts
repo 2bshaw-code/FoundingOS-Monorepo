@@ -27,13 +27,14 @@ export async function POST(request: Request) {
   const tester = await getTester(testerId)
   if (!tester) return NextResponse.json({ error: 'Tester not found' }, { status: 404 })
 
-  // Demo must always come before the survey for real testers/survey-takers — block a
+  // Demo must always come before the survey for real testers/survey-takers/investors — block a
   // direct API call attempting to bypass the page-level redirect in survey/page.tsx. Free
-  // roam / investor / lawyer sessions never take a survey, so they're exempt.
+  // roam / lawyer sessions never take a survey, so they're exempt.
   const category = categorizeCredential(testerId)
-  const isSurveyTaker = category === 'tester' || category === 'survey'
+  const isSurveyTaker = category === 'tester' || category === 'survey' || category === 'investor'
+  const demoPath = category === 'investor' ? '/investor' : `/tester/demo/${tester.moduleId}`
   if (isSurveyTaker && tester.status === 'registered') {
-    return NextResponse.json({ error: 'Complete the module demo before starting the survey.', redirect: `/tester/demo/${tester.moduleId}` }, { status: 403 })
+    return NextResponse.json({ error: 'Complete the module demo before starting the survey.', redirect: demoPath }, { status: 403 })
   }
 
   const body = await request.json().catch(() => null)
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
       signal: baseSignal ? await enrichBrandSignalWithQuantum(baseSignal) : undefined,
     }
     await upsertTester(testerId, { currentAnswers: [], runs: [...tester.runs, run], status: 'complete' })
-    return NextResponse.json({ done: true, redirect: `/tester/demo/${tester.moduleId}` })
+    return NextResponse.json({ done: true, redirect: demoPath })
   }
 
   await upsertTester(testerId, { currentAnswers, status: tester.status === 'complete' ? 'complete' : 'in-progress' })

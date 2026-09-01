@@ -7,6 +7,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, verifyToken } from '../../session'
 import { getTester, upsertTester } from '../../store.server'
+import { MODULE_NARRATION, NARRATION_PLAYER_SCRIPT, type ModuleId } from '../../tester-data'
 
 export default async function TesterDemoPage({ params }: { params: Promise<{ moduleId: string }> }) {
   const { moduleId } = await params
@@ -46,6 +47,8 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
     : moduleId === 'ai-automation' ? '/modules/foundai-demo'
     : null
   const hasCompletedSurvey = tester.runs.length > 0
+  const narration = MODULE_NARRATION[moduleId as ModuleId]
+    ?? `This is your assigned ${tester.moduleLabel} module — part of the FoundingOS multi-brand operating system.`
 
   return (
     <section className="stack">
@@ -60,6 +63,18 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
       </header>
 
       <div className="module-card-grid">
+        <article className="module-card fo-card" data-narration={narration}>
+          <div className="module-card-top"><span>🔊</span><strong>Narration</strong></div>
+          <p>{narration}</p>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button type="button" className="btn btn-secondary" data-narrate-btn>▶ Play narration</button>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+              <input type="checkbox" id="demo-autoplay-toggle" />
+              Auto-play next time
+            </label>
+          </div>
+        </article>
+
         {isSuperDashboardDemo ? (
           <article className="module-card fo-card">
             <div className="module-card-top"><span>◈</span><strong>SuperDashboard (read-only)</strong></div>
@@ -89,7 +104,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
           </article>
         )}
       </div>
+      <script dangerouslySetInnerHTML={{ __html: NARRATION_PLAYER_SCRIPT }} />
     </section>
   )
 }
-

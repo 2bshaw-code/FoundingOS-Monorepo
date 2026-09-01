@@ -6,12 +6,36 @@ import { FoundingOSFooter } from '@foundingos/ui/footer'
 import './globals.css'
 import './theme.css'
 import type { ReactNode } from 'react'
+import { cookies } from 'next/headers'
 import { Sidebar } from '@foundingos/ui/sidebar'
 import { FoundAI } from '@foundingos/ui/found-ai'
 import { Topbar } from '@foundingos/ui/topbar'
 import { brandConfig } from './brand-config'
+import { SESSION_COOKIE, verifyToken } from './tester/session'
+import { categorizeCredential } from './tester/tester-data'
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  // Real testers/survey-takers/investors must NEVER see the console sidebar, topbar, or
+  // FoundAI panel — no console navigation, no dashboard tiles, nothing beyond their assigned
+  // demo/briefing and survey. Every real tester/survey/investor session is, by this point,
+  // always redirected to /tester/demo/*, /tester/survey, or /investor — so this check alone
+  // (independent of path) is enough to guarantee the console chrome never renders for them.
+  // Free roam / lawyer / admin sessions are unaffected and see the full console shell as before.
+  const token = cookies().get(SESSION_COOKIE)?.value
+  const testerId = token ? await verifyToken('tester', token) : null
+  const category = testerId ? categorizeCredential(testerId) : null
+  const isRealTesterSession = category === 'tester' || category === 'survey' || category === 'investor'
+
+  if (isRealTesterSession) {
+    return (
+      <html lang="en">
+        <body className="min-h-screen bg-black tester-shell">
+          <main className="tester-shell-content">{children}</main>
+        </body>
+      </html>
+    )
+  }
+
   return (
     <html lang="en">
       <body className="min-h-screen flex bg-black console-shell-page">
