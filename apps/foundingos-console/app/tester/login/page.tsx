@@ -85,6 +85,9 @@ export default function TesterLoginPage() {
             </label>
 
             <div className="tester-legal-block">
+              <div className="quantum-narrator-panel">
+                <p>Quick legal bit — short and global. We keep this clear so anyone, anywhere understands how the OS works.</p>
+              </div>
               <p className="tester-legal-heading">Agreements (v{LEGAL_CONTENT_VERSION}) — please review before continuing</p>
               {LEGAL_DOCUMENTS.map((doc) => (
                 <details key={doc.id} className="tester-legal-doc">

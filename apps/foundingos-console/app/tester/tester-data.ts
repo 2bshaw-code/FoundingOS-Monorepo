@@ -141,7 +141,7 @@ export function findModuleOption(moduleId: string): ModuleOption | null {
   return MODULE_OPTIONS.find((option) => option.moduleId === moduleId) ?? null
 }
 
-export type SectionKind = 'module' | 'businessplan' | 'website' | 'console' | 'pos' | 'intelligence'
+export type SectionKind = 'module' | 'businessplan' | 'legal' | 'website' | 'console' | 'pos' | 'intelligence'
 export type SurveyQuestion = { id: string; prompt: string; section?: string; sectionKind?: SectionKind; target?: string }
 export type Survey = { id: SurveyId; title: string; moduleLabel: string; questions: SurveyQuestion[] }
 
@@ -224,6 +224,15 @@ function buildIntelligenceQuestions(label: string): SurveyQuestion[] {
   ]
 }
 
+// Legal comprehension — was the legal text itself clear and globally accessible? Appended
+// first, ahead of the ecosystem-validation targets, since legal understanding is asked about
+// before anything else in this section grouping.
+export const LEGAL_QUESTIONS: SurveyQuestion[] = [
+  { id: 'legal-1', prompt: 'Was the legal text clear?', section: 'Legal', sectionKind: 'legal' },
+  { id: 'legal-2', prompt: 'Would someone in a developing country understand it?', section: 'Legal', sectionKind: 'legal' },
+  { id: 'legal-3', prompt: 'Was the language simple?', section: 'Legal', sectionKind: 'legal' },
+]
+
 // Appended to every survey (module, buyer, customer, and investor alike) so every real tester
 // validates clarity, messaging, ease of use, and global/low-literacy accessibility across every
 // real brand website, console, POS-style flow, and intelligence system in the ecosystem — not
@@ -231,6 +240,7 @@ function buildIntelligenceQuestions(label: string): SurveyQuestion[] {
 // narrator explained about the wider ecosystem, not a claim that the tester has hands-on used
 // every single one of these (only their own assigned module demo is hands-on).
 export const ECOSYSTEM_VALIDATION_QUESTIONS: SurveyQuestion[] = [
+  ...LEGAL_QUESTIONS,
   ...BRAND_WEBSITE_TARGETS.flatMap(buildWebsiteQuestions),
   ...CONSOLE_TARGETS.flatMap(buildConsoleQuestions),
   ...POS_TARGETS.flatMap(buildPosQuestions),
@@ -242,6 +252,7 @@ export const ECOSYSTEM_VALIDATION_QUESTIONS: SurveyQuestion[] = [
 export const SECTION_NARRATOR_LINES: Record<SectionKind, string> = {
   module: "Alright, let's start with your assigned module — quick and easy.",
   businessplan: "Now a few quick ones about the bigger picture — the business plan itself.",
+  legal: "Quick legal bit — short and global. We keep this clear so anyone, anywhere understands how the OS works.",
   website: "Alright, this part is quick — let's look at some brand websites.",
   console: "Next up, a tiny console check. Super simple.",
   pos: "Okay, POS time. Don't worry, this is bite-sized.",
@@ -276,12 +287,21 @@ export const ACCESSIBILITY_REMINDER_LINES = [
   "Does this feel WhatsApp-simple?",
 ]
 
-// One-off humour lines for specific targets, shown alongside that target's own short intro —
-// not every target gets a joke, just the ones with real personality.
+// One-off humour + mini-demo narrative lines for specific targets — a small "conceptual demo"
+// moment for systems without a real dedicated tester module page (POS/ATS/compliance flows,
+// Guardian/Autonomous/BrandMetric), grounded honestly in what each one actually is, not
+// invented functionality. Not every target gets one, just the ones called out by name.
 export const TARGET_JOKES: Record<string, string> = {
-  'Guardian (system safety layer)': "Guardian gets dramatic here, but we love it.",
-  'Autonomous (auto-optimize/auto-coach)': "Autonomous is about to make a decision — don't blink.",
-  'Retail POS': "Retail POS is the diva of the group — let's see how it behaves.",
+  'Guardian (system safety layer)': "Guardian gets dramatic here, but we love it — think of it as the bouncer that keeps every brand's UI and data in its own lane.",
+  'Autonomous (auto-optimize/auto-coach)': "Autonomous is about to make a decision — don't blink. It watches engagement scores and reacts on its own: auto-optimize when a module surges, auto-coach when one dips.",
+  'BrandMetric (live brand data)': "This is the heartbeat of every brand — the live engagement and anomaly numbers everything else in the OS is built on top of.",
+  'SuperDash': "SuperDash is the brain of the whole OS — every brand, every module, rolled into one live view.",
+  'Retail POS': "Retail POS is the diva of the group — let's see how it behaves. (Conceptual for now — no live checkout screen exists yet, just the idea of one.)",
+  'Meat POS': "Meat POS keeps a different rhythm — weights and cuts instead of SKUs. (Conceptual for now, not a live screen yet.)",
+  'Logistics POS': "Logistics POS is all about handoffs — parcel in, parcel out. (Conceptual for now, not a live screen yet.)",
+  'Talent ATS': "Talent ATS tracks a person's journey from application to hire. (Conceptual for now, not a live screen yet.)",
+  'FoundThat seller flow': "The FoundThat seller flow is the marketplace side of things — list it, sell it. (Conceptual for now, not a live screen yet.)",
+  'Crypto compliance flow': "Crypto compliance is the careful one — checks before it lets anything through. (Conceptual for now, not a live screen yet.)",
 }
 
 // Shown once, at the very top of the survey (before any question) — the mission framing that

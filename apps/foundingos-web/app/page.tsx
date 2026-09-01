@@ -101,6 +101,9 @@ export default function RootLoginPage() {
               </div>
             </label>
 
+            <div className="quantum-narrator-panel">
+              <p>Quick legal bit — short and global. We keep this clear so anyone, anywhere understands how the OS works.</p>
+            </div>
             <label className="tester-legal-checkbox">
               <input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} />
               <span>I have read and agree to the Terms of Service, Privacy Policy, and applicable agreements.</span>
