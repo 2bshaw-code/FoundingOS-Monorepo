@@ -298,23 +298,20 @@ export const ACCESSIBILITY_REMINDER_LINES = [
   "Does this feel WhatsApp-simple?",
 ]
 
-// One-off humour + mini-demo narrative lines for specific targets — a small "conceptual demo"
-// moment for systems without a real dedicated tester module page (POS/ATS/compliance flows,
-// Guardian/Autonomous/BrandMetric), grounded honestly in what each one actually is, not
-// invented functionality. Not every target gets one, just the ones called out by name. The
-// named intelligence systems also get a short "Quantum delight" quip appended, for a lighter,
-// more playful second beat alongside the longer explanatory line.
+// One-off short, reactive quips for specific named targets — a light, human reaction rather
+// than a scripted paragraph, grounded honestly in what each one actually is (POS/ATS/compliance
+// flows are explicitly still conceptual — no live screens exist for them yet).
 export const TARGET_JOKES: Record<string, string> = {
-  'Guardian (system safety layer)': "Guardian gets dramatic here, but we love it — think of it as the bouncer that keeps every brand's UI and data in its own lane. Guardian gets dramatic here — don't mind it.",
-  'Autonomous (auto-optimize/auto-coach)': "Autonomous is about to make a decision — don't blink. It watches engagement scores and reacts on its own: auto-optimize when a module surges, auto-coach when one dips. Autonomous is thinking… it does that.",
-  'BrandMetric (live brand data)': "This is the heartbeat of every brand — the live engagement and anomaly numbers everything else in the OS is built on top of. BrandMetric is basically the OS's heartbeat.",
-  'SuperDash': "SuperDash is the brain of the whole OS — every brand, every module, rolled into one live view. SuperDash loves showing off.",
-  'Retail POS': "Retail POS is the diva of the group — let's see how it behaves. (Conceptual for now — no live checkout screen exists yet, just the idea of one.)",
-  'Meat POS': "Meat POS keeps a different rhythm — weights and cuts instead of SKUs. (Conceptual for now, not a live screen yet.)",
-  'Logistics POS': "Logistics POS is all about handoffs — parcel in, parcel out. (Conceptual for now, not a live screen yet.)",
-  'Talent ATS': "Talent ATS tracks a person's journey from application to hire. (Conceptual for now, not a live screen yet.)",
-  'FoundThat seller flow': "The FoundThat seller flow is the marketplace side of things — list it, sell it. (Conceptual for now, not a live screen yet.)",
-  'Crypto compliance flow': "Crypto compliance is the careful one — checks before it lets anything through. (Conceptual for now, not a live screen yet.)",
+  'Guardian (system safety layer)': "Guardian gets dramatic here — don't mind it.",
+  'Autonomous (auto-optimize/auto-coach)': 'Autonomous is thinking… it does that.',
+  'BrandMetric (live brand data)': "BrandMetric is basically the OS's heartbeat.",
+  'SuperDash': 'SuperDash loves showing off.',
+  'Retail POS': "Conceptual for now — no live checkout yet.",
+  'Meat POS': 'Conceptual for now — weights and cuts, not SKUs.',
+  'Logistics POS': 'Conceptual for now — parcel in, parcel out.',
+  'Talent ATS': 'Conceptual for now — tracks application to hire.',
+  'FoundThat seller flow': 'Conceptual for now — list it, sell it.',
+  'Crypto compliance flow': 'Conceptual for now — careful, checks-first by design.',
 }
 
 // Shown once, at the very top of the survey (before any question) — the mission framing that
@@ -517,10 +514,11 @@ export const SURVEYS: Record<SurveyId, Survey> = {
   },
 }
 
-// A single, shared narration voice/storyline used across every module demo and the investor
-// briefing — grounded in what each module actually does today, not invented claims. Every
-// module's narration begins with the same BUSINESS_PLAN_NARRATION story (so the "single
-// narrator" storyline is identical everywhere), followed by a module-specific detail sentence.
+// Shown once, in its own plain "Business plan, in short" card (not spoken by the short
+// reactive narrator voice) — the substantive context every survey needs, since
+// BUSINESS_PLAN_QUESTIONS asks every tester/buyer/customer/investor about IntelligenceOS,
+// SystemOS, Guardian, Autonomous, SuperDash, and Package Model D pricing, regardless of their
+// assigned module. Grounded in what the ecosystem actually does today, not invented claims.
 export const BUSINESS_PLAN_NARRATION =
   'FoundingOS is a multi-brand SaaS ecosystem — twenty-six interconnected apps across eight-plus brands, each with its own public website and its own console, all sharing one architecture. ' +
   'Two layers sit underneath every brand: SystemOS, which handles tiers, industry packs, and hardware packs; and IntelligenceOS, the layer that reads live signals and turns them into decisions. ' +
@@ -532,50 +530,72 @@ export const BUSINESS_PLAN_NARRATION =
   'The quantum-styled visuals across the ecosystem are not decoration — they are the live representation of that same real-time engagement and anomaly data moving through the system right now.'
 
 const MODULE_NARRATION_DETAIL: Partial<Record<ModuleId, string>> = {
-  'marketing-suite': 'This module, Marketing Suite, lets a brand plan, launch, and track campaigns across the ecosystem, feeding engagement signals straight into SuperDash.',
-  'accounting': 'This module, Accounting, brings invoices, revenue, and financial health into one streamlined view for each brand, powering the adaptive pricing and finance layers above it.',
-  'customer-service': 'This module, Customer Service, tracks tickets, service-level agreements, and customer happiness, so support quality becomes another live signal the OS can measure.',
-  'messaging': 'This module, Messaging, unifies conversations, notifications, and outreach across every channel a brand uses, so nothing falls outside the intelligence layer.',
-  'ai-automation': 'This module is FoundAI — AI-powered workflows and suggestions tailored to this console, the automation layer that turns raw signals into recommended actions.',
-  'finance': 'This module, Finance, gives each brand a real, working view of cash flow and financial operations, one of the core inputs the OS uses to score brand health.',
-  'crypto': 'This module, Crypto, tracks brand-specific crypto operations and market exposure as its own real, live data stream inside the ecosystem.',
-  'superdashboard-demo': 'This module is SuperDash itself: every module — marketing, accounting, service, messaging, AI, and system health — rolled up into one live intelligence layer for a founder or operator.',
-  'buyer-overview': "This is the buyer's-eye view — the real brand website a customer actually lands on, browses, and buys from, which is where all of this real engagement data starts.",
-  'customer-overview': 'This is Customer Service from the other side of the counter — the real support experience a customer gets, and another live signal the OS folds straight into brand health.',
+  'marketing-suite': 'Plan, launch, and track campaigns across the ecosystem, feeding engagement signals straight into SuperDash.',
+  'accounting': 'Invoices, revenue, and financial health in one streamlined view, powering the adaptive pricing and finance layers above it.',
+  'customer-service': 'Tickets, service-level agreements, and customer happiness — support quality as another live signal the OS can measure.',
+  'messaging': 'Conversations, notifications, and outreach across every channel a brand uses, so nothing falls outside the intelligence layer.',
+  'ai-automation': "FoundAI — AI-powered workflows and suggestions tailored to this console, turning raw signals into recommended actions.",
+  'finance': 'A real, working view of cash flow and financial operations — one of the core inputs the OS uses to score brand health.',
+  'crypto': 'Brand-specific crypto operations and market exposure as their own real, live data stream inside the ecosystem.',
+  'superdashboard-demo': 'SuperDash itself: every module — marketing, accounting, service, messaging, AI, and system health — rolled up into one live view.',
+  'buyer-overview': "The buyer's-eye view — the real brand website a customer lands on, browses, and buys from.",
+  'customer-overview': 'Customer Service from the other side of the counter — the real support experience a customer gets.',
 }
 
-export type NarratorStep = { step: string; text: string }
+// Real action names surfaced inside each module's own workbench UI (see app/brand-config.ts) —
+// used to ground "how to use it" and "a real example" in genuinely real, clickable actions
+// rather than invented ones. Modules without a checked action list fall back to a generic,
+// still-honest phrasing in buildNarratorSteps below.
+const MODULE_REAL_ACTIONS: Partial<Record<ModuleId, string[]>> = {
+  'marketing-suite': ['Launch Campaign', 'Schedule Send', 'Review Analytics'],
+  'accounting': ['Create Invoice', 'Reconcile Accounts', 'Review Overdue'],
+  'messaging': ['Open Inbox', 'Create Template', 'Assign Conversation'],
+  'customer-service': ['Open Ticket Queue', 'Reply to Customer', 'Review CSAT'],
+}
 
-// The AI narrator's personality, applied identically everywhere: warm, confident, a little
-// funny, talks like a founder who genuinely loves this product and knows every corner of it —
-// speaking as part of the Quantum WhatsApp OS itself. Every demo — every tester module, the
-// investor briefing, buyer, customer — gets the same six beats, so the guided, step-by-step
-// feel (and the voice) never changes, only the module detail slotted into "Explanation".
-function buildNarratorSteps(moduleLabel: string, moduleDetail: string): NarratorStep[] {
+export type NarratorStep = { step: string; text: string; detail: string }
+
+// The AI narrator's personality: warm, human, reactive — a short (3–10 word) spoken reaction
+// for every beat, never a long scripted paragraph. The practical substance (what the module
+// does, how to use it, what happens, what the OS does behind the scenes, a real example, and a
+// short summary) lives in "detail" and renders as the card's own body copy; "text" is only the
+// narrator's own short reaction to that beat, read aloud by the same voice everywhere.
+function buildNarratorSteps(moduleLabel: string, moduleDetail: string, moduleId?: ModuleId): NarratorStep[] {
+  const actions = (moduleId && MODULE_REAL_ACTIONS[moduleId]) || null
   return [
     {
-      step: '1 · Intro',
-      text: `Welcome inside the Quantum WhatsApp OS — let me show you around. Alright, let me show you something cool about ${moduleLabel}.`,
+      step: '1 · What it does',
+      text: 'Alright, here\'s the fun part.',
+      detail: `${moduleLabel}: ${moduleDetail}`,
     },
     {
-      step: '2 · Explanation',
-      text: `${BUSINESS_PLAN_NARRATION} ${moduleDetail}`,
+      step: '2 · How to use it',
+      text: 'Let me walk you through it.',
+      detail: actions
+        ? `Try ${actions[0]} below, then ${actions[1].toLowerCase()} — that's the whole flow.`
+        : `Open ${moduleLabel} below and try whatever's on screen — it's all real and clickable.`,
     },
     {
-      step: '3 · Humour',
-      text: "This module is one of my favourites. Don't tell Guardian. Watch how IntelligenceOS reacts here — it's like magic, but with maths. Guardian gets a little dramatic about isolation and lockdown sometimes, but honestly? We love that about it.",
+      step: '3 · What happens',
+      text: 'Watch what happens next.',
+      detail: `Every action in ${moduleLabel} updates its numbers live — nothing here is a static screenshot.`,
     },
     {
-      step: '4 · Insight',
-      text: "You're inside the OS now. Everything you see is live, real, and reactive — every click, every message flows straight into a BrandMetric signal, scored, watched for anomalies by real scrapers, and rolled into SuperDash in real time. No vanity numbers, no guesswork.",
+      step: '4 · Behind the scenes',
+      text: "Here's the clever part.",
+      detail: 'That same activity becomes a BrandMetric signal — Guardian keeps it in its own lane, Autonomous reacts to it, and SuperDash rolls it up live.',
     },
     {
-      step: '5 · Mission',
-      text: "And here's the whole point of it, honestly: we're building the WhatsApp OS — the operating system for real human engagement. Everything you see here is designed to understand people, react to behaviour, and help brands operate in real time.",
+      step: '5 · A real example',
+      text: 'Nice — that worked perfectly.',
+      detail: actions
+        ? `Try ${actions[2]} now — you'll see it reflected the moment you use it.`
+        : `Try one real action in ${moduleLabel} now — you'll see it reflected the moment you use it.`,
     },
     {
-      step: '6 · Wrap-up',
-      text: `That's ${moduleLabel}, in a nutshell. Take your time exploring, and when you're ready, I'll walk you into a quick survey — thanks for sticking with me this far.`,
+      step: '6 · Summary',
+      text: "That's the gist — nice work.",
+      detail: `That's ${moduleLabel}, in short. Your survey's up next.`,
     },
   ]
 }
@@ -583,18 +603,35 @@ function buildNarratorSteps(moduleLabel: string, moduleDetail: string): Narrator
 export const MODULE_NARRATOR_STEPS: Partial<Record<ModuleId, NarratorStep[]>> = Object.fromEntries(
   Object.entries(MODULE_NARRATION_DETAIL).map(([id, detail]) => {
     const label = MODULE_OPTIONS.find((option) => option.moduleId === id)?.moduleLabel ?? id
-    return [id, buildNarratorSteps(label, detail)]
+    return [id, buildNarratorSteps(label, detail, id as ModuleId)]
   }),
 ) as Partial<Record<ModuleId, NarratorStep[]>>
 
-// Full, joined script per module — what the "Play narration" button reads aloud in one go.
+// Marketing Suite gets its own dedicated 8-step walkthrough (rather than the generic six-beat
+// template) — same short reactive-narrator voice, but with steps that map onto its real,
+// checked actions (Launch Campaign → Draft/Approve/Publish, Schedule Send, Review Analytics)
+// and its place in the wider OS (IntelligenceOS/Guardian/Autonomous), not invented functionality.
+const MARKETING_SUITE_NARRATOR_STEPS: NarratorStep[] = [
+  { step: '1 · Overview', text: 'This is your marketing command center.', detail: 'Plan, launch, and track campaigns — 12 live right now, reaching 48.2k people.' },
+  { step: '2 · Campaign creation', text: "Let's build one together.", detail: 'Launch Campaign starts one, then it moves through Draft → Approve → Publish.' },
+  { step: '3 · IntelligenceOS reaction', text: 'Watch the system think in real time.', detail: 'The moment a campaign publishes, its engagement becomes a live BrandMetric signal.' },
+  { step: '4 · Engagement flows', text: "Here's where the audience moves.", detail: 'Reach and conversion update live as real people interact with the campaign.' },
+  { step: '5 · Category insights', text: 'Guardian gets loud here — check it out.', detail: "Guardian watches this module's data to keep it safely inside its own brand lane." },
+  { step: '6 · Autonomous reactions', text: 'The OS makes smart decisions instantly.', detail: 'If a campaign surges or dips, Autonomous auto-optimizes or auto-coaches — no human needed.' },
+  { step: '7 · Real promo example', text: "Let's fire off a quick promo.", detail: 'Try Schedule Send on a real campaign row — that\'s the whole promo flow, end to end.' },
+  { step: '8 · Summary + next steps', text: "Nice — you're ready to explore more.", detail: "That's Marketing Suite. Your survey's up next, then Free Roam." },
+]
+MODULE_NARRATOR_STEPS['marketing-suite'] = MARKETING_SUITE_NARRATOR_STEPS
+
+// Full, joined script per module — what the "Play narration" button reads aloud in one go
+// (narrator lines only; the practical "detail" copy is read on-screen, not spoken).
 export const MODULE_NARRATION: Partial<Record<ModuleId, string>> = Object.fromEntries(
   Object.entries(MODULE_NARRATOR_STEPS).map(([id, steps]) => [id, (steps as NarratorStep[]).map((s) => s.text).join(' ')]),
 ) as Partial<Record<ModuleId, string>>
 
 export const INVESTOR_NARRATOR_STEPS = buildNarratorSteps(
   'Investor Briefing',
-  'This briefing walks you through the live, cross-brand engagement data behind FoundingOS — the same numbers SuperDash uses, read-only, exactly as an investor should see them.',
+  'The live, cross-brand engagement data behind FoundingOS — the same numbers SuperDash uses, read-only, exactly as an investor should see them.',
 )
 export const INVESTOR_NARRATION = INVESTOR_NARRATOR_STEPS.map((s) => s.text).join(' ')
 
@@ -700,6 +737,11 @@ export const FREE_ROAM_TIPS = [
   "Autonomous reacts to real engagement in real time — go see it.",
   "BrandMetric shows you the heartbeat of every brand.",
 ]
+
+// Short, reactive line shown once above the brand-cards row (FoundingOS, FoundRetail,
+// FoundMeat, FoundTalent, FoundCrypto, FoundThat) on demo/survey/investor/dashboard screens —
+// introduces the six real brands without altering the row/cards themselves.
+export const BRAND_ROW_NARRATOR_LINE = 'Six real brands, one OS.'
 
 // "Free Roam" for a tester/investor/buyer/customer session means real, read-only revisiting of
 // whatever real page their module already unlocks — there is no separate /free-roam route.

@@ -6,7 +6,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { SESSION_COOKIE, verifyToken } from '../session'
 import { getTester } from '../store.server'
-import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, DEMO_COMPLETE_CELEBRATION_LINE, SURVEY_COMPLETE_NARRATOR_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, SURVEY_MISSION_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, SIGNATURE_MOMENT_LINE, FREE_ROAM_FIRST_STEP_LINE, SECTION_NARRATOR_LINES, PACING_REASSURANCE_LINES, ACCESSIBILITY_REMINDER_LINES, TARGET_JOKES, MICRO_BREAK_LINES, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, getFreeRoamHref, type SurveyId } from '../tester-data'
+import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, DEMO_COMPLETE_CELEBRATION_LINE, SURVEY_COMPLETE_NARRATOR_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, SURVEY_MISSION_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, SIGNATURE_MOMENT_LINE, FREE_ROAM_FIRST_STEP_LINE, SECTION_NARRATOR_LINES, PACING_REASSURANCE_LINES, ACCESSIBILITY_REMINDER_LINES, TARGET_JOKES, MICRO_BREAK_LINES, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, getFreeRoamHref, BRAND_ROW_NARRATOR_LINE, type SurveyId } from '../tester-data'
 import { brands } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
 import { SurveyEngine } from './SurveyEngine'
@@ -21,15 +21,15 @@ export default async function TesterSurveyPage() {
 
   // Demo must always come before the survey for real testers/survey-takers/investors/buyers/
   // customers — anyone who hasn't viewed their assigned demo/briefing yet (status still
-  // 'registered', or for investors still mid-briefing at 'briefing-viewed') is sent there
-  // first, every time, no exceptions. Free roam / lawyer sessions never take a survey at all,
-  // so they're exempt from this gate entirely (they can still browse here read-only if they
-  // navigate here directly).
+  // 'registered', or for investors still mid-briefing at 'briefing-viewed') is sent to their
+  // Switcher hub (/tester/dashboard, or the investor briefing) first, every time, no
+  // exceptions. Free roam / lawyer sessions never take a survey at all, so they're exempt from
+  // this gate entirely (they can still browse here read-only if they navigate here directly).
   const category = categorizeCredential(testerId)
   const isSurveyTaker = category === 'tester' || category === 'survey' || category === 'investor' || category === 'buyer' || category === 'customer'
   const demoNotYetViewed = tester.status === 'registered' || tester.status === 'briefing-viewed'
   if (isSurveyTaker && demoNotYetViewed) {
-    redirect(category === 'investor' ? '/investor' : `/tester/demo/${tester.moduleId}`)
+    redirect(category === 'investor' ? '/investor' : '/tester/dashboard')
   }
 
   const survey = SURVEYS[tester.surveyId as SurveyId]
@@ -113,6 +113,9 @@ export default async function TesterSurveyPage() {
         switcherNarratorLine={SWITCHER_PANEL_NARRATOR_LINE}
         freeRoamUnlockLine={FREE_ROAM_UNLOCK_LINE}
       />
+      <div className="quantum-narrator-panel">
+        <p>{BRAND_ROW_NARRATOR_LINE}</p>
+      </div>
       <div className="quantum-brand-row">
         {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat'] as const).map((slug) => (
           <a key={slug} href={brands[slug].webUrl} className="quantum-brand-card" style={{ ['--brand-glow' as string]: brands[slug].accent }}>

@@ -7,8 +7,10 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, verifyToken } from '../session'
 import { getTester } from '../store.server'
-import { SURVEYS, categorizeCredential, type SurveyId } from '../tester-data'
+import { SURVEYS, categorizeCredential, getFreeRoamHref, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, type SurveyId } from '../tester-data'
 import { buildQuantumDemoCtaLabel } from '@foundingos/config/quantum-defined-engine'
+import { GLOBAL_ACCESSIBILITY_SCRIPT, brands } from '@foundingos/config'
+import { QuantumSphereLogo } from '@foundingos/ui'
 
 export default async function TesterDashboardPage() {
   const token = cookies().get(SESSION_COOKIE)?.value
@@ -18,15 +20,91 @@ export default async function TesterDashboardPage() {
   const tester = await getTester(testerId)
   if (!tester) redirect('/tester/login')
 
-  // Real testers/survey-takers/buyers/customers must never land on this console dashboard at
-  // all — not on first arrival, and not on any later visit either. They're always bounced
-  // straight to their assigned module demo (if not yet viewed) or straight to the survey (once
-  // the demo has been viewed), so they never see the module tiles, KPI cards, or survey history
-  // below. Free roam / investor / lawyer sessions never take a survey at all, so they're
-  // exempt and see the dashboard as-is.
+  // Real testers/survey-takers/buyers/customers land here first, right after login + legal —
+  // this page is now their Demo & Survey Switcher hub (UI-only change: no backend routing,
+  // role, or auth logic touched — the login API still sends these categories here exactly as
+  // before). From here they can jump straight into their own assigned demo/survey, or explore
+  // anything else the Switcher genuinely allows for their session. Free roam / investor /
+  // lawyer sessions never take a survey at all, so they're exempt and see the dashboard as-is.
   const category = categorizeCredential(testerId)
   const isSurveyTaker = category === 'tester' || category === 'survey' || category === 'buyer' || category === 'customer'
-  if (isSurveyTaker) redirect(tester.status === 'registered' ? `/tester/demo/${tester.moduleId}` : '/tester/survey')
+
+  if (isSurveyTaker) {
+    const hasCompletedSurvey = tester.runs.length > 0
+    const primaryHref = tester.status === 'registered'
+      ? `/tester/demo/${tester.moduleId}`
+      : hasCompletedSurvey
+        ? getFreeRoamHref(tester.moduleId)
+        : '/tester/survey'
+    const primaryLabel = tester.status === 'registered'
+      ? `Start your ${tester.moduleLabel} demo`
+      : hasCompletedSurvey
+        ? 'Jump into Free Roam'
+        : `Continue to your ${tester.moduleLabel} survey`
+    const switcherOptions = buildSwitcherOptions(category)
+
+    return (
+      <section className="stack">
+        <div className="quantum-brand-header">
+          <QuantumSphereLogo size={48} />
+          <div className="quantum-gradient-bar" />
+        </div>
+        <header className="module-header">
+          <p>FounderOS Tester Program</p>
+          <h1>Welcome, {tester.email}</h1>
+          <span>Assigned module: {tester.moduleLabel}</span>
+        </header>
+
+        <article className="module-card fo-card quantum-frame">
+          <div className="module-card-top"><span>→</span><strong>{primaryLabel}</strong></div>
+          <p>Pick up right where you left off, or explore anything else below first.</p>
+          <Link className="btn btn-primary quantum-btn" href={primaryHref}>{primaryLabel}</Link>
+        </article>
+
+        <article className="module-card fo-card quantum-frame">
+          <div className="module-card-top"><span>🧭</span><strong>{SWITCHER_PANEL_TITLE}</strong></div>
+          <div className="quantum-narrator-panel">
+            <p>{SWITCHER_PANEL_NARRATOR_LINE}</p>
+          </div>
+          <form data-switcher-form style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {switcherOptions.map((option) => (
+                <div key={option.code} data-code={option.code} data-href={option.href} data-available={String(option.available)} data-note={option.note ?? ''}>
+                  {option.available ? (
+                    <Link href={option.href} className="btn btn-secondary quantum-btn" style={{ width: '100%', justifyContent: 'flex-start' }}>{option.code} · {option.label}</Link>
+                  ) : (
+                    <div className="btn btn-secondary" style={{ width: '100%', justifyContent: 'flex-start', opacity: 0.5, cursor: 'default' }}>
+                      {option.code} · {option.label} <small style={{ marginLeft: 6 }}>({option.note})</small>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <input type="text" data-switcher-code placeholder="Enter a code (e.g. R1, M1, S1)" style={{ padding: '10px 14px', borderRadius: 999, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)' }} />
+              <button type="submit" className="btn btn-primary quantum-btn">Go</button>
+            </div>
+            <p data-switcher-message><small></small></p>
+          </form>
+        </article>
+
+        <div className="quantum-narrator-panel">
+          <p>{BRAND_ROW_NARRATOR_LINE}</p>
+        </div>
+        <div className="quantum-brand-row">
+          {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat'] as const).map((slug) => (
+            <a key={slug} href={brands[slug].webUrl} className="quantum-brand-card" style={{ ['--brand-glow' as string]: brands[slug].accent }}>
+              <span className="quantum-brand-card-dot" />
+              {brands[slug].name}
+            </a>
+          ))}
+        </div>
+
+        <script dangerouslySetInnerHTML={{ __html: GLOBAL_ACCESSIBILITY_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: SWITCHER_CODE_SCRIPT }} />
+      </section>
+    )
+  }
 
   const survey = SURVEYS[tester.surveyId as SurveyId]
   const baseAnswered = survey.questions.filter((question) => tester.currentAnswers.some((answer) => answer.questionId === question.id)).length

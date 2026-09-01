@@ -282,7 +282,7 @@ export function SurveyEngine({
 
       {!isNewSection && isNewTarget && question.target && (
         <div className="quantum-narrator-panel">
-          <p>Alright, this part is quick — let's look at {question.target}.{targetJokes[question.target] ? ` ${targetJokes[question.target]}` : ''}</p>
+          <p>Let's look at {question.target}.{targetJokes[question.target] ? ` ${targetJokes[question.target]}` : ''}</p>
         </div>
       )}
 

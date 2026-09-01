@@ -7,7 +7,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, verifyToken } from '../../session'
 import { getTester, upsertTester } from '../../store.server'
-import { MODULE_NARRATION, MODULE_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_NARRATION, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, categorizeCredential, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, type ModuleId } from '../../tester-data'
+import { MODULE_NARRATION, MODULE_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_NARRATION, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, categorizeCredential, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, type ModuleId } from '../../tester-data'
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
 
@@ -55,17 +55,18 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
   // already unlocks (their own directModuleHref, or SuperDashboard read-only) — not a separate
   // /free-roam route, which doesn't exist.
   const freeRoamHref = getFreeRoamHref(moduleId)
-  // Every module gets the same six-beat narrator walkthrough (intro, explanation, humour,
-  // insight, mission, wrap-up) in the same warm founder-style voice; modules with no dedicated
-  // detail sentence (operations/sales/branding/console-navigation) still get the full six-beat
-  // treatment via the generic fallback below, so no demo is left without the narrator.
+  // Every module gets the same practical six-beat walkthrough (what it does, how to use it,
+  // what happens, behind the scenes, a real example, summary) with a short reactive narrator
+  // voice-line per beat; modules with no dedicated detail sentence (operations/sales/branding/
+  // console-navigation) still get the full treatment via the generic fallback below, so no demo
+  // is left without the narrator.
   const narratorSteps = MODULE_NARRATOR_STEPS[moduleId as ModuleId] ?? [
-    { step: '1 · Intro', text: `Welcome inside the Quantum WhatsApp OS — let me show you around ${tester.moduleLabel}.` },
-    { step: '2 · Explanation', text: `${BUSINESS_PLAN_NARRATION} This module, ${tester.moduleLabel}, is your assigned part of that same FoundingOS multi-brand operating system.` },
-    { step: '3 · Humour', text: "This module is one of my favourites. Don't tell Guardian. Watch how IntelligenceOS reacts here — it's like magic, but with maths." },
-    { step: '4 · Insight', text: "You're inside the OS now. Everything you see is live, real, and reactive — every click, every message flows straight into a BrandMetric signal, rolled into SuperDash in real time." },
-    { step: '5 · Mission', text: "And here's the whole point of it, honestly: we're building the WhatsApp OS — the operating system for real human engagement. Everything you see here is designed to understand people, react to behaviour, and help brands operate in real time." },
-    { step: '6 · Wrap-up', text: `That's ${tester.moduleLabel}, in a nutshell. Take your time exploring, and when you're ready, I'll walk you into a quick survey — thanks for sticking with me this far.` },
+    { step: '1 · What it does', text: "Alright, here's the fun part.", detail: `${tester.moduleLabel}: your assigned part of the FoundingOS multi-brand operating system.` },
+    { step: '2 · How to use it', text: 'Let me walk you through it.', detail: `Open ${tester.moduleLabel} below and try whatever's on screen — it's all real and clickable.` },
+    { step: '3 · What happens', text: 'Watch what happens next.', detail: `Every action in ${tester.moduleLabel} updates its numbers live — nothing here is a static screenshot.` },
+    { step: '4 · Behind the scenes', text: "Here's the clever part.", detail: 'That same activity becomes a BrandMetric signal — Guardian keeps it in its own lane, Autonomous reacts to it, and SuperDash rolls it up live.' },
+    { step: '5 · A real example', text: 'Nice — that worked perfectly.', detail: `Try one real action in ${tester.moduleLabel} now — you'll see it reflected the moment you use it.` },
+    { step: '6 · Summary', text: "That's the gist — nice work.", detail: `That's ${tester.moduleLabel}, in short. Your survey's up next.` },
   ]
   const fullNarration = MODULE_NARRATION[moduleId as ModuleId] ?? narratorSteps.map((s) => s.text).join(' ')
   const switcherOptions = buildSwitcherOptions(categorizeCredential(testerId))
@@ -121,10 +122,15 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
           <p>{DEMO_INTRO}</p>
         </article>
 
+        <article className="module-card fo-card quantum-frame">
+          <div className="module-card-top"><span>◈</span><strong>The business plan, in short</strong></div>
+          <p>{BUSINESS_PLAN_NARRATION}</p>
+        </article>
+
         <article className="module-card fo-card quantum-frame" data-narration={fullNarration}>
           <div className="module-card-top"><span>🔊</span><strong>Your narrator</strong></div>
           <div className="quantum-narrator-panel">
-            <p>Welcome inside the Quantum WhatsApp OS — hit play any time and I'll walk you through the whole thing.</p>
+            <p>Alright, let's dive in.</p>
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
             <button type="button" className="btn btn-secondary quantum-btn" data-narrate-btn>▶ Play narration</button>
@@ -141,6 +147,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
               <span className="quantum-step-badge">{beat.step.split(' · ')[0]}</span>
               <strong>{beat.step.split(' · ')[1]}</strong>
             </div>
+            <p>{beat.detail}</p>
             <div className="quantum-narrator-panel">
               <p>{beat.text}</p>
             </div>
@@ -223,6 +230,9 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
         </form>
       </article>
 
+      <div className="quantum-narrator-panel">
+        <p>{BRAND_ROW_NARRATOR_LINE}</p>
+      </div>
       <div className="quantum-brand-row">
         {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat'] as const).map((slug) => (
           <a key={slug} href={brands[slug].webUrl} className="quantum-brand-card" style={{ ['--brand-glow' as string]: brands[slug].accent }}>

@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, verifyToken } from '../tester/session'
 import { getTester, upsertTester } from '../tester/store.server'
-import { categorizeCredential, INVESTOR_NARRATION, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SURVEY_COMPLETE_NARRATOR_LINE, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT } from '../tester/tester-data'
+import { categorizeCredential, INVESTOR_NARRATION, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, DEMO_INTRO, BUSINESS_PLAN_NARRATION, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SURVEY_COMPLETE_NARRATOR_LINE, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE } from '../tester/tester-data'
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands as brandRegistry } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
 import { readBrandMetrics } from '../superdashboard/brand-metric-store.server'
@@ -95,10 +95,15 @@ export default async function InvestorPage() {
             <p>{DEMO_INTRO}</p>
           </article>
 
+          <article className="module-card fo-card quantum-frame">
+            <div className="module-card-top"><span>◈</span><strong>The business plan, in short</strong></div>
+            <p>{BUSINESS_PLAN_NARRATION}</p>
+          </article>
+
           <article className="module-card fo-card quantum-frame" data-narration={INVESTOR_NARRATION}>
             <div className="module-card-top"><span>🔊</span><strong>Your narrator — the FoundingOS story</strong></div>
             <div className="quantum-narrator-panel">
-              <p>Welcome inside the Quantum WhatsApp OS — hit play any time and I'll walk you through the whole thing.</p>
+              <p>Alright, let's dive in.</p>
             </div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
               <button type="button" className="btn btn-secondary quantum-btn" data-narrate-btn>▶ Play narration</button>
@@ -115,6 +120,7 @@ export default async function InvestorPage() {
                 <span className="quantum-step-badge">{beat.step.split(' · ')[0]}</span>
                 <strong>{beat.step.split(' · ')[1]}</strong>
               </div>
+              <p>{beat.detail}</p>
               <div className="quantum-narrator-panel">
                 <p>{beat.text}</p>
               </div>
@@ -240,6 +246,9 @@ export default async function InvestorPage() {
           )}
         </>
       )}
+      <div className="quantum-narrator-panel">
+        <p>{BRAND_ROW_NARRATOR_LINE}</p>
+      </div>
       <div className="quantum-brand-row">
         {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat'] as const).map((slug) => (
           <a key={slug} href={brandRegistry[slug].webUrl} className="quantum-brand-card" style={{ ['--brand-glow' as string]: brandRegistry[slug].accent }}>
