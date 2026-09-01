@@ -158,14 +158,8 @@ export default async function TesterDashboardPage() {
         <header className="module-header">
           <p>FounderOS Tester Program</p>
           <h1>Welcome, {tester.email}</h1>
-          <span>Assigned module: {tester.moduleLabel}</span>
+          <span>Assigned module: {tester.moduleLabel} — but feel free to explore anything below first.</span>
         </header>
-
-        <article className="module-card fo-card quantum-frame">
-          <div className="module-card-top"><span>→</span><strong>{primaryLabel}</strong></div>
-          <p>Pick up right where you left off, or explore anything else below first.</p>
-          <Link className="btn btn-primary quantum-btn" href={primaryHref}>{primaryLabel}</Link>
-        </article>
 
         <article className="module-card fo-card quantum-frame" data-narration={SWITCHER_PANEL_NARRATOR_LINE}>
           <div className="module-card-top"><span>🧭</span><strong>{SWITCHER_PANEL_TITLE}</strong></div>
@@ -178,7 +172,9 @@ export default async function TesterDashboardPage() {
               {switcherOptions.map((option) => (
                 <div key={option.code} data-code={option.code} data-href={option.href} data-available={String(option.available)} data-note={option.note ?? ''}>
                   {option.available ? (
-                    <Link href={option.href} className="btn btn-secondary quantum-btn" style={{ width: '100%', justifyContent: 'flex-start' }}>{option.code} · {option.label}</Link>
+                    <Link href={option.href} className="btn btn-secondary quantum-btn" style={{ width: '100%', justifyContent: 'flex-start' }}>
+                      {option.code} · {option.label}{option.href === primaryHref ? <small style={{ marginLeft: 'auto', opacity: 0.6 }}>your assigned module</small> : null}
+                    </Link>
                   ) : (
                     <div className="btn btn-secondary" style={{ width: '100%', justifyContent: 'flex-start', opacity: 0.5, cursor: 'default' }}>
                       {option.code} · {option.label} <small style={{ marginLeft: 6 }}>({option.note})</small>
@@ -193,6 +189,12 @@ export default async function TesterDashboardPage() {
             </div>
             <p data-switcher-message><small></small></p>
           </form>
+        </article>
+
+        <article className="module-card fo-card" style={{ opacity: 0.85 }}>
+          <div className="module-card-top"><span>→</span><strong>Pick up where you left off</strong></div>
+          <p><small>{primaryLabel} — or choose anything else above.</small></p>
+          <Link className="btn btn-secondary quantum-btn" href={primaryHref}>{primaryLabel}</Link>
         </article>
 
         <div className="quantum-narrator-panel">

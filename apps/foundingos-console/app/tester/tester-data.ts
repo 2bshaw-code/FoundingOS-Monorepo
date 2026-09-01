@@ -813,7 +813,7 @@ export function getFreeRoamHref(moduleId: string): string {
 //   /tester/dashboard covers every other module beyond these 9 quick shortcuts.
 export const SWITCHER_PANEL_TITLE = 'Explore Another Part of the OS'
 export const SWITCHER_PANEL_NARRATOR_LINE =
-  'Jump anywhere you like — everything here is safe, guided, and read-only.'
+  "Welcome to FoundingOS — I'm your AI guide. Here's everything you can explore: every brand demo, every survey, and Free Roam. Pick whatever you'd like to try first."
 
 // Shown directly above the Free Roam box on the survey-completion screen — the "unlocked a
 // new level" framing for reaching Free Roam.
