@@ -7,7 +7,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../../session'
 import { getTester, upsertTester, getOrCreateAdminTester } from '../../store.server'
-import { MODULE_NARRATION, MODULE_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_NARRATION, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, categorizeCredential, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, adminTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type ModuleId } from '../../tester-data'
+import { MODULE_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_FACTS, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, categorizeCredential, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, adminTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type ModuleId } from '../../tester-data'
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
 
@@ -89,7 +89,6 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
     { step: '5 · A real example', text: 'Nice — that worked perfectly.', detail: `Try one real action in ${tester.moduleLabel} now — you'll see it reflected the moment you use it.` },
     { step: '6 · Summary', text: "That's the gist — nice work.", detail: `That's ${tester.moduleLabel}, in short. Your survey's up next.` },
   ]
-  const fullNarration = MODULE_NARRATION[moduleId as ModuleId] ?? narratorSteps.map((s) => s.text).join(' ')
   const switcherOptions = buildSwitcherOptions(isSuperFounderAdminSession ? 'admin' : categorizeCredential(testerId))
 
   return (
@@ -145,20 +144,20 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
 
         <article className="module-card fo-card quantum-frame">
           <div className="module-card-top"><span>◈</span><strong>The business plan, in short</strong></div>
-          <p>{BUSINESS_PLAN_NARRATION}</p>
+          <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 6 }}>
+            {BUSINESS_PLAN_FACTS.map((fact) => (
+              <li key={fact}><small>{fact}</small></li>
+            ))}
+          </ul>
         </article>
 
-        <article className="module-card fo-card quantum-frame" data-narration={fullNarration}>
+        <article className="module-card fo-card quantum-frame" data-narration="Alright, let's dive in.">
           <div className="module-card-top"><span>🔊</span><strong>Your narrator</strong></div>
           <div className="quantum-narrator-panel">
             <p>Alright, let's dive in.</p>
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button type="button" className="btn btn-secondary quantum-btn" data-narrate-btn>▶ Play narration</button>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-              <input type="checkbox" id="demo-autoplay-toggle" />
-              Auto-play next time
-            </label>
+            <button type="button" className="btn btn-secondary quantum-btn" data-narrate-btn data-idle-label="▶ Play narration" data-playing-label="■ Stop narration">▶ Play narration</button>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
               <input type="checkbox" id="narrator-enabled-toggle" defaultChecked />
               Narrator: ON / OFF
@@ -167,10 +166,11 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
         </article>
 
         {narratorSteps.map((beat) => (
-          <article key={beat.step} className="module-card fo-card quantum-frame">
+          <article key={beat.step} className="module-card fo-card quantum-frame" data-narration={beat.text}>
             <div className="module-card-top">
               <span className="quantum-step-badge">{beat.step.split(' · ')[0]}</span>
               <strong>{beat.step.split(' · ')[1]}</strong>
+              <button type="button" className="quantum-step-narrate-btn" data-narrate-btn data-idle-label="🔊" data-playing-label="⏹" aria-label="Play this step's narrator line" style={{ marginLeft: 'auto' }}>🔊</button>
             </div>
             <p>{beat.detail}</p>
             <div className="quantum-narrator-panel">

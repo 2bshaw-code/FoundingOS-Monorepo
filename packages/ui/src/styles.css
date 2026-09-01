@@ -2521,6 +2521,33 @@ body.superdash-heatmap-off .quantum-heatmap {
   letter-spacing: 0;
 }
 
+/* Compact per-step audio button — plays ONLY that card's own short micro-line, never a
+   joined multi-step script. Hidden/disabled entirely (via NARRATION_PLAYER_SCRIPT) when the
+   page's Narrator ON/OFF toggle is set to OFF. */
+.quantum-step-narrate-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 150ms ease, transform 150ms ease;
+}
+.quantum-step-narrate-btn:hover {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-soft));
+  transform: scale(1.06);
+}
+.quantum-step-narrate-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+  transform: none;
+}
+
 /* Full-width Quantum Free Roam invitation — same hover lift as .module-card, plus a slow
    ambient glow pulse (shadow only, never opacity, so the text never fades/flickers). */
 @keyframes quantumFreeRoamGlow {

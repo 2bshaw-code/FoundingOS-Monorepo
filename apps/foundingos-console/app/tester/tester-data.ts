@@ -527,15 +527,21 @@ export const SURVEYS: Record<SurveyId, Survey> = {
   },
 }
 
-// Shown once, in its own plain "Business plan, in short" card (not spoken by the short
-// reactive narrator voice) — the substantive context every survey needs, since
-// BUSINESS_PLAN_QUESTIONS asks every tester/buyer/customer/investor about IntelligenceOS,
-// SystemOS, Guardian, Autonomous, SuperDash, and Package Model D pricing, regardless of their
-// assigned module. Grounded in what the ecosystem actually does today, not invented claims.
-export const BUSINESS_PLAN_NARRATION =
-  'FoundingOS is a multi-brand SaaS ecosystem — twenty-six apps across eight-plus brands, each with its own website and console, sharing one architecture. ' +
-  'Guardian keeps every brand in its own lane; Autonomous auto-optimizes or auto-coaches modules on its own, using real engagement data. ' +
-  "SuperDash brings every brand and module into one live view, and pricing (Package Model D) adapts on top of it."
+// Shown once, as a short bullet list (not a paragraph) in its own "Business plan, in short"
+// card — the substantive context every survey needs, since BUSINESS_PLAN_QUESTIONS asks every
+// tester/buyer/customer/investor about Guardian, Autonomous, SuperDash, and Package Model D
+// pricing, regardless of their assigned module. Grounded in what the ecosystem actually does
+// today, not invented claims. Each fact is its own short line — no paragraph, no long text
+// block, consistent with the narrator's micro-line-only rule.
+export const BUSINESS_PLAN_FACTS = [
+  'Eight-plus brands, each with its own website and console.',
+  'Guardian keeps every brand in its own lane.',
+  'Autonomous auto-optimizes or auto-coaches modules on its own.',
+  'SuperDash brings every brand into one live view.',
+  'Pricing (Package Model D) adapts on top of it.',
+]
+// Joined form, used only for narrator audio (spoken, never rendered as visible paragraph text).
+export const BUSINESS_PLAN_NARRATION = BUSINESS_PLAN_FACTS.join(' ')
 
 const MODULE_NARRATION_DETAIL: Partial<Record<ModuleId, string>> = {
   'marketing-suite': 'Plan, launch, and track campaigns across the ecosystem, feeding engagement signals straight into SuperDash.',
@@ -845,11 +851,12 @@ export const SWITCHER_CODE_SCRIPT = `
 })();
 `
 
-// Shared, no-new-file audio narration engine: reads MODULE_NARRATION / INVESTOR_NARRATION text
-// aloud via the browser's built-in speech synthesis (works on desktop and mobile with zero
-// external audio assets). One "Play narration" click always works; the auto-play checkbox is a
-// best-effort convenience (mobile browsers may still block audio without a user gesture — the
-// manual button is always the reliable path). Rendered once per page via a plain <script> tag.
+// Shared, no-new-file audio narration engine — reads only the short, visible micro-line text
+// sitting on each narrator/step card (never a long-form concatenated script) aloud via the
+// browser's built-in speech synthesis (works on desktop and mobile with zero external audio
+// assets). Every play is a direct result of a click on that card's own small narrate button —
+// there is no auto-play anywhere; ON/OFF only controls whether the narrator (panels + narrate
+// buttons) is visible/usable at all. Rendered once per page via a plain <script> tag.
 export const NARRATION_PLAYER_SCRIPT = `
 (function () {
   function speak(text, onEnd) {
@@ -865,34 +872,40 @@ export const NARRATION_PLAYER_SCRIPT = `
   function narrationFor(el) { return el ? el.getAttribute('data-narration') : ''; }
   function setButtonLabel(btn, label) { if (btn) btn.textContent = label; }
 
-  // Play / Stop toggle — the same button now genuinely stops mid-sentence instead of only
-  // ever offering Play.
+  // Play / Stop toggle, scoped to the button's own nearest [data-narration] card — each button
+  // only ever speaks that one card's own short micro-line, never a joined multi-step script.
   document.addEventListener('click', function (e) {
     var btn = e.target.closest('[data-narrate-btn]');
-    if (!btn) return;
+    if (!btn || btn.disabled) return;
+    var idleLabel = btn.getAttribute('data-idle-label') || '▶ Play narration';
+    var playingLabel = btn.getAttribute('data-playing-label') || '■ Stop narration';
     if (window.speechSynthesis && window.speechSynthesis.speaking) {
       window.speechSynthesis.cancel();
-      setButtonLabel(btn, '▶ Play narration');
+      setButtonLabel(btn, idleLabel);
       return;
     }
-    speak(narrationFor(btn.closest('[data-narration]')), function () { setButtonLabel(btn, '▶ Play narration'); });
-    setButtonLabel(btn, '■ Stop narration');
+    speak(narrationFor(btn.closest('[data-narration]')), function () { setButtonLabel(btn, idleLabel); });
+    setButtonLabel(btn, playingLabel);
   });
 
   document.addEventListener('change', function (e) {
-    if (e.target && e.target.id === 'demo-autoplay-toggle') {
-      try { localStorage.setItem('fo-demo-autoplay', e.target.checked ? '1' : '0'); } catch (err) {}
-    }
     if (e.target && e.target.id === 'narrator-enabled-toggle') {
       setNarratorEnabled(e.target.checked);
     }
   });
 
-  // Narrator ON/OFF — OFF hides every narrator panel on the page entirely (not just mutes
-  // audio) and stops any speech in progress; persisted so it stays off across pages.
+  // Narrator ON/OFF — OFF hides every narrator panel AND every narrate button on the page
+  // entirely (not just mutes audio) and stops any speech in progress; persisted so it stays
+  // off across pages. ON never plays anything by itself — every line only ever plays from a
+  // direct click on its own button.
   function setNarratorEnabled(enabled) {
     var panels = document.querySelectorAll('.quantum-narrator-panel');
     for (var i = 0; i < panels.length; i += 1) panels[i].style.display = enabled ? '' : 'none';
+    var buttons = document.querySelectorAll('[data-narrate-btn]');
+    for (var j = 0; j < buttons.length; j += 1) {
+      buttons[j].style.display = enabled ? '' : 'none';
+      buttons[j].disabled = !enabled;
+    }
     if (!enabled) { try { window.speechSynthesis.cancel(); } catch (err) {} }
     try { localStorage.setItem('fo-narrator-enabled', enabled ? '1' : '0'); } catch (err) {}
   }
@@ -902,14 +915,5 @@ export const NARRATION_PLAYER_SCRIPT = `
   try { narratorEnabled = localStorage.getItem('fo-narrator-enabled') !== '0'; } catch (err) {}
   if (narratorToggle) narratorToggle.checked = narratorEnabled;
   setNarratorEnabled(narratorEnabled);
-
-  var toggle = document.getElementById('demo-autoplay-toggle');
-  var wantsAutoplay = false;
-  try { wantsAutoplay = localStorage.getItem('fo-demo-autoplay') === '1'; } catch (err) {}
-  if (toggle) toggle.checked = wantsAutoplay;
-  if (wantsAutoplay && narratorEnabled) {
-    var card = document.querySelector('[data-narration]');
-    setTimeout(function () { speak(narrationFor(card)); }, 500);
-  }
 })();
 `

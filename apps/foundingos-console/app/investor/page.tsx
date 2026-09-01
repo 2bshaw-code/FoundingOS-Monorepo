@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../tester/session'
 import { getTester, upsertTester, getOrCreateAdminTester } from '../tester/store.server'
-import { categorizeCredential, INVESTOR_NARRATION, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, DEMO_INTRO, BUSINESS_PLAN_NARRATION, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SURVEY_COMPLETE_NARRATOR_LINE, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, adminTesterId, SUPER_FOUNDER_ADMIN_EMAIL, type CredentialCategory } from '../tester/tester-data'
+import { categorizeCredential, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, DEMO_INTRO, BUSINESS_PLAN_FACTS, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SURVEY_COMPLETE_NARRATOR_LINE, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, adminTesterId, SUPER_FOUNDER_ADMIN_EMAIL, type CredentialCategory } from '../tester/tester-data'
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands as brandRegistry } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
 import { readBrandMetrics } from '../superdashboard/brand-metric-store.server'
@@ -118,20 +118,20 @@ export default async function InvestorPage() {
 
           <article className="module-card fo-card quantum-frame">
             <div className="module-card-top"><span>◈</span><strong>The business plan, in short</strong></div>
-            <p>{BUSINESS_PLAN_NARRATION}</p>
+            <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 6 }}>
+              {BUSINESS_PLAN_FACTS.map((fact) => (
+                <li key={fact}><small>{fact}</small></li>
+              ))}
+            </ul>
           </article>
 
-          <article className="module-card fo-card quantum-frame" data-narration={INVESTOR_NARRATION}>
+          <article className="module-card fo-card quantum-frame" data-narration="Alright, let's dive in.">
             <div className="module-card-top"><span>🔊</span><strong>Your narrator — the FoundingOS story</strong></div>
             <div className="quantum-narrator-panel">
               <p>Alright, let's dive in.</p>
             </div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-              <button type="button" className="btn btn-secondary quantum-btn" data-narrate-btn>▶ Play narration</button>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-                <input type="checkbox" id="demo-autoplay-toggle" />
-                Auto-play next time
-              </label>
+              <button type="button" className="btn btn-secondary quantum-btn" data-narrate-btn data-idle-label="▶ Play narration" data-playing-label="■ Stop narration">▶ Play narration</button>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                 <input type="checkbox" id="narrator-enabled-toggle" defaultChecked />
                 Narrator: ON / OFF
@@ -140,10 +140,11 @@ export default async function InvestorPage() {
           </article>
 
           {INVESTOR_NARRATOR_STEPS.map((beat) => (
-            <article key={beat.step} className="module-card fo-card quantum-frame">
+            <article key={beat.step} className="module-card fo-card quantum-frame" data-narration={beat.text}>
               <div className="module-card-top">
                 <span className="quantum-step-badge">{beat.step.split(' · ')[0]}</span>
                 <strong>{beat.step.split(' · ')[1]}</strong>
+                <button type="button" className="quantum-step-narrate-btn" data-narrate-btn data-idle-label="🔊" data-playing-label="⏹" aria-label="Play this step's narrator line" style={{ marginLeft: 'auto' }}>🔊</button>
               </div>
               <p>{beat.detail}</p>
               <div className="quantum-narrator-panel">
