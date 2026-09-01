@@ -131,7 +131,7 @@ export default async function InvestorPage() {
               <p>Alright, let's dive in.</p>
             </div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-              <button type="button" className="btn btn-secondary quantum-btn" data-narrate-btn data-idle-label="▶ Play narration" data-playing-label="■ Stop narration">▶ Play narration</button>
+              <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: OFF</button>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                 <input type="checkbox" id="narrator-enabled-toggle" defaultChecked />
                 Narrator: ON / OFF

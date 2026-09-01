@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../session'
 import { getTester } from '../store.server'
-import { SURVEYS, categorizeCredential, getFreeRoamHref, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, MODULE_OPTIONS, adminTesterId, type SurveyId } from '../tester-data'
+import { SURVEYS, categorizeCredential, getFreeRoamHref, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, NARRATION_PLAYER_SCRIPT, BRAND_ROW_NARRATOR_LINE, MODULE_OPTIONS, adminTesterId, type SurveyId } from '../tester-data'
 import { buildQuantumDemoCtaLabel } from '@foundingos/config/quantum-defined-engine'
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
@@ -69,11 +69,12 @@ export default async function TesterDashboardPage() {
           </div>
         </article>
 
-        <article className="module-card fo-card quantum-frame">
+        <article className="module-card fo-card quantum-frame" data-narration={SWITCHER_PANEL_NARRATOR_LINE}>
           <div className="module-card-top"><span>🧭</span><strong>{SWITCHER_PANEL_TITLE}</strong></div>
           <div className="quantum-narrator-panel">
             <p>{SWITCHER_PANEL_NARRATOR_LINE}</p>
           </div>
+          <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: OFF</button>
           <form data-switcher-form style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'grid', gap: 8 }}>
               {switcherOptions.map((option) => (
@@ -113,6 +114,7 @@ export default async function TesterDashboardPage() {
 
         <script dangerouslySetInnerHTML={{ __html: GLOBAL_ACCESSIBILITY_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: SWITCHER_CODE_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: NARRATION_PLAYER_SCRIPT }} />
       </section>
     )
   }
@@ -165,11 +167,12 @@ export default async function TesterDashboardPage() {
           <Link className="btn btn-primary quantum-btn" href={primaryHref}>{primaryLabel}</Link>
         </article>
 
-        <article className="module-card fo-card quantum-frame">
+        <article className="module-card fo-card quantum-frame" data-narration={SWITCHER_PANEL_NARRATOR_LINE}>
           <div className="module-card-top"><span>🧭</span><strong>{SWITCHER_PANEL_TITLE}</strong></div>
           <div className="quantum-narrator-panel">
             <p>{SWITCHER_PANEL_NARRATOR_LINE}</p>
           </div>
+          <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: OFF</button>
           <form data-switcher-form style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'grid', gap: 8 }}>
               {switcherOptions.map((option) => (
@@ -206,6 +209,7 @@ export default async function TesterDashboardPage() {
 
         <script dangerouslySetInnerHTML={{ __html: GLOBAL_ACCESSIBILITY_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: SWITCHER_CODE_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: NARRATION_PLAYER_SCRIPT }} />
       </section>
     )
   }

@@ -30,6 +30,94 @@ const CATEGORY_DESTINATIONS: Record<string, string> = {
   lawyer: `${CONSOLE_URL}/legal`,
 }
 
+// Local copy of foundingos-console's tester-data.ts NARRATION_PLAYER_SCRIPT — this app can't
+// import it directly (separate deployment, no shared package boundary for this app-local
+// file), so the identical script is duplicated here rather than fabricating different
+// behavior. Keep in sync with tester-data.ts if that one changes.
+const NARRATION_PLAYER_SCRIPT = `
+(function () {
+  function speak(text, onEnd) {
+    try {
+      if (!text || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      var utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 0.98;
+      if (onEnd) utter.onend = onEnd;
+      window.speechSynthesis.speak(utter);
+    } catch (err) {}
+  }
+  function narrationFor(el) { return el ? el.getAttribute('data-narration') : ''; }
+  function setButtonLabel(btn, label) { if (btn) btn.textContent = label; }
+
+  var audioEnabled = false;
+  try { audioEnabled = localStorage.getItem('fo-audio-enabled') === '1'; } catch (err) {}
+
+  function setAudioButtonLabels() {
+    var toggles = document.querySelectorAll('[data-audio-toggle]');
+    for (var i = 0; i < toggles.length; i += 1) toggles[i].textContent = audioEnabled ? 'Audio: ON' : 'Audio: OFF';
+  }
+
+  function setAudioEnabled(enabled) {
+    audioEnabled = enabled;
+    if (!enabled) { try { window.speechSynthesis.cancel(); } catch (err) {} }
+    try { localStorage.setItem('fo-audio-enabled', enabled ? '1' : '0'); } catch (err) {}
+    setAudioButtonLabels();
+  }
+
+  document.addEventListener('click', function (e) {
+    var toggle = e.target.closest('[data-audio-toggle]');
+    if (!toggle) return;
+    setAudioEnabled(!audioEnabled);
+  });
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-narrate-btn]');
+    if (!btn || btn.disabled) return;
+    if (!audioEnabled) return;
+    var idleLabel = btn.getAttribute('data-idle-label') || '▶ Play narration';
+    var playingLabel = btn.getAttribute('data-playing-label') || '■ Stop narration';
+    if (window.speechSynthesis && window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+      setButtonLabel(btn, idleLabel);
+      return;
+    }
+    speak(narrationFor(btn.closest('[data-narration]')), function () { setButtonLabel(btn, idleLabel); });
+    setButtonLabel(btn, playingLabel);
+  });
+
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.id === 'narrator-enabled-toggle') {
+      setNarratorEnabled(e.target.checked);
+    }
+  });
+
+  function setNarratorEnabled(enabled) {
+    var panels = document.querySelectorAll('.quantum-narrator-panel');
+    for (var i = 0; i < panels.length; i += 1) panels[i].style.display = enabled ? '' : 'none';
+    var buttons = document.querySelectorAll('[data-narrate-btn]');
+    for (var j = 0; j < buttons.length; j += 1) {
+      buttons[j].style.display = enabled ? '' : 'none';
+      buttons[j].disabled = !enabled;
+    }
+    if (!enabled) { try { window.speechSynthesis.cancel(); } catch (err) {} }
+    try { localStorage.setItem('fo-narrator-enabled', enabled ? '1' : '0'); } catch (err) {}
+  }
+
+  var narratorToggle = document.getElementById('narrator-enabled-toggle');
+  var narratorEnabled = true;
+  try { narratorEnabled = localStorage.getItem('fo-narrator-enabled') !== '0'; } catch (err) {}
+  if (narratorToggle) narratorToggle.checked = narratorEnabled;
+  setNarratorEnabled(narratorEnabled);
+  setAudioButtonLabels();
+
+  window.setTimeout(function () {
+    if (!audioEnabled) return;
+    var first = document.querySelector('[data-narration]');
+    if (first) speak(narrationFor(first));
+  }, 15000);
+})();
+`
+
 export default function RootLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -109,9 +197,10 @@ export default function RootLoginPage() {
               </div>
             </label>
 
-            <div className="quantum-narrator-panel">
+            <div className="quantum-narrator-panel" data-narration="Quick legal bit — short and global. We keep this clear so anyone, anywhere understands how the OS works.">
               <p>Quick legal bit — short and global. We keep this clear so anyone, anywhere understands how the OS works.</p>
             </div>
+            <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: OFF</button>
             <label className="tester-legal-checkbox">
               <input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} />
               <span>I have read and agree to the Terms of Service, Privacy Policy, and applicable agreements.</span>
@@ -125,6 +214,7 @@ export default function RootLoginPage() {
           </form>
         </div>
       </div>
+      <script dangerouslySetInnerHTML={{ __html: NARRATION_PLAYER_SCRIPT }} />
     </main>
   )
 }

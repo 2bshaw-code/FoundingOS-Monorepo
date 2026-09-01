@@ -633,7 +633,7 @@ const MARKETING_SUITE_NARRATOR_STEPS: NarratorStep[] = [
   { step: '5 · Category insights', text: 'Guardian gets loud here — check it out.', detail: "Guardian watches this module's data to keep it safely inside its own brand lane." },
   { step: '6 · Autonomous reactions', text: 'The OS makes smart decisions instantly.', detail: 'If a campaign surges or dips, Autonomous auto-optimizes or auto-coaches — no human needed.' },
   { step: '7 · Real promo example', text: "Let's fire off a quick promo.", detail: 'Try Schedule Send on a real campaign row — that\'s the whole promo flow, end to end.' },
-  { step: '8 · Summary + next steps', text: "Nice — you're ready to explore more.", detail: "That's Marketing Suite. Your survey's up next, then Free Roam." },
+  { step: '8 · Summary + next steps', text: "Nice — you're ready to explore more.", detail: "That's Marketing Suite — and like every module, its usage rolls into the same Package Model D pricing tiers (SystemOS/IntelligenceOS/QuantumOS) the whole OS runs on. Your survey's up next, then Free Roam." },
 ]
 MODULE_NARRATOR_STEPS['marketing-suite'] = MARKETING_SUITE_NARRATOR_STEPS
 
@@ -855,9 +855,18 @@ export const SWITCHER_CODE_SCRIPT = `
 // Shared, no-new-file audio narration engine — reads only the short, visible micro-line text
 // sitting on each narrator/step card (never a long-form concatenated script) aloud via the
 // browser's built-in speech synthesis (works on desktop and mobile with zero external audio
-// assets). Every play is a direct result of a click on that card's own small narrate button —
-// there is no auto-play anywhere; ON/OFF only controls whether the narrator (panels + narrate
-// buttons) is visible/usable at all. Rendered once per page via a plain <script> tag.
+// assets).
+//
+// Two independent, orthogonal controls:
+// - "Narrator: ON/OFF" (#narrator-enabled-toggle, unchanged from before) — shows/hides the
+//   narrator text panels and narrate buttons entirely.
+// - "Audio: ON/OFF" ([data-audio-toggle], always visible, never hidden by the Narrator
+//   toggle) — a master permission gate for actually speaking anything aloud. OFF (the
+//   default) means every narrate-button click is a silent no-op; ON enables them. This is
+//   the only thing that ever triggers audio without a direct click: 15 seconds after a
+//   narrator surface loads, if — and only if — Audio is already ON, it speaks the page's
+//   first narrator line once. If Audio is OFF (the default), nothing plays automatically,
+//   ever.
 export const NARRATION_PLAYER_SCRIPT = `
 (function () {
   function speak(text, onEnd) {
@@ -873,11 +882,37 @@ export const NARRATION_PLAYER_SCRIPT = `
   function narrationFor(el) { return el ? el.getAttribute('data-narration') : ''; }
   function setButtonLabel(btn, label) { if (btn) btn.textContent = label; }
 
+  var audioEnabled = false;
+  try { audioEnabled = localStorage.getItem('fo-audio-enabled') === '1'; } catch (err) {}
+
+  function setAudioButtonLabels() {
+    var toggles = document.querySelectorAll('[data-audio-toggle]');
+    for (var i = 0; i < toggles.length; i += 1) toggles[i].textContent = audioEnabled ? 'Audio: ON' : 'Audio: OFF';
+  }
+
+  function setAudioEnabled(enabled) {
+    audioEnabled = enabled;
+    if (!enabled) { try { window.speechSynthesis.cancel(); } catch (err) {} }
+    try { localStorage.setItem('fo-audio-enabled', enabled ? '1' : '0'); } catch (err) {}
+    setAudioButtonLabels();
+  }
+
+  // Master Audio ON/OFF toggle — always visible regardless of the separate Narrator
+  // visibility toggle below; clicking it never itself speaks anything, it only flips the
+  // gate that every narrate-button click (and the 15-second auto-play) checks first.
+  document.addEventListener('click', function (e) {
+    var toggle = e.target.closest('[data-audio-toggle]');
+    if (!toggle) return;
+    setAudioEnabled(!audioEnabled);
+  });
+
   // Play / Stop toggle, scoped to the button's own nearest [data-narration] card — each button
   // only ever speaks that one card's own short micro-line, never a joined multi-step script.
+  // A no-op while Audio is OFF: the button stays visible and clickable, it just doesn't speak.
   document.addEventListener('click', function (e) {
     var btn = e.target.closest('[data-narrate-btn]');
     if (!btn || btn.disabled) return;
+    if (!audioEnabled) return;
     var idleLabel = btn.getAttribute('data-idle-label') || '▶ Play narration';
     var playingLabel = btn.getAttribute('data-playing-label') || '■ Stop narration';
     if (window.speechSynthesis && window.speechSynthesis.speaking) {
@@ -897,8 +932,8 @@ export const NARRATION_PLAYER_SCRIPT = `
 
   // Narrator ON/OFF — OFF hides every narrator panel AND every narrate button on the page
   // entirely (not just mutes audio) and stops any speech in progress; persisted so it stays
-  // off across pages. ON never plays anything by itself — every line only ever plays from a
-  // direct click on its own button.
+  // off across pages. Independent of the Audio toggle above: this one is purely about
+  // visibility, never about permission to speak.
   function setNarratorEnabled(enabled) {
     var panels = document.querySelectorAll('.quantum-narrator-panel');
     for (var i = 0; i < panels.length; i += 1) panels[i].style.display = enabled ? '' : 'none';
@@ -916,5 +951,15 @@ export const NARRATION_PLAYER_SCRIPT = `
   try { narratorEnabled = localStorage.getItem('fo-narrator-enabled') !== '0'; } catch (err) {}
   if (narratorToggle) narratorToggle.checked = narratorEnabled;
   setNarratorEnabled(narratorEnabled);
+  setAudioButtonLabels();
+
+  // Opt-in-only auto-audio: 15 seconds after this narrator surface loads, if Audio was
+  // already ON (the user toggled it on previously — never on by default), speak the page's
+  // first narrator line once. If Audio is OFF, this does nothing at all.
+  window.setTimeout(function () {
+    if (!audioEnabled) return;
+    var first = document.querySelector('[data-narration]');
+    if (first) speak(narrationFor(first));
+  }, 15000);
 })();
 `
