@@ -6,7 +6,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { SESSION_COOKIE, verifyToken } from '../session'
 import { getTester } from '../store.server'
-import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, DEMO_COMPLETE_CELEBRATION_LINE, SURVEY_COMPLETE_NARRATOR_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, SURVEY_MISSION_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, SIGNATURE_MOMENT_LINE, FREE_ROAM_FIRST_STEP_LINE, SECTION_NARRATOR_LINES, PACING_REASSURANCE_LINES, ACCESSIBILITY_REMINDER_LINES, TARGET_JOKES, MICRO_BREAK_LINES, getFreeRoamHref, type SurveyId } from '../tester-data'
+import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, DEMO_COMPLETE_CELEBRATION_LINE, SURVEY_COMPLETE_NARRATOR_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, SURVEY_MISSION_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, SIGNATURE_MOMENT_LINE, FREE_ROAM_FIRST_STEP_LINE, SECTION_NARRATOR_LINES, PACING_REASSURANCE_LINES, ACCESSIBILITY_REMINDER_LINES, TARGET_JOKES, MICRO_BREAK_LINES, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, getFreeRoamHref, type SurveyId } from '../tester-data'
 import { SurveyEngine } from './SurveyEngine'
 
 export default async function TesterSurveyPage() {
@@ -36,6 +36,7 @@ export default async function TesterSurveyPage() {
   // already existed prior to right now, so SurveyEngine can tell a genuine first-ever
   // completion (about to happen) apart from a repeat one.
   const hasCompletedSurveyBefore = tester.runs.length > 0
+  const switcherOptions = buildSwitcherOptions(category)
 
   return (
     <section className="stack">
@@ -52,6 +53,33 @@ export default async function TesterSurveyPage() {
             <p>{NARRATOR_SURVEY_LINE}</p>
           </div>
           <p>{SURVEY_INTRO}</p>
+        </article>
+
+        <article className="module-card fo-card quantum-frame">
+          <div className="module-card-top"><span>🧭</span><strong>{SWITCHER_PANEL_TITLE}</strong></div>
+          <div className="quantum-narrator-panel">
+            <p>{SWITCHER_PANEL_NARRATOR_LINE}</p>
+          </div>
+          <form data-switcher-form style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {switcherOptions.map((option) => (
+                <div key={option.code} data-code={option.code} data-href={option.href} data-available={String(option.available)} data-note={option.note ?? ''}>
+                  {option.available ? (
+                    <a href={option.href} className="btn btn-secondary quantum-btn" style={{ width: '100%', justifyContent: 'flex-start' }}>{option.code} · {option.label}</a>
+                  ) : (
+                    <div className="btn btn-secondary" style={{ width: '100%', justifyContent: 'flex-start', opacity: 0.5, cursor: 'default' }}>
+                      {option.code} · {option.label} <small style={{ marginLeft: 6 }}>({option.note})</small>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <input type="text" data-switcher-code placeholder="Enter a code (e.g. R1, M1, S1)" style={{ padding: '10px 14px', borderRadius: 999, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)' }} />
+              <button type="submit" className="btn btn-primary quantum-btn">Go</button>
+            </div>
+            <p data-switcher-message><small></small></p>
+          </form>
         </article>
       </div>
       <SurveyEngine
@@ -74,7 +102,11 @@ export default async function TesterSurveyPage() {
         targetJokes={TARGET_JOKES}
         missionNarratorLine={SURVEY_MISSION_NARRATOR_LINE}
         microBreakLines={MICRO_BREAK_LINES}
+        switcherOptions={switcherOptions}
+        switcherTitle={SWITCHER_PANEL_TITLE}
+        switcherNarratorLine={SWITCHER_PANEL_NARRATOR_LINE}
       />
+      <script dangerouslySetInnerHTML={{ __html: SWITCHER_CODE_SCRIPT }} />
     </section>
   )
 }

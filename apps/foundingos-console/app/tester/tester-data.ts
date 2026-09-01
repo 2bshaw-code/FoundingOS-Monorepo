@@ -701,6 +701,74 @@ export function getFreeRoamHref(moduleId: string): string {
   return `/tester/demo/${moduleId}`
 }
 
+// Demo & Survey Switcher — a pure navigation aid: no backend mutation, no role change,
+// no bypass of any existing gate. Every option links to a genuinely real, already-existing
+// destination (never a fabricated one), and is only marked "available" when the CURRENT
+// session's real category/moduleId can actually reach it without hitting an existing gate:
+// - Retail Demo / Messaging Console Demo: real, ungated pages any authenticated session can
+//   already reach (confirmed: /modules/* carries no per-tester moduleId check, only
+//   /tester/demo/[moduleId] does).
+// - Guardian / Autonomous / BrandMetric Demo: middleware.ts explicitly redirects
+//   tester/survey/buyer/customer sessions away from /superdashboard and /system/guardian to
+//   /tester/survey — only admin/free-roam/investor/lawyer are actually let in. Shown honestly
+//   as unavailable (informational only) for everyone else, never a broken/misleading link.
+// - Tester/Buyer/Customer/Investor Survey: /tester/survey always renders the CURRENT session's
+//   own SURVEYS[tester.surveyId] — there is no way to view a different role's distinct survey
+//   without actually being that role. Only the option matching the session's real category is
+//   ever marked available; the other three are shown as informational only.
+export const SWITCHER_PANEL_TITLE = 'Explore Another Part of the OS'
+export const SWITCHER_PANEL_NARRATOR_LINE =
+  'Want to explore another part of the OS? Jump anywhere you like — everything here is safe, guided, and read-only.'
+
+export type SwitcherOption = { code: string; label: string; href: string; available: boolean; note?: string }
+
+export function buildSwitcherOptions(category: CredentialCategory): SwitcherOption[] {
+  const superDashAllowed = category === 'free-roam' || category === 'investor' || category === 'lawyer'
+  const superDashNote = 'Read-only for admin, free-roam, and investor sessions — conceptual for yours right now.'
+  return [
+    { code: 'R1', label: 'Retail Demo', href: 'https://retail.foundingos.com', available: true },
+    { code: 'M1', label: 'Messaging Console Demo', href: '/modules/messaging', available: true },
+    { code: 'G1', label: 'Guardian Demo', href: '/system/guardian', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
+    { code: 'A1', label: 'Autonomous Demo', href: '/superdashboard?readOnly=1', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
+    { code: 'B1', label: 'BrandMetric Demo', href: '/superdashboard?readOnly=1', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
+    { code: 'S1', label: 'Tester Survey', href: '/tester/survey', available: category === 'tester' || category === 'survey', note: 'Only available while signed in with a tester access code.' },
+    { code: 'S2', label: 'Buyer Survey', href: '/tester/survey', available: category === 'buyer', note: 'Only available while signed in with a buyer access code.' },
+    { code: 'S3', label: 'Customer Survey', href: '/tester/survey', available: category === 'customer', note: 'Only available while signed in with a customer access code.' },
+    { code: 'S4', label: 'Investor Survey', href: '/investor', available: category === 'investor', note: 'Only available while signed in with an investor access code.' },
+  ]
+}
+
+// Shared, no-new-file client script for the switcher's optional code box: looks up the typed
+// code among the rendered options (via data attributes) and either navigates to a real,
+// available destination or shows the honest "not available for your session" note inline —
+// never a silent failure, never a fabricated destination.
+export const SWITCHER_CODE_SCRIPT = `
+(function () {
+  function run() {
+    var form = document.querySelector('[data-switcher-form]');
+    if (!form) return;
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var input = form.querySelector('[data-switcher-code]');
+      var code = ((input && input.value) || '').trim().toUpperCase();
+      var msg = form.querySelector('[data-switcher-message]');
+      var target = form.querySelector('[data-code="' + code + '"]');
+      if (!target) {
+        if (msg) msg.textContent = code ? 'Code not recognized — try one from the list above.' : 'Type a code first (e.g. R1, M1, S1).';
+        return;
+      }
+      if (target.getAttribute('data-available') === 'true') {
+        window.location.href = target.getAttribute('data-href');
+        return;
+      }
+      if (msg) msg.textContent = target.getAttribute('data-note') || "That part of the OS isn't available for your current session.";
+    });
+  }
+  if (document.readyState === 'complete' || document.readyState === 'interactive') run();
+  else document.addEventListener('DOMContentLoaded', run);
+})();
+`
+
 // Shared, no-new-file audio narration engine: reads MODULE_NARRATION / INVESTOR_NARRATION text
 // aloud via the browser's built-in speech synthesis (works on desktop and mobile with zero
 // external audio assets). One "Play narration" click always works; the auto-play checkbox is a

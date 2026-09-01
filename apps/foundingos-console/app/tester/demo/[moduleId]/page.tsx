@@ -7,7 +7,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, verifyToken } from '../../session'
 import { getTester, upsertTester } from '../../store.server'
-import { MODULE_NARRATION, MODULE_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_NARRATION, OPENING_NARRATOR_LINE, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, type ModuleId } from '../../tester-data'
+import { MODULE_NARRATION, MODULE_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_NARRATION, OPENING_NARRATOR_LINE, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, categorizeCredential, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, type ModuleId } from '../../tester-data'
 import { GLOBAL_ACCESSIBILITY_SCRIPT } from '@foundingos/config'
 
 export default async function TesterDemoPage({ params }: { params: Promise<{ moduleId: string }> }) {
@@ -67,6 +67,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
     { step: '6 · Wrap-up', text: `That's ${tester.moduleLabel}, in a nutshell. Take your time exploring, and when you're ready, I'll walk you into a quick survey — thanks for sticking with me this far.` },
   ]
   const fullNarration = MODULE_NARRATION[moduleId as ModuleId] ?? narratorSteps.map((s) => s.text).join(' ')
+  const switcherOptions = buildSwitcherOptions(categorizeCredential(testerId))
 
   return (
     <section className="stack">
@@ -175,8 +176,37 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
           </div>
         </div>
       )}
+
+      <article className="module-card fo-card quantum-frame" style={{ marginTop: 24 }}>
+        <div className="module-card-top"><span>🧭</span><strong>{SWITCHER_PANEL_TITLE}</strong></div>
+        <div className="quantum-narrator-panel">
+          <p>{SWITCHER_PANEL_NARRATOR_LINE}</p>
+        </div>
+        <form data-switcher-form style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {switcherOptions.map((option) => (
+              <div key={option.code} data-code={option.code} data-href={option.href} data-available={String(option.available)} data-note={option.note ?? ''}>
+                {option.available ? (
+                  <Link href={option.href} className="btn btn-secondary quantum-btn" style={{ width: '100%', justifyContent: 'flex-start' }}>{option.code} · {option.label}</Link>
+                ) : (
+                  <div className="btn btn-secondary" style={{ width: '100%', justifyContent: 'flex-start', opacity: 0.5, cursor: 'default' }}>
+                    {option.code} · {option.label} <small style={{ marginLeft: 6 }}>({option.note})</small>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <input type="text" data-switcher-code placeholder="Enter a code (e.g. R1, M1, S1)" style={{ padding: '10px 14px', borderRadius: 999, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)' }} />
+            <button type="submit" className="btn btn-primary quantum-btn">Go</button>
+          </div>
+          <p data-switcher-message><small></small></p>
+        </form>
+      </article>
+
       <script dangerouslySetInnerHTML={{ __html: NARRATION_PLAYER_SCRIPT }} />
       <script dangerouslySetInnerHTML={{ __html: GLOBAL_ACCESSIBILITY_SCRIPT }} />
+      <script dangerouslySetInnerHTML={{ __html: SWITCHER_CODE_SCRIPT }} />
     </section>
   )
 }

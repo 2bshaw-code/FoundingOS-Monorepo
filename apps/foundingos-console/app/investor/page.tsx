@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, verifyToken } from '../tester/session'
 import { getTester, upsertTester } from '../tester/store.server'
-import { categorizeCredential, INVESTOR_NARRATION, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, OPENING_NARRATOR_LINE, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SURVEY_COMPLETE_NARRATOR_LINE } from '../tester/tester-data'
+import { categorizeCredential, INVESTOR_NARRATION, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, OPENING_NARRATOR_LINE, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SURVEY_COMPLETE_NARRATOR_LINE, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT } from '../tester/tester-data'
 import { GLOBAL_ACCESSIBILITY_SCRIPT } from '@foundingos/config'
 import { readBrandMetrics } from '../superdashboard/brand-metric-store.server'
 
@@ -51,6 +51,7 @@ export default async function InvestorPage() {
 
   const isBriefingPhase = tester.status === 'registered'
   const hasCompletedSurvey = tester.runs.length > 0
+  const switcherOptions = buildSwitcherOptions('investor')
 
   const brands = isBriefingPhase ? [] : await readBrandMetrics()
   const totalEngagement = brands.reduce((sum, brand) => sum + brand.totalEngagement, 0)
@@ -179,6 +180,33 @@ export default async function InvestorPage() {
               <div className="quantum-narrator-panel">
                 <p>{EMOTIONAL_CLOSING_LINE}</p>
               </div>
+
+              <article className="module-card fo-card quantum-frame">
+                <div className="module-card-top"><span>🧭</span><strong>{SWITCHER_PANEL_TITLE}</strong></div>
+                <div className="quantum-narrator-panel">
+                  <p>{SWITCHER_PANEL_NARRATOR_LINE}</p>
+                </div>
+                <form data-switcher-form style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    {switcherOptions.map((option) => (
+                      <div key={option.code} data-code={option.code} data-href={option.href} data-available={String(option.available)} data-note={option.note ?? ''}>
+                        {option.available ? (
+                          <Link href={option.href} className="btn btn-secondary quantum-btn" style={{ width: '100%', justifyContent: 'flex-start' }}>{option.code} · {option.label}</Link>
+                        ) : (
+                          <div className="btn btn-secondary" style={{ width: '100%', justifyContent: 'flex-start', opacity: 0.5, cursor: 'default' }}>
+                            {option.code} · {option.label} <small style={{ marginLeft: 6 }}>({option.note})</small>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <input type="text" data-switcher-code placeholder="Enter a code (e.g. R1, M1, S4)" style={{ padding: '10px 14px', borderRadius: 999, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)' }} />
+                    <button type="submit" className="btn btn-primary quantum-btn">Go</button>
+                  </div>
+                  <p data-switcher-message><small></small></p>
+                </form>
+              </article>
             </div>
           ) : (
             <div className="module-card-grid">
@@ -196,6 +224,7 @@ export default async function InvestorPage() {
       )}
       <script dangerouslySetInnerHTML={{ __html: NARRATION_PLAYER_SCRIPT }} />
       <script dangerouslySetInnerHTML={{ __html: GLOBAL_ACCESSIBILITY_SCRIPT }} />
+      <script dangerouslySetInnerHTML={{ __html: SWITCHER_CODE_SCRIPT }} />
     </section>
   )
 }
