@@ -817,6 +817,7 @@ export function buildSwitcherOptions(category: CredentialCategory): SwitcherOpti
     { code: 'S2', label: 'Buyer Survey', href: isAdmin ? '/tester/survey?moduleId=buyer-overview' : '/tester/survey', available: isAdmin || category === 'buyer', note: 'Only available while signed in with a buyer access code.' },
     { code: 'S3', label: 'Customer Survey', href: isAdmin ? '/tester/survey?moduleId=customer-overview' : '/tester/survey', available: isAdmin || category === 'customer', note: 'Only available while signed in with a customer access code.' },
     { code: 'S4', label: 'Investor Survey', href: '/investor', available: isAdmin || category === 'investor', note: 'Only available while signed in with an investor access code.' },
+    { code: 'S5', label: 'Lawyer Survey', href: isAdmin ? '/tester/survey?moduleId=superdashboard-demo' : '/tester/survey', available: isAdmin || category === 'lawyer', note: 'Only available while signed in with a lawyer access code.' },
   ]
 }
 
