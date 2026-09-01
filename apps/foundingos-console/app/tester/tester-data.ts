@@ -157,10 +157,12 @@ export const BUSINESS_PLAN_QUESTIONS: SurveyQuestion[] = [
 
 // Real, existing brand websites/consoles/POS-style flows in this codebase — no invented
 // brands. "Marketplace" maps to the real FoundThat app (this ecosystem's actual
-// marketplace-style brand); there is no separate "Marketplace" app. Intelligence Systems
-// (SuperDash/Guardian/Autonomous/BrandMetric) get their own bite-sized section, separate from
-// the brand consoles, per the explicit section breakdown — all four are real systems inside
-// foundingos-console, labelled honestly as such rather than implied to be standalone apps.
+// marketplace-style brand); there is no separate "Marketplace" app. POS/ATS/compliance flows
+// and Intelligence Systems (SuperDash/Guardian/Autonomous/BrandMetric) share ONE combined
+// macro-section (keeping the survey at 6 macro-sections total, per the explicit breakdown) —
+// all four intelligence systems are real systems inside foundingos-console, labelled honestly
+// as such rather than implied to be standalone apps.
+const COMBINED_POS_INTELLIGENCE_SECTION = 'POS/ATS/Compliance + Intelligence Systems'
 const BRAND_WEBSITE_TARGETS = [
   'Retail website', 'Meat website', 'Logistics website', 'Talent website', 'Crypto website',
   'Finance website', 'Health website', 'FoundThat (Marketplace) website', 'FoundingOS website',
@@ -206,21 +208,21 @@ function buildConsoleQuestions(label: string): SurveyQuestion[] {
 function buildPosQuestions(label: string): SurveyQuestion[] {
   const slug = slugify(label)
   return [
-    { id: `pos-${slug}-1`, prompt: `${label}: Is the workflow simple?`, section: 'POS/ATS/Compliance Flows', sectionKind: 'pos', target: label },
-    { id: `pos-${slug}-2`, prompt: `${label}: Are the steps easy to follow?`, section: 'POS/ATS/Compliance Flows', sectionKind: 'pos', target: label },
-    { id: `pos-${slug}-3`, prompt: `${label}: Does it feel intuitive?`, section: 'POS/ATS/Compliance Flows', sectionKind: 'pos', target: label },
-    { id: `pos-${slug}-4`, prompt: `${label}: Would someone in a developing country understand it?`, section: 'POS/ATS/Compliance Flows', sectionKind: 'pos', target: label },
+    { id: `pos-${slug}-1`, prompt: `${label}: Is the workflow simple?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'pos', target: label },
+    { id: `pos-${slug}-2`, prompt: `${label}: Are the steps easy to follow?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'pos', target: label },
+    { id: `pos-${slug}-3`, prompt: `${label}: Does it feel intuitive?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'pos', target: label },
+    { id: `pos-${slug}-4`, prompt: `${label}: Would someone in a developing country understand it?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'pos', target: label },
   ]
 }
 
 function buildIntelligenceQuestions(label: string): SurveyQuestion[] {
   const slug = slugify(label)
   return [
-    { id: `int-${slug}-1`, prompt: `${label}: Is it easy to understand?`, section: 'Intelligence Systems', sectionKind: 'intelligence', target: label },
-    { id: `int-${slug}-2`, prompt: `${label}: Are its labels and signals clear?`, section: 'Intelligence Systems', sectionKind: 'intelligence', target: label },
-    { id: `int-${slug}-3`, prompt: `${label}: Does it feel simple and familiar rather than intimidating?`, section: 'Intelligence Systems', sectionKind: 'intelligence', target: label },
-    { id: `int-${slug}-4`, prompt: `${label}: Does it feel WhatsApp-like?`, section: 'Intelligence Systems', sectionKind: 'intelligence', target: label },
-    { id: `int-${slug}-5`, prompt: `${label}: Would someone with low digital literacy understand it?`, section: 'Intelligence Systems', sectionKind: 'intelligence', target: label },
+    { id: `int-${slug}-1`, prompt: `${label}: Is it easy to understand?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'intelligence', target: label },
+    { id: `int-${slug}-2`, prompt: `${label}: Are its labels and signals clear?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'intelligence', target: label },
+    { id: `int-${slug}-3`, prompt: `${label}: Does it feel simple and familiar rather than intimidating?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'intelligence', target: label },
+    { id: `int-${slug}-4`, prompt: `${label}: Does it feel WhatsApp-like?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'intelligence', target: label },
+    { id: `int-${slug}-5`, prompt: `${label}: Would someone with low digital literacy understand it?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'intelligence', target: label },
   ]
 }
 
@@ -255,7 +257,7 @@ export const SECTION_NARRATOR_LINES: Record<SectionKind, string> = {
   legal: "Quick legal bit — short and global. We keep this clear so anyone, anywhere understands how the OS works.",
   website: "Alright, this part is quick — let's look at some brand websites.",
   console: "Next up, a tiny console check. Super simple.",
-  pos: "Okay, POS time. Don't worry, this is bite-sized.",
+  pos: "Okay, this part covers POS/ATS/compliance flows and the intelligence systems together — don't worry, still bite-sized.",
   intelligence: "Now let's peek at one of the intelligence systems — this one's fun.",
 }
 
@@ -584,6 +586,12 @@ export const INVESTOR_NARRATOR_STEPS = buildNarratorSteps(
   'This briefing walks you through the live, cross-brand engagement data behind FoundingOS — the same numbers SuperDash uses, read-only, exactly as an investor should see them.',
 )
 export const INVESTOR_NARRATION = INVESTOR_NARRATOR_STEPS.map((s) => s.text).join(' ')
+
+// Shown once, at the very first moment a real tester/investor/buyer/customer session enters
+// the OS (the top of their first demo/briefing page) — before DEMO_INTRO's more instructional
+// copy. The narrator's own personal greeting, distinct from the business-y walkthrough intro.
+export const OPENING_NARRATOR_LINE =
+  "Welcome to the Quantum WhatsApp OS — you're stepping into a living system built for real people, everywhere. I'll walk with you through everything… and don't worry, it's all simple, human, and honestly pretty fun. Ready."
 
 // Universal intro copy shown once, before any demo/briefing content and before any survey,
 // for every real tester/investor/buyer/customer session — identical wording everywhere per the
