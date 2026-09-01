@@ -6,7 +6,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { SESSION_COOKIE, verifyToken } from '../session'
 import { getTester } from '../store.server'
-import { SURVEYS, type SurveyId } from '../tester-data'
+import { SURVEYS, categorizeCredential, type SurveyId } from '../tester-data'
 import { SurveyEngine } from './SurveyEngine'
 
 export default async function TesterSurveyPage() {
@@ -14,8 +14,17 @@ export default async function TesterSurveyPage() {
   const testerId = token ? await verifyToken('tester', token) : null
   if (!testerId) redirect('/tester/login')
 
-  const tester = getTester(testerId)
+  const tester = await getTester(testerId)
   if (!tester) redirect('/tester/login')
+
+  // Demo must always come before the survey for real testers/survey-takers — a tester who
+  // hasn't viewed their assigned module demo yet (status still 'registered') is sent there
+  // first, every time, no exceptions. Free roam / investor / lawyer sessions never take a
+  // survey at all, so they're exempt from this gate entirely (they can still browse here
+  // read-only if they navigate here directly).
+  const category = categorizeCredential(testerId)
+  const isSurveyTaker = category === 'tester' || category === 'survey'
+  if (isSurveyTaker && tester.status === 'registered') redirect(`/tester/demo/${tester.moduleId}`)
 
   const survey = SURVEYS[tester.surveyId as SurveyId]
 

@@ -1895,14 +1895,20 @@ body[data-sidebar-collapsed='true'] .nav-card {
     grid-template-columns: 1fr;
   }
 
+  /* Sticky (not fixed) on mobile: the header can grow taller here (wrapped nav/actions,
+     the FoundingOS Homepage/Log out links, the positioning tagline) without ever covering
+     the content below it — a sticky element always reserves its own real space in the
+     normal document flow, so no matter how tall it renders, nothing underneath (including
+     the tester demo/survey pages) can ever be obscured. */
   .topbar {
-    left: var(--sidebar-width);
+    position: sticky;
+    left: 0;
     padding: 14px 16px;
   }
 
   .console-shell-main {
     margin-left: var(--sidebar-width);
-    padding-top: 76px;
+    padding-top: 0;
   }
 
   .console-shell-content {
@@ -3054,4 +3060,40 @@ body.superdash-heatmap-off .quantum-heatmap {
   background: rgba(255, 255, 255, 0.03);
   box-shadow: 0 0 24px color-mix(in srgb, var(--accent, #00e0ff) 18%, transparent);
   animation: sphereBreath 6s ease-in-out infinite;
+}
+
+/* Tester login — legal agreements block (expandable, required checkbox gate). */
+.tester-legal-block {
+  margin: 16px 0;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  max-height: 260px;
+  overflow-y: auto;
+}
+.tester-legal-heading {
+  font-size: 12px;
+  color: var(--muted-foreground, #9ca3af);
+  margin: 0 0 8px;
+}
+.tester-legal-doc {
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.tester-legal-doc summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.tester-legal-doc p {
+  margin: 6px 0 0;
+  color: var(--muted-foreground, #9ca3af);
+  white-space: pre-line;
+}
+.tester-legal-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
 }
