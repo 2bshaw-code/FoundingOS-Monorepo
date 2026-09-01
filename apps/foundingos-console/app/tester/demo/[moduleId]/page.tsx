@@ -11,7 +11,7 @@ import { MODULE_NARRATOR_STEPS, buildNarratorSteps, NARRATION_PLAYER_SCRIPT, BUS
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
 import { AnimatedMessageFlow } from '@foundingos/ui/animated-message-flow'
-import { buildDemoCurrencyPanel } from '../../demo-currency'
+import { DemoCurrencyCard } from '../../DemoCurrencyCard'
 
 export default async function TesterDemoPage({ params }: { params: Promise<{ moduleId: string }> }) {
   const { moduleId } = await params
@@ -89,7 +89,6 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
     moduleId as ModuleId,
   )
   const switcherOptions = buildSwitcherOptions(isSuperFounderAdminSession ? 'admin' : categorizeCredential(testerId))
-  const currencyPanel = buildDemoCurrencyPanel(moduleId)
 
   return (
     <section className="stack">
@@ -171,16 +170,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
           <AnimatedMessageFlow />
         </article>
 
-        <article className="module-card fo-card quantum-frame">
-          <div className="module-card-top"><span>🌍</span><strong>Demo currency simulation</strong></div>
-          <p><small>Synthetic demo values only — not real prices, not a real conversion rate, never shown inside a real module.</small></p>
-          <p style={{ fontSize: 20, fontWeight: 700, margin: '4px 0' }}>{currencyPanel.primary.formatted} <small style={{ fontWeight: 400, opacity: 0.6 }}>({currencyPanel.primary.code} · simulated locale)</small></p>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 13, opacity: 0.75 }}>
-            {currencyPanel.secondary.map((c) => (
-              <span key={c.code}>{c.formatted} <small>({c.code})</small></span>
-            ))}
-          </div>
-        </article>
+        <DemoCurrencyCard moduleId={moduleId} />
 
         {narratorSteps.map((beat) => (
           <article key={beat.step} className="module-card fo-card quantum-frame" data-narration={beat.text}>

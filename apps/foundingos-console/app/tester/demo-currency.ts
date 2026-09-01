@@ -40,10 +40,13 @@ function findCurrency(code: DemoCurrencyCode): DemoCurrencyMeta {
 }
 
 // Real Intl.NumberFormat formatting (genuinely correct symbols/grouping per currency) applied
-// to a synthetic amount — the formatting is real, the underlying number is demo-only.
-export function formatDemoCurrency(amountUsd: number, code: DemoCurrencyCode): string {
+// to either a real live rate (when provided) or the fixed synthetic multiplier as fallback.
+// This function itself never fetches anything — liveRateFromUsd (if passed) comes from the
+// shared, isolated fx-rates.ts client helper, keeping this file free of any network code.
+export function formatDemoCurrency(amountUsd: number, code: DemoCurrencyCode, liveRateFromUsd?: number): string {
   const currency = findCurrency(code)
-  const converted = amountUsd * currency.syntheticRateFromUsd
+  const rate = typeof liveRateFromUsd === 'number' ? liveRateFromUsd : currency.syntheticRateFromUsd
+  const converted = amountUsd * rate
   try {
     return new Intl.NumberFormat(currency.locale, { style: 'currency', currency: code, maximumFractionDigits: code === 'JPY' ? 0 : 2 }).format(converted)
   } catch {
@@ -62,7 +65,8 @@ export function pickDemoPrimaryCurrency(moduleId: string): DemoCurrencyCode {
 
 // One deterministic "synthetic scrape" value per module (a stand-in for the kind of number a
 // real scraper might have returned) — same rules as every other synthetic value in this app:
-// clearly demo-only, never presented as real.
+// clearly demo-only, never presented as real. The AMOUNT stays synthetic even in "real FX"
+// mode (this is still a demo module) — only the conversion RATE can become real.
 export function syntheticDemoAmount(moduleId: string): number {
   let hash = 0
   for (let i = 0; i < moduleId.length; i += 1) hash = (hash * 17 + moduleId.charCodeAt(i)) % 97
@@ -72,21 +76,27 @@ export function syntheticDemoAmount(moduleId: string): number {
 export type DemoCurrencyPanelData = {
   moduleId: string
   amountUsd: number
+  ratesAreLive: boolean
   primary: { code: DemoCurrencyCode; name: string; formatted: string }
   secondary: Array<{ code: DemoCurrencyCode; name: string; formatted: string }>
 }
 
 // Builds the full primary + secondary display set for one module — 1 primary (simulated
 // locale) + 3 secondary currencies, always including USD unless USD is already primary.
-export function buildDemoCurrencyPanel(moduleId: string): DemoCurrencyPanelData {
+// liveRates (USD-based, from the real FX proxy) is optional: when present, every conversion
+// uses the real rate for that currency (falling back to the synthetic one only if that
+// specific currency is missing from the live response); when absent, everything is synthetic.
+export function buildDemoCurrencyPanel(moduleId: string, liveRates?: Record<string, number> | null): DemoCurrencyPanelData {
   const amountUsd = syntheticDemoAmount(moduleId)
   const primaryCode = pickDemoPrimaryCurrency(moduleId)
   const primaryMeta = findCurrency(primaryCode)
   const secondaryCodes: DemoCurrencyCode[] = (primaryCode === 'USD' ? (['EUR', 'GBP', 'JPY'] as const) : (['USD', 'EUR', 'GBP'] as const)).filter((code) => code !== primaryCode).slice(0, 3)
+  const rateFor = (code: DemoCurrencyCode) => liveRates?.[code]
   return {
     moduleId,
     amountUsd,
-    primary: { code: primaryCode, name: primaryMeta.name, formatted: formatDemoCurrency(amountUsd, primaryCode) },
-    secondary: secondaryCodes.map((code) => ({ code, name: findCurrency(code).name, formatted: formatDemoCurrency(amountUsd, code) })),
+    ratesAreLive: Boolean(liveRates),
+    primary: { code: primaryCode, name: primaryMeta.name, formatted: formatDemoCurrency(amountUsd, primaryCode, rateFor(primaryCode)) },
+    secondary: secondaryCodes.map((code) => ({ code, name: findCurrency(code).name, formatted: formatDemoCurrency(amountUsd, code, rateFor(code)) })),
   }
 }
