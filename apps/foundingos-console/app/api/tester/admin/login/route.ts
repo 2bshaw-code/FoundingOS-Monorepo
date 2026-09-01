@@ -17,6 +17,6 @@ export async function POST(request: Request) {
 
   const token = await signToken('admin', 'admin')
   const response = NextResponse.json({ ok: true, redirect: '/tester/admin' })
-  response.cookies.set(ADMIN_COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 4 })
+  response.cookies.set(ADMIN_COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', domain: '.foundingos.com', maxAge: 60 * 60 * 4 })
   return response
 }

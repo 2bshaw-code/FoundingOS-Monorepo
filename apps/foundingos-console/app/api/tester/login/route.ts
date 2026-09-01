@@ -64,8 +64,8 @@ export async function POST(request: Request) {
   if (isSuperFounderAdmin(email, password)) {
     const token = await signToken('admin', 'super-founder-admin')
     const response = NextResponse.json({ ok: true, redirect: '/superdashboard', category: 'admin' })
-    response.cookies.set(ADMIN_COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 8 })
-    response.cookies.delete(SESSION_COOKIE)
+    response.cookies.set(ADMIN_COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', domain: '.foundingos.com', maxAge: 60 * 60 * 8 })
+    response.cookies.set(SESSION_COOKIE, '', { path: '/', domain: '.foundingos.com', maxAge: 0 })
     return withCors(response)
   }
 
@@ -125,6 +125,6 @@ export async function POST(request: Request) {
 
   const token = await signToken('tester', tester.id)
   const response = NextResponse.json({ ok: true, redirect: categoryRedirect[category], category })
-  response.cookies.set(SESSION_COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 8 })
+  response.cookies.set(SESSION_COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', domain: '.foundingos.com', maxAge: 60 * 60 * 8 })
   return withCors(response)
 }

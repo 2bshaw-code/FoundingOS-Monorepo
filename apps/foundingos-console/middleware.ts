@@ -4,6 +4,7 @@
 */
 import { NextResponse, type NextRequest } from 'next/server'
 import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from './app/tester/session'
+import { categorizeCredential } from './app/tester/tester-data'
 
 // Scoped to /tester/* only — every other route in this console is untouched (zero drift).
 export async function middleware(request: NextRequest) {
@@ -47,10 +48,34 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // SuperDash + Guardian: Admin gets full access, Free Roam (+ investor/lawyer) gets a
+  // read-only view, Tester/Survey sessions are sent to their own real survey instead —
+  // they were previously fully public, now aligned with the same three-role model as
+  // every other app on the shared session domain.
+  if (pathname.startsWith('/superdashboard') || pathname.startsWith('/system/guardian')) {
+    const adminToken = request.cookies.get(ADMIN_COOKIE)?.value
+    const adminId = adminToken ? await verifyToken('admin', adminToken) : null
+    if (adminId) return NextResponse.next()
+
+    const sessionToken = request.cookies.get(SESSION_COOKIE)?.value
+    const testerId = sessionToken ? await verifyToken('tester', sessionToken) : null
+    if (!testerId) return NextResponse.redirect(new URL('/tester/login', request.url))
+
+    const category = categorizeCredential(testerId)
+    if (category === 'free-roam' || category === 'investor' || category === 'lawyer') {
+      if (pathname.startsWith('/api/') && request.method !== 'GET') {
+        return NextResponse.json({ error: 'Read-only session — write access is disabled.' }, { status: 403 })
+      }
+      return NextResponse.next()
+    }
+
+    return NextResponse.redirect(new URL('/tester/survey', request.url))
+  }
+
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/tester/dashboard/:path*', '/tester/survey/:path*', '/tester/demo/:path*', '/tester/admin/:path*', '/finance/:path*', '/crypto/:path*', '/investor/:path*', '/legal/:path*'],
+  matcher: ['/tester/dashboard/:path*', '/tester/survey/:path*', '/tester/demo/:path*', '/tester/admin/:path*', '/finance/:path*', '/crypto/:path*', '/investor/:path*', '/legal/:path*', '/superdashboard/:path*', '/system/guardian/:path*'],
 }
 
