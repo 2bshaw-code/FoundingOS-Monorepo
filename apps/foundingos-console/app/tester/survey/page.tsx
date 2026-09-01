@@ -6,7 +6,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { SESSION_COOKIE, verifyToken } from '../session'
 import { getTester } from '../store.server'
-import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, SURVEY_COMPLETE_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SECTION_NARRATOR_LINES, getFreeRoamHref, type SurveyId } from '../tester-data'
+import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, SURVEY_COMPLETE_NARRATOR_LINE, SURVEY_MISSION_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SECTION_NARRATOR_LINES, PACING_REASSURANCE_LINES, ACCESSIBILITY_REMINDER_LINES, TARGET_JOKES, getFreeRoamHref, type SurveyId } from '../tester-data'
 import { SurveyEngine } from './SurveyEngine'
 
 export default async function TesterSurveyPage() {
@@ -58,6 +58,10 @@ export default async function TesterSurveyPage() {
         freeRoamInviteLines={FREE_ROAM_INVITE_LINES}
         freeRoamTips={FREE_ROAM_TIPS}
         sectionNarratorLines={SECTION_NARRATOR_LINES}
+        pacingReassuranceLines={PACING_REASSURANCE_LINES}
+        accessibilityReminderLines={ACCESSIBILITY_REMINDER_LINES}
+        targetJokes={TARGET_JOKES}
+        missionNarratorLine={SURVEY_MISSION_NARRATOR_LINE}
       />
     </section>
   )

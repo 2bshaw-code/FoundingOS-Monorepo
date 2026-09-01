@@ -141,7 +141,8 @@ export function findModuleOption(moduleId: string): ModuleOption | null {
   return MODULE_OPTIONS.find((option) => option.moduleId === moduleId) ?? null
 }
 
-export type SurveyQuestion = { id: string; prompt: string; section?: string; sectionKind?: 'website' | 'console' | 'pos' }
+export type SectionKind = 'module' | 'businessplan' | 'website' | 'console' | 'pos' | 'intelligence'
+export type SurveyQuestion = { id: string; prompt: string; section?: string; sectionKind?: SectionKind; target?: string }
 export type Survey = { id: SurveyId; title: string; moduleLabel: string; questions: SurveyQuestion[] }
 
 // Appended to every module survey (survey-a through survey-l) so each one — not just the
@@ -156,9 +157,10 @@ export const BUSINESS_PLAN_QUESTIONS: SurveyQuestion[] = [
 
 // Real, existing brand websites/consoles/POS-style flows in this codebase — no invented
 // brands. "Marketplace" maps to the real FoundThat app (this ecosystem's actual
-// marketplace-style brand); there is no separate "Marketplace" app. SuperDash/Guardian/
-// Autonomous/BrandMetric are real systems inside foundingos-console, not separate consoles —
-// labelled honestly as such rather than implied to be standalone apps.
+// marketplace-style brand); there is no separate "Marketplace" app. Intelligence Systems
+// (SuperDash/Guardian/Autonomous/BrandMetric) get their own bite-sized section, separate from
+// the brand consoles, per the explicit section breakdown — all four are real systems inside
+// foundingos-console, labelled honestly as such rather than implied to be standalone apps.
 const BRAND_WEBSITE_TARGETS = [
   'Retail website', 'Meat website', 'Logistics website', 'Talent website', 'Crypto website',
   'Finance website', 'Health website', 'FoundThat (Marketplace) website', 'FoundingOS website',
@@ -167,11 +169,12 @@ const BRAND_WEBSITE_TARGETS = [
 const CONSOLE_TARGETS = [
   'Retail console', 'Meat console', 'Logistics console', 'Talent console', 'Crypto console',
   'Finance console', 'Health console', 'Messaging module', 'Customer Service module',
-  'SuperDash', 'Guardian (system safety layer)', 'Autonomous (auto-optimize/auto-coach)',
-  'BrandMetric (live brand data)',
 ]
 const POS_TARGETS = [
   'Retail POS', 'Meat POS', 'Logistics POS', 'Talent ATS', 'FoundThat seller flow', 'Crypto compliance flow',
+]
+const INTELLIGENCE_TARGETS = [
+  'SuperDash', 'Guardian (system safety layer)', 'Autonomous (auto-optimize/auto-coach)', 'BrandMetric (live brand data)',
 ]
 
 function slugify(label: string): string {
@@ -181,54 +184,98 @@ function slugify(label: string): string {
 function buildWebsiteQuestions(label: string): SurveyQuestion[] {
   const slug = slugify(label)
   return [
-    { id: `web-${slug}-1`, prompt: `${label}: Is the message clear?`, section: label, sectionKind: 'website' },
-    { id: `web-${slug}-2`, prompt: `${label}: Is the purpose easy to understand?`, section: label, sectionKind: 'website' },
-    { id: `web-${slug}-3`, prompt: `${label}: Is navigation simple?`, section: label, sectionKind: 'website' },
-    { id: `web-${slug}-4`, prompt: `${label}: Would someone in a developing country understand this easily?`, section: label, sectionKind: 'website' },
-    { id: `web-${slug}-5`, prompt: `${label}: Does it feel like part of the Quantum WhatsApp OS?`, section: label, sectionKind: 'website' },
+    { id: `web-${slug}-1`, prompt: `${label}: Is the message clear?`, section: 'Websites', sectionKind: 'website', target: label },
+    { id: `web-${slug}-2`, prompt: `${label}: Is the purpose easy to understand?`, section: 'Websites', sectionKind: 'website', target: label },
+    { id: `web-${slug}-3`, prompt: `${label}: Is navigation simple?`, section: 'Websites', sectionKind: 'website', target: label },
+    { id: `web-${slug}-4`, prompt: `${label}: Would someone in a developing country understand this easily?`, section: 'Websites', sectionKind: 'website', target: label },
+    { id: `web-${slug}-5`, prompt: `${label}: Does it feel like part of the Quantum WhatsApp OS?`, section: 'Websites', sectionKind: 'website', target: label },
   ]
 }
 
 function buildConsoleQuestions(label: string): SurveyQuestion[] {
   const slug = slugify(label)
   return [
-    { id: `con-${slug}-1`, prompt: `${label}: Is it easy to use?`, section: label, sectionKind: 'console' },
-    { id: `con-${slug}-2`, prompt: `${label}: Are buttons and labels clear?`, section: label, sectionKind: 'console' },
-    { id: `con-${slug}-3`, prompt: `${label}: Does the layout feel simple and familiar?`, section: label, sectionKind: 'console' },
-    { id: `con-${slug}-4`, prompt: `${label}: Does it feel WhatsApp-like?`, section: label, sectionKind: 'console' },
-    { id: `con-${slug}-5`, prompt: `${label}: Would someone with low digital literacy understand it?`, section: label, sectionKind: 'console' },
+    { id: `con-${slug}-1`, prompt: `${label}: Is it easy to use?`, section: 'Consoles', sectionKind: 'console', target: label },
+    { id: `con-${slug}-2`, prompt: `${label}: Are buttons and labels clear?`, section: 'Consoles', sectionKind: 'console', target: label },
+    { id: `con-${slug}-3`, prompt: `${label}: Does the layout feel simple and familiar?`, section: 'Consoles', sectionKind: 'console', target: label },
+    { id: `con-${slug}-4`, prompt: `${label}: Does it feel WhatsApp-like?`, section: 'Consoles', sectionKind: 'console', target: label },
+    { id: `con-${slug}-5`, prompt: `${label}: Would someone with low digital literacy understand it?`, section: 'Consoles', sectionKind: 'console', target: label },
   ]
 }
 
 function buildPosQuestions(label: string): SurveyQuestion[] {
   const slug = slugify(label)
   return [
-    { id: `pos-${slug}-1`, prompt: `${label}: Is the workflow simple?`, section: label, sectionKind: 'pos' },
-    { id: `pos-${slug}-2`, prompt: `${label}: Are the steps easy to follow?`, section: label, sectionKind: 'pos' },
-    { id: `pos-${slug}-3`, prompt: `${label}: Does it feel intuitive?`, section: label, sectionKind: 'pos' },
-    { id: `pos-${slug}-4`, prompt: `${label}: Would someone in a developing country understand it?`, section: label, sectionKind: 'pos' },
+    { id: `pos-${slug}-1`, prompt: `${label}: Is the workflow simple?`, section: 'POS/ATS/Compliance Flows', sectionKind: 'pos', target: label },
+    { id: `pos-${slug}-2`, prompt: `${label}: Are the steps easy to follow?`, section: 'POS/ATS/Compliance Flows', sectionKind: 'pos', target: label },
+    { id: `pos-${slug}-3`, prompt: `${label}: Does it feel intuitive?`, section: 'POS/ATS/Compliance Flows', sectionKind: 'pos', target: label },
+    { id: `pos-${slug}-4`, prompt: `${label}: Would someone in a developing country understand it?`, section: 'POS/ATS/Compliance Flows', sectionKind: 'pos', target: label },
+  ]
+}
+
+function buildIntelligenceQuestions(label: string): SurveyQuestion[] {
+  const slug = slugify(label)
+  return [
+    { id: `int-${slug}-1`, prompt: `${label}: Is it easy to understand?`, section: 'Intelligence Systems', sectionKind: 'intelligence', target: label },
+    { id: `int-${slug}-2`, prompt: `${label}: Are its labels and signals clear?`, section: 'Intelligence Systems', sectionKind: 'intelligence', target: label },
+    { id: `int-${slug}-3`, prompt: `${label}: Does it feel simple and familiar rather than intimidating?`, section: 'Intelligence Systems', sectionKind: 'intelligence', target: label },
+    { id: `int-${slug}-4`, prompt: `${label}: Does it feel WhatsApp-like?`, section: 'Intelligence Systems', sectionKind: 'intelligence', target: label },
+    { id: `int-${slug}-5`, prompt: `${label}: Would someone with low digital literacy understand it?`, section: 'Intelligence Systems', sectionKind: 'intelligence', target: label },
   ]
 }
 
 // Appended to every survey (module, buyer, customer, and investor alike) so every real tester
 // validates clarity, messaging, ease of use, and global/low-literacy accessibility across every
-// real brand website, console, and POS-style flow in the ecosystem — not just their own
-// assigned module. These are opinion/impression questions grounded in what the narrator
-// explained about the wider ecosystem, not a claim that the tester has hands-on used every
-// single one of these (only their own assigned module demo is hands-on).
+// real brand website, console, POS-style flow, and intelligence system in the ecosystem — not
+// just their own assigned module. These are opinion/impression questions grounded in what the
+// narrator explained about the wider ecosystem, not a claim that the tester has hands-on used
+// every single one of these (only their own assigned module demo is hands-on).
 export const ECOSYSTEM_VALIDATION_QUESTIONS: SurveyQuestion[] = [
   ...BRAND_WEBSITE_TARGETS.flatMap(buildWebsiteQuestions),
   ...CONSOLE_TARGETS.flatMap(buildConsoleQuestions),
   ...POS_TARGETS.flatMap(buildPosQuestions),
+  ...INTELLIGENCE_TARGETS.flatMap(buildIntelligenceQuestions),
 ]
 
-// One narrator line per section kind — explains why that category of question matters, in the
-// same warm founder-style voice used throughout the demo.
-export const SECTION_NARRATOR_LINES: Record<'website' | 'console' | 'pos', string> = {
-  website: "If this website's message doesn't land, I need to know. We're building the WhatsApp OS — it must be simple enough for anyone, anywhere, even on low-end devices.",
-  console: "Tell me if this console feels clear — we want zero confusion. Would someone with low digital literacy understand it?",
-  pos: "Your feedback helps us make the OS accessible globally — even for someone in a developing country picking this up for the first time.",
+// One mini-demo-intro narrator line per broad section kind, shown once (in a full Quantum
+// frame) at the start of that section — explains what the user is about to evaluate and why.
+export const SECTION_NARRATOR_LINES: Record<SectionKind, string> = {
+  module: "Alright, let's start with your assigned module — quick and easy.",
+  businessplan: "Now a few quick ones about the bigger picture — the business plan itself.",
+  website: "Alright, this part is quick — let's look at some brand websites.",
+  console: "Next up, a tiny console check. Super simple.",
+  pos: "Okay, POS time. Don't worry, this is bite-sized.",
+  intelligence: "Now let's peek at one of the intelligence systems — this one's fun.",
 }
+
+// Narrator reassurance, rotated section-by-section so the survey never feels overwhelming.
+export const PACING_REASSURANCE_LINES = [
+  "You're doing great — these sections are small.",
+  "Short answers are perfect.",
+  "This isn't a test — it's feedback.",
+  "We keep everything bite-sized so it's easy.",
+]
+
+// Developing-country / low-digital-literacy accessibility reminders, rotated for the
+// website/console/pos/intelligence sections (the sections this actually applies to).
+export const ACCESSIBILITY_REMINDER_LINES = [
+  "Imagine someone using this on a low-end phone — would it make sense?",
+  "Would someone with low digital literacy understand this?",
+  "Does this feel WhatsApp-simple?",
+]
+
+// One-off humour lines for specific targets, shown alongside that target's own short intro —
+// not every target gets a joke, just the ones with real personality.
+export const TARGET_JOKES: Record<string, string> = {
+  'Guardian (system safety layer)': "Guardian gets dramatic here, but we love it.",
+  'Autonomous (auto-optimize/auto-coach)': "Autonomous is about to make a decision — don't blink.",
+  'Retail POS': "Retail POS is the diva of the group — let's see how it behaves.",
+}
+
+// Shown once, at the very top of the survey (before any question) — the mission framing that
+// explains why this ecosystem-wide survey exists at all.
+export const SURVEY_MISSION_NARRATOR_LINE =
+  "This isn't a normal survey — you're helping shape a global operating system. We're building the Quantum WhatsApp OS, designed to be simple enough for anyone, anywhere, even on low-end devices. That's why we ask about every website, every console, and every POS flow. Your answers don't need to be long — just honest."
 
 export const SURVEYS: Record<SurveyId, Survey> = {
   'survey-a': {
