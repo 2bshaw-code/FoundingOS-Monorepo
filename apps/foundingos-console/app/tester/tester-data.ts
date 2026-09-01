@@ -606,9 +606,20 @@ export const OPENING_NARRATOR_LINE =
 
 // Shown instead of OPENING_NARRATOR_LINE whenever a session returns after making real
 // progress (status !== 'registered' — i.e. the demo has been viewed and/or a survey run
-// exists) — never shown on a genuine first visit.
+// exists) — never shown on a genuine first visit. There is no real visit-counter anywhere in
+// this data model (TesterStatus has no such field, and adding one would be a schema change),
+// so "returning after real progress but before finishing a full survey" is the honest signal
+// used here — WELCOME_BACK_SOFT_LINE below is the equally-honest proxy for "returning after
+// having finished at least one full survey", using tester.status === 'complete' as the real,
+// already-existing milestone rather than an exact (unavailable) visit count.
 export const WELCOME_BACK_NARRATOR_LINE =
   "Welcome back — the Quantum WhatsApp OS remembers you. Let's pick up right where you left off."
+
+// Shown instead of WELCOME_BACK_NARRATOR_LINE once a session has completed at least one full
+// survey run and returns to the demo/briefing page again (tester.status === 'complete') — a
+// real, existing milestone standing in honestly for "a later revisit", since no exact visit
+// counter exists to fire this on precisely the second visit and never again.
+export const WELCOME_BACK_SOFT_LINE = "Good to see you again — the OS grows every time you return."
 
 // Micro-celebration: shown on the survey page's intro, since reaching the survey always means
 // the demo gate was just cleared.
@@ -630,6 +641,19 @@ export const FREE_ROAM_ENTERED_LINE = "Alright, explorer — the OS is yours now
 // "end of Free Roam or extended exploration," for the same reason as FREE_ROAM_ENTERED_LINE.
 export const EMOTIONAL_CLOSING_LINE =
   "That's the full Quantum WhatsApp OS — alive, evolving, and built for real people everywhere. Thanks for exploring. Whenever you're ready, I'll be here to guide you through whatever comes next."
+
+// Once-in-a-lifetime signature moment: shown only in the transient client-side "just
+// submitted" completion state (SurveyEngine), gated on hasCompletedSurveyBefore === false —
+// i.e. tester.runs.length was genuinely 0 before this exact submission. This is a real "only
+// once, ever" trigger (unlike a page-revisit-based check) because that client state only ever
+// exists as a direct result of the completing action itself, never on a later page load.
+export const SIGNATURE_MOMENT_LINE =
+  "You've just helped shape the Quantum WhatsApp OS. Most people never get to see a system being born — but you did. Thanks for being part of the beginning."
+
+// Free Roam "first step" moment — shown alongside SIGNATURE_MOMENT_LINE, in the same
+// hasCompletedSurveyBefore === false gate, since that is genuinely the first time this session
+// could ever reach the Free Roam box (it never rendered before their first completion).
+export const FREE_ROAM_FIRST_STEP_LINE = "Go explore — nothing you click can break anything. The OS is yours."
 
 // Universal intro copy shown once, before any demo/briefing content and before any survey,
 // for every real tester/investor/buyer/customer session — identical wording everywhere per the

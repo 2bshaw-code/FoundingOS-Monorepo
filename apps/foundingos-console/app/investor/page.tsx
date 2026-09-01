@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, verifyToken } from '../tester/session'
 import { getTester, upsertTester } from '../tester/store.server'
-import { categorizeCredential, INVESTOR_NARRATION, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, OPENING_NARRATOR_LINE, WELCOME_BACK_NARRATOR_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SURVEY_COMPLETE_NARRATOR_LINE } from '../tester/tester-data'
+import { categorizeCredential, INVESTOR_NARRATION, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, OPENING_NARRATOR_LINE, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SURVEY_COMPLETE_NARRATOR_LINE } from '../tester/tester-data'
 import { GLOBAL_ACCESSIBILITY_SCRIPT } from '@foundingos/config'
 import { readBrandMetrics } from '../superdashboard/brand-metric-store.server'
 
@@ -118,7 +118,7 @@ export default async function InvestorPage() {
             <article className="module-card fo-card quantum-frame">
               <div className="module-card-top"><span>👋</span><strong>Welcome back</strong></div>
               <div className="quantum-narrator-panel">
-                <p>{WELCOME_BACK_NARRATOR_LINE}</p>
+                <p>{tester.status === 'complete' ? WELCOME_BACK_SOFT_LINE : WELCOME_BACK_NARRATOR_LINE}</p>
               </div>
             </article>
             <article className="module-card fo-card quantum-frame">

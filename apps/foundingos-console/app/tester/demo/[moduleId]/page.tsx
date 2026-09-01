@@ -7,7 +7,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, verifyToken } from '../../session'
 import { getTester, upsertTester } from '../../store.server'
-import { MODULE_NARRATION, MODULE_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_NARRATION, OPENING_NARRATOR_LINE, WELCOME_BACK_NARRATOR_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, type ModuleId } from '../../tester-data'
+import { MODULE_NARRATION, MODULE_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_NARRATION, OPENING_NARRATOR_LINE, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, type ModuleId } from '../../tester-data'
 import { GLOBAL_ACCESSIBILITY_SCRIPT } from '@foundingos/config'
 
 export default async function TesterDemoPage({ params }: { params: Promise<{ moduleId: string }> }) {
@@ -92,7 +92,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
           <article className="module-card fo-card quantum-frame">
             <div className="module-card-top"><span>👋</span><strong>Welcome back</strong></div>
             <div className="quantum-narrator-panel">
-              <p>{WELCOME_BACK_NARRATOR_LINE}</p>
+              <p>{tester.status === 'complete' ? WELCOME_BACK_SOFT_LINE : WELCOME_BACK_NARRATOR_LINE}</p>
             </div>
           </article>
         )}

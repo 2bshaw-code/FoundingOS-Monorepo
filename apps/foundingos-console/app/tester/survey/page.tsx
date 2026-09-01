@@ -6,7 +6,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { SESSION_COOKIE, verifyToken } from '../session'
 import { getTester } from '../store.server'
-import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, DEMO_COMPLETE_CELEBRATION_LINE, SURVEY_COMPLETE_NARRATOR_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, SURVEY_MISSION_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, SECTION_NARRATOR_LINES, PACING_REASSURANCE_LINES, ACCESSIBILITY_REMINDER_LINES, TARGET_JOKES, MICRO_BREAK_LINES, getFreeRoamHref, type SurveyId } from '../tester-data'
+import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, DEMO_COMPLETE_CELEBRATION_LINE, SURVEY_COMPLETE_NARRATOR_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, SURVEY_MISSION_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, SIGNATURE_MOMENT_LINE, FREE_ROAM_FIRST_STEP_LINE, SECTION_NARRATOR_LINES, PACING_REASSURANCE_LINES, ACCESSIBILITY_REMINDER_LINES, TARGET_JOKES, MICRO_BREAK_LINES, getFreeRoamHref, type SurveyId } from '../tester-data'
 import { SurveyEngine } from './SurveyEngine'
 
 export default async function TesterSurveyPage() {
@@ -32,6 +32,10 @@ export default async function TesterSurveyPage() {
 
   const survey = SURVEYS[tester.surveyId as SurveyId]
   const freeRoamHref = getFreeRoamHref(tester.moduleId)
+  // Captured BEFORE any submission this page load could make — true only if a full survey run
+  // already existed prior to right now, so SurveyEngine can tell a genuine first-ever
+  // completion (about to happen) apart from a repeat one.
+  const hasCompletedSurveyBefore = tester.runs.length > 0
 
   return (
     <section className="stack">
@@ -59,6 +63,9 @@ export default async function TesterSurveyPage() {
         completeCelebrationLine={SURVEY_COMPLETE_CELEBRATION_LINE}
         freeRoamEnteredLine={FREE_ROAM_ENTERED_LINE}
         emotionalClosingLine={EMOTIONAL_CLOSING_LINE}
+        signatureMomentLine={SIGNATURE_MOMENT_LINE}
+        freeRoamFirstStepLine={FREE_ROAM_FIRST_STEP_LINE}
+        hasCompletedSurveyBefore={hasCompletedSurveyBefore}
         freeRoamInviteLines={FREE_ROAM_INVITE_LINES}
         freeRoamTips={FREE_ROAM_TIPS}
         sectionNarratorLines={SECTION_NARRATOR_LINES}
