@@ -6,7 +6,9 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { SESSION_COOKIE, verifyToken } from '../session'
 import { getTester } from '../store.server'
-import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, DEMO_COMPLETE_CELEBRATION_LINE, SURVEY_COMPLETE_NARRATOR_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, SURVEY_MISSION_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, SIGNATURE_MOMENT_LINE, FREE_ROAM_FIRST_STEP_LINE, SECTION_NARRATOR_LINES, PACING_REASSURANCE_LINES, ACCESSIBILITY_REMINDER_LINES, TARGET_JOKES, MICRO_BREAK_LINES, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, getFreeRoamHref, type SurveyId } from '../tester-data'
+import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, DEMO_COMPLETE_CELEBRATION_LINE, SURVEY_COMPLETE_NARRATOR_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, SURVEY_MISSION_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, SIGNATURE_MOMENT_LINE, FREE_ROAM_FIRST_STEP_LINE, SECTION_NARRATOR_LINES, PACING_REASSURANCE_LINES, ACCESSIBILITY_REMINDER_LINES, TARGET_JOKES, MICRO_BREAK_LINES, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, getFreeRoamHref, type SurveyId } from '../tester-data'
+import { brands } from '@foundingos/config'
+import { QuantumSphereLogo } from '@foundingos/ui'
 import { SurveyEngine } from './SurveyEngine'
 
 export default async function TesterSurveyPage() {
@@ -40,6 +42,10 @@ export default async function TesterSurveyPage() {
 
   return (
     <section className="stack">
+      <div className="quantum-brand-header">
+        <QuantumSphereLogo size={48} />
+        <div className="quantum-gradient-bar" />
+      </div>
       <header className="module-header">
         <p>FounderOS Tester Program</p>
         <h1>{survey.title}</h1>
@@ -105,7 +111,16 @@ export default async function TesterSurveyPage() {
         switcherOptions={switcherOptions}
         switcherTitle={SWITCHER_PANEL_TITLE}
         switcherNarratorLine={SWITCHER_PANEL_NARRATOR_LINE}
+        freeRoamUnlockLine={FREE_ROAM_UNLOCK_LINE}
       />
+      <div className="quantum-brand-row">
+        {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat'] as const).map((slug) => (
+          <a key={slug} href={brands[slug].webUrl} className="quantum-brand-card" style={{ ['--brand-glow' as string]: brands[slug].accent }}>
+            <span className="quantum-brand-card-dot" />
+            {brands[slug].name}
+          </a>
+        ))}
+      </div>
       <script dangerouslySetInnerHTML={{ __html: SWITCHER_CODE_SCRIPT }} />
     </section>
   )

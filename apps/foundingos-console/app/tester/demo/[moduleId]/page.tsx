@@ -7,8 +7,9 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, verifyToken } from '../../session'
 import { getTester, upsertTester } from '../../store.server'
-import { MODULE_NARRATION, MODULE_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_NARRATION, OPENING_NARRATOR_LINE, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, categorizeCredential, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, type ModuleId } from '../../tester-data'
-import { GLOBAL_ACCESSIBILITY_SCRIPT } from '@foundingos/config'
+import { MODULE_NARRATION, MODULE_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_NARRATION, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, categorizeCredential, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, type ModuleId } from '../../tester-data'
+import { GLOBAL_ACCESSIBILITY_SCRIPT, brands } from '@foundingos/config'
+import { QuantumSphereLogo } from '@foundingos/ui'
 
 export default async function TesterDemoPage({ params }: { params: Promise<{ moduleId: string }> }) {
   const { moduleId } = await params
@@ -71,6 +72,10 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
 
   return (
     <section className="stack">
+      <div className="quantum-brand-header">
+        <QuantumSphereLogo size={48} />
+        <div className="quantum-gradient-bar" />
+      </div>
       <header className="module-header">
         <p>FounderOS Tester Program</p>
         <h1>{tester.moduleLabel} demo</h1>
@@ -83,12 +88,25 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
 
       <div className="module-card-grid">
         {tester.status === 'registered' ? (
-          <article className="module-card fo-card quantum-frame">
-            <div className="module-card-top"><span>👋</span><strong>Welcome</strong></div>
-            <div className="quantum-narrator-panel">
-              <p>{OPENING_NARRATOR_LINE}</p>
-            </div>
-          </article>
+          <>
+            <article className="module-card fo-card quantum-frame">
+              <div className="module-card-top"><span>👋</span><strong>Welcome</strong></div>
+              <div className="quantum-narrator-panel">
+                <p>{OPENING_NARRATOR_LINE}</p>
+              </div>
+            </article>
+            <article className="module-card fo-card quantum-frame">
+              <div className="module-card-top"><span>ℹ</span><strong>{TESTER_INSTRUCTION_CARD.title}</strong></div>
+              <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 6 }}>
+                {TESTER_INSTRUCTION_CARD.lines.map((line) => (
+                  <li key={line}><small>{line}</small></li>
+                ))}
+              </ul>
+              <div className="quantum-narrator-panel">
+                <p>{TESTER_INSTRUCTION_CARD.narratorLine}</p>
+              </div>
+            </article>
+          </>
         ) : (
           <article className="module-card fo-card quantum-frame">
             <div className="module-card-top"><span>👋</span><strong>Welcome back</strong></div>
@@ -163,6 +181,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
       {hasCompletedSurvey && (
         <div className="stack" style={{ marginTop: 24 }}>
           <div className="quantum-narrator-panel">
+            <p>{FREE_ROAM_UNLOCK_LINE}</p>
             <p>{FREE_ROAM_INVITE_LINES[0]}</p>
             <p>{FREE_ROAM_INVITE_LINES[1]} {FREE_ROAM_INVITE_LINES[2]}</p>
             <p><small>{FREE_ROAM_TIPS.join(' ')}</small></p>
@@ -203,6 +222,15 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
           <p data-switcher-message><small></small></p>
         </form>
       </article>
+
+      <div className="quantum-brand-row">
+        {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat'] as const).map((slug) => (
+          <a key={slug} href={brands[slug].webUrl} className="quantum-brand-card" style={{ ['--brand-glow' as string]: brands[slug].accent }}>
+            <span className="quantum-brand-card-dot" />
+            {brands[slug].name}
+          </a>
+        ))}
+      </div>
 
       <script dangerouslySetInnerHTML={{ __html: NARRATION_PLAYER_SCRIPT }} />
       <script dangerouslySetInnerHTML={{ __html: GLOBAL_ACCESSIBILITY_SCRIPT }} />

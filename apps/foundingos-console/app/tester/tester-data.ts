@@ -604,6 +604,23 @@ export const INVESTOR_NARRATION = INVESTOR_NARRATOR_STEPS.map((s) => s.text).joi
 export const OPENING_NARRATOR_LINE =
   "Welcome to the Quantum WhatsApp OS — you're stepping into a living system built for real people, everywhere. I'll walk with you through everything… and don't worry, it's all simple, human, and honestly pretty fun. Ready."
 
+// Shown alongside OPENING_NARRATOR_LINE, only on a genuine first visit (status ===
+// 'registered') — a plain, honest orientation card. The login-details line is worded
+// generically ("may differ depending on your assigned role") rather than claiming a single
+// universal password, since the real system still uses distinct per-role credentials.
+export const TESTER_INSTRUCTION_CARD = {
+  title: 'Welcome Tester',
+  lines: [
+    'Thanks for helping test the Quantum WhatsApp OS.',
+    'Your login details may differ depending on your assigned role.',
+    "Once you're inside, you don't need to log out to see other modules.",
+    "Use the 'Explore Another Part of the OS' panel to jump between demos and surveys.",
+    "After each demo, you'll get a short, bite-sized survey.",
+    'Free Roam unlocks after your first survey.',
+  ],
+  narratorLine: "I'll guide you through everything — it's simple.",
+}
+
 // Shown instead of OPENING_NARRATOR_LINE whenever a session returns after making real
 // progress (status !== 'registered' — i.e. the demo has been viewed and/or a survey run
 // exists) — never shown on a genuine first visit. There is no real visit-counter anywhere in
@@ -718,7 +735,12 @@ export function getFreeRoamHref(moduleId: string): string {
 //   ever marked available; the other three are shown as informational only.
 export const SWITCHER_PANEL_TITLE = 'Explore Another Part of the OS'
 export const SWITCHER_PANEL_NARRATOR_LINE =
-  'Want to explore another part of the OS? Jump anywhere you like — everything here is safe, guided, and read-only.'
+  'Jump anywhere you like — everything here is safe, guided, and read-only.'
+
+// Shown directly above the Free Roam box on the survey-completion screen — the "unlocked a
+// new level" framing for reaching Free Roam.
+export const FREE_ROAM_UNLOCK_LINE =
+  "Nice work — you've completed the demo and survey. You've just unlocked a new level: Free Roam."
 
 export type SwitcherOption = { code: string; label: string; href: string; available: boolean; note?: string }
 

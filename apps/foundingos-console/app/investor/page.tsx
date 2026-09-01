@@ -7,8 +7,9 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, verifyToken } from '../tester/session'
 import { getTester, upsertTester } from '../tester/store.server'
-import { categorizeCredential, INVESTOR_NARRATION, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, OPENING_NARRATOR_LINE, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, EMOTIONAL_CLOSING_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SURVEY_COMPLETE_NARRATOR_LINE, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT } from '../tester/tester-data'
-import { GLOBAL_ACCESSIBILITY_SCRIPT } from '@foundingos/config'
+import { categorizeCredential, INVESTOR_NARRATION, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SURVEY_COMPLETE_NARRATOR_LINE, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT } from '../tester/tester-data'
+import { GLOBAL_ACCESSIBILITY_SCRIPT, brands as brandRegistry } from '@foundingos/config'
+import { QuantumSphereLogo } from '@foundingos/ui'
 import { readBrandMetrics } from '../superdashboard/brand-metric-store.server'
 
 // Real, read-only Investor briefing — reuses the same live BrandMetric data that powers
@@ -58,6 +59,10 @@ export default async function InvestorPage() {
 
   return (
     <section className="stack">
+      <div className="quantum-brand-header">
+        <QuantumSphereLogo size={48} />
+        <div className="quantum-gradient-bar" />
+      </div>
       <header className="module-header">
         <p>FoundingOS Investor {isBriefingPhase ? 'Briefing' : 'Demo'}</p>
         <h1>Welcome, {tester.email}</h1>
@@ -70,6 +75,18 @@ export default async function InvestorPage() {
             <div className="module-card-top"><span>👋</span><strong>Welcome</strong></div>
             <div className="quantum-narrator-panel">
               <p>{OPENING_NARRATOR_LINE}</p>
+            </div>
+          </article>
+
+          <article className="module-card fo-card quantum-frame">
+            <div className="module-card-top"><span>ℹ</span><strong>{TESTER_INSTRUCTION_CARD.title}</strong></div>
+            <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 6 }}>
+              {TESTER_INSTRUCTION_CARD.lines.map((line) => (
+                <li key={line}><small>{line}</small></li>
+              ))}
+            </ul>
+            <div className="quantum-narrator-panel">
+              <p>{TESTER_INSTRUCTION_CARD.narratorLine}</p>
             </div>
           </article>
 
@@ -167,6 +184,7 @@ export default async function InvestorPage() {
           {hasCompletedSurvey ? (
             <div className="stack" style={{ marginTop: 24 }}>
               <div className="quantum-narrator-panel">
+                <p>{FREE_ROAM_UNLOCK_LINE}</p>
                 <p>{SURVEY_COMPLETE_NARRATOR_LINE}</p>
                 <p>{SURVEY_COMPLETE_CELEBRATION_LINE}</p>
                 <p>{FREE_ROAM_INVITE_LINES[0]}</p>
@@ -222,6 +240,14 @@ export default async function InvestorPage() {
           )}
         </>
       )}
+      <div className="quantum-brand-row">
+        {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat'] as const).map((slug) => (
+          <a key={slug} href={brandRegistry[slug].webUrl} className="quantum-brand-card" style={{ ['--brand-glow' as string]: brandRegistry[slug].accent }}>
+            <span className="quantum-brand-card-dot" />
+            {brandRegistry[slug].name}
+          </a>
+        ))}
+      </div>
       <script dangerouslySetInnerHTML={{ __html: NARRATION_PLAYER_SCRIPT }} />
       <script dangerouslySetInnerHTML={{ __html: GLOBAL_ACCESSIBILITY_SCRIPT }} />
       <script dangerouslySetInnerHTML={{ __html: SWITCHER_CODE_SCRIPT }} />

@@ -3226,3 +3226,62 @@ html[data-accessibility-simplified='true'] .btn {
   padding: 0 22px;
   font-size: 16px;
 }
+
+/* Demo/survey screen branding — logo header, neon gradient bar, and the bottom brand-card
+   row. Blue → purple → cyan uses real, existing colours already in this design system
+   (FoundCrypto's #9933FF purple, the Quantum sign-in page's #00E5FF cyan) rather than
+   inventing new ones, so it stays visually consistent with the rest of the OS. */
+.quantum-brand-header {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.quantum-gradient-bar {
+  width: 100%;
+  max-width: 420px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2563EB, #9933FF, #00E5FF);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.35);
+}
+
+.quantum-brand-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.quantum-brand-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.quantum-brand-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 16px var(--brand-glow, rgba(0, 229, 255, 0.4));
+  border-color: var(--brand-glow, rgba(0, 229, 255, 0.6));
+}
+
+.quantum-brand-card-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--brand-glow, #00E5FF);
+  box-shadow: 0 0 6px var(--brand-glow, #00E5FF);
+}
