@@ -138,6 +138,30 @@ const AUDIO_SET: string[] = [
   'Here\u2019s a good one\u2026 someone asked if their dog is stealing food on purpose.',
 ]
 
+// Best-available free voice (matches tester-data.ts's NARRATION_PLAYER_SCRIPT — kept in sync).
+// No paid API, just a smarter pick from whatever voices this browser already ships for free.
+let cachedVoice: SpeechSynthesisVoice | null = null
+function pickBestVoice(): SpeechSynthesisVoice | null {
+  try {
+    if (!('speechSynthesis' in window)) return null
+    const voices = window.speechSynthesis.getVoices()
+    if (!voices || voices.length === 0) return null
+    const english = voices.filter((v) => /^en/i.test(v.lang))
+    const pool = english.length > 0 ? english : voices
+    return pool.find((v) => /natural/i.test(v.name))
+      ?? pool.find((v) => /enhanced|premium/i.test(v.name))
+      ?? pool.find((v) => /online/i.test(v.name))
+      ?? pool.find((v) => /google/i.test(v.name))
+      ?? pool.find((v) => v.localService === false)
+      ?? pool[0]
+  } catch {
+    return null
+  }
+}
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  window.speechSynthesis.onvoiceschanged = () => { cachedVoice = null }
+}
+
 // Universal smart action, appended in every context/brand (see FoundAI component below) —
 // the voice pack isn't brand- or context-specific, so it doesn't belong in smartActions().
 const FOUNDAI_STORY_ACTION: SmartAction = { label: '\ud83d\udd0a Hear a FoundAI story', audioBank: AUDIO_SET }
@@ -416,6 +440,8 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
             window.speechSynthesis.cancel()
             const utter = new SpeechSynthesisUtterance(line)
             utter.rate = 0.98
+            if (!cachedVoice) cachedVoice = pickBestVoice()
+            if (cachedVoice) utter.voice = cachedVoice
             window.speechSynthesis.speak(utter)
           }
         } catch {

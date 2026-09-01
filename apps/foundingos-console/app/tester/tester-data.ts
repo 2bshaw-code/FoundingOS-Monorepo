@@ -21,8 +21,9 @@ export type ModuleId =
   | 'investor-overview'
   | 'buyer-overview'
   | 'customer-overview'
+  | 'crm-overview'
 
-export type SurveyId = 'survey-a' | 'survey-b' | 'survey-c' | 'survey-d' | 'survey-e' | 'survey-f' | 'survey-g' | 'survey-h' | 'survey-i' | 'survey-j' | 'survey-k' | 'survey-l' | 'survey-investor' | 'survey-buyer' | 'survey-customer'
+export type SurveyId = 'survey-a' | 'survey-b' | 'survey-c' | 'survey-d' | 'survey-e' | 'survey-f' | 'survey-g' | 'survey-h' | 'survey-i' | 'survey-j' | 'survey-k' | 'survey-l' | 'survey-investor' | 'survey-buyer' | 'survey-customer' | 'survey-crm'
 
 export type Credential = {
   id: string
@@ -92,6 +93,12 @@ export const CREDENTIALS: Credential[] = [
   { id: 'buyer-2', password: 'BUYER-2', moduleId: 'buyer-overview', moduleLabel: 'Buyer Overview', surveyId: 'survey-buyer' },
   { id: 'customer-1', password: 'CUSTOMER-1', moduleId: 'customer-overview', moduleLabel: 'Customer Overview', surveyId: 'survey-customer' },
   { id: 'customer-2', password: 'CUSTOMER-2', moduleId: 'customer-overview', moduleLabel: 'Customer Overview', surveyId: 'survey-customer' },
+
+  // CRM access — its own real, dedicated demo+survey tier (the real /crm board, same pattern
+  // as every other module: demo -> survey -> submit), distinct from CRM's ongoing role as a
+  // real, direct-access tool for admin/brand-console use.
+  { id: 'tester-11', password: 'TST-66CR', moduleId: 'crm-overview', moduleLabel: 'CRM', surveyId: 'survey-crm' },
+  { id: 'survey-crm-1', password: 'SURVEY-CRM', moduleId: 'crm-overview', moduleLabel: 'CRM', surveyId: 'survey-crm' },
 ]
 
 export function findCredentialByPassword(password: string): Credential | null {
@@ -525,6 +532,19 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
+  'survey-crm': {
+    id: 'survey-crm',
+    title: 'Survey — CRM',
+    moduleLabel: 'CRM',
+    questions: [
+      { id: 'crm1', prompt: 'How clear was it to find contacts, companies, and deals in one place?' },
+      { id: 'crm2', prompt: 'Did adding a contact, deal, or note feel fast enough for daily use?' },
+      { id: 'crm3', prompt: 'Which CRM view (contacts, deals, pipeline, tasks, activity) do you rely on most day-to-day?' },
+      { id: 'crm4', prompt: 'What is one CRM workflow you wish was automated or connected to another module?' },
+      ...BUSINESS_PLAN_QUESTIONS,
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
+    ],
+  },
 }
 
 // Shown once, as a short bullet list (not a paragraph) in its own "Business plan, in short"
@@ -554,6 +574,7 @@ const MODULE_NARRATION_DETAIL: Partial<Record<ModuleId, string>> = {
   'superdashboard-demo': 'SuperDash itself: every module — marketing, accounting, service, messaging, AI, and system health — rolled up into one live view.',
   'buyer-overview': "The buyer's-eye view — the real brand website a customer lands on, browses, and buys from.",
   'customer-overview': 'Customer Service from the other side of the counter — the real support experience a customer gets.',
+  'crm-overview': 'Contacts, companies, deals, pipeline, notes, tasks, and activity — one real relationship board per brand, feeding the same live BrandMetric signals every other module does.',
 }
 
 // Real action names surfaced inside each module's own workbench UI (see app/brand-config.ts) —
@@ -565,6 +586,7 @@ const MODULE_REAL_ACTIONS: Partial<Record<ModuleId, string[]>> = {
   'accounting': ['Create Invoice', 'Reconcile Accounts', 'Review Overdue'],
   'messaging': ['Open Inbox', 'Create Template', 'Assign Conversation'],
   'customer-service': ['Open Ticket Queue', 'Reply to Customer', 'Review CSAT'],
+  'crm-overview': ['Add Contact', 'Log a Deal', 'Add a Note'],
 }
 
 export type NarratorStep = { step: string; text: string; detail: string }
@@ -829,6 +851,7 @@ export function buildSwitcherOptions(category: CredentialCategory): SwitcherOpti
   return [
     { code: 'R1', label: 'Retail Demo', href: 'https://retail.foundingos.com', available: true },
     { code: 'M1', label: 'Messaging Console Demo', href: '/modules/messaging', available: true },
+    { code: 'M2', label: 'CRM Demo', href: '/crm', available: true },
     { code: 'G1', label: 'Guardian Demo', href: '/system/guardian', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
     { code: 'A1', label: 'Autonomous Demo', href: '/superdashboard?readOnly=1', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
     { code: 'B1', label: 'BrandMetric Demo', href: '/superdashboard?readOnly=1', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
@@ -837,6 +860,7 @@ export function buildSwitcherOptions(category: CredentialCategory): SwitcherOpti
     { code: 'S3', label: 'Customer Survey', href: isAdmin ? '/tester/survey?moduleId=customer-overview' : '/tester/survey', available: isAdmin || category === 'customer', note: 'Only available while signed in with a customer access code.' },
     { code: 'S4', label: 'Investor Survey', href: '/investor', available: isAdmin || category === 'investor', note: 'Only available while signed in with an investor access code.' },
     { code: 'S5', label: 'Lawyer Survey', href: isAdmin ? '/tester/survey?moduleId=superdashboard-demo' : '/tester/survey', available: isAdmin || category === 'lawyer', note: 'Only available while signed in with a lawyer access code.' },
+    { code: 'S6', label: 'CRM Demo Survey', href: isAdmin ? '/tester/survey?moduleId=crm-overview' : '/tester/survey', available: isAdmin || category === 'tester', note: 'Only available while signed in with a tester access code.' },
   ]
 }
 
@@ -888,12 +912,40 @@ export const SWITCHER_CODE_SCRIPT = `
 //   ever.
 export const NARRATION_PLAYER_SCRIPT = `
 (function () {
+  // Best-available free voice — the browser's default speechSynthesis voice is often the
+  // most robotic one on that system; most real browsers also ship at least one noticeably
+  // better ("Natural"/"Enhanced"/"Premium"/network "Google"/"Microsoft ... Online") voice
+  // among speechSynthesis.getVoices(). No paid API, no new dependency — just a smarter pick
+  // from what's already free and built in. Cached once, refreshed if the browser loads its
+  // voice list asynchronously (getVoices() can be empty on first call in some browsers).
+  var cachedVoice = null;
+  function pickBestVoice() {
+    try {
+      if (!('speechSynthesis' in window)) return null;
+      var voices = window.speechSynthesis.getVoices();
+      if (!voices || voices.length === 0) return null;
+      var english = voices.filter(function (v) { return /^en/i.test(v.lang); });
+      var pool = english.length > 0 ? english : voices;
+      return pool.find(function (v) { return /natural/i.test(v.name); })
+        || pool.find(function (v) { return /enhanced|premium/i.test(v.name); })
+        || pool.find(function (v) { return /online/i.test(v.name); })
+        || pool.find(function (v) { return /google/i.test(v.name); })
+        || pool.find(function (v) { return v.localService === false; })
+        || pool[0];
+    } catch (err) { return null; }
+  }
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = function () { cachedVoice = null; };
+  }
+
   function speak(text, onEnd) {
     try {
       if (!text || !('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
       var utter = new SpeechSynthesisUtterance(text);
       utter.rate = 0.98;
+      if (!cachedVoice) cachedVoice = pickBestVoice();
+      if (cachedVoice) utter.voice = cachedVoice;
       if (onEnd) utter.onend = onEnd;
       window.speechSynthesis.speak(utter);
     } catch (err) {}

@@ -72,6 +72,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
     : moduleId === 'ai-automation' ? '/modules/foundai-demo'
     : moduleId === 'customer-overview' ? '/modules/customer-service'
     : moduleId === 'buyer-overview' ? 'https://retail.foundingos.com'
+    : moduleId === 'crm-overview' ? '/crm'
     : null
   const hasCompletedSurvey = tester.runs.length > 0
   // "Free Roam" here is real, read-only revisiting of whatever real page this tester's module

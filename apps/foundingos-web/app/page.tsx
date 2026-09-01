@@ -36,12 +36,37 @@ const CATEGORY_DESTINATIONS: Record<string, string> = {
 // behavior. Keep in sync with tester-data.ts if that one changes.
 const NARRATION_PLAYER_SCRIPT = `
 (function () {
+  // Best-available free voice (see tester-data.ts's NARRATION_PLAYER_SCRIPT for the full
+  // explanation — kept in sync here). No paid API, just a smarter pick from whatever voices
+  // the browser already ships for free.
+  var cachedVoice = null;
+  function pickBestVoice() {
+    try {
+      if (!('speechSynthesis' in window)) return null;
+      var voices = window.speechSynthesis.getVoices();
+      if (!voices || voices.length === 0) return null;
+      var english = voices.filter(function (v) { return /^en/i.test(v.lang); });
+      var pool = english.length > 0 ? english : voices;
+      return pool.find(function (v) { return /natural/i.test(v.name); })
+        || pool.find(function (v) { return /enhanced|premium/i.test(v.name); })
+        || pool.find(function (v) { return /online/i.test(v.name); })
+        || pool.find(function (v) { return /google/i.test(v.name); })
+        || pool.find(function (v) { return v.localService === false; })
+        || pool[0];
+    } catch (err) { return null; }
+  }
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = function () { cachedVoice = null; };
+  }
+
   function speak(text, onEnd) {
     try {
       if (!text || !('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
       var utter = new SpeechSynthesisUtterance(text);
       utter.rate = 0.98;
+      if (!cachedVoice) cachedVoice = pickBestVoice();
+      if (cachedVoice) utter.voice = cachedVoice;
       if (onEnd) utter.onend = onEnd;
       window.speechSynthesis.speak(utter);
     } catch (err) {}
