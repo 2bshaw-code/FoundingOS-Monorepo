@@ -311,3 +311,90 @@ model DriftLog {
   @@index([kind])
   @@map("drift_logs")
 }
+
+// Real, honest monetary layer — informational only (no payment processor exists anywhere in
+// this OS; see package-model-d.ts's own header). Every value here defaults to real zero
+// rather than fabricated revenue: this is a genuinely new product with no real paying
+// customers yet, so zero is the honest starting state, not a placeholder. Values are set only
+// by a real admin action (via the matching store.server.ts function), never auto-populated
+// with illustrative numbers. currency is the row's OWN stored base currency (per-row, since
+// different brands may reasonably bill in different currencies later) — FX conversion is a
+// read-only DISPLAY layer on top (see /api/fx/rates) and never writes back here.
+
+// Package Model D — one row per brand's real subscription state (base tier + industry pack),
+// replacing the previous "activation tracked client-side only" note in package-model-d.ts.
+// price/mrr/arr are snapshots captured at the real admin action that set this row, not live
+// recalculations, matching how real billing systems snapshot price at subscription time.
+model BrandSubscription {
+  id           String   @id @default(cuid())
+  brandSlug    String   @unique
+  baseTier     String?
+  industryPack String?
+  price        Float    @default(0)
+  mrr          Float    @default(0)
+  arr          Float    @default(0)
+  currency     String   @default("GBP")
+  status       String   @default("none")
+  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now())
+
+  @@map("brand_subscriptions")
+}
+
+// CRM Deals — one row per real deal, replacing the previous hardcoded sample text (e.g.
+// "£3.2k") in packages/ui/src/console.tsx's makeRows. Also serves as the real source for the
+// SuperDash cross-brand pipeline rollup (probabilityWeightedValue = dealValue * (probability
+// implied by stage), computed at read time in the store — not duplicated into a second table).
+model CrmDeal {
+  id                       String   @id @default(cuid())
+  brandSlug                String
+  name                     String
+  stage                    String   @default("New")
+  dealValue                Float    @default(0)
+  currency                 String   @default("GBP")
+  expectedValue            Float    @default(0)
+  probabilityWeightedValue Float    @default(0)
+  owner                    String?
+  updatedAt                DateTime @updatedAt
+  createdAt                DateTime @default(now())
+
+  @@index([brandSlug])
+  @@map("crm_deals")
+}
+
+// Finance module (per brand) AND Brand-console earnings — the same real numbers serve both
+// roles (one source of truth, not two near-duplicate tables): "Finance module: revenue,
+// expenses, profit" and "Brand consoles: brandRevenue, brandProfit" are the identical real
+// figures viewed from two different pages, so brandRevenue/brandProfit are read as aliases of
+// revenue/profit rather than stored a second time.
+model BrandFinance {
+  id        String   @id @default(cuid())
+  brandSlug String   @unique
+  revenue   Float    @default(0)
+  expenses  Float    @default(0)
+  profit    Float    @default(0)
+  currency  String   @default("GBP")
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("brand_finances")
+}
+
+// Accounting module (per brand) — real invoice totals, separate from BrandFinance's
+// revenue/expenses/profit rollup since an invoice can be raised (and sit outstanding) before
+// it ever becomes recognized revenue.
+model AccountingInvoice {
+  id                 String   @id @default(cuid())
+  brandSlug          String
+  invoiceNumber      String
+  invoiceAmount      Float    @default(0)
+  paidAmount         Float    @default(0)
+  outstandingAmount  Float    @default(0)
+  currency           String   @default("GBP")
+  status             String   @default("draft")
+  updatedAt          DateTime @updatedAt
+  createdAt          DateTime @default(now())
+
+  @@index([brandSlug])
+  @@map("accounting_invoices")
+}

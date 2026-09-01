@@ -47,6 +47,71 @@ function readinessScore() {
   return Math.min(100, Math.round(40 + activationRate / 4 + strongRecs * 6))
 }
 
+type RealSubscription = { brandSlug: string; brandName: string; baseTier: string | null; industryPack: string | null; price: number; mrr: number; arr: number; currency: string; status: string }
+type RealTotals = { totalMrr: number; totalArr: number; activeCount: number; currency: string }
+
+// Real, database-backed section — genuinely separate from the mock panels below it (which
+// keep their own "illustrative demo data" label, per this OS's own honesty rules). Reads
+// real BrandSubscription rows via /api/superdash/package-subscriptions (same-origin, no
+// payment processor — still no real billing, just a real, persisted record of which real
+// tier/pack each brand is actually assigned to). Real zero across the board is the honest
+// current state (no real paying customers yet), not a bug.
+function RealSubscriptionsSection() {
+  const [subscriptions, setSubscriptions] = useState<RealSubscription[]>([])
+  const [totals, setTotals] = useState<RealTotals | null>(null)
+  const [fxRates, setFxRates] = useState<Record<string, number> | null>(null)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/superdash/package-subscriptions').then((r) => r.json()).catch(() => null),
+      fetch('/api/fx/rates').then((r) => r.json()).catch(() => null),
+    ]).then(([subs, fx]) => {
+      if (subs) {
+        setSubscriptions(subs.subscriptions ?? [])
+        setTotals(subs.totals ?? null)
+      }
+      if (fx?.live && fx.rates) setFxRates(fx.rates)
+      setLoaded(true)
+    })
+  }, [])
+
+  if (!loaded) return null
+
+  // Real MRR is stored in GBP; FX rates come back USD-based, so convert GBP -> USD -> target.
+  const gbpToUsd = fxRates?.GBP ? 1 / fxRates.GBP : null
+  const fxEquivalent = (amountGbp: number, code: string) => {
+    if (!fxRates || !gbpToUsd || !fxRates[code]) return null
+    const amountUsd = amountGbp * gbpToUsd
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: code, maximumFractionDigits: code === 'JPY' ? 0 : 2 }).format(amountUsd * fxRates[code])
+  }
+
+  return (
+    <div className="module-card fo-card" style={{ marginBottom: 16 }}>
+      <strong>Real subscriptions <small style={{ opacity: 0.55, fontWeight: 400 }}>(live, database-backed — informational only, no payment processor)</small></strong>
+      <p style={{ margin: '6px 0' }}>
+        Total real MRR: £{totals?.totalMrr.toLocaleString() ?? 0} · Real ARR: £{totals?.totalArr.toLocaleString() ?? 0} · {totals?.activeCount ?? 0} of {subscriptions.length} brands active
+        {fxRates && totals ? (
+          <>
+            {' '}<small style={{ opacity: 0.7 }}>
+              (FX view: {fxEquivalent(totals.totalMrr, 'USD') ?? '—'} · {fxEquivalent(totals.totalMrr, 'EUR') ?? '—'} MRR — real live rate, read-only)
+            </small>
+          </>
+        ) : (
+          <small style={{ opacity: 0.6 }}> (live FX unavailable right now)</small>
+        )}
+      </p>
+      <ul style={{ margin: 0 }}>
+        {subscriptions.map((s) => (
+          <li key={s.brandSlug}>
+            {s.brandName}: {s.status === 'active' ? `${s.baseTier ?? '—'}${s.industryPack ? ` + ${s.industryPack}` : ''} — £${s.mrr}/mo` : 'no real subscription yet'}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 export function SuperDashCommercialPanel() {
   const [testerMode, setTesterMode] = useState(false)
   const [quantumActive, setQuantumActive] = useState(true)
@@ -70,9 +135,11 @@ export function SuperDashCommercialPanel() {
         </label>
       </div>
 
+      <RealSubscriptionsSection />
+
       <div className="module-card-grid">
         <div className="module-card fo-card">
-          <strong>Package analytics</strong>
+          <strong>Package analytics <small style={{ opacity: 0.55, fontWeight: 400 }}>(illustrative demo data)</small></strong>
           <ul>
             {PACKAGE_ANALYTICS.map((row) => (
               <li key={row.tier}>{row.tier}: {row.accounts} accounts · £{row.mrr.toLocaleString()} MRR</li>
