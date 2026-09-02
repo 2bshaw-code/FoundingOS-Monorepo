@@ -13,14 +13,14 @@ import { AnimatedMessageFlow } from '@foundingos/ui/animated-message-flow'
 // no duplicate auth logic, no duplicate credential list. The API's `category` field
 // (computed server-side from the real credential id) decides where this page sends the
 // browser next; category destinations live on console.foundingos.com except for
-// free-roam, which lands back on this app's own real Homepage at /home. Admin now goes
-// through the same Legal -> Switcher Hub flow as every real tester/investor session
-// (previously hardcoded straight to /home here, which silently overrode the API's own
-// /tester/dashboard redirect and was the real reason admin never reached the Switcher Hub).
+// admin and free-roam, which land back on this app's own real Homepage at /home —
+// explicit product direction: admin's login should return to the main site, with a real
+// one-click path from there into the console's full Demo & Survey Switcher hub (see
+// FounderLauncher's "Console" nav link).
 const CONSOLE_URL = process.env.NEXT_PUBLIC_FOUNDINGOS_CONSOLE_URL || 'http://localhost:8000'
 
 const CATEGORY_DESTINATIONS: Record<string, string> = {
-  admin: `${CONSOLE_URL}/tester/dashboard`,
+  admin: '/home',
   'free-roam': '/home',
   survey: `${CONSOLE_URL}/tester/survey`,
   tester: `${CONSOLE_URL}/tester/dashboard`,

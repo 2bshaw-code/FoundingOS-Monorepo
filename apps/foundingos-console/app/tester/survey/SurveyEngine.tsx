@@ -136,6 +136,24 @@ export function SurveyEngine({
   const sectionIndex = sectionOrder.indexOf(current.label)
   const isNewTarget = Boolean(question.target) && question.target !== (index > 0 ? survey.questions[index - 1]?.target : undefined)
 
+  // Bite-size framing: a real tester never needs to see "Question 1 of 148" (the true total,
+  // once every real brand website/console/POS flow/intelligence system's own question is
+  // counted) — that's overwhelming and doesn't reflect how the survey actually feels, since
+  // it's broken into small, self-contained sections. Showing "Section X of N — Question A of B
+  // in this section" instead means the biggest number a tester ever sees is however many
+  // questions THIS section has (single digits, in every section), not the grand total.
+  const { withinSectionIndex, withinSectionTotal } = useMemo(() => {
+    const counts: Record<string, number> = {}
+    let indexInSection = 0
+    for (let i = 0; i <= index; i += 1) {
+      const label = inferSection(survey.questions[i]).label
+      counts[label] = (counts[label] ?? 0) + 1
+      if (i === index) indexInSection = counts[label]
+    }
+    const total = survey.questions.filter((q) => inferSection(q).label === current.label).length
+    return { withinSectionIndex: indexInSection, withinSectionTotal: total }
+  }, [survey.questions, index, current.label])
+
   async function postAnswer(payload: { questionId: string; answer: string; autosave?: boolean }) {
     const response = await fetch('/api/tester/survey', {
       method: 'POST',
@@ -296,7 +314,7 @@ export function SurveyEngine({
         <div className="quantum-sync-meter" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
           <span style={{ width: `${progress}%` }} />
         </div>
-        <p><small>Question {index + 1} of {survey.questions.length} · {current.label}{question.target ? ` · ${question.target}` : ''}</small></p>
+        <p><small>Section {sectionIndex + 1} of {sectionOrder.length} — Question {withinSectionIndex} of {withinSectionTotal} in this section · {current.label}{question.target ? ` · ${question.target}` : ''}</small></p>
 
         {followUp ? (
           <>

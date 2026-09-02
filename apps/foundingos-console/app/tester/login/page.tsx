@@ -33,7 +33,15 @@ export default function TesterLoginPage() {
         setError(data.error ?? 'Unable to sign in.')
         return
       }
-      router.push(data.redirect ?? '/tester/dashboard')
+      const destination = data.redirect ?? '/tester/dashboard'
+      // Admin's real redirect is now a full, cross-origin URL (the main website's Homepage) —
+      // router.push (client-side app-router navigation) can't follow that; a real full page
+      // navigation via window.location is required for any absolute destination.
+      if (destination.startsWith('http')) {
+        window.location.href = destination
+      } else {
+        router.push(destination)
+      }
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {

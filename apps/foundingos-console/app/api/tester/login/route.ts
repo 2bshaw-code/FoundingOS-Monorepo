@@ -8,6 +8,7 @@ import { findCredentialByPassword, isSuperFounderAdmin, categorizeCredential } f
 import { getTester, upsertTester } from '../../../tester/store.server'
 import { LEGAL_CONTENT_VERSION } from '../../../tester/legal-content'
 import { logLegalAcceptance } from '../../../tester/legal-acceptance-store.server'
+import { brands } from '@foundingos/config'
 
 // The real Quantum-styled login page lives on the root domain (www.foundingos.com /
 // apps/foundingos-web), a different origin from this console — it calls this endpoint
@@ -57,13 +58,13 @@ export async function POST(request: Request) {
   }
 
   // Super Founder Admin: bypasses the tester credential pool, but goes through the exact same
-  // legal-acceptance gate as every real tester/investor/lawyer session (previously bypassed it
-  // entirely) and lands on the same Demo & Survey Switcher hub (/tester/dashboard) instead of
-  // jumping straight to SuperDashboard — admin can always reach SuperDash/Guardian/tester
-  // results from a link on that hub, or by navigating there directly (middleware still grants
-  // admin full, unrestricted access to those routes exactly as before). Explicitly clears any
-  // pre-existing tester SESSION_COOKIE on this browser so a leftover tester session can
-  // never coexist with — or be mistaken for — the admin session.
+  // legal-acceptance gate as every real tester/investor/lawyer session. Lands back on the real
+  // main website's own Homepage (not the Switcher Hub) — explicit product direction: admin's
+  // login should return to the main site, with a real one-click path from there into the
+  // console's full Demo & Survey Switcher hub (see FounderLauncher's "Console" nav link, which
+  // now points straight at /tester/dashboard rather than forcing a second login). Explicitly
+  // clears any pre-existing tester SESSION_COOKIE on this browser so a leftover tester session
+  // can never coexist with — or be mistaken for — the admin session.
   if (isSuperFounderAdmin(email, password)) {
     if (!agreedToLegalTerms) {
       return withCors(NextResponse.json({ error: 'You must review and accept the agreements before signing in.' }, { status: 403 }))
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
     }
 
     const token = await signToken('admin', 'super-founder-admin')
-    const response = NextResponse.json({ ok: true, redirect: '/tester/dashboard', category: 'admin' })
+    const response = NextResponse.json({ ok: true, redirect: `${brands.foundingos.webUrl}/home`, category: 'admin' })
     response.cookies.set(ADMIN_COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', domain: '.foundingos.com', maxAge: 60 * 60 * 8 })
     response.cookies.set(SESSION_COOKIE, '', { path: '/', domain: '.foundingos.com', maxAge: 0 })
     return withCors(response)

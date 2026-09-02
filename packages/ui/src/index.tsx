@@ -344,10 +344,13 @@ export function FounderLauncher() {
           <a href="#top">Home</a>
           <a href="#pricing">Intelligence</a>
           <a href="#found-ai">Insights</a>
-          {/* Sole entry point into FoundingOS Console: routes to the real Quantum-styled
-              tester/admin sign-in (not the unauthenticated /console demo route) — the
-              Homepage must be the only path in, per the single-entry-point requirement. */}
-          <a href={`${brands.foundingos.consoleUrl}/tester/login`}>Console</a>
+          {/* Real one-click path into the console's full Demo & Survey Switcher hub (every
+              real module demo + every survey, exactly like admin/testers already see once
+              inside) — an already-authenticated session (admin or tester; the session cookie
+              is shared across .foundingos.com) goes straight there; a signed-out visitor is
+              safely bounced to the real sign-in page by the console's own middleware, so this
+              link is never a broken/unsafe shortcut either way. */}
+          <a href={`${brands.foundingos.consoleUrl}/tester/dashboard`}>Console</a>
           <a href="#contact">Support</a>
         </div>
         <div className="site-nav-links">

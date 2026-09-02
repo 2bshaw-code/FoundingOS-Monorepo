@@ -715,6 +715,12 @@ export const brandConfig: BrandConsoleConfig = {
       "section": "Core"
     },
     {
+      "label": "Demos & Surveys",
+      "href": "/tester/dashboard",
+      "icon": "🧭",
+      "section": "Core"
+    },
+    {
       "label": "Intelligence",
       "href": "/intelligence",
       "icon": "◈",

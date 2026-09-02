@@ -231,44 +231,36 @@ function slugify(label: string): string {
 
 function buildWebsiteQuestions(label: string): SurveyQuestion[] {
   const slug = slugify(label)
+  // Consolidated from 5 near-duplicate questions per target into one well-crafted question —
+  // real product decision this session: 142 near-repetitive ecosystem-validation questions
+  // (10 websites x 5 + 9 consoles x 5 + 6 POS flows x 4 + 4 intelligence systems x 5 + 3 legal)
+  // was genuinely too much to ask a real tester to sit through in one session, and asking the
+  // same 4-5 boilerplate questions per target invited rushed, low-value answers anyway. One
+  // combined question per target keeps every real target covered honestly, at a quarter of
+  // the length.
   return [
-    { id: `web-${slug}-1`, prompt: `${label}: Is the message clear?`, section: 'Websites', sectionKind: 'website', target: label },
-    { id: `web-${slug}-2`, prompt: `${label}: Is the purpose easy to understand?`, section: 'Websites', sectionKind: 'website', target: label },
-    { id: `web-${slug}-3`, prompt: `${label}: Is navigation simple?`, section: 'Websites', sectionKind: 'website', target: label },
-    { id: `web-${slug}-4`, prompt: `${label}: Would someone in a developing country understand this easily?`, section: 'Websites', sectionKind: 'website', target: label },
-    { id: `web-${slug}-5`, prompt: `${label}: Does it feel like part of the Quantum WhatsApp OS?`, section: 'Websites', sectionKind: 'website', target: label },
+    { id: `web-${slug}-1`, prompt: `${label}: Was the message and purpose clear, easy to navigate, and did it feel like part of one connected Quantum WhatsApp OS — including for someone with limited digital literacy?`, section: 'Websites', sectionKind: 'website', target: label },
   ]
 }
 
 function buildConsoleQuestions(label: string): SurveyQuestion[] {
   const slug = slugify(label)
   return [
-    { id: `con-${slug}-1`, prompt: `${label}: Is it easy to use?`, section: 'Consoles', sectionKind: 'console', target: label },
-    { id: `con-${slug}-2`, prompt: `${label}: Are buttons and labels clear?`, section: 'Consoles', sectionKind: 'console', target: label },
-    { id: `con-${slug}-3`, prompt: `${label}: Does the layout feel simple and familiar?`, section: 'Consoles', sectionKind: 'console', target: label },
-    { id: `con-${slug}-4`, prompt: `${label}: Does it feel WhatsApp-like?`, section: 'Consoles', sectionKind: 'console', target: label },
-    { id: `con-${slug}-5`, prompt: `${label}: Would someone with low digital literacy understand it?`, section: 'Consoles', sectionKind: 'console', target: label },
+    { id: `con-${slug}-1`, prompt: `${label}: Was it easy to use, with clear buttons/labels and a simple, familiar, WhatsApp-like layout — including for someone with low digital literacy?`, section: 'Consoles', sectionKind: 'console', target: label },
   ]
 }
 
 function buildPosQuestions(label: string): SurveyQuestion[] {
   const slug = slugify(label)
   return [
-    { id: `pos-${slug}-1`, prompt: `${label}: Is the workflow simple?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'pos', target: label },
-    { id: `pos-${slug}-2`, prompt: `${label}: Are the steps easy to follow?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'pos', target: label },
-    { id: `pos-${slug}-3`, prompt: `${label}: Does it feel intuitive?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'pos', target: label },
-    { id: `pos-${slug}-4`, prompt: `${label}: Would someone in a developing country understand it?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'pos', target: label },
+    { id: `pos-${slug}-1`, prompt: `${label}: Did the workflow feel simple and intuitive, with easy-to-follow steps — including for someone in a developing country?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'pos', target: label },
   ]
 }
 
 function buildIntelligenceQuestions(label: string): SurveyQuestion[] {
   const slug = slugify(label)
   return [
-    { id: `int-${slug}-1`, prompt: `${label}: Is it easy to understand?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'intelligence', target: label },
-    { id: `int-${slug}-2`, prompt: `${label}: Are its labels and signals clear?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'intelligence', target: label },
-    { id: `int-${slug}-3`, prompt: `${label}: Does it feel simple and familiar rather than intimidating?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'intelligence', target: label },
-    { id: `int-${slug}-4`, prompt: `${label}: Does it feel WhatsApp-like?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'intelligence', target: label },
-    { id: `int-${slug}-5`, prompt: `${label}: Would someone with low digital literacy understand it?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'intelligence', target: label },
+    { id: `int-${slug}-1`, prompt: `${label}: Were its labels and signals easy to understand, and did it feel simple and WhatsApp-like rather than intimidating — including for someone with low digital literacy?`, section: COMBINED_POS_INTELLIGENCE_SECTION, sectionKind: 'intelligence', target: label },
   ]
 }
 
