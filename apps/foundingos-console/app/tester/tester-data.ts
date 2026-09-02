@@ -22,8 +22,9 @@ export type ModuleId =
   | 'buyer-overview'
   | 'customer-overview'
   | 'crm-overview'
+  | 'foundingos-overview'
 
-export type SurveyId = 'survey-a' | 'survey-b' | 'survey-c' | 'survey-d' | 'survey-e' | 'survey-f' | 'survey-g' | 'survey-h' | 'survey-i' | 'survey-j' | 'survey-k' | 'survey-l' | 'survey-investor' | 'survey-buyer' | 'survey-customer' | 'survey-crm'
+export type SurveyId = 'survey-a' | 'survey-b' | 'survey-c' | 'survey-d' | 'survey-e' | 'survey-f' | 'survey-g' | 'survey-h' | 'survey-i' | 'survey-j' | 'survey-k' | 'survey-l' | 'survey-investor' | 'survey-buyer' | 'survey-customer' | 'survey-crm' | 'survey-overview'
 
 export type Credential = {
   id: string
@@ -99,6 +100,11 @@ export const CREDENTIALS: Credential[] = [
   // real, direct-access tool for admin/brand-console use.
   { id: 'tester-11', password: 'TST-66CR', moduleId: 'crm-overview', moduleLabel: 'CRM', surveyId: 'survey-crm' },
   { id: 'survey-crm-1', password: 'SURVEY-CRM', moduleId: 'crm-overview', moduleLabel: 'CRM', surveyId: 'survey-crm' },
+
+  // Complete FoundingOS Tour — its own real, dedicated demo+survey tier, a whole-ecosystem
+  // walkthrough rather than a single module.
+  { id: 'tester-12', password: 'TST-77OS', moduleId: 'foundingos-overview', moduleLabel: 'Complete FoundingOS Tour', surveyId: 'survey-overview' },
+  { id: 'survey-overview-1', password: 'SURVEY-OS', moduleId: 'foundingos-overview', moduleLabel: 'Complete FoundingOS Tour', surveyId: 'survey-overview' },
 ]
 
 export function findCredentialByPassword(password: string): Credential | null {
@@ -545,6 +551,19 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
+  'survey-overview': {
+    id: 'survey-overview',
+    title: 'Survey — Complete FoundingOS Tour',
+    moduleLabel: 'Complete FoundingOS Tour',
+    questions: [
+      { id: 'ov1', prompt: 'After the full tour, could you explain FoundingOS to someone else in one or two sentences?' },
+      { id: 'ov2', prompt: 'Which single piece (SuperDash, Guardian, Autonomous, Package Model D, or FoundAI) felt least clear, and why?' },
+      { id: 'ov3', prompt: 'Now that you\u2019ve seen the whole ecosystem, which brand or module do you want to explore first, and why?' },
+      { id: 'ov4', prompt: 'Did the tour feel like one connected system, or 8 separate products bundled together?' },
+      ...BUSINESS_PLAN_QUESTIONS,
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
+    ],
+  },
 }
 
 // Shown once, as a short bullet list (not a paragraph) in its own "Business plan, in short"
@@ -677,6 +696,23 @@ const MARKETING_SUITE_NARRATOR_STEPS: NarratorStep[] = [
   { step: '8 · Summary + next steps', text: "Nice — you're ready to explore more.", detail: "That's Marketing Suite — and like every module, its usage rolls into the same Package Model D pricing tiers (SystemOS/IntelligenceOS/QuantumOS) the whole OS runs on. Your survey's up next, then Free Roam." },
 ]
 MODULE_NARRATOR_STEPS['marketing-suite'] = MARKETING_SUITE_NARRATOR_STEPS
+
+// The Complete FoundingOS Tour — a dedicated master walkthrough covering the whole
+// ecosystem (not one module), for testers who want the full picture before diving into any
+// single brand/module. Same short reactive-narrator voice; every fact here is a real system
+// already covered elsewhere in this file (brand count, SuperDash, Guardian, Autonomous,
+// Package Model D, FoundAI, CRM) — nothing invented for this tour.
+const FOUNDINGOS_OVERVIEW_NARRATOR_STEPS: NarratorStep[] = [
+  { step: '1 · Overview', text: "Let's zoom all the way out.", detail: 'FoundingOS is one operating system running 8 real brands — Retail, Meat, Logistics, Talent, Crypto, Finance, Health, and FoundThat — each with its own console, plus a shared intelligence layer on top.' },
+  { step: '2 · Why it exists', text: 'Here\u2019s the problem it solves.', detail: 'Every brand used to run in its own silo. FoundingOS gives every brand the same real modules (Marketing, Accounting, Messaging, Customer Service, CRM, AI Automation) while rolling every signal up into one shared view.' },
+  { step: '3 · Every brand, one console pattern', text: 'Same shape, every time.', detail: 'Each of the 8 brand consoles is a real, separately deployed app — but every one shares the same modules, the same CRM board, and the same FoundAI assistant, so once you know one console, you know them all.' },
+  { step: '4 · SuperDash', text: 'This is where it all rolls up.', detail: 'SuperDash pulls every brand\u2019s real engagement, scraper health, and pipeline data into one live, cross-brand view — the same view an admin or investor actually sees.' },
+  { step: '5 · Guardian + Autonomous', text: 'The safety net and the reflexes.', detail: 'Guardian keeps every brand\u2019s data in its own lane and flags anomalies; Autonomous reacts to real signals (auto-optimize or auto-coach) without a human needing to click anything.' },
+  { step: '6 · Package Model D', text: 'And here\u2019s how it\u2019s priced.', detail: 'SystemOS, IntelligenceOS, and QuantumOS tiers, plus an industry pack per brand — the same real pricing catalog every module\u2019s summary step points back to.' },
+  { step: '7 · FoundAI, your guide throughout', text: 'I\u2019m with you on every page.', detail: 'The same FoundAI assistant (bottom-right, on every real page) already knows which brand and module you\u2019re looking at, and can answer real questions about any of this.' },
+  { step: '8 · Summary + next action', text: "That's the whole picture — now go explore a brand.", detail: 'Head back to the Switcher Hub and pick any brand demo, the CRM demo, or SuperDash read-only — you now know how every piece fits together.' },
+]
+MODULE_NARRATOR_STEPS['foundingos-overview'] = FOUNDINGOS_OVERVIEW_NARRATOR_STEPS
 
 // Full, joined script per module — what the "Play narration" button reads aloud in one go
 // (narrator lines only; the practical "detail" copy is read on-screen, not spoken).
@@ -852,6 +888,7 @@ export function buildSwitcherOptions(category: CredentialCategory): SwitcherOpti
     { code: 'R1', label: 'Retail Demo', href: 'https://retail.foundingos.com', available: true },
     { code: 'M1', label: 'Messaging Console Demo', href: '/modules/messaging', available: true },
     { code: 'M2', label: 'CRM Demo', href: '/crm', available: true },
+    { code: 'U1', label: 'Brand User Guide', href: '/tester/guide', available: true },
     { code: 'G1', label: 'Guardian Demo', href: '/system/guardian', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
     { code: 'A1', label: 'Autonomous Demo', href: '/superdashboard?readOnly=1', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
     { code: 'B1', label: 'BrandMetric Demo', href: '/superdashboard?readOnly=1', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
@@ -861,6 +898,12 @@ export function buildSwitcherOptions(category: CredentialCategory): SwitcherOpti
     { code: 'S4', label: 'Investor Survey', href: '/investor', available: isAdmin || category === 'investor', note: 'Only available while signed in with an investor access code.' },
     { code: 'S5', label: 'Lawyer Survey', href: isAdmin ? '/tester/survey?moduleId=superdashboard-demo' : '/tester/survey', available: isAdmin || category === 'lawyer', note: 'Only available while signed in with a lawyer access code.' },
     { code: 'S6', label: 'CRM Demo Survey', href: isAdmin ? '/tester/survey?moduleId=crm-overview' : '/tester/survey', available: isAdmin || category === 'tester', note: 'Only available while signed in with a tester access code.' },
+    // Admin-only quick link: a real tester assigned specifically to this tour already reaches
+    // it via their own dashboard's assigned-module highlight — this generic switcher code
+    // would 404 for any tester assigned to a different module (/tester/demo/[moduleId] only
+    // ever allows the current tester's OWN moduleId), so it's intentionally not offered as a
+    // universally "available: true" option the way R1/M1/M2 are.
+    { code: 'T1', label: 'Complete FoundingOS Tour', href: '/tester/demo/foundingos-overview', available: isAdmin, note: 'Only available to admin — real testers assigned to this tour reach it from their own dashboard.' },
   ]
 }
 
