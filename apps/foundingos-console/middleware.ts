@@ -39,10 +39,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Founder Console: admin-only (this is the master control centre, not a tester-facing
-  // surface) — previously had no auth check at all here or in its own page code, meaning
-  // anyone with the URL could reach it. Real fix, not a demo/manual-only workaround.
-  if (pathname.startsWith('/founder')) {
+  // Founder Console + Ecosystem Demo: admin-only (master control centre + promo-recording
+  // tool, neither is a tester-facing surface) — previously /founder had no auth check at all
+  // here or in its own page code, meaning anyone with the URL could reach it. Real fix, not a
+  // demo/manual-only workaround.
+  if (pathname.startsWith('/founder') || pathname.startsWith('/ecosystem-demo')) {
     const adminToken = request.cookies.get(ADMIN_COOKIE)?.value
     const adminId = adminToken ? await verifyToken('admin', adminToken) : null
     if (!adminId) return NextResponse.redirect(new URL('/tester/login', request.url))
@@ -86,6 +87,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/tester/dashboard/:path*', '/tester/survey/:path*', '/tester/demo/:path*', '/tester/admin/:path*', '/founder/:path*', '/finance/:path*', '/crypto/:path*', '/investor/:path*', '/legal/:path*', '/superdashboard/:path*', '/system/guardian/:path*'],
+  matcher: ['/tester/dashboard/:path*', '/tester/survey/:path*', '/tester/demo/:path*', '/tester/admin/:path*', '/founder/:path*', '/ecosystem-demo/:path*', '/finance/:path*', '/crypto/:path*', '/investor/:path*', '/legal/:path*', '/superdashboard/:path*', '/system/guardian/:path*'],
 }
 
