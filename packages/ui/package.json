@@ -13,6 +13,7 @@
     "./modules/customer-service": "./src/modules/CustomerServiceModule.tsx",
     "./modules/foundai-demo": "./src/modules/FoundAIDemoModule.tsx",
     "./modules/sales": "./src/modules/SalesModule.tsx",
+    "./modules/crypto-wallet-views": "./src/modules/CryptoWalletViews.tsx",
     "./superdash/SuperDashTile": "./src/superdash/SuperDashTile.tsx",
     "./superdash/SuperDashQuantumTiles": "./src/superdash/SuperDashQuantumTiles.tsx",
     "./superdash/SuperDashChat": "./src/superdash/SuperDashChat.tsx",
