@@ -12,6 +12,15 @@ import { buildQuantumDemoCtaLabel } from '@foundingos/config/quantum-defined-eng
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
 
+// suppressHydrationWarning on the `[data-audio-toggle]` button below (both occurrences): real
+// root-cause fix for the "audio label reverts to its default shortly after page load" bug.
+// NARRATION_PLAYER_SCRIPT's inline <script> tag runs synchronously during initial HTML parse —
+// before this page's JS bundle loads and React's own hydration commit runs — so it may already
+// have set the button's real stored-preference text before React reconciles. Without this prop,
+// React's hydration treats its own SSR text as ground truth and silently overwrites the script's
+// correction back to the static default. This is the same, documented React pattern used for
+// content that legitimately differs between server and client (e.g. a live timestamp) — it tells
+// React to trust the DOM's existing text for that one node instead of re-asserting its own.
 export default async function TesterDashboardPage() {
   // Real Super Founder Admin only (see tester-data.ts's adminTesterId doc comment) — never the
   // separate passcode-only /tester/admin reviewer (id === 'admin'), whose access is unchanged.
@@ -74,7 +83,7 @@ export default async function TesterDashboardPage() {
           <div className="quantum-narrator-panel">
             <p>{SWITCHER_PANEL_NARRATOR_LINE}</p>
           </div>
-          <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: ON</button>
+          <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle suppressHydrationWarning>Audio: ON</button>
           <form data-switcher-form style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'grid', gap: 8 }}>
               {switcherOptions.map((option) => (
@@ -166,7 +175,7 @@ export default async function TesterDashboardPage() {
           <div className="quantum-narrator-panel">
             <p>{SWITCHER_PANEL_NARRATOR_LINE}</p>
           </div>
-          <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: ON</button>
+          <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle suppressHydrationWarning>Audio: ON</button>
           <form data-switcher-form style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'grid', gap: 8 }}>
               {switcherOptions.map((option) => (

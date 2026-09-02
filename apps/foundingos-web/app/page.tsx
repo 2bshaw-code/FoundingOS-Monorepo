@@ -234,7 +234,14 @@ export default function RootLoginPage() {
             <div className="quantum-narrator-panel" data-narration="Quick legal bit — short and global. We keep this clear so anyone, anywhere understands how the OS works.">
               <p>Quick legal bit — short and global. We keep this clear so anyone, anywhere understands how the OS works.</p>
             </div>
-            <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: ON</button>
+            {/* suppressHydrationWarning: real root-cause fix for the "audio label reverts to its
+                default shortly after page load" bug — NARRATION_PLAYER_SCRIPT's inline <script>
+                runs synchronously during initial HTML parse, before React's own hydration commit,
+                so it may already have set this button's real stored-preference text before React
+                reconciles. Without this, React treats its own SSR text as ground truth and
+                silently overwrites the script's correction. Same documented pattern as a
+                legitimately server/client-differing value (e.g. a live timestamp). */}
+            <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle suppressHydrationWarning>Audio: ON</button>
             <label className="tester-legal-checkbox">
               <input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} />
               <span>I have read and agree to the Terms of Service, Privacy Policy, and applicable agreements.</span>

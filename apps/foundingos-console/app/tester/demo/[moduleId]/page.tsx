@@ -159,7 +159,16 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
             <p>Alright, let's dive in.</p>
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: ON</button>
+            {/* suppressHydrationWarning: NARRATION_PLAYER_SCRIPT's inline <script> tag runs
+                synchronously during initial HTML parse — before this JS bundle loads and React's
+                own hydration commit runs — so it may already have set this button's real stored
+                text before React reconciles. Without this, React's hydration treats its own SSR
+                text as ground truth and silently overwrites the script's correction back to this
+                static default (root cause of the "audio label reverts" bug). This is the same,
+                documented React pattern used for legitimately server/client-differing content
+                (e.g. a live timestamp) — it tells React to trust the DOM's existing text for this
+                one node instead of re-asserting its own. */}
+            <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle suppressHydrationWarning>Audio: ON</button>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
               <input type="checkbox" id="narrator-enabled-toggle" defaultChecked />
               Narrator: ON / OFF
