@@ -302,7 +302,7 @@ export default async function TesterDashboardPage() {
                 {tester.runs.map((run, index) => (
                   <tr key={run.id}>
                     <td>#{index + 1}</td>
-                    <td>{new Date(run.completedAt).toLocaleString()}</td>
+                    <td>{new Date(run.completedAt).toLocaleString('en-GB', { timeZone: 'UTC' })}</td>
                     <td>{run.answers.length}</td>
                     <td>{run.signal ? run.signal.insight : '—'}</td>
                     <td>{run.signal ? `${run.signal.pulse}%` : '—'}</td>

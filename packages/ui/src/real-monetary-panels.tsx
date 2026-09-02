@@ -222,7 +222,10 @@ export function RealBrandFinancePanel({ brandSlug, brandName }: { brandSlug: str
 
 function formatGbp(amount: number): string {
   try {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'GBP' }).format(amount)
+    // Explicit 'en-GB' (not `undefined`) — see real-monetary.tsx's formatBase for why this
+    // matters: `undefined` resolves to the runtime's default locale, which differs between
+    // server and a real visitor's browser and causes a real, confirmed-live hydration mismatch.
+    return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount)
   } catch {
     return `£${amount.toFixed(2)}`
   }

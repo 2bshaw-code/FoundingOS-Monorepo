@@ -68,4 +68,35 @@ for (const path of skipGuardFiles) {
   }
 }
 
-console.log(`Hydration safety verified: ${audioToggleSitesChecked} audio-toggle sites protected, both effect-skip guards present.`)
+// 3. Locale-dependent formatting without an explicit locale — confirmed live (React error #425
+//    firing on /crm) to cause the exact same class of hydration mismatch: `undefined`/no-args
+//    resolves to the RUNTIME's default locale, which differs between the server (Node/Vercel)
+//    and a real visitor's browser, so the exact same number/date renders as different text in
+//    each environment. Every call site found this session was fixed to pass an explicit locale
+//    (and, for Date values, an explicit timeZone too, since that also defaults from the
+//    runtime) — this guards against a future call site reintroducing the unsafe form.
+let localeSitesChecked = 0
+const unsafePatterns = [
+  { name: 'Intl.NumberFormat(undefined, ...)', pattern: /Intl\.NumberFormat\(\s*undefined\s*,/g },
+  { name: '.toLocaleString() with no locale argument', pattern: /\.toLocaleString\(\)/g },
+  { name: '.toLocaleDateString() with no locale argument', pattern: /\.toLocaleDateString\(\)/g },
+]
+const localeCheckRoots = [...appRoots, 'packages/ui/src/']
+for (const root of localeCheckRoots) {
+  for (const path of await walk(root)) {
+    const source = await readFile(new URL(path, repoRoot), 'utf8')
+    for (const { name, pattern } of unsafePatterns) {
+      for (const match of source.matchAll(pattern)) {
+        throw new Error(
+          `${path}: found ${name} — this will reintroduce the confirmed hydration-mismatch bug ` +
+          `(React error #425) where the same number/date renders different text on the server ` +
+          `vs. a real visitor's browser. Pass an explicit locale (e.g. 'en-GB'), and an explicit ` +
+          `timeZone too for dates.\n  ${match[0]}`
+        )
+      }
+    }
+    localeSitesChecked += 1
+  }
+}
+
+console.log(`Hydration safety verified: ${audioToggleSitesChecked} audio-toggle sites protected, both effect-skip guards present, ${localeSitesChecked} app/package files scanned clean for locale-dependent formatting bugs.`)

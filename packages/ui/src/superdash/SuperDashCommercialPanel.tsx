@@ -83,14 +83,18 @@ function RealSubscriptionsSection() {
   const fxEquivalent = (amountGbp: number, code: string) => {
     if (!fxRates || !gbpToUsd || !fxRates[code]) return null
     const amountUsd = amountGbp * gbpToUsd
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency: code, maximumFractionDigits: code === 'JPY' ? 0 : 2 }).format(amountUsd * fxRates[code])
+    // Explicit 'en-GB' (not `undefined`) — `undefined` resolves to the runtime's default
+    // locale, which differs between the server (Node/Vercel) and a real visitor's browser and
+    // causes a real, confirmed-live React hydration mismatch (error #425). A fixed locale keeps
+    // this identical in both environments for every visitor.
+    return new Intl.NumberFormat('en-GB', { style: 'currency', currency: code, maximumFractionDigits: code === 'JPY' ? 0 : 2 }).format(amountUsd * fxRates[code])
   }
 
   return (
     <div className="module-card fo-card" style={{ marginBottom: 16 }}>
       <strong>Real subscriptions <small style={{ opacity: 0.55, fontWeight: 400 }}>(live MRR/ARR{totals && totals.totalMrr === 0 ? ' — currently 0, honestly, until a real subscription is assigned' : ''} — database-backed, informational only, no payment processor)</small></strong>
       <p style={{ margin: '6px 0' }}>
-        Total real MRR: £{totals?.totalMrr.toLocaleString() ?? 0} · Real ARR: £{totals?.totalArr.toLocaleString() ?? 0} · {totals?.activeCount ?? 0} of {subscriptions.length} brands active
+        Total real MRR: £{totals?.totalMrr.toLocaleString('en-GB') ?? 0} · Real ARR: £{totals?.totalArr.toLocaleString('en-GB') ?? 0} · {totals?.activeCount ?? 0} of {subscriptions.length} brands active
         {fxRates && totals && totals.totalMrr > 0 ? (
           <>
             {' '}<small style={{ opacity: 0.7 }}>
@@ -142,7 +146,7 @@ export function SuperDashCommercialPanel() {
           <strong>Package analytics <small style={{ opacity: 0.55, fontWeight: 400 }}>(illustrative demo data)</small></strong>
           <ul>
             {PACKAGE_ANALYTICS.map((row) => (
-              <li key={row.tier}>{row.tier}: {row.accounts} accounts · £{row.mrr.toLocaleString()} MRR</li>
+              <li key={row.tier}>{row.tier}: {row.accounts} accounts · £{row.mrr.toLocaleString('en-GB')} MRR</li>
             ))}
           </ul>
         </div>
@@ -168,9 +172,9 @@ export function SuperDashCommercialPanel() {
 
         <div className="module-card fo-card">
           <strong>Usage projections (mocked)</strong>
-          <p>Insights: {USAGE_PROJECTIONS.insights.toLocaleString()}/mo</p>
-          <p>Simulations: {USAGE_PROJECTIONS.simulations.toLocaleString()}/mo</p>
-          <p>Anomaly detections: {USAGE_PROJECTIONS.anomalies.toLocaleString()}/mo</p>
+          <p>Insights: {USAGE_PROJECTIONS.insights.toLocaleString('en-GB')}/mo</p>
+          <p>Simulations: {USAGE_PROJECTIONS.simulations.toLocaleString('en-GB')}/mo</p>
+          <p>Anomaly detections: {USAGE_PROJECTIONS.anomalies.toLocaleString('en-GB')}/mo</p>
         </div>
 
         <div className="module-card fo-card">

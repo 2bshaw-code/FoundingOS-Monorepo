@@ -73,7 +73,13 @@ export function convertFromGbp(amountGbp: number, targetCode: string, fx: FxStat
   const amountUsd = amountGbp / fx.rates.GBP
   const amountTarget = amountUsd * fx.rates[targetCode]
   try {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency: targetCode, maximumFractionDigits: targetCode === 'JPY' ? 0 : 2 }).format(amountTarget)
+    // Explicit locale ('en-GB', not `undefined`) is required, not cosmetic: `undefined` means
+    // "use the runtime's default locale", which differs between the server (Node/Vercel's
+    // locale) and a real visitor's browser — producing different formatted text for the exact
+    // same amount and causing a real, confirmed-live React hydration mismatch (error #425) on
+    // any page that renders this before/during hydration. A fixed locale makes the output
+    // identical in both environments, for every visitor, regardless of their own browser locale.
+    return new Intl.NumberFormat('en-GB', { style: 'currency', currency: targetCode, maximumFractionDigits: targetCode === 'JPY' ? 0 : 2 }).format(amountTarget)
   } catch {
     return null
   }
@@ -81,7 +87,7 @@ export function convertFromGbp(amountGbp: number, targetCode: string, fx: FxStat
 
 export function formatBase(amount: number, currency: string): string {
   try {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency, maximumFractionDigits: currency === 'JPY' ? 0 : 2 }).format(amount)
+    return new Intl.NumberFormat('en-GB', { style: 'currency', currency, maximumFractionDigits: currency === 'JPY' ? 0 : 2 }).format(amount)
   } catch {
     return `${currency} ${amount.toFixed(2)}`
   }

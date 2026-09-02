@@ -16,7 +16,7 @@ export default async function TesterAdminPage() {
   const adminId = token ? await verifyToken('admin', token) : null
   if (!adminId) redirect('/tester/admin/login')
 
-  const testers = readTesters()
+  const testers = await readTesters()
   const brandSignals = aggregateBrandSignals(new Date(0).toISOString())
 
   return (
@@ -103,7 +103,7 @@ export default async function TesterAdminPage() {
               <div className="module-card-top"><span>{credential.id}</span><strong>{credential.moduleLabel}</strong></div>
               {tester.runs.map((run, index) => (
                 <div key={run.id} className="tester-admin-run">
-                  <p><strong>Run #{index + 1}</strong> · {new Date(run.completedAt).toLocaleString()}</p>
+                  <p><strong>Run #{index + 1}</strong> · {new Date(run.completedAt).toLocaleString('en-GB', { timeZone: 'UTC' })}</p>
                   <ul>
                     {run.answers.map((answer) => (
                       <li key={answer.questionId}>

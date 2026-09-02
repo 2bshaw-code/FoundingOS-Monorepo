@@ -47,7 +47,7 @@ export function DemoCurrencyCard({ moduleId }: { moduleId: string }) {
       <div className="module-card-top"><span>🌍</span><strong>Demo currency simulation</strong></div>
       <p><small>
         {panel.ratesAreLive
-          ? `Real, live exchange rates (open.er-api.com${fetchedAt ? `, fetched ${new Date(fetchedAt).toLocaleString()}` : ''}) applied to a synthetic demo amount — the amount is demo-only, the rate is real.`
+          ? `Real, live exchange rates (open.er-api.com${fetchedAt ? `, fetched ${new Date(fetchedAt).toLocaleString('en-GB', { timeZone: 'UTC' })}` : ''}) applied to a synthetic demo amount — the amount is demo-only, the rate is real.`
           : checked
             ? 'Live FX unavailable right now — showing fixed synthetic demo rates instead.'
             : 'Checking for live exchange rates…'}

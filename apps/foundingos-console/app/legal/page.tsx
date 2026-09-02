@@ -56,7 +56,7 @@ export default async function LegalPage() {
                   <tr key={`${entry.email}-${entry.timestamp.toISOString()}-${index}`}>
                     <td>{entry.email}</td>
                     <td>{entry.version}</td>
-                    <td>{entry.timestamp.toLocaleString()}</td>
+                    <td>{entry.timestamp.toLocaleString('en-GB', { timeZone: 'UTC' })}</td>
                   </tr>
                 ))}
               </tbody>

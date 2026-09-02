@@ -184,9 +184,9 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
   const summaryMetrics: Array<{ label: string; value: string; trend: string; icon: string; tone: Tone; history: number[] }> = [
     { label: 'Marketing performance', value: `${aggregates.avgMarketing}%`, trend: 'Across 8 brands', icon: '▲', tone: 'good', history: [80, 82, 83, 84, 82, aggregates.avgMarketing] },
     { label: 'Accounting health', value: `${aggregates.avgAccounting}%`, trend: 'Across 8 brands', icon: '£', tone: 'good', history: [90, 91, 92, 93, 92, aggregates.avgAccounting] },
-    { label: 'Service load', value: aggregates.totalServiceLoad.toLocaleString(), trend: 'Open tickets, all brands', icon: '◌', tone: aggregates.totalServiceLoad > 250 ? 'watch' : 'good', history: [210, 225, 240, 260, 270, aggregates.totalServiceLoad] },
-    { label: 'Messaging activity', value: aggregates.totalMessaging.toLocaleString(), trend: 'Messages / day', icon: '✉', tone: 'good', history: [6200, 6800, 7100, 7600, 7900, aggregates.totalMessaging] },
-    { label: 'AI actions', value: aggregates.totalAiActions.toLocaleString(), trend: 'Autonomous actions / day', icon: 'B', tone: 'good', history: [560, 610, 650, 700, 780, aggregates.totalAiActions] },
+    { label: 'Service load', value: aggregates.totalServiceLoad.toLocaleString('en-GB'), trend: 'Open tickets, all brands', icon: '◌', tone: aggregates.totalServiceLoad > 250 ? 'watch' : 'good', history: [210, 225, 240, 260, 270, aggregates.totalServiceLoad] },
+    { label: 'Messaging activity', value: aggregates.totalMessaging.toLocaleString('en-GB'), trend: 'Messages / day', icon: '✉', tone: 'good', history: [6200, 6800, 7100, 7600, 7900, aggregates.totalMessaging] },
+    { label: 'AI actions', value: aggregates.totalAiActions.toLocaleString('en-GB'), trend: 'Autonomous actions / day', icon: 'B', tone: 'good', history: [560, 610, 650, 700, 780, aggregates.totalAiActions] },
     { label: 'System health', value: '99.9%', trend: 'Global infrastructure', icon: '✓', tone: 'good', history: [99.6, 99.7, 99.8, 99.9, 99.9, 99.9] },
     { label: 'Global ecosystem score', value: `${ecosystemScore}`, trend: 'Weighted composite KPI', icon: '◈', tone: ecosystemScore >= 80 ? 'good' : ecosystemScore >= 60 ? 'watch' : 'risk', history: [78, 80, 81, 82, 83, ecosystemScore] },
   ]
@@ -297,7 +297,7 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
                   <td>{row.accounting}%</td>
                   <td>{row.serviceLoad}</td>
                   <td>{delta(row.serviceLoad, row.previousServiceLoad)}</td>
-                  <td>{row.messaging.toLocaleString()}</td>
+                  <td>{row.messaging.toLocaleString('en-GB')}</td>
                   <td>{row.aiActions}</td>
                   <td className={`status-${row.status}`}>{row.status === 'good' ? 'Stable' : row.status === 'watch' ? 'Watch' : 'At risk'}</td>
                 </tr>
@@ -422,7 +422,7 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
             </div>
             <div className="module-card fo-card">
               <strong>Revenue projection ({REVENUE_PROJECTION.horizon})</strong>
-              <p>MRR £{REVENUE_PROJECTION.mrr.toLocaleString()} → £{REVENUE_PROJECTION.projectedMrr.toLocaleString()}</p>
+              <p>MRR £{REVENUE_PROJECTION.mrr.toLocaleString('en-GB')} → £{REVENUE_PROJECTION.projectedMrr.toLocaleString('en-GB')}</p>
               <small>Add-on attach rate: {REVENUE_PROJECTION.addOnAttachRate}</small>
             </div>
           </div>
@@ -492,7 +492,7 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
 
         {verificationStatus && (
           <footer style={{ fontSize: 11, opacity: 0.6, marginTop: 24, paddingTop: 12, borderTop: '1px solid var(--line)' }}>
-            Verification: {verificationStatus.lastRun ? new Date(verificationStatus.lastRun).toLocaleString() : 'never run'} • {verificationStatus.driftCount} drift • {verificationStatus.safeFixCount} safe-fixed • {verificationStatus.pendingGuardian} pending Guardian
+            Verification: {verificationStatus.lastRun ? new Date(verificationStatus.lastRun).toLocaleString('en-GB', { timeZone: 'UTC' }) : 'never run'} • {verificationStatus.driftCount} drift • {verificationStatus.safeFixCount} safe-fixed • {verificationStatus.pendingGuardian} pending Guardian
           </footer>
         )}
 

@@ -204,7 +204,7 @@ export default async function InvestorPage() {
                       <td>{brand.brandName}</td>
                       <td data-locale-number={brand.totalEngagement}>{brand.totalEngagement}</td>
                       <td data-locale-number={brand.anomalyScore}>{brand.anomalyScore.toFixed(2)}</td>
-                      <td>{brand.lastUpdated.toLocaleString()}</td>
+                      <td>{brand.lastUpdated.toLocaleString('en-GB', { timeZone: 'UTC' })}</td>
                     </tr>
                   ))}
                 </tbody>

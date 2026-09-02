@@ -86,7 +86,7 @@ export function CustomerPipelinePanel({
                   <td>{contact.leadScore}</td>
                   <td>{contact.submissionCount}</td>
                   <td>{contact.categories.join(', ')}</td>
-                  <td>{new Date(contact.lastSeen).toLocaleString()}</td>
+                  <td>{new Date(contact.lastSeen).toLocaleString('en-GB', { timeZone: 'UTC' })}</td>
                 </tr>
               ))}
             </tbody>

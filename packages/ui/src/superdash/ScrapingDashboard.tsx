@@ -122,7 +122,7 @@ export function ScrapingDashboard({
                 <td>
                   {Object.keys(row.categoryBreakdown).length === 0 ? '—' : Object.entries(row.categoryBreakdown).map(([cat, count]) => `${cat}: ${count}`).join(', ')}
                 </td>
-                <td>{row.lastUpdated ? new Date(row.lastUpdated).toLocaleString() : 'Never scraped'}</td>
+                <td>{row.lastUpdated ? new Date(row.lastUpdated).toLocaleString('en-GB', { timeZone: 'UTC' }) : 'Never scraped'}</td>
               </tr>
             ))}
           </tbody>
@@ -159,7 +159,7 @@ export function ScrapingDashboard({
         ) : (
           <ul style={{ display: 'grid', gap: 8, paddingLeft: 18 }}>
             {initialEngagementLog.map((entry, index) => (
-              <li key={index}><small>{entry.brandName ?? 'Unknown brand'} — score {entry.score.toFixed(2)}, {entry.totalEngagement ?? 0} total — {new Date(entry.recordedAt).toLocaleString()}</small></li>
+              <li key={index}><small>{entry.brandName ?? 'Unknown brand'} — score {entry.score.toFixed(2)}, {entry.totalEngagement ?? 0} total — {new Date(entry.recordedAt).toLocaleString('en-GB', { timeZone: 'UTC' })}</small></li>
             ))}
           </ul>
         )}
@@ -172,7 +172,7 @@ export function ScrapingDashboard({
         ) : (
           <ul style={{ display: 'grid', gap: 8, paddingLeft: 18 }}>
             {initialAnomalyLog.map((entry, index) => (
-              <li key={index}><small>{entry.message} — {new Date(entry.detectedAt).toLocaleString()}</small></li>
+              <li key={index}><small>{entry.message} — {new Date(entry.detectedAt).toLocaleString('en-GB', { timeZone: 'UTC' })}</small></li>
             ))}
           </ul>
         )}
