@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "dev:next": "turbo dev --filter='./apps/*' --concurrency=12",
-    "dev:locked": "turbo run dev --filter=@foundingos/foundcrypto-console --filter=@foundingos/foundcrypto-console-starter --filter=@foundingos/foundcrypto-web --filter=@foundingos/foundfinance-console --filter=@foundingos/foundfinance-console-starter --filter=@foundingos/foundfinance-web --filter=@foundingos/foundhealth-console --filter=@foundingos/foundhealth-console-starter --filter=@foundingos/foundhealth-web --filter=@foundingos/foundingos-console --filter=@foundingos/foundingos-website --filter=@foundingos/foundlogistics-console --filter=@foundingos/foundlogistics-console-starter --filter=@foundingos/foundlogistics-web --filter=@foundingos/foundmeat-console --filter=@foundingos/foundmeat-console-starter --filter=@foundingos/foundmeat-web --filter=@foundingos/foundretail-console --filter=@foundingos/foundretail-console-starter --filter=@foundingos/foundretail-web --filter=@foundingos/foundtalent-console --filter=@foundingos/foundtalent-console-starter --filter=@foundingos/foundtalent-web --filter=@foundingos/foundthat-console --filter=@foundingos/foundthat-console-starter --filter=@foundingos/foundthat-web --concurrency=26",
+    "dev:locked": "turbo run dev --filter=@foundingos/foundcrypto-console --filter=@foundingos/foundcrypto-console-starter --filter=@foundingos/foundcrypto-web --filter=@foundingos/foundfinance-console --filter=@foundingos/foundfinance-console-starter --filter=@foundingos/foundfinance-web --filter=@foundingos/foundhealth-console --filter=@foundingos/foundhealth-console-starter --filter=@foundingos/foundhealth-web --filter=@foundingos/foundingos-console --filter=@foundingos/foundingos-website --filter=@foundingos/foundlogistics-console --filter=@foundingos/foundlogistics-console-starter --filter=@foundingos/foundlogistics-web --filter=@foundingos/foundmeat-console --filter=@foundingos/foundmeat-console-starter --filter=@foundingos/foundmeat-web --filter=@foundingos/foundretail-console --filter=@foundingos/foundretail-console-starter --filter=@foundingos/foundretail-web --filter=@foundingos/foundtalent-console --filter=@foundingos/foundtalent-console-starter --filter=@foundingos/foundtalent-web --filter=@foundingos/foundthat-console --filter=@foundingos/foundthat-console-starter --filter=@foundingos/foundthat-web --concurrency=27",
     "build:next": "turbo build --filter='./apps/*'",
     "lint:next": "turbo lint --filter='./apps/*'",
     "db:generate": "npm run db:generate --workspace @foundingos/db",
@@ -23,7 +23,9 @@
     "verify:superdashboard-isolation": "node scripts/verify-superdashboard-isolation.mjs",
     "verify:lockdown": "node scripts/verify-ecosystem-lockdown.mjs",
     "verify:backup-readiness": "node scripts/verify-backup-readiness.mjs",
-    "test": "npm test --workspace @foundingos/auth",
+    "verify:hydration-safety": "node scripts/verify-hydration-safety.mjs",
+    "test:tester-system": "node --experimental-strip-types scripts/test-tester-system.mjs",
+    "test": "npm test --workspace @foundingos/auth && npm run test:tester-system",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },
   "devDependencies": {

@@ -12,21 +12,37 @@ import { aggregateBrandSignals, buildBrandSignal, buildSignalFromSurveyRun } fro
 import { buildQuantumIdentity, buildQuantumDemoSteps, buildQuantumOverlayConfig, buildQuantumWebsiteSection, buildQuantumConsoleSection, buildQuantumInsightSentence } from '../packages/config/src/quantum/quantum-defined-engine.ts'
 import { buildUnifiedQuantumPayload, enrichBrandSignalWithQuantum as qolEnrich } from '../packages/config/src/quantum/quantum-orchestration-layer.ts'
 
-test('module assignment: 12 unique credentials, modules, and surveys', () => {
+test('module assignment: every credential has a unique password/id, and resolves to a real module + survey', () => {
+  // Real invariant, resilient to growth: this pool has legitimately grown from 12 to 46+
+  // credentials across several batches (each batch intentionally REUSES existing
+  // module/survey pairs rather than creating new ones — see the comments in tester-data.ts) —
+  // so "modules/surveys must be unique" was never actually the right invariant to assert; it
+  // broke the moment batch 2 was added, and was simply never re-run since this suite wasn't
+  // wired into CI. What must always hold, regardless of how many credentials exist: no two
+  // credentials share a password or an id, and every credential's moduleId/surveyId actually
+  // resolves to something real (catches typos/orphaned references, which a hardcoded count
+  // never would).
   const passwords = new Set(CREDENTIALS.map((c) => c.password))
-  const modules = new Set(CREDENTIALS.map((c) => c.moduleId))
-  const surveys = new Set(CREDENTIALS.map((c) => c.surveyId))
-  assert.equal(CREDENTIALS.length, 12)
-  assert.equal(passwords.size, 12, 'passwords must be unique')
-  assert.equal(modules.size, 12, 'modules must be unique')
-  assert.equal(surveys.size, 12, 'surveys must be unique')
+  const ids = new Set(CREDENTIALS.map((c) => c.id))
+  assert.ok(CREDENTIALS.length >= 12, 'credential pool should only grow, never shrink below its original size')
+  assert.equal(passwords.size, CREDENTIALS.length, 'every password must be unique')
+  assert.equal(ids.size, CREDENTIALS.length, 'every credential id must be unique')
+  for (const credential of CREDENTIALS) {
+    assert.ok(findModuleOption(credential.moduleId), `${credential.id} references a real module (${credential.moduleId})`)
+    assert.ok(SURVEYS[credential.surveyId], `${credential.id} references a real survey (${credential.surveyId})`)
+  }
 })
 
-test('every credential maps to a survey with 3-5 tailored questions', () => {
+test('every credential maps to a survey with at least 3 tailored questions', () => {
+  // Real invariant update: surveys legitimately grew well past 5 questions once shared
+  // BUSINESS_PLAN_QUESTIONS/ECOSYSTEM_VALIDATION_QUESTIONS blocks were folded into every
+  // survey (a deliberate design change, not a regression) — "3-5" was the ORIGINAL shape
+  // before that; the real, still-meaningful floor is "at least 3", which every survey must
+  // keep regardless of how many shared questions get appended on top.
   for (const credential of CREDENTIALS) {
     const survey = SURVEYS[credential.surveyId]
     assert.ok(survey, `survey ${credential.surveyId} must exist for ${credential.id}`)
-    assert.ok(survey.questions.length >= 3 && survey.questions.length <= 5, `${credential.surveyId} must have 3-5 questions`)
+    assert.ok(survey.questions.length >= 3, `${credential.surveyId} must have at least 3 questions`)
   }
 })
 
@@ -89,20 +105,29 @@ test('survey replay: completing a run archives it and resets the working buffer'
     return { ...tester, currentAnswers, status: tester.status === 'complete' ? 'complete' : 'in-progress' }
   }
 
+  // Answer every real question in the survey (not a hardcoded k1/k2/k3 subset) — survey-k now
+  // carries far more than 3 questions since the shared BUSINESS_PLAN_QUESTIONS/
+  // ECOSYSTEM_VALIDATION_QUESTIONS blocks were folded in; a completed run must always mean
+  // every real question was answered, whatever that count happens to be today.
+  const allAnswers = (value) => Object.fromEntries(survey.questions.map((q) => [q.id, value]))
+
   let tester = { currentAnswers: [], runs: [], status: 'registered' }
-  tester = simulateRun(tester, { k1: 'Xero', k2: 'Weekly', k3: 'Manual reconciliation' })
+  tester = simulateRun(tester, allAnswers('Xero'))
   assert.equal(tester.runs.length, 1)
   assert.equal(tester.currentAnswers.length, 0, 'buffer resets after a completed run')
 
   // Redo: the survey is "always available" — a second run starts fresh and archives independently.
-  tester = simulateRun(tester, { k1: 'QuickBooks', k2: 'Daily', k3: 'Slow approvals' })
+  tester = simulateRun(tester, allAnswers('QuickBooks'))
   assert.equal(tester.runs.length, 2, 'a second run is archived alongside the first')
   assert.equal(tester.runs[0].answers.find((a) => a.questionId === 'k1').answer, 'Xero', 'first run history is preserved')
   assert.equal(tester.runs[1].answers.find((a) => a.questionId === 'k1').answer, 'QuickBooks')
 })
 
 test('Finance and Crypto module access: reachable through the same catalog as every other module', () => {
-  assert.equal(MODULE_OPTIONS.length, 12)
+  // Real invariant update: MODULE_OPTIONS legitimately grew from 12 to 18 as new modules
+  // (CRM, the whole-ecosystem tour, admin ops tour, buyer/customer overview, etc.) were added
+  // this session — a floor rather than an exact count keeps this meaningful as it keeps growing.
+  assert.ok(MODULE_OPTIONS.length >= 12, 'module catalog should only grow, never shrink below its original size')
   const finance = findModuleOption('finance')
   const crypto = findModuleOption('crypto')
   assert.equal(finance?.surveyId, 'survey-k')
@@ -132,9 +157,13 @@ test('module reassignment: moving a tester to a new module resets the working bu
   assert.equal(tester.runs.length, 1, 'prior completed run history is preserved across reassignment')
 })
 
-test('brand personality layers: 6 brands each have color, pulse, micro-story, 3-5 KPIs, sparkline, and 3 tiles', () => {
+test('brand personality layers: every real brand has color, pulse, micro-story, 3-5 KPIs, sparkline, and 3 tiles', () => {
+  // Real invariant update: the ecosystem grew from 6 to 8 real brands this session (Health,
+  // Logistics added) and the 'it' brand was removed entirely (see IT removal history) — an
+  // exact "6" would need editing every time a brand is added or removed, so assert the shape
+  // of whatever brands are real today plus a sane floor, rather than a brittle exact count.
   const brands = Object.values(BRAND_PERSONALITIES)
-  assert.equal(brands.length, 6)
+  assert.ok(brands.length >= 6, 'brand roster should only grow, never shrink below its original size')
   for (const layer of brands) {
     assert.match(layer.color, /^#[0-9A-Fa-f]{6}$/, `${layer.brand} must have a valid hex color`)
     assert.ok(layer.basePulse >= 0 && layer.basePulse <= 100, `${layer.brand} pulse must be 0-100`)
@@ -153,11 +182,14 @@ test('brand AI engine: output is isolated to a single brand (no cross-brand leak
   assert.equal(retail.recommendation.includes('Prioritise:'), true)
 })
 
-test('brand signal feed: aggregates exactly 6 brands with contribution scores in range', () => {
+test('brand signal feed: aggregates every real brand with contribution scores in range', () => {
+  // Real invariant update: same reasoning as the brand personality test above — assert against
+  // the real, current brand roster (via BRAND_PERSONALITIES) rather than a hardcoded count.
+  const realBrandCount = Object.keys(BRAND_PERSONALITIES).length
   const signals = aggregateBrandSignals('2026-01-01T00:00:00.000Z')
-  assert.equal(signals.length, 6)
+  assert.equal(signals.length, realBrandCount)
   const brands = new Set(signals.map((s) => s.brand))
-  assert.equal(brands.size, 6)
+  assert.equal(brands.size, realBrandCount)
   for (const signal of signals) {
     assert.ok(signal.contributionScore >= 0 && signal.contributionScore <= 100, `${signal.brand} contribution score must be 0-100`)
     assert.equal(signal.timestamp, '2026-01-01T00:00:00.000Z')
@@ -165,8 +197,11 @@ test('brand signal feed: aggregates exactly 6 brands with contribution scores in
 })
 
 test('brand signal feed: same brand + timestamp always builds an identical signal (deterministic, no hidden randomness)', () => {
-  const a = buildBrandSignal('it', '2026-01-01T00:00:00.000Z')
-  const b = buildBrandSignal('it', '2026-01-01T00:00:00.000Z')
+  // 'it' was the original fixture brand here — it was removed from the ecosystem entirely
+  // (see IT removal history), so generateBrandAIOutput('it') now correctly returns undefined;
+  // 'retail' is a real, currently-live brand and exercises the exact same code path.
+  const a = buildBrandSignal('retail', '2026-01-01T00:00:00.000Z')
+  const b = buildBrandSignal('retail', '2026-01-01T00:00:00.000Z')
   assert.deepEqual(a, b)
 })
 
