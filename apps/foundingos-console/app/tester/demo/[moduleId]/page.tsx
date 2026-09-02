@@ -7,7 +7,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../../session'
 import { getTester, upsertTester, getOrCreateAdminTester } from '../../store.server'
-import { MODULE_NARRATOR_STEPS, buildNarratorSteps, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_FACTS, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, categorizeCredential, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, adminTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type ModuleId } from '../../tester-data'
+import { MODULE_NARRATOR_STEPS, buildNarratorSteps, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_FACTS, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, categorizeCredential, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, adminTesterId, exploreTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type ModuleId } from '../../tester-data'
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
 import { AnimatedMessageFlow } from '@foundingos/ui/animated-message-flow'
@@ -26,6 +26,11 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
 
   let testerId: string
   let tester: Awaited<ReturnType<typeof getTester>>
+  // True whenever /tester/survey needs an explicit ?moduleId= to know which survey to render —
+  // admin always needs it (no single assigned module), and so does any real session exploring
+  // a module that isn't their own primary assignment.
+  let needsModuleQueryParam = isSuperFounderAdminSession
+  let realTesterIdForCategory: string | null = null
   if (isSuperFounderAdminSession) {
     const moduleOption = findModuleOption(moduleId)
     if (!moduleOption) notFound()
@@ -35,25 +40,40 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
     const token = cookies().get(SESSION_COOKIE)?.value
     const realTesterId = token ? await verifyToken('tester', token) : null
     if (!realTesterId) redirect('/tester/login')
-    testerId = realTesterId
+    realTesterIdForCategory = realTesterId
 
-    tester = await getTester(testerId)
-    if (!tester) redirect('/tester/login')
-    if (tester.moduleId !== moduleId) notFound()
+    const ownTester = await getTester(realTesterId)
+    if (!ownTester) redirect('/tester/login')
+
+    if (ownTester.moduleId === moduleId) {
+      // Their own real, primary assigned module — completely unchanged from before.
+      testerId = realTesterId
+      tester = ownTester
+    } else {
+      // Every real session can now browse and try any real module's demo — not just the one
+      // they were originally assigned — exactly like admin already could. Tracked under its
+      // own namespaced per-module row (this tester's own real email, own real runs/status) so
+      // exploring never touches or overwrites their actual assigned-module progress.
+      const moduleOption = findModuleOption(moduleId)
+      if (!moduleOption) notFound()
+      testerId = exploreTesterId(realTesterId, moduleId)
+      tester = await getOrCreateAdminTester(testerId, moduleOption.moduleId, moduleOption.moduleLabel, moduleOption.surveyId, ownTester.email)
+      needsModuleQueryParam = true
+    }
   }
 
   // Marks the demo as viewed (first time only — never regresses a tester who has already
   // progressed past this point) and sends them on to their real survey. Demo must always
-  // come before the survey now, so this is the only way forward from here. Admin's redirect
-  // carries moduleId — its survey isn't tied to one single assigned session the way a real
-  // tester's is, so /tester/survey needs it to know which one to render.
+  // come before the survey now, so this is the only way forward from here. A moduleId is
+  // carried whenever /tester/survey can't infer which survey to render from the session's own
+  // single primary record alone (admin, or a real session exploring a non-primary module).
   async function continueToSurvey() {
     'use server'
     const current = await getTester(testerId)
     if (current && current.status === 'registered') {
       await upsertTester(testerId, { status: 'demo-viewed' })
     }
-    redirect(isSuperFounderAdminSession ? `/tester/survey?moduleId=${moduleId}` : '/tester/survey')
+    redirect(needsModuleQueryParam ? `/tester/survey?moduleId=${moduleId}` : '/tester/survey')
   }
 
   const isSuperDashboardDemo = moduleId === 'superdashboard-demo'
@@ -91,7 +111,9 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
     `your assigned part of the FoundingOS multi-brand operating system`,
     moduleId as ModuleId,
   )
-  const switcherOptions = buildSwitcherOptions(isSuperFounderAdminSession ? 'admin' : categorizeCredential(testerId))
+  // categorizeCredential must use the real underlying tester id, never a synthetic explore id
+  // (exploreTesterId's "::explore::" suffix would break the credential-prefix checks it does).
+  const switcherOptions = buildSwitcherOptions(isSuperFounderAdminSession ? 'admin' : categorizeCredential(realTesterIdForCategory!))
 
   return (
     <section className="stack">

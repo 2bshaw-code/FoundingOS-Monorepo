@@ -151,6 +151,17 @@ export function adminTesterId(moduleId: string): string {
   return `admin-${moduleId}`
 }
 
+// Every real tester/survey/buyer/customer session can now browse and try ANY real module's
+// demo and survey — not just the one they were originally assigned — matching what admin could
+// already do. A tester's own real, primary assigned module keeps using their real record
+// exactly as before (untouched by any of this); every OTHER module they explore gets its own
+// namespaced pseudo-tester row (own real email, own real runs/status), so exploring never
+// touches or overwrites their actual assigned-module progress. The "::explore::" separator can
+// never collide with a real credential id (none contain "::").
+export function exploreTesterId(realTesterId: string, moduleId: string): string {
+  return `${realTesterId}::explore::${moduleId}`
+}
+
 // Super Founder Admin — full-access account, bypasses the tester credential pool above.
 // Password is intentionally kept out of source (env var only, dev fallback for local testing).
 export const SUPER_FOUNDER_ADMIN_EMAIL = '2bshaw@gmail.com'
@@ -910,26 +921,15 @@ export function getFreeRoamHref(moduleId: string): string {
   return `/tester/demo/${moduleId}`
 }
 
-// Demo & Survey Switcher — a pure navigation aid: no backend mutation, no role change,
-// no bypass of any existing gate. Every option links to a genuinely real, already-existing
-// destination (never a fabricated one), and is only marked "available" when the CURRENT
-// session's real category/moduleId can actually reach it without hitting an existing gate:
-// - Retail Demo / Messaging Console Demo: real, ungated pages any authenticated session can
-//   already reach (confirmed: /modules/* carries no per-tester moduleId check, only
-//   /tester/demo/[moduleId] does).
-// - Guardian / Autonomous / BrandMetric Demo: middleware.ts explicitly redirects
-//   tester/survey/buyer/customer sessions away from /superdashboard and /system/guardian to
-//   /tester/survey — only admin/free-roam/investor/lawyer are actually let in. Shown honestly
-//   as unavailable (informational only) for everyone else, never a broken/misleading link.
-// - Tester/Buyer/Customer/Investor Survey: /tester/survey always renders the CURRENT session's
-//   own SURVEYS[tester.surveyId] — there is no way to view a different role's distinct survey
-//   without actually being that role. Only the option matching the session's real category is
-//   ever marked available; the other three are shown as informational only.
-// - Admin (the real Super Founder Admin identity only): every option is unlocked, exactly as
-//   requested — nothing hidden, nothing gated. The S1/S2/S3 survey shortcuts carry a
-//   moduleId so /tester/survey knows which one to render (admin has no single assigned
-//   module the way a real tester does); admin's own full module-by-module grid on
-//   /tester/dashboard covers every other module beyond these 9 quick shortcuts.
+// Demo & Survey Switcher — a pure navigation aid: no backend mutation beyond the same
+// namespaced explore-record mechanism already used for admin (see exploreTesterId's doc
+// comment). Every real session now sees the exact same full access admin already had — every
+// demo, every survey, nothing gated by category — since every /tester/demo/[moduleId] and
+// /tester/survey?moduleId= request now resolves via that session's own real record (their
+// primary assigned module) or a per-module explore record (everything else), and
+// middleware.ts's SuperDashboard/Guardian gate treats every non-admin session the same
+// (real, live, read-only). U2/T2 stay admin-only — genuine founder/operator tooling, not a
+// demo or survey.
 export const SWITCHER_PANEL_TITLE = 'Explore Another Part of the OS'
 export const SWITCHER_PANEL_NARRATOR_LINE =
   "Welcome to FoundingOS — I'm your AI guide. Here's everything you can explore: every brand demo, every survey, and Free Roam. Pick whatever you'd like to try first."
@@ -943,29 +943,29 @@ export type SwitcherOption = { code: string; label: string; href: string; availa
 
 export function buildSwitcherOptions(category: CredentialCategory): SwitcherOption[] {
   const isAdmin = category === 'admin'
-  const superDashAllowed = isAdmin || category === 'free-roam' || category === 'investor' || category === 'lawyer'
-  const superDashNote = 'Read-only for admin, free-roam, and investor sessions — conceptual for yours right now.'
+  // Every real session (tester/survey/buyer/customer/investor/lawyer/free-roam) can now reach
+  // every demo and every survey — matching admin's existing full access — via the explore
+  // mechanism (see exploreTesterId's doc comment) for /tester/demo/[moduleId], and the same
+  // moduleId-aware rendering (see /tester/survey's page) for surveys. middleware.ts now treats
+  // every non-admin session the same way for SuperDashboard/Guardian too: real, live, read-only.
+  // U2/T2 stay admin-only on purpose — they're genuine founder/operator tooling (real admin
+  // actions, real founder-only screens), not a demo or survey a tester would take.
   return [
     { code: 'R1', label: 'Retail Demo', href: 'https://retail.foundingos.com', available: true },
     { code: 'M1', label: 'Messaging Console Demo', href: '/modules/messaging', available: true },
     { code: 'M2', label: 'CRM Demo', href: '/crm', available: true },
     { code: 'U1', label: 'Brand User Guide', href: '/tester/guide', available: true },
     { code: 'U2', label: 'Admin & Founder Operations Manual', href: '/founder/manual', available: isAdmin, note: 'Admin-only.' },
-    { code: 'G1', label: 'Guardian Demo', href: '/system/guardian', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
-    { code: 'A1', label: 'Autonomous Demo', href: '/superdashboard?readOnly=1', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
-    { code: 'B1', label: 'BrandMetric Demo', href: '/superdashboard?readOnly=1', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
-    { code: 'S1', label: 'Tester Survey', href: isAdmin ? '/tester/survey?moduleId=marketing-suite' : '/tester/survey', available: isAdmin || category === 'tester' || category === 'survey', note: 'Only available while signed in with a tester access code.' },
-    { code: 'S2', label: 'Buyer Survey', href: isAdmin ? '/tester/survey?moduleId=buyer-overview' : '/tester/survey', available: isAdmin || category === 'buyer', note: 'Only available while signed in with a buyer access code.' },
-    { code: 'S3', label: 'Customer Survey', href: isAdmin ? '/tester/survey?moduleId=customer-overview' : '/tester/survey', available: isAdmin || category === 'customer', note: 'Only available while signed in with a customer access code.' },
-    { code: 'S4', label: 'Investor Survey', href: '/investor', available: isAdmin || category === 'investor', note: 'Only available while signed in with an investor access code.' },
-    { code: 'S5', label: 'Lawyer Survey', href: isAdmin ? '/tester/survey?moduleId=superdashboard-demo' : '/tester/survey', available: isAdmin || category === 'lawyer', note: 'Only available while signed in with a lawyer access code.' },
-    { code: 'S6', label: 'CRM Demo Survey', href: isAdmin ? '/tester/survey?moduleId=crm-overview' : '/tester/survey', available: isAdmin || category === 'tester', note: 'Only available while signed in with a tester access code.' },
-    // Admin-only quick link: a real tester assigned specifically to this tour already reaches
-    // it via their own dashboard's assigned-module highlight — this generic switcher code
-    // would 404 for any tester assigned to a different module (/tester/demo/[moduleId] only
-    // ever allows the current tester's OWN moduleId), so it's intentionally not offered as a
-    // universally "available: true" option the way R1/M1/M2 are.
-    { code: 'T1', label: 'Complete FoundingOS Tour', href: '/tester/demo/foundingos-overview', available: isAdmin, note: 'Only available to admin — real testers assigned to this tour reach it from their own dashboard.' },
+    { code: 'G1', label: 'Guardian Demo', href: '/system/guardian', available: true },
+    { code: 'A1', label: 'Autonomous Demo', href: '/superdashboard?readOnly=1', available: true },
+    { code: 'B1', label: 'BrandMetric Demo', href: '/superdashboard?readOnly=1', available: true },
+    { code: 'S1', label: 'Tester Survey', href: '/tester/survey?moduleId=marketing-suite', available: true },
+    { code: 'S2', label: 'Buyer Survey', href: '/tester/survey?moduleId=buyer-overview', available: true },
+    { code: 'S3', label: 'Customer Survey', href: '/tester/survey?moduleId=customer-overview', available: true },
+    { code: 'S4', label: 'Investor Survey', href: '/investor', available: true },
+    { code: 'S5', label: 'Lawyer Survey', href: '/tester/survey?moduleId=superdashboard-demo', available: true },
+    { code: 'S6', label: 'CRM Demo Survey', href: '/tester/survey?moduleId=crm-overview', available: true },
+    { code: 'T1', label: 'Complete FoundingOS Tour', href: '/tester/demo/foundingos-overview', available: true },
     { code: 'T2', label: 'Admin & Founder Operations Tour', href: '/tester/demo/admin-overview', available: isAdmin, note: 'Admin-only.' },
   ]
 }

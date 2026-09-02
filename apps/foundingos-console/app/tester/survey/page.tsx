@@ -6,7 +6,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../session'
 import { getTester, getOrCreateAdminTester } from '../store.server'
-import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, DEMO_COMPLETE_CELEBRATION_LINE, SURVEY_COMPLETE_NARRATOR_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, SURVEY_MISSION_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, SIGNATURE_MOMENT_LINE, FREE_ROAM_FIRST_STEP_LINE, SECTION_NARRATOR_LINES, PACING_REASSURANCE_LINES, ACCESSIBILITY_REMINDER_LINES, TARGET_JOKES, MICRO_BREAK_LINES, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, NARRATION_PLAYER_SCRIPT, getFreeRoamHref, BRAND_ROW_NARRATOR_LINE, adminTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type CredentialCategory, type SurveyId } from '../tester-data'
+import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, DEMO_COMPLETE_CELEBRATION_LINE, SURVEY_COMPLETE_NARRATOR_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, SURVEY_MISSION_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, SIGNATURE_MOMENT_LINE, FREE_ROAM_FIRST_STEP_LINE, SECTION_NARRATOR_LINES, PACING_REASSURANCE_LINES, ACCESSIBILITY_REMINDER_LINES, TARGET_JOKES, MICRO_BREAK_LINES, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, NARRATION_PLAYER_SCRIPT, getFreeRoamHref, BRAND_ROW_NARRATOR_LINE, adminTesterId, exploreTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type CredentialCategory, type SurveyId } from '../tester-data'
 import { brands } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
 import { SurveyEngine } from './SurveyEngine'
@@ -21,6 +21,10 @@ export default async function TesterSurveyPage({ searchParams }: { searchParams:
   let testerId: string
   let tester: Awaited<ReturnType<typeof getTester>>
   let category: CredentialCategory
+  // True whenever the demo-not-yet-viewed redirect below should send this session back to a
+  // specific module's demo page (?moduleId=) rather than the generic dashboard — admin always
+  // (no single assigned module), and so does any real session exploring a non-primary module.
+  let exploredModuleId: string | null = null
   if (isSuperFounderAdminSession) {
     const { moduleId: requestedModuleId } = await searchParams
     const moduleOption = requestedModuleId ? findModuleOption(requestedModuleId) : null
@@ -30,15 +34,33 @@ export default async function TesterSurveyPage({ searchParams }: { searchParams:
     testerId = adminTesterId(moduleOption.moduleId)
     tester = await getOrCreateAdminTester(testerId, moduleOption.moduleId, moduleOption.moduleLabel, moduleOption.surveyId, SUPER_FOUNDER_ADMIN_EMAIL)
     category = 'admin'
+    exploredModuleId = moduleOption.moduleId
   } else {
     const token = cookies().get(SESSION_COOKIE)?.value
     const realTesterId = token ? await verifyToken('tester', token) : null
     if (!realTesterId) redirect('/tester/login')
-    testerId = realTesterId
 
-    tester = await getTester(testerId)
-    if (!tester) redirect('/tester/login')
-    category = categorizeCredential(testerId)
+    const ownTester = await getTester(realTesterId)
+    if (!ownTester) redirect('/tester/login')
+    category = categorizeCredential(realTesterId)
+
+    const { moduleId: requestedModuleId } = await searchParams
+    if (requestedModuleId && requestedModuleId !== ownTester.moduleId) {
+      // Every real session can now take any real module's survey — not just the one they were
+      // originally assigned — exactly like admin already could. Tracked under its own
+      // namespaced per-module row (own real email, own real runs/status), same mechanism as
+      // /tester/demo/[moduleId]'s explore path, so it never touches their real assigned-module
+      // progress.
+      const moduleOption = findModuleOption(requestedModuleId)
+      if (!moduleOption) redirect('/tester/dashboard')
+      testerId = exploreTesterId(realTesterId, requestedModuleId)
+      tester = await getOrCreateAdminTester(testerId, moduleOption.moduleId, moduleOption.moduleLabel, moduleOption.surveyId, ownTester.email)
+      exploredModuleId = moduleOption.moduleId
+    } else {
+      // Their own real, primary assigned module — completely unchanged from before.
+      testerId = realTesterId
+      tester = ownTester
+    }
   }
 
   // Demo must always come before the survey for real testers/survey-takers/investors/buyers/
@@ -47,12 +69,13 @@ export default async function TesterSurveyPage({ searchParams }: { searchParams:
   // Switcher hub (/tester/dashboard, or the investor briefing) first, every time, no
   // exceptions. Free roam / lawyer sessions never take a survey at all, so they're exempt from
   // this gate entirely (they can still browse here read-only if they navigate here directly).
-  // Admin gets sent back to its own module's demo page (we already know which module from the
-  // moduleId above) rather than the generic hub.
+  // Admin (or any real session exploring a non-primary module) gets sent back to that specific
+  // module's demo page (we already know which module from exploredModuleId above) rather than
+  // the generic hub.
   const isSurveyTaker = category === 'tester' || category === 'survey' || category === 'investor' || category === 'buyer' || category === 'customer' || category === 'admin'
   const demoNotYetViewed = tester.status === 'registered' || tester.status === 'briefing-viewed'
   if (isSurveyTaker && demoNotYetViewed) {
-    redirect(category === 'investor' ? '/investor' : category === 'admin' ? `/tester/demo/${tester.moduleId}` : '/tester/dashboard')
+    redirect(category === 'investor' ? '/investor' : exploredModuleId ? `/tester/demo/${exploredModuleId}` : '/tester/dashboard')
   }
 
   const survey = SURVEYS[tester.surveyId as SurveyId]

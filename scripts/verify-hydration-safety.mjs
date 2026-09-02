@@ -53,8 +53,12 @@ for (const root of appRoots) {
   }
 }
 
-if (audioToggleSitesChecked < 6) {
-  throw new Error(`Expected at least 6 [data-audio-toggle] sites across the repo, found ${audioToggleSitesChecked} — did one get removed or renamed?`)
+if (audioToggleSitesChecked < 5) {
+  // 5 real sites as of the tester/dashboard layout unification (which merged what used to be
+  // two separate audio-toggle buttons — one for admin, one for real testers — into one shared
+  // layout for both): tester/demo/[moduleId], tester/dashboard, tester/survey, investor
+  // (foundingos-console), plus the root login page (foundingos-web).
+  throw new Error(`Expected at least 5 [data-audio-toggle] sites across the repo, found ${audioToggleSitesChecked} — did one get removed or renamed?`)
 }
 
 const skipGuardFiles = ['packages/ui/src/topbar.tsx', 'packages/ui/src/theme.tsx']

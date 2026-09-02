@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../../../tester/session'
 import { getTester, upsertTester, getOrCreateAdminTester, type SurveyRun } from '../../../tester/store.server'
-import { SURVEYS, categorizeCredential, adminTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type CredentialCategory, type SurveyId } from '../../../tester/tester-data'
+import { SURVEYS, categorizeCredential, adminTesterId, exploreTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type CredentialCategory, type SurveyId } from '../../../tester/tester-data'
 import { buildSignalFromSurveyRun, type IntelBrandSlug } from '@foundingos/config/brandSignalFeed'
 import { enrichBrandSignalWithQuantum } from '@foundingos/config/quantum-orchestration-layer'
 
@@ -44,11 +44,27 @@ export async function POST(request: Request) {
     const token = cookies().get(SESSION_COOKIE)?.value
     const realTesterId = token ? await verifyToken('tester', token) : null
     if (!realTesterId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    testerId = realTesterId
 
-    tester = await getTester(testerId)
-    if (!tester) return NextResponse.json({ error: 'Tester not found' }, { status: 404 })
-    category = categorizeCredential(testerId)
+    const ownTester = await getTester(realTesterId)
+    if (!ownTester) return NextResponse.json({ error: 'Tester not found' }, { status: 404 })
+    category = categorizeCredential(realTesterId)
+
+    // Every real session can now take any real module's survey — not just the one they were
+    // originally assigned — exactly like admin already could (see /tester/survey/page.tsx and
+    // /tester/demo/[moduleId]/page.tsx, which both use this same explore mechanism). Must be
+    // checked here too: this API independently resolves the tester record from cookies, so
+    // without this, answers submitted while exploring a non-primary module would silently save
+    // to this tester's real, primary record under the wrong surveyId instead.
+    const requestedModuleId = typeof body.moduleId === 'string' ? body.moduleId : null
+    if (requestedModuleId && requestedModuleId !== ownTester.moduleId) {
+      const moduleOption = findModuleOption(requestedModuleId)
+      if (!moduleOption) return NextResponse.json({ error: 'Unknown moduleId' }, { status: 400 })
+      testerId = exploreTesterId(realTesterId, requestedModuleId)
+      tester = await getOrCreateAdminTester(testerId, moduleOption.moduleId, moduleOption.moduleLabel, moduleOption.surveyId, ownTester.email)
+    } else {
+      testerId = realTesterId
+      tester = ownTester
+    }
   }
 
   // Demo must always come before the survey for real testers/survey-takers/investors/buyers/

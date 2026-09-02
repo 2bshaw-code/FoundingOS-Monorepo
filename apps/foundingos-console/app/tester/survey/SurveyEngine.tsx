@@ -140,9 +140,12 @@ export function SurveyEngine({
     const response = await fetch('/api/tester/survey', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      // moduleId is only ever used server-side for a real Super Founder Admin session (which
-      // has no single assigned survey the way a real tester does) — harmless extra field for
-      // every real tester/buyer/customer/investor session, which resolves via its own cookie.
+      // moduleId tells the server which survey this belongs to whenever the session's own
+      // cookie-derived record alone isn't enough to know: always for admin (no single assigned
+      // survey the way a real tester has), and for any real session currently exploring a
+      // module other than their own primary assignment (see the API route's explore-record
+      // handling) — harmless, ignored extra field otherwise, when it just echoes back the
+      // session's own real primary module.
       body: JSON.stringify({ ...payload, moduleId }),
     })
     return response.json()
