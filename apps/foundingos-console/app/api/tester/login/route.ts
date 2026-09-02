@@ -145,5 +145,13 @@ export async function POST(request: Request) {
   const token = await signToken('tester', tester.id)
   const response = NextResponse.json({ ok: true, redirect: categoryRedirect[category], category })
   response.cookies.set(SESSION_COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', domain: '.foundingos.com', maxAge: 60 * 60 * 8 })
+  // Real, pre-existing gap found and fixed: the admin login above already clears any stale
+  // SESSION_COOKIE so an admin session can never coexist with a leftover tester one — but this
+  // real tester login never did the same in reverse. A stale ADMIN_COOKIE from an earlier admin
+  // session in the same browser would keep taking priority everywhere (middleware, this same
+  // page's own layout), silently masking a brand-new real tester login behind the old admin
+  // view. Confirmed live: logging in as a real tester right after an admin session, without
+  // this, still showed the admin dashboard.
+  response.cookies.set(ADMIN_COOKIE, '', { path: '/', domain: '.foundingos.com', maxAge: 0 })
   return withCors(response)
 }
