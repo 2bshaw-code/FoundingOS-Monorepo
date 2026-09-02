@@ -23,8 +23,9 @@ export type ModuleId =
   | 'customer-overview'
   | 'crm-overview'
   | 'foundingos-overview'
+  | 'admin-overview'
 
-export type SurveyId = 'survey-a' | 'survey-b' | 'survey-c' | 'survey-d' | 'survey-e' | 'survey-f' | 'survey-g' | 'survey-h' | 'survey-i' | 'survey-j' | 'survey-k' | 'survey-l' | 'survey-investor' | 'survey-buyer' | 'survey-customer' | 'survey-crm' | 'survey-overview'
+export type SurveyId = 'survey-a' | 'survey-b' | 'survey-c' | 'survey-d' | 'survey-e' | 'survey-f' | 'survey-g' | 'survey-h' | 'survey-i' | 'survey-j' | 'survey-k' | 'survey-l' | 'survey-investor' | 'survey-buyer' | 'survey-customer' | 'survey-crm' | 'survey-overview' | 'survey-admin'
 
 export type Credential = {
   id: string
@@ -105,6 +106,13 @@ export const CREDENTIALS: Credential[] = [
   // walkthrough rather than a single module.
   { id: 'tester-12', password: 'TST-77OS', moduleId: 'foundingos-overview', moduleLabel: 'Complete FoundingOS Tour', surveyId: 'survey-overview' },
   { id: 'survey-overview-1', password: 'SURVEY-OS', moduleId: 'foundingos-overview', moduleLabel: 'Complete FoundingOS Tour', surveyId: 'survey-overview' },
+
+  // Admin & Founder Operations Tour — reserved for internal/admin use only (not distributed
+  // as a real tester access code). Exists purely so findModuleOption('admin-overview') can
+  // resolve for the Super Founder Admin's own '?moduleId=' flow; a real tester logging in
+  // with this password would technically reach it like any other credential, but it's never
+  // handed out.
+  { id: 'admin-tour', password: 'ADMIN-OPS-TOUR', moduleId: 'admin-overview', moduleLabel: 'Admin & Founder Operations Tour', surveyId: 'survey-admin' },
 ]
 
 export function findCredentialByPassword(password: string): Credential | null {
@@ -564,6 +572,19 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
+  'survey-admin': {
+    id: 'survey-admin',
+    title: 'Survey — Admin & Founder Operations',
+    moduleLabel: 'Admin & Founder Operations Tour',
+    questions: [
+      { id: 'adm1', prompt: 'Is anything in the Guardian Queue or AVL footer status unclear about what action it needs from you?' },
+      { id: 'adm2', prompt: 'Was assigning a real Package Model D subscription to a brand straightforward?' },
+      { id: 'adm3', prompt: 'What admin task do you do most often that still feels like too many clicks?' },
+      { id: 'adm4', prompt: 'What is one admin-only tool you wish existed that doesn\u2019t yet?' },
+      ...BUSINESS_PLAN_QUESTIONS,
+      ...ECOSYSTEM_VALIDATION_QUESTIONS,
+    ],
+  },
 }
 
 // Shown once, as a short bullet list (not a paragraph) in its own "Business plan, in short"
@@ -713,6 +734,22 @@ const FOUNDINGOS_OVERVIEW_NARRATOR_STEPS: NarratorStep[] = [
   { step: '8 · Summary + next action', text: "That's the whole picture — now go explore a brand.", detail: 'Head back to the Switcher Hub and pick any brand demo, the CRM demo, or SuperDash read-only — you now know how every piece fits together.' },
 ]
 MODULE_NARRATOR_STEPS['foundingos-overview'] = FOUNDINGOS_OVERVIEW_NARRATOR_STEPS
+
+// Admin & Founder Operations Tour — admin-only, covers everything an admin actually operates
+// day-to-day (not the tester-facing tour above). Every system named here is real and already
+// shipped: Founder Console, SuperDash's real subscriptions/scraping sections, AVL, Guardian
+// Queue, Package Model D admin actions, and the tester program's own admin tools.
+const ADMIN_OPERATIONS_NARRATOR_STEPS: NarratorStep[] = [
+  { step: '1 · Overview', text: "Welcome to the operator's seat.", detail: 'As admin, you have full, unrestricted access to every demo, every survey, every brand console, and every admin-only tool in the ecosystem — nothing here is locked for you.' },
+  { step: '2 · Founder Console', text: "This is your control centre.", detail: 'All brands, workflows, WhatsApp automation, analytics, AI onboarding, customers, orders, products, employees, permissions, and settings — all 12 sections now link to a real destination, no "coming soon" placeholders.' },
+  { step: '3 · SuperDash — the intelligence layer', text: 'Everything rolls up here.', detail: 'Cross-brand analytics, brand switching, the real Package Model D subscriptions section (live MRR/ARR + real FX conversion), and the Scraping Dashboard (real scrape history, diffing, and the customer pipeline builder).' },
+  { step: '4 · AVL — Autonomous Verification Layer', text: "It's watching the whole system for you.", detail: 'Runs every 5 minutes: scans all 26 apps for reachability, detects drift against the last known-good snapshot, auto-applies safe fixes (like re-triggering a stale scrape), and reports lastRun/driftCount/safeFixCount/pendingGuardian in the SuperDash footer.' },
+  { step: '5 · Guardian Queue', text: 'High-risk items wait for you here.', detail: 'Anything AVL classifies as needing a human call sits unresolved until you review it — the pendingGuardian count in the SuperDash footer tells you exactly how many are waiting right now.' },
+  { step: '6 · Package Model D — real admin actions', text: "You control real subscriptions here.", detail: 'From SuperDash you can assign any of the 8 real brands a real base tier + industry pack; it snapshots the real catalog price into a persisted MRR/ARR record — informational only, no payment processor, but genuinely real and stored.' },
+  { step: '7 · Tester program admin tools', text: "This is how you run the tester program.", detail: 'At /tester/admin you can review every tester\u2019s real survey answers and reassign their module — separate from your own Super Founder Admin access, which lets you open any demo or survey directly from the Switcher Hub.' },
+  { step: '8 · Summary + next action', text: "That's the full operator's view — go run it.", detail: 'You now know every admin-only tool in the ecosystem. Head to SuperDash or the Founder Console to put it to use, or read the full Admin & Founder Operations Manual for the written version.' },
+]
+MODULE_NARRATOR_STEPS['admin-overview'] = ADMIN_OPERATIONS_NARRATOR_STEPS
 
 // Full, joined script per module — what the "Play narration" button reads aloud in one go
 // (narrator lines only; the practical "detail" copy is read on-screen, not spoken).
@@ -889,6 +926,7 @@ export function buildSwitcherOptions(category: CredentialCategory): SwitcherOpti
     { code: 'M1', label: 'Messaging Console Demo', href: '/modules/messaging', available: true },
     { code: 'M2', label: 'CRM Demo', href: '/crm', available: true },
     { code: 'U1', label: 'Brand User Guide', href: '/tester/guide', available: true },
+    { code: 'U2', label: 'Admin & Founder Operations Manual', href: '/founder/manual', available: isAdmin, note: 'Admin-only.' },
     { code: 'G1', label: 'Guardian Demo', href: '/system/guardian', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
     { code: 'A1', label: 'Autonomous Demo', href: '/superdashboard?readOnly=1', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
     { code: 'B1', label: 'BrandMetric Demo', href: '/superdashboard?readOnly=1', available: superDashAllowed, note: superDashAllowed ? undefined : superDashNote },
@@ -904,6 +942,7 @@ export function buildSwitcherOptions(category: CredentialCategory): SwitcherOpti
     // ever allows the current tester's OWN moduleId), so it's intentionally not offered as a
     // universally "available: true" option the way R1/M1/M2 are.
     { code: 'T1', label: 'Complete FoundingOS Tour', href: '/tester/demo/foundingos-overview', available: isAdmin, note: 'Only available to admin — real testers assigned to this tour reach it from their own dashboard.' },
+    { code: 'T2', label: 'Admin & Founder Operations Tour', href: '/tester/demo/admin-overview', available: isAdmin, note: 'Admin-only.' },
   ]
 }
 
