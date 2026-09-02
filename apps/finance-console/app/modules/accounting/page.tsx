@@ -2,9 +2,9 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { BrandModulePage } from '@foundingos/ui/console'
+import { AccountingModule } from '@foundingos/ui/modules/accounting'
 import { brandConfig } from '../../brand-config'
 
 export default function Page() {
-  return <BrandModulePage config={brandConfig} moduleId="accounting" />
+  return <AccountingModule config={brandConfig} />
 }

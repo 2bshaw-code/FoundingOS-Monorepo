@@ -43,19 +43,19 @@ export type BrandConsoleConfig = {
   settings: string[]
 }
 
-type DataField = {
+export type DataField = {
   key: string
   label: string
   type?: 'text' | 'textarea' | 'select' | 'number' | 'date' | 'file'
   options?: string[]
 }
 
-type DataRow = {
+export type DataRow = {
   id: string
   values: Record<string, string>
 }
 
-type WorkbenchProps = {
+export type WorkbenchProps = {
   title: string
   description: string
   fields: DataField[]
@@ -240,7 +240,7 @@ function consoleTitle(config: BrandConsoleConfig) {
   }
 }
 
-function consoleStyle(config: BrandConsoleConfig): CSSProperties {
+export function consoleStyle(config: BrandConsoleConfig): CSSProperties {
   return {
     '--accent': config.colors.accent,
   } as CSSProperties
@@ -303,7 +303,7 @@ function workbenchFilterOptions(rows: DataRow[], fields: DataField[]) {
   return { filterField, options }
 }
 
-function DataWorkbench({ title, description, fields, rows, cards, accentStyle, pageSize = 4, emptyCopy = 'No records yet.' }: WorkbenchProps) {
+export function DataWorkbench({ title, description, fields, rows, cards, accentStyle, pageSize = 4, emptyCopy = 'No records yet.' }: WorkbenchProps) {
   const [records, setRecords] = useState<DataRow[]>(() => cloneRows(rows))
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('all')

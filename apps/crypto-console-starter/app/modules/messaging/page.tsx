@@ -2,9 +2,9 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { BrandModulePage } from '@foundingos/ui/console'
+import { MessagingModule } from '@foundingos/ui/modules/messaging'
 import { brandConfig } from '../../brand-config'
 
 export default function Page() {
-  return <BrandModulePage config={brandConfig} moduleId="messaging" />
+  return <MessagingModule config={brandConfig} />
 }

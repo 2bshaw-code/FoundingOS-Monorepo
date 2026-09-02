@@ -709,6 +709,12 @@ export const brandConfig: BrandConsoleConfig = {
       "icon": "lifebuoy",
       "section": "Modules"
     },
+        {
+      "label": "Sales",
+      "href": "/modules/sales",
+      "icon": "▣",
+      "section": "Modules"
+    },
     {
       "label": "FoundAI Demo",
       "href": "/modules/foundai-demo",
