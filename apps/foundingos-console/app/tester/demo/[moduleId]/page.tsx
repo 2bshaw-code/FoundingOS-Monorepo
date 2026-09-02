@@ -90,6 +90,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
     : moduleId === 'customer-service' ? '/modules/customer-service'
     : moduleId === 'messaging' ? '/modules/messaging'
     : moduleId === 'ai-automation' ? '/modules/foundai-demo'
+    : moduleId === 'sales' ? '/modules/sales'
     : moduleId === 'customer-overview' ? '/modules/customer-service'
     : moduleId === 'buyer-overview' ? 'https://retail.foundingos.com'
     : moduleId === 'crm-overview' ? '/crm'

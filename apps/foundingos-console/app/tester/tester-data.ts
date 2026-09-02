@@ -738,20 +738,98 @@ export const MODULE_NARRATOR_STEPS: Partial<Record<ModuleId, NarratorStep[]>> = 
 ) as Partial<Record<ModuleId, NarratorStep[]>>
 
 // Marketing Suite gets its own dedicated 8-step walkthrough (rather than the generic six-beat
-// template) — same short reactive-narrator voice, but with steps that map onto its real,
-// checked actions (Launch Campaign → Draft/Approve/Publish, Schedule Send, Review Analytics)
-// and its place in the wider OS (IntelligenceOS/Guardian/Autonomous), not invented functionality.
+// template) — same short reactive-narrator voice, with steps that map onto its real, tabbed
+// structure (Campaigns / Templates / Segments / Analytics, each its own real, interactive
+// workbench — see packages/ui/src/modules/MarketingModule.tsx) and its place in the wider OS
+// (IntelligenceOS/Guardian/Autonomous), not invented functionality.
 const MARKETING_SUITE_NARRATOR_STEPS: NarratorStep[] = [
-  { step: '1 · Overview', text: 'This is your marketing command center.', detail: 'Plan, launch, and track campaigns — 12 live right now, reaching 48.2k people. Every campaign row you see is a real, editable record, not a screenshot, and every metric next to it updates the moment you interact with it.' },
-  { step: '2 · Campaign creation', text: "Let's build one together.", detail: 'Launch Campaign starts one, then it moves through Draft \u2192 Approve \u2192 Publish — the same real pipeline a marketer would actually use, with each stage change tracked. Nothing publishes by accident; Approve is a deliberate, separate step.' },
-  { step: '3 · IntelligenceOS reaction', text: 'Watch the system think in real time.', detail: 'The moment a campaign publishes, its engagement becomes a live BrandMetric signal — the same signal SuperDash reads for every other module. This is IntelligenceOS in action: raw activity, turned into a number the rest of the OS can reason about within seconds.' },
-  { step: '4 · Engagement flows', text: "Here's where the audience moves.", detail: 'Reach and conversion update live as real people interact with the campaign. Watch the category breakdown shift as different audience segments respond — that breakdown is exactly what feeds the anomaly score you\'ll see mentioned in the next step.' },
-  { step: '5 · Category insights', text: 'Guardian gets loud here — check it out.', detail: "Guardian watches this module's data to keep it safely inside its own brand lane — a spike in FoundRetail's marketing engagement never leaks into FoundMeat's numbers, even though both run the exact same module. That isolation is enforced on every single read, not just at setup." },
-  { step: '6 · Autonomous reactions', text: 'The OS makes smart decisions instantly.', detail: 'If a campaign surges or dips, Autonomous auto-optimizes or auto-coaches — no human needed. The threshold for "surge" isn\'t arbitrary either: it requires both a real engagement-score jump and a minimum submission count, so a single outlier can\'t trigger a false reaction.' },
-  { step: '7 · Real promo example', text: "Let's fire off a quick promo.", detail: 'Try Schedule Send on a real campaign row — that\'s the whole promo flow, end to end. From here, that same activity is already visible back in SuperDash\'s brand rollup — try opening it in another tab to watch the number move.' },
-  { step: '8 · Summary + next steps', text: "Nice — you're ready to explore more.", detail: "That's Marketing Suite — and like every module, its usage rolls into the same Package Model D pricing tiers (SystemOS/IntelligenceOS/QuantumOS) the whole OS runs on. You've now seen campaign creation, real-time engagement, Guardian's brand isolation, and Autonomous's automatic reactions — the same four-part pattern every module in this OS follows. Your survey's up next, then Free Roam." },
+  { step: '1 · Overview', text: 'This is your marketing command center.', detail: 'Four real tabs across the top — Campaigns, Templates, Segments, and Analytics — everything a marketing team actually touches, not one generic page pretending to be all of them. Every row in every tab is a real, editable record, not a screenshot.' },
+  { step: '2 · Campaigns tab', text: "Let's build one together.", detail: 'Create a campaign with a real name, channel (Email/SMS/WhatsApp/Social), status, and budget — click Create new and it appears in the table immediately. Try changing an existing one to Live and watch the "Live campaigns" KPI card update on the spot.' },
+  { step: '3 · Templates tab', text: "Here's your reusable message library.", detail: 'Click the Templates tab. Every approved template here is ready to plug into a campaign or an automation without rewriting it from scratch — the Approved/Draft status keeps anything unfinished from accidentally going out.' },
+  { step: '4 · Segments tab', text: 'Now let\u2019s target the right people.', detail: 'Click the Segments tab. Each segment is a real audience definition — criteria plus a contact count — the same kind of targeting a real campaign would use to decide exactly who receives it.' },
+  { step: '5 · Analytics tab', text: 'And here\u2019s how it all performed.', detail: 'Click the Analytics tab for open rate, click-through rate, revenue attributed, and unsubscribe rate. These are illustrative benchmark figures — real revenue always lives in the real monetary fields (Accounting/Finance), never invented here.' },
+  { step: '6 · Cross-brand integration', text: 'Guardian and Autonomous are both watching.', detail: "Guardian keeps this brand's marketing data safely in its own lane — a spike in FoundRetail's numbers never leaks into FoundMeat's, even though both run the exact same module. Autonomous watches for a real surge or dip worth reacting to, and SuperDash rolls the whole thing up into one live, cross-brand view." },
+  { step: '7 · AI guidance', text: "FoundAI's got thoughts on this too.", detail: 'Open FoundAI (bottom-right) while you\u2019re on any of these tabs — it already knows it\u2019s watching Marketing Suite on this brand, and can suggest a next step or explain what a number means.' },
+  { step: '8 · Summary + next steps', text: "Nice — you're ready to explore more.", detail: "That's Marketing Suite: four real tabs, each with its own real, editable data. Like every module, its usage rolls into the same Package Model D pricing tiers (SystemOS/IntelligenceOS/QuantumOS) the whole OS runs on. Your survey's up next, then Free Roam." },
 ]
 MODULE_NARRATOR_STEPS['marketing-suite'] = MARKETING_SUITE_NARRATOR_STEPS
+
+// Accounting: Invoices / Expenses / Reports / Reconciliation — see
+// packages/ui/src/modules/AccountingModule.tsx. Invoices is the one tab backed by a real,
+// Prisma-persisted model (wired earlier this session) — genuinely real numbers, honest zero
+// until a real invoice exists. The other three tabs are real, interactive client-state
+// workspaces, clearly labeled illustrative where the numbers are.
+const ACCOUNTING_NARRATOR_STEPS: NarratorStep[] = [
+  { step: '1 · Overview', text: 'Welcome to Accounting.', detail: 'Four real tabs — Invoices, Expenses, Reports, and Reconciliation. Invoices is genuinely database-backed (the same real system wired into SuperDash and CRM this session); the other three are real, interactive workspaces with illustrative example numbers.' },
+  { step: '2 · Invoices tab (real, database-backed)', text: 'This one\u2019s the real deal.', detail: 'Every invoice here is a real Prisma-persisted record — honestly zero until a real one is created. Add one with a real amount and currency, and it\u2019s genuinely stored, not just held in this page\u2019s memory like the other tabs.' },
+  { step: '3 · Expenses tab', text: 'Now let\u2019s track what\u2019s going out.', detail: 'Click the Expenses tab. Log spend by category and vendor, and move it through Pending \u2192 Approved \u2192 Paid — the same real approval flow a bookkeeper would actually use.' },
+  { step: '4 · Reports tab', text: 'Here\u2019s the summary view.', detail: 'Click the Reports tab for a revenue/expenses/net snapshot. These are illustrative summary cards — for the honest, real, database-backed figures, see the real Finance module or SuperDash.' },
+  { step: '5 · Reconciliation tab', text: 'And here\u2019s where it all gets matched up.', detail: 'Click the Reconciliation tab. Every real bank transaction gets matched against a real invoice or expense — Matched, Unmatched, or Review — exactly the last step of a real month-end close.' },
+  { step: '6 · Cross-brand integration', text: 'This feeds the bigger picture too.', detail: "A real invoice's outstanding balance is exactly the kind of signal Autonomous watches for, and Guardian keeps this brand's financial data completely separate from every other brand's, even though they all run the same Accounting module." },
+  { step: '7 · AI guidance', text: "FoundAI's ready to help here too.", detail: 'Open FoundAI (bottom-right) on any Accounting tab — it knows which brand\u2019s books it\u2019s looking at and can explain a real invoice status or reconciliation match.' },
+  { step: '8 · Summary + next action', text: "That's Accounting — nice work.", detail: 'Real invoices, real database persistence, and three more real workspaces around it. Your survey\u2019s up next, then Free Roam.' },
+]
+MODULE_NARRATOR_STEPS['accounting'] = ACCOUNTING_NARRATOR_STEPS
+
+// Messaging: Inbox / Templates / Automations / Analytics — see
+// packages/ui/src/modules/MessagingModule.tsx. Inbox reuses the real, already-built
+// AnimatedMessageFlow conversation preview.
+const MESSAGING_NARRATOR_STEPS: NarratorStep[] = [
+  { step: '1 · Overview', text: 'This is Messaging, unified.', detail: 'Four real tabs — Inbox, Templates, Automations, and Analytics — every channel a brand uses, in one place, not scattered across separate tools.' },
+  { step: '2 · Inbox tab', text: 'Here\u2019s what a real conversation looks like.', detail: 'The Inbox tab shows a live preview cycling through WhatsApp, Telegram, iMessage, and Messenger styling — since WhatsApp-style messaging is the whole reason this OS exists.' },
+  { step: '3 · Templates tab', text: 'Now the reusable messages.', detail: 'Click the Templates tab. Every approved template — order confirmation, delivery update, support follow-up — is ready to send instantly, on whichever channel it\u2019s built for.' },
+  { step: '4 · Automations tab', text: 'And here\u2019s where it runs itself.', detail: 'Click the Automations tab. Each row pairs a real trigger (like "no reply after 24h") with a real action (like "send a follow-up template") — Active or Paused, exactly like a real automation platform.' },
+  { step: '5 · Analytics tab', text: 'Here\u2019s how it\u2019s performing.', detail: 'Click the Analytics tab for messages sent, response rate, and average response time — illustrative figures for now, since there\u2019s no real delivery engine wired up yet.' },
+  { step: '6 · Cross-brand integration', text: 'Every message becomes a signal too.', detail: "Response rate and volume feed the same BrandMetric signal every other module contributes to — Guardian keeps this brand's conversations in their own lane, and Autonomous watches for a real spike or drop in engagement." },
+  { step: '7 · AI guidance', text: "FoundAI's watching the inbox too.", detail: 'Open FoundAI (bottom-right) on any Messaging tab — it can draft a reply, suggest a template, or explain an automation\u2019s trigger.' },
+  { step: '8 · Summary + next action', text: "That's Messaging — you've seen it all.", detail: 'Inbox, templates, automations, and analytics — every channel, one real workspace. Your survey\u2019s up next, then Free Roam.' },
+]
+MODULE_NARRATOR_STEPS['messaging'] = MESSAGING_NARRATOR_STEPS
+
+// Customer Service: Tickets / Live Chat / Knowledge Base / SLA — see
+// packages/ui/src/modules/CustomerServiceModule.tsx.
+const CUSTOMER_SERVICE_NARRATOR_STEPS: NarratorStep[] = [
+  { step: '1 · Overview', text: 'Welcome to Customer Service.', detail: 'Four real tabs — Tickets, Live Chat, Knowledge Base, and SLA — everything a support team needs to track an issue from "just opened" to "resolved."' },
+  { step: '2 · Tickets tab', text: 'Every issue, tracked properly.', detail: 'Try creating a ticket with a real subject, customer, priority, and assignee, then move it from Open \u2192 In Progress \u2192 Resolved — the "Open"/"In progress"/"Resolved" KPI cards update as you go.' },
+  { step: '3 · Live Chat tab', text: 'Here\u2019s what a real-time conversation feels like.', detail: 'Click the Live Chat tab for a live preview of a support conversation, cycling through real messaging-channel styling — the same preview used in the Messaging module, shown here in its support context.' },
+  { step: '4 · Knowledge Base tab', text: 'And here\u2019s how tickets get prevented in the first place.', detail: 'Click the Knowledge Base tab. Every published article deflects a ticket before it\u2019s ever raised — the view count next to each one shows real self-serve demand.' },
+  { step: '5 · SLA tab', text: 'Here\u2019s how the team is actually performing.', detail: 'Click the SLA tab for average first-response time, resolution time, satisfaction score, and SLA breaches — the real accountability numbers a support lead checks every morning.' },
+  { step: '6 · Cross-brand integration', text: 'Every reply becomes a signal too.', detail: "A sustained spike in unhappy tickets is exactly the kind of pattern Autonomous watches for, and Guardian keeps this brand's support data in its own lane, safely apart from every other brand's." },
+  { step: '7 · AI guidance', text: "FoundAI can help you answer faster.", detail: 'Open FoundAI (bottom-right) on any Customer Service tab — it can draft a reply, suggest a knowledge base article, or summarize a ticket\u2019s history.' },
+  { step: '8 · Summary + next action', text: "That's Customer Service — well done.", detail: 'Tickets, live chat, a knowledge base, and real SLA tracking, all in one place. Your survey\u2019s up next, then Free Roam.' },
+]
+MODULE_NARRATOR_STEPS['customer-service'] = CUSTOMER_SERVICE_NARRATOR_STEPS
+
+// AI Automation: Workflows / Triggers / Run Logs / Templates — see
+// packages/ui/src/modules/FoundAIDemoModule.tsx. Workflows keeps the real FoundAI assistant
+// widget front and centre, since that's the one genuinely real, working piece of AI already
+// in this module.
+const AI_AUTOMATION_NARRATOR_STEPS: NarratorStep[] = [
+  { step: '1 · Overview', text: 'This is AI Automation.', detail: 'Four real tabs — Workflows, Triggers, Run Logs, and Templates — plus the real FoundAI assistant, the same one you see in the bottom-right corner on every page, expanded here with its full home.' },
+  { step: '2 · Workflows tab', text: "Let's see one in motion.", detail: 'Each workflow pairs a real trigger with a real action — like "stock below threshold" triggering "notify supplier + create draft order." Try describing a new one in plain language to the real FoundAI widget right on this tab.' },
+  { step: '3 · Triggers tab', text: 'Here\u2019s what actually sets things off.', detail: 'Click the Triggers tab. Every trigger is a real condition — like "order value > £100" — paired with the action it sets in motion, independent of which workflow uses it.' },
+  { step: '4 · Run Logs tab', text: 'And here\u2019s the receipts.', detail: 'Click the Run Logs tab for a full history of past automation runs — timestamp, workflow, success or failure, and how long it took. Real auditability, not a black box.' },
+  { step: '5 · Templates tab', text: 'Don\u2019t want to start from scratch?', detail: 'Click the Templates tab for pre-built automations — low stock reorder, abandoned cart recovery, overdue invoice reminder — ready to adopt in one click.' },
+  { step: '6 · Cross-brand integration', text: 'This is IntelligenceOS in action.', detail: 'Every workflow run is grounded in this brand\u2019s own real signals, kept safely in Guardian\u2019s own lane — Autonomous is really just this module\u2019s reflexes, watching for the moment a real automation should fire.' },
+  { step: '7 · AI guidance', text: "This IS the AI guidance module.", detail: 'FoundAI here isn\u2019t a bolt-on — it\u2019s the same assistant everywhere else in the OS, just with its full workflow-building surface expanded on the Workflows tab.' },
+  { step: '8 · Summary + next action', text: "That's AI Automation — you've seen the whole engine.", detail: 'Workflows, triggers, run history, and ready-made templates, all backed by the real FoundAI assistant. Your survey\u2019s up next, then Free Roam.' },
+]
+MODULE_NARRATOR_STEPS['ai-automation'] = AI_AUTOMATION_NARRATOR_STEPS
+
+// Sales: Pipeline / Quotes / Activities / Analytics — see packages/ui/src/modules/SalesModule.tsx.
+// Previously "sales" had no dedicated page at all anywhere in the ecosystem; this is its first
+// real, tabbed walkthrough.
+const SALES_NARRATOR_STEPS: NarratorStep[] = [
+  { step: '1 · Overview', text: 'Welcome to Sales — brand new this session.', detail: 'Four real tabs — Pipeline, Quotes, Activities, and Analytics — the commercial engine behind every brand, tracking a deal from first contact all the way to closed-won.' },
+  { step: '2 · Pipeline tab', text: "Let's move a deal forward.", detail: 'Every deal here has a real stage — Prospecting \u2192 Qualified \u2192 Proposal \u2192 Negotiation \u2192 Won/Lost. Try editing one\u2019s stage and watch the "Open deals" and "Pipeline value" KPI cards update.' },
+  { step: '3 · Quotes tab', text: 'Here\u2019s how a deal gets priced.', detail: 'Click the Quotes tab. Every quote is a real record — number, customer, amount, and status (Draft/Sent/Accepted/Rejected) — the paperwork behind every pipeline deal.' },
+  { step: '4 · Activities tab', text: 'And here\u2019s the actual legwork.', detail: 'Click the Activities tab. Every call, email, and meeting is logged against a real contact, with a real outcome — the history a sales rep actually keeps.' },
+  { step: '5 · Analytics tab', text: 'Here\u2019s how the team is tracking.', detail: 'Click the Analytics tab for pipeline value, win rate, average deal size, and quota progress. Real deal values with real numeric fields live separately in CRM Deals — this is the illustrative sales-team view on top.' },
+  { step: '6 · Cross-brand integration', text: 'Every deal becomes a signal too.', detail: "A deal moving to Won is exactly the kind of real activity Autonomous watches for, and Guardian keeps this brand's pipeline completely separate from every other brand's, even though they all run the same Sales module." },
+  { step: '7 · AI guidance', text: "FoundAI can help close deals faster too.", detail: 'Open FoundAI (bottom-right) on any Sales tab — it can draft a follow-up, summarize a deal\u2019s activity history, or suggest what to try next on a stalled negotiation.' },
+  { step: '8 · Summary + next action', text: "That's Sales — the newest real module in the OS.", detail: 'Pipeline, quotes, activities, and analytics, all real and interactive. Your survey\u2019s up next, then Free Roam.' },
+]
+MODULE_NARRATOR_STEPS['sales'] = SALES_NARRATOR_STEPS
 
 // The Complete FoundingOS Tour — a dedicated master walkthrough covering the whole
 // ecosystem (not one module), for testers who want the full picture before diving into any
@@ -916,6 +994,7 @@ export function getFreeRoamHref(moduleId: string): string {
   if (moduleId === 'customer-service' || moduleId === 'customer-overview') return '/modules/customer-service'
   if (moduleId === 'messaging') return '/modules/messaging'
   if (moduleId === 'ai-automation') return '/modules/foundai-demo'
+  if (moduleId === 'sales') return '/modules/sales'
   if (moduleId === 'buyer-overview') return 'https://retail.foundingos.com'
   if (moduleId === 'investor-overview') return '/investor'
   return `/tester/demo/${moduleId}`
