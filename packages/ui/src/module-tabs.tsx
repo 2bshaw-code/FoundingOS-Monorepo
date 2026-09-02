@@ -58,7 +58,15 @@ export function ModuleTabs({
           </button>
         ))}
       </div>
-      <div data-module-tab-panel={active?.id}>{active?.render()}</div>
+      {/* key={active?.id} is required, not cosmetic: without it, React treats each tab's panel
+          as the SAME component instance across tab switches (same type, same tree position) and
+          only re-renders it with new props — it does NOT remount. Confirmed live: switching from
+          Campaigns to Templates showed the new tab's title/description/KPIs but the OLD tab's
+          table rows, because DataWorkbench seeds its internal state via a lazy
+          useState(() => cloneRows(rows)) initializer, which only ever runs on a component's
+          first-ever mount, never again on a props change. A changing key forces a real
+          unmount/remount on every tab switch, giving each tab a genuinely fresh, correct state. */}
+      <div key={active?.id} data-module-tab-panel={active?.id}>{active?.render()}</div>
     </section>
   )
 }
