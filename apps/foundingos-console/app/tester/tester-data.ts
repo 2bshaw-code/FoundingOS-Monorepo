@@ -629,6 +629,26 @@ const MODULE_REAL_ACTIONS: Partial<Record<ModuleId, string[]>> = {
   'crm-overview': ['Add Contact', 'Log a Deal', 'Add a Note'],
 }
 
+// One extra, module-specific paragraph of real detail — used to make each demo genuinely
+// substantial rather than a single generic sentence repeated with the module name swapped in.
+// Every fact here is grounded in a real system already documented elsewhere in this file.
+const MODULE_DEEP_DIVE: Partial<Record<ModuleId, string>> = {
+  'accounting': "Every invoice you create here becomes a real signal the moment it's saved — overdue accounts are automatically flagged for follow-up, and reconciliation status feeds directly into this brand's overall health score in SuperDash.",
+  'customer-service': "Tickets move through a real queue with SLA timers, and every reply — good or bad — becomes part of this brand's satisfaction signal. A sustained spike in unhappy tickets is exactly the kind of pattern Autonomous watches for.",
+  'messaging': "Every channel a brand uses — WhatsApp, SMS, email — flows through the same inbox here, so nothing gets missed. Templates you save are reusable across every future conversation, and assigning a conversation to a teammate is tracked in real time.",
+  'ai-automation': "This is FoundAI's own home module — the same assistant you see in the bottom-right corner on every page, but with its full workflow and automation surface expanded here. Every suggestion it makes is grounded in this brand's own real signals, not a generic script.",
+  'finance': "Cash flow, revenue, and financial operations all live here as one of the core real inputs the OS uses to score brand health. A sustained dip in cash flow is exactly the kind of signal that would trigger an Autonomous auto-coach moment.",
+  'crypto': "Market exposure and wallet-level signals are tracked here as their own real, live data stream — kept safely in Guardian's own lane, distinct from every other brand's financial data.",
+  'superdashboard-demo': "This is the same real, read-only view an admin or investor actually sees: every brand, every module, rolled into one live dashboard. Nothing here is brand-specific — it's the whole ecosystem's health in one place.",
+  'buyer-overview': "You're seeing the real, live brand website exactly as a genuine customer would — the same product pages, the same cart, the same checkout flow. Nothing here is a mockup built just for this demo.",
+  'customer-overview': "This is Customer Service from the other side of the counter — what it actually feels like to ask for help as a real customer, rather than the agent's own queue view you'd see in the Customer Service module.",
+  'crm-overview': "Every contact, deal, and note you add here persists for the length of your session — a real, working CRM board, not a static screenshot. The same relationship data rolls up into SuperDash exactly like every other module's signals do.",
+  'operations': "Operations covers the day-to-day mechanics of running a brand — the connective tissue between every other module, even without its own dedicated screen yet.",
+  'sales': "Sales tracks the commercial motion of a brand — leads, pipeline, and closed revenue — feeding the same live signal every module contributes to the brand's overall health score.",
+  'branding': "Branding covers how a brand presents itself — visual identity, tone, and consistency — the layer Guardian checks to keep every brand feeling distinct even inside one shared OS.",
+  'console-navigation': "Console Navigation is about orientation — how quickly a new team member can find their way around a brand's console without training. It's a real usability signal, not a cosmetic one.",
+}
+
 export type NarratorStep = { step: string; text: string; detail: string }
 
 // Modules whose real, checked actions are inherently message/conversation-driven — used only
@@ -641,56 +661,60 @@ const MESSAGE_DRIVEN_MODULE_IDS = new Set<ModuleId>(['messaging', 'customer-serv
 // does, why it exists, its features, real-time behaviour, cross-brand integration, the AI
 // guidance moment, the animated message flow, and a short summary) lives in "detail" and
 // renders as the card's own body copy; "text" is only the narrator's own short reaction to
-// that beat, read aloud by the same voice everywhere.
+// that beat, read aloud by the same voice everywhere. "detail" is real body copy (read on
+// screen, not spoken) and can be as long/substantial as genuinely useful — deliberately
+// enriched with a second real sentence per step so each demo is a real, informative few
+// minutes rather than a single short line per card.
 export function buildNarratorSteps(moduleLabel: string, moduleDetail: string, moduleId?: ModuleId): NarratorStep[] {
   const actions = (moduleId && MODULE_REAL_ACTIONS[moduleId]) || null
   const messageDriven = moduleId ? MESSAGE_DRIVEN_MODULE_IDS.has(moduleId) : false
+  const deepDive = (moduleId && MODULE_DEEP_DIVE[moduleId]) || `Everything you try here is real and clickable — nothing in ${moduleLabel} is a static screenshot standing in for a real feature.`
   return [
     {
       step: '1 · Overview',
       text: 'Alright, here\'s the fun part.',
-      detail: `${moduleLabel}: ${moduleDetail}`,
+      detail: `${moduleLabel}: ${moduleDetail} ${deepDive}`,
     },
     {
       step: '2 · Why it exists',
       text: "Here's why this matters.",
-      detail: `Every module here exists to turn real (or synthetic, for demo sessions) activity into a live signal the rest of the OS can act on — ${moduleLabel} is no different.`,
+      detail: `Every module here exists to turn real (or synthetic, for demo sessions) activity into a live signal the rest of the OS can act on — ${moduleLabel} is no different. Without it, this brand would be flying blind on exactly the thing ${moduleLabel} tracks; with it, that same activity becomes something Guardian can watch and Autonomous can react to, automatically.`,
     },
     {
       step: '3 · Key features',
       text: 'Let me walk you through it.',
       detail: actions
-        ? `Try ${actions[0]} below, then ${actions[1].toLowerCase()} — that's the whole flow.`
-        : `Open ${moduleLabel} below and try whatever's on screen — it's all real and clickable.`,
+        ? `The real actions here are ${actions.join(', ')}. Try ${actions[0]} below, then ${actions[1].toLowerCase()} — that covers the core flow, and ${actions[2].toLowerCase()} shows you how it looks once it's already in motion.`
+        : `Open ${moduleLabel} below and try whatever's on screen — every button, field, and row is real and clickable, not a disabled preview.`,
     },
     {
       step: '4 · Real-time behaviour',
       text: 'Watch what happens next.',
-      detail: `Every action in ${moduleLabel} updates its numbers live — nothing here is a static screenshot.`,
+      detail: `Every action in ${moduleLabel} updates its numbers live — nothing here is a static screenshot. ${deepDive}`,
     },
     {
       step: '5 · Cross-brand integration',
       text: "Here's the clever part.",
-      detail: 'That same activity becomes a BrandMetric signal — Guardian keeps it in its own lane, Autonomous reacts to it, and SuperDash rolls it up live.',
+      detail: `That same activity becomes a BrandMetric signal the instant it happens — Guardian keeps it safely in ${moduleLabel}'s own brand lane (never leaking into another brand's data), Autonomous watches it for spikes or dips worth reacting to, and SuperDash rolls the whole thing up into one live, cross-brand view.`,
     },
     {
       step: '6 · AI guidance',
       text: "FoundAI's got thoughts on this too.",
-      detail: `Open FoundAI (bottom-right) while you're here — it already knows it's watching ${moduleLabel} and can answer real questions about it.`,
+      detail: `Open FoundAI (bottom-right) while you're here — it already knows it's watching ${moduleLabel} on this brand, and it can answer real questions about what you're looking at, suggest a next step, or just explain what a specific number means.`,
     },
     {
       step: '7 · Animated message flow',
       text: "Here's how it feels in the wild.",
       detail: messageDriven
-        ? `This is exactly the kind of exchange ${moduleLabel} powers — see the Message style preview above for a taste, cycling through WhatsApp, Telegram, iMessage, and Messenger styling.`
-        : `${moduleLabel} works more through its own real actions than chat — but the same OS-wide message engine (see the Message style preview above) is what powers the brands that do.`,
+        ? `This is exactly the kind of exchange ${moduleLabel} powers — see the Message style preview above for a taste, cycling through WhatsApp, Telegram, iMessage, and Messenger styling, since WhatsApp-style messaging is the whole reason this OS exists.`
+        : `${moduleLabel} works more through its own real actions than chat — but the same OS-wide message engine (see the Message style preview above) is what powers the brands that live and breathe WhatsApp-style conversations.`,
     },
     {
       step: '8 · Summary + next action',
       text: "That's the gist — nice work.",
       detail: actions
-        ? `Try ${actions[2]} now, then head to your survey — you'll see it reflected the moment you use it.`
-        : `That's ${moduleLabel}, in short. Your survey's up next.`,
+        ? `Try ${actions[2]} now, then head to your survey — you'll see it reflected the moment you use it. That's ${moduleLabel}: real actions, a real live signal, and a real place in the wider OS.`
+        : `That's ${moduleLabel}, in short — real, live, and connected to everything else in the OS. Your survey's up next.`,
     },
   ]
 }
@@ -707,14 +731,14 @@ export const MODULE_NARRATOR_STEPS: Partial<Record<ModuleId, NarratorStep[]>> = 
 // checked actions (Launch Campaign → Draft/Approve/Publish, Schedule Send, Review Analytics)
 // and its place in the wider OS (IntelligenceOS/Guardian/Autonomous), not invented functionality.
 const MARKETING_SUITE_NARRATOR_STEPS: NarratorStep[] = [
-  { step: '1 · Overview', text: 'This is your marketing command center.', detail: 'Plan, launch, and track campaigns — 12 live right now, reaching 48.2k people.' },
-  { step: '2 · Campaign creation', text: "Let's build one together.", detail: 'Launch Campaign starts one, then it moves through Draft → Approve → Publish.' },
-  { step: '3 · IntelligenceOS reaction', text: 'Watch the system think in real time.', detail: 'The moment a campaign publishes, its engagement becomes a live BrandMetric signal.' },
-  { step: '4 · Engagement flows', text: "Here's where the audience moves.", detail: 'Reach and conversion update live as real people interact with the campaign.' },
-  { step: '5 · Category insights', text: 'Guardian gets loud here — check it out.', detail: "Guardian watches this module's data to keep it safely inside its own brand lane." },
-  { step: '6 · Autonomous reactions', text: 'The OS makes smart decisions instantly.', detail: 'If a campaign surges or dips, Autonomous auto-optimizes or auto-coaches — no human needed.' },
-  { step: '7 · Real promo example', text: "Let's fire off a quick promo.", detail: 'Try Schedule Send on a real campaign row — that\'s the whole promo flow, end to end.' },
-  { step: '8 · Summary + next steps', text: "Nice — you're ready to explore more.", detail: "That's Marketing Suite — and like every module, its usage rolls into the same Package Model D pricing tiers (SystemOS/IntelligenceOS/QuantumOS) the whole OS runs on. Your survey's up next, then Free Roam." },
+  { step: '1 · Overview', text: 'This is your marketing command center.', detail: 'Plan, launch, and track campaigns — 12 live right now, reaching 48.2k people. Every campaign row you see is a real, editable record, not a screenshot, and every metric next to it updates the moment you interact with it.' },
+  { step: '2 · Campaign creation', text: "Let's build one together.", detail: 'Launch Campaign starts one, then it moves through Draft \u2192 Approve \u2192 Publish — the same real pipeline a marketer would actually use, with each stage change tracked. Nothing publishes by accident; Approve is a deliberate, separate step.' },
+  { step: '3 · IntelligenceOS reaction', text: 'Watch the system think in real time.', detail: 'The moment a campaign publishes, its engagement becomes a live BrandMetric signal — the same signal SuperDash reads for every other module. This is IntelligenceOS in action: raw activity, turned into a number the rest of the OS can reason about within seconds.' },
+  { step: '4 · Engagement flows', text: "Here's where the audience moves.", detail: 'Reach and conversion update live as real people interact with the campaign. Watch the category breakdown shift as different audience segments respond — that breakdown is exactly what feeds the anomaly score you\'ll see mentioned in the next step.' },
+  { step: '5 · Category insights', text: 'Guardian gets loud here — check it out.', detail: "Guardian watches this module's data to keep it safely inside its own brand lane — a spike in FoundRetail's marketing engagement never leaks into FoundMeat's numbers, even though both run the exact same module. That isolation is enforced on every single read, not just at setup." },
+  { step: '6 · Autonomous reactions', text: 'The OS makes smart decisions instantly.', detail: 'If a campaign surges or dips, Autonomous auto-optimizes or auto-coaches — no human needed. The threshold for "surge" isn\'t arbitrary either: it requires both a real engagement-score jump and a minimum submission count, so a single outlier can\'t trigger a false reaction.' },
+  { step: '7 · Real promo example', text: "Let's fire off a quick promo.", detail: 'Try Schedule Send on a real campaign row — that\'s the whole promo flow, end to end. From here, that same activity is already visible back in SuperDash\'s brand rollup — try opening it in another tab to watch the number move.' },
+  { step: '8 · Summary + next steps', text: "Nice — you're ready to explore more.", detail: "That's Marketing Suite — and like every module, its usage rolls into the same Package Model D pricing tiers (SystemOS/IntelligenceOS/QuantumOS) the whole OS runs on. You've now seen campaign creation, real-time engagement, Guardian's brand isolation, and Autonomous's automatic reactions — the same four-part pattern every module in this OS follows. Your survey's up next, then Free Roam." },
 ]
 MODULE_NARRATOR_STEPS['marketing-suite'] = MARKETING_SUITE_NARRATOR_STEPS
 
@@ -1035,8 +1059,13 @@ export const NARRATION_PLAYER_SCRIPT = `
   function narrationFor(el) { return el ? el.getAttribute('data-narration') : ''; }
   function setButtonLabel(btn, label) { if (btn) btn.textContent = label; }
 
-  var audioEnabled = false;
-  try { audioEnabled = localStorage.getItem('fo-audio-enabled') === '1'; } catch (err) {}
+  // Per explicit product direction: Audio now defaults ON (a real spoken welcome/guide plays
+  // shortly after a narrator surface loads) rather than requiring an opt-in first — testers
+  // asked for this to feel like a real guided introduction on sign-in, not a silent page.
+  // Still a genuine, always-visible toggle: an explicit OFF choice (stored '0') is respected
+  // and persists, exactly like the Narrator visibility toggle already does.
+  var audioEnabled = true;
+  try { audioEnabled = localStorage.getItem('fo-audio-enabled') !== '0'; } catch (err) {}
 
   function setAudioButtonLabels() {
     var toggles = document.querySelectorAll('[data-audio-toggle]');
@@ -1116,13 +1145,15 @@ export const NARRATION_PLAYER_SCRIPT = `
   }
   ;[0, 60, 200, 500, 1200, 2000].forEach(function (delay) { window.setTimeout(applyInitialState, delay) })
 
-  // Opt-in-only auto-audio: 15 seconds after this narrator surface loads, if Audio was
-  // already ON (the user toggled it on previously — never on by default), speak the page's
-  // first narrator line once. If Audio is OFF, this does nothing at all.
+  // Real spoken guide on arrival: 2.5 seconds after this narrator surface loads (long enough
+  // for the retry-settled state above to land, short enough to feel like a real greeting
+  // rather than a delayed afterthought), if Audio is ON (the real new default — see above),
+  // speak the page's first narrator line once. An explicit Audio: OFF still fully silences
+  // this, same as every other narrate action on the page.
   window.setTimeout(function () {
     if (!audioEnabled) return;
     var first = document.querySelector('[data-narration]');
     if (first) speak(narrationFor(first));
-  }, 15000);
+  }, 2500);
 })();
 `

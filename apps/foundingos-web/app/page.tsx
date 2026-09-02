@@ -74,8 +74,10 @@ const NARRATION_PLAYER_SCRIPT = `
   function narrationFor(el) { return el ? el.getAttribute('data-narration') : ''; }
   function setButtonLabel(btn, label) { if (btn) btn.textContent = label; }
 
-  var audioEnabled = false;
-  try { audioEnabled = localStorage.getItem('fo-audio-enabled') === '1'; } catch (err) {}
+  // Defaults ON now (see tester-data.ts's NARRATION_PLAYER_SCRIPT — kept in sync here); an
+  // explicit OFF choice (stored '0') is still respected and persists.
+  var audioEnabled = true;
+  try { audioEnabled = localStorage.getItem('fo-audio-enabled') !== '0'; } catch (err) {}
 
   function setAudioButtonLabels() {
     var toggles = document.querySelectorAll('[data-audio-toggle]');
@@ -146,7 +148,7 @@ const NARRATION_PLAYER_SCRIPT = `
     if (!audioEnabled) return;
     var first = document.querySelector('[data-narration]');
     if (first) speak(narrationFor(first));
-  }, 15000);
+  }, 2500);
 })();
 `
 
@@ -232,7 +234,7 @@ export default function RootLoginPage() {
             <div className="quantum-narrator-panel" data-narration="Quick legal bit — short and global. We keep this clear so anyone, anywhere understands how the OS works.">
               <p>Quick legal bit — short and global. We keep this clear so anyone, anywhere understands how the OS works.</p>
             </div>
-            <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: OFF</button>
+            <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: ON</button>
             <label className="tester-legal-checkbox">
               <input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} />
               <span>I have read and agree to the Terms of Service, Privacy Policy, and applicable agreements.</span>

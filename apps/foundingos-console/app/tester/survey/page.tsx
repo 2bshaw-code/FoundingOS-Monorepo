@@ -81,7 +81,7 @@ export default async function TesterSurveyPage({ searchParams }: { searchParams:
             <p>{DEMO_COMPLETE_CELEBRATION_LINE}</p>
             <p>{NARRATOR_SURVEY_LINE}</p>
           </div>
-          <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: OFF</button>
+          <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: ON</button>
           <p>{SURVEY_INTRO}</p>
         </article>
 

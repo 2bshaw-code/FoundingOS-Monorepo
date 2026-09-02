@@ -74,7 +74,7 @@ export default async function TesterDashboardPage() {
           <div className="quantum-narrator-panel">
             <p>{SWITCHER_PANEL_NARRATOR_LINE}</p>
           </div>
-          <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: OFF</button>
+          <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: ON</button>
           <form data-switcher-form style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'grid', gap: 8 }}>
               {switcherOptions.map((option) => (
@@ -166,7 +166,7 @@ export default async function TesterDashboardPage() {
           <div className="quantum-narrator-panel">
             <p>{SWITCHER_PANEL_NARRATOR_LINE}</p>
           </div>
-          <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: OFF</button>
+          <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: ON</button>
           <form data-switcher-form style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'grid', gap: 8 }}>
               {switcherOptions.map((option) => (

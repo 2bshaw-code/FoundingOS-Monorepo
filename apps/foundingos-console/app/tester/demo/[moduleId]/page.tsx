@@ -159,7 +159,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
             <p>Alright, let's dive in.</p>
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: OFF</button>
+            <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle>Audio: ON</button>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
               <input type="checkbox" id="narrator-enabled-toggle" defaultChecked />
               Narrator: ON / OFF
