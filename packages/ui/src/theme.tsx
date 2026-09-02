@@ -4,7 +4,7 @@
 */
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const THEME_KEY = 'foundingos-theme'
 type ThemeMode = 'night' | 'day'
@@ -32,6 +32,11 @@ function applyTheme(mode: ThemeMode) {
 
 export function ThemeToggle({ className = 'theme-toggle' }: { className?: string }) {
   const [mode, setMode] = useState<ThemeMode>('night')
+  // Same real double-write/flash bug as topbar.tsx's sidebar-collapse state, same fix: skip this
+  // effect's own first invocation so it doesn't fire with the stale 'night' default on the same
+  // initial commit as the mount effect below (which already applies the real stored value) —
+  // see topbar.tsx for the full empirically-confirmed root-cause writeup.
+  const skipNextApplyRef = useRef(true)
 
   useEffect(() => {
     const initial = readStoredTheme()
@@ -40,6 +45,7 @@ export function ThemeToggle({ className = 'theme-toggle' }: { className?: string
   }, [])
 
   useEffect(() => {
+    if (skipNextApplyRef.current) { skipNextApplyRef.current = false; return }
     applyTheme(mode)
   }, [mode])
 

@@ -4,7 +4,7 @@
 */
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BrandConsoleConfig } from './console'
 import { ThemeToggle } from './theme'
 import { QuantumSphereLogo } from './QuantumSphereLogo'
@@ -34,6 +34,18 @@ function ActualTopbar({ config, variant = 'console' }: { config?: BrandConsoleCo
   const theme = { '--accent': config?.colors.accent ?? '#00E0FF' } as React.CSSProperties
   const sphereAccent = config?.name && config.name !== 'FoundingOS' ? config.colors.accent : undefined
   const [collapsed, setCollapsed] = useState(false)
+  // Real fix for a genuine double-write/visible-flash bug (confirmed live via instrumented
+  // localStorage/MutationObserver logging): both effects below fire on the same initial mount
+  // commit. The mount-only effect reads the real stored preference and applies it correctly —
+  // but the effect below, reacting to `collapsed`, ALSO fires on that same first commit, before
+  // the mount effect's setCollapsed() has flushed a re-render, so it runs with the stale default
+  // (false) and immediately overwrites the correct value. React then re-renders from
+  // setCollapsed() and this effect fires again with the real value, correcting it — but not
+  // before a real, user-visible flash (sidebar briefly shows its default state, then snaps to the
+  // stored one) and a redundant conflicting localStorage write. Skipping this effect's own first
+  // invocation (the standard React idiom for this) removes the stale write entirely; every
+  // subsequent invocation — i.e. every real user click on the toggle — behaves exactly as before.
+  const skipNextApplyRef = useRef(true)
 
   useEffect(() => {
    const initial = readSidebarPreference()
@@ -42,6 +54,7 @@ function ActualTopbar({ config, variant = 'console' }: { config?: BrandConsoleCo
   }, [])
 
   useEffect(() => {
+   if (skipNextApplyRef.current) { skipNextApplyRef.current = false; return }
    applySidebarPreference(collapsed)
   }, [collapsed])
 
