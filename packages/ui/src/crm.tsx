@@ -216,7 +216,13 @@ function seedRecords(brand: string, blueprint: CRMBlueprint): CRMRecord[] {
     extraLabel: blueprint.extraLabel,
     extraValue: `${blueprint.entityLabel} detail ${index + 1}`,
     brandField: row[3],
-    updatedAt: nowLabel(),
+    // Fixed, deterministic label — not nowLabel() — because this seed data is built via a
+    // useState lazy initializer, which React runs once during SSR and once again during client
+    // hydration, at genuinely different wall-clock moments; calling new Date() in either path
+    // makes the two renders produce different text (a real, confirmed-live hydration mismatch,
+    // React error #425). Also more honest: these are illustrative seed records created when the
+    // demo mounted, not real events that happened at a precise historical moment.
+    updatedAt: 'Just now',
   }))
 }
 
@@ -229,16 +235,20 @@ function seedTasks(brand: string): CRMTask[] {
 }
 
 function seedNotes(brand: string): CRMNote[] {
+  // Fixed, deterministic labels here too — see seedRecords' updatedAt comment for why
+  // (useState lazy initializer runs once on the server, once again on the client, at different
+  // real-world moments; new Date() there is a confirmed-live hydration-mismatch trigger).
   return [
-    { id: `${brand}-note-1`, targetType: 'customer', targetId: `${brand.toLowerCase()}-1`, title: 'Call summary', body: 'Confirmed next steps and shared package details.', editedAt: nowLabel() },
-    { id: `${brand}-note-2`, targetType: 'lead', targetId: `${brand.toLowerCase()}-2`, title: 'Qualification note', body: 'Lead meets the main criteria and needs a proposal.', editedAt: nowLabel() },
+    { id: `${brand}-note-1`, targetType: 'customer', targetId: `${brand.toLowerCase()}-1`, title: 'Call summary', body: 'Confirmed next steps and shared package details.', editedAt: 'Just now' },
+    { id: `${brand}-note-2`, targetType: 'lead', targetId: `${brand.toLowerCase()}-2`, title: 'Qualification note', body: 'Lead meets the main criteria and needs a proposal.', editedAt: 'Just now' },
   ]
 }
 
 function seedActivity(brand: string): CRMActivity[] {
+  // Same fix, same reason as seedRecords/seedNotes above.
   return [
-    { id: `${brand}-activity-1`, title: 'Dashboard opened', detail: 'CRM workspace loaded with brand-specific modules.', timestamp: nowLabel() },
-    { id: `${brand}-activity-2`, title: 'Lead pipeline reviewed', detail: 'Current records and stages synced into the console.', timestamp: nowLabel() },
+    { id: `${brand}-activity-1`, title: 'Dashboard opened', detail: 'CRM workspace loaded with brand-specific modules.', timestamp: 'Just now' },
+    { id: `${brand}-activity-2`, title: 'Lead pipeline reviewed', detail: 'Current records and stages synced into the console.', timestamp: 'Just now' },
   ]
 }
 

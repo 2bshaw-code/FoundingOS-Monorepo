@@ -99,4 +99,28 @@ for (const root of localeCheckRoots) {
   }
 }
 
-console.log(`Hydration safety verified: ${audioToggleSitesChecked} audio-toggle sites protected, both effect-skip guards present, ${localeSitesChecked} app/package files scanned clean for locale-dependent formatting bugs.`)
+// 4. Non-deterministic values computed directly inside a `useState(() => ...)` lazy initializer
+//    — confirmed live as the actual root cause of a second, distinct React error #425 on /crm
+//    (the locale fix above did not resolve it): React runs a lazy initializer once during the
+//    server render AND once again during client hydration, at genuinely different real-world
+//    moments — so a function that calls new Date()/Math.random() inside one produces different
+//    output in each pass. This is the exact same class as the very first bug fixed this session
+//    (AnimatedMessageFlow's Math.random() in a useMemo). crm.tsx's seedRecords/seedNotes/
+//    seedActivity used to call nowLabel() (which calls new Date()) this way — fixed to a
+//    deterministic 'Just now' placeholder, since this is illustrative seed data, not a real
+//    historical timestamp anyway.
+const crmSource = await readFile(new URL('packages/ui/src/crm.tsx', repoRoot), 'utf8')
+for (const fnName of ['seedRecords', 'seedNotes', 'seedActivity']) {
+  const fnMatch = crmSource.match(new RegExp(`function ${fnName}\\([^)]*\\)[^{]*\\{[\\s\\S]*?\\n\\}`))
+  const codeOnly = fnMatch ? fnMatch[0].split('\n').map((line) => line.replace(/\/\/.*$/, '')).join('\n') : ''
+  if (fnMatch && /nowLabel\(\)|new Date\(|Math\.random\(/.test(codeOnly)) {
+    throw new Error(
+      `packages/ui/src/crm.tsx: ${fnName} calls a non-deterministic function (nowLabel/new Date/` +
+      `Math.random) — this seed data is built via a useState lazy initializer, which runs once ` +
+      `on the server and once again on the client at a different real-world moment, so this will ` +
+      `reintroduce the confirmed hydration-mismatch bug (React error #425).`
+    )
+  }
+}
+
+console.log(`Hydration safety verified: ${audioToggleSitesChecked} audio-toggle sites protected, both effect-skip guards present, ${localeSitesChecked} app/package files scanned clean for locale-dependent formatting bugs, CRM seed functions clean of non-deterministic values.`)
