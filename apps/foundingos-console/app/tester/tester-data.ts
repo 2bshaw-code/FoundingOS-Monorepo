@@ -162,13 +162,28 @@ export function exploreTesterId(realTesterId: string, moduleId: string): string 
   return `${realTesterId}::explore::${moduleId}`
 }
 
-// Super Founder Admin — full-access account, bypasses the tester credential pool above.
-// Password is intentionally kept out of source (env var only, dev fallback for local testing).
+// Super Founder Admin — full-access accounts, bypass the tester credential pool above. Every
+// real password is kept out of source (env var only, dev fallback for local testing) — never
+// hardcoded here, even though these were shared with me in plaintext chat, since this file is
+// committed to git. Every account here shares the exact same 'super-founder-admin' identity/
+// token/access level once signed in (see isSuperFounderAdmin's caller in the login route) —
+// there's no per-admin role distinction, matching what was asked for ("same auth as my admin").
+// SUPER_FOUNDER_ADMIN_EMAIL stays exported as the primary account's email — used only as a
+// cosmetic label for the shared admin-tester tracking record (see adminTesterId's callers),
+// never for anything security-critical.
 export const SUPER_FOUNDER_ADMIN_EMAIL = '2bshaw@gmail.com'
-const SUPER_FOUNDER_ADMIN_PASSWORD = process.env.SUPER_FOUNDER_ADMIN_PASSWORD ?? 'founderos-super-admin-dev-only'
+type AdminAccount = { name: string; email: string; password: string }
+const SUPER_FOUNDER_ADMINS: AdminAccount[] = [
+  { name: 'Founder', email: SUPER_FOUNDER_ADMIN_EMAIL, password: process.env.SUPER_FOUNDER_ADMIN_PASSWORD ?? 'founderos-super-admin-dev-only' },
+  { name: 'Darren Watts', email: 'darrenwatts8@yahoo.co.uk', password: process.env.SUPER_FOUNDER_ADMIN_PASSWORD_DARREN ?? 'founderos-super-admin-dev-only-darren' },
+  { name: 'Paul Bogard', email: 'palloran.g@gmail.com', password: process.env.SUPER_FOUNDER_ADMIN_PASSWORD_PAUL ?? 'founderos-super-admin-dev-only-paul' },
+  // Dave Alexandre — real email + password not provided yet ("tbc"); not added until both are
+  // real, so there's never a guessed/placeholder password silently granting real admin access.
+]
 
 export function isSuperFounderAdmin(email: string, password: string): boolean {
-  return email.trim().toLowerCase() === SUPER_FOUNDER_ADMIN_EMAIL && password === SUPER_FOUNDER_ADMIN_PASSWORD
+  const normalizedEmail = email.trim().toLowerCase()
+  return SUPER_FOUNDER_ADMINS.some((account) => account.email === normalizedEmail && password === account.password)
 }
 
 // Every module a tester can be (re)assigned to, derived from the credential catalog
