@@ -10,6 +10,8 @@ import type { CSSProperties } from 'react'
 import { DemoMessageBoard } from './demo-message-board'
 import { GetStartedChecklist } from './get-started-checklist'
 import { DataMigrationHub } from './data-migration-hub'
+import { RealDealsPanel, RealBrandFinancePanel, RealInvoicesPanel } from './real-monetary-panels'
+import { resolveBrandSlugFromName } from './real-monetary'
 import { brands } from '@foundingos/config'
 import { recommendQuantumOS, type BusinessProfile } from '@foundingos/config/quantum-recommendation'
 import { RecommendationBadge } from './onboarding/RecommendationBadge'
@@ -652,6 +654,7 @@ export function BrandDashboard({ config, variant = 'growth' }: { config: BrandCo
   const crm = config.crm ?? defaultCRM(config)
   const moduleCards = consoleModules(config)
   const accentStyle = consoleStyle(config)
+  const brandSlug = resolveBrandSlugFromName(config.name)
   return (
     <section className="console-page quantum-ambient-grid" style={accentStyle}>
       <div className="quantum-particle-drift"><span className="quantum-particle" /><span className="quantum-particle" /><span className="quantum-particle" /></div>
@@ -660,6 +663,8 @@ export function BrandDashboard({ config, variant = 'growth' }: { config: BrandCo
       <div className="kpi-grid">
         {config.dashboard.metrics.map((metric, index) => <KPIWidget key={metric.label} metric={metric} index={index} />)}
       </div>
+
+      {brandSlug && <RealBrandFinancePanel brandSlug={brandSlug} brandName={config.name} />}
 
       <div className="module-card-grid">
         {moduleCards.map((module, index) => (
@@ -1198,6 +1203,7 @@ function CRMBoardSection({ title, fields, rows, accentStyle, description }: { ti
 export function BrandModulePage({ config, moduleId }: { config: BrandConsoleConfig; moduleId: string }) {
   const module = config.modules.find((item) => item.id === moduleId) ?? { id: moduleId, label: `Module: ${moduleId}`, description: 'This module is active.', metrics: [], actions: ['Review activity', 'Configure module'] }
   const accentStyle = consoleStyle(config)
+  const brandSlug = resolveBrandSlugFromName(config.name)
 
   if (module.id === 'products') {
     const productFields: DataField[] = [
@@ -1237,20 +1243,27 @@ export function BrandModulePage({ config, moduleId }: { config: BrandConsoleConf
   const rows = makeRows(module.id, module.actions.length > 0 ? module.actions : [module.label], fields)
 
   return (
-    <DataWorkbench
-      title={module.label}
-      description={module.description}
-      fields={fields}
-      rows={rows}
-      cards={[
-        { label: 'Actions', value: String(module.actions.length), trend: 'Ready', icon: '▦' },
-        { label: 'Metrics', value: String(module.metrics.length), trend: 'Live', icon: '◌' },
-        { label: 'Workflow steps', value: String((module.workflow ?? []).length || 3), trend: 'Guided', icon: '◆' },
-      ]}
-      accentStyle={accentStyle}
-      pageSize={5}
-      emptyCopy={`No ${module.label.toLowerCase()} records yet.`}
-    />
+    <>
+      <DataWorkbench
+        title={module.label}
+        description={module.description}
+        fields={fields}
+        rows={rows}
+        cards={[
+          { label: 'Actions', value: String(module.actions.length), trend: 'Ready', icon: '▦' },
+          { label: 'Metrics', value: String(module.metrics.length), trend: 'Live', icon: '◌' },
+          { label: 'Workflow steps', value: String((module.workflow ?? []).length || 3), trend: 'Guided', icon: '◆' },
+        ]}
+        accentStyle={accentStyle}
+        pageSize={5}
+        emptyCopy={`No ${module.label.toLowerCase()} records yet.`}
+      />
+      {module.id === 'accounting' && brandSlug && (
+        <div className="module-card-grid" style={{ marginTop: 16 }}>
+          <RealInvoicesPanel brandSlug={brandSlug} brandName={config.name} />
+        </div>
+      )}
+    </>
   )
 }
 
@@ -1283,6 +1296,7 @@ export function CRMBoard({ config }: { config: BrandConsoleConfig }) {
   const crm = config.crm ?? defaultCRM(config)
   const sections = extensionGroups(config)
   const [activeSection, setActiveSection] = useState(sections[0]?.key ?? 'contacts')
+  const brandSlug = resolveBrandSlugFromName(config.name)
 
   const current = sections.find((section) => section.key === activeSection) ?? sections[0]
 
@@ -1310,6 +1324,7 @@ export function CRMBoard({ config }: { config: BrandConsoleConfig }) {
             }[config.name] ?? 'Contacts, companies, deals, tasks, notes, and activity.'
           }</p>
         </article>
+        {brandSlug && <RealDealsPanel brandSlug={brandSlug} brandName={config.name} />}
       </div>
 
       <div className="manager-tabs">

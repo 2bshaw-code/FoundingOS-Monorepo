@@ -88,18 +88,18 @@ function RealSubscriptionsSection() {
 
   return (
     <div className="module-card fo-card" style={{ marginBottom: 16 }}>
-      <strong>Real subscriptions <small style={{ opacity: 0.55, fontWeight: 400 }}>(live, database-backed — informational only, no payment processor)</small></strong>
+      <strong>Real subscriptions <small style={{ opacity: 0.55, fontWeight: 400 }}>(live MRR/ARR{totals && totals.totalMrr === 0 ? ' — currently 0, honestly, until a real subscription is assigned' : ''} — database-backed, informational only, no payment processor)</small></strong>
       <p style={{ margin: '6px 0' }}>
         Total real MRR: £{totals?.totalMrr.toLocaleString() ?? 0} · Real ARR: £{totals?.totalArr.toLocaleString() ?? 0} · {totals?.activeCount ?? 0} of {subscriptions.length} brands active
-        {fxRates && totals ? (
+        {fxRates && totals && totals.totalMrr > 0 ? (
           <>
             {' '}<small style={{ opacity: 0.7 }}>
               (FX view: {fxEquivalent(totals.totalMrr, 'USD') ?? '—'} · {fxEquivalent(totals.totalMrr, 'EUR') ?? '—'} MRR — real live rate, read-only)
             </small>
           </>
-        ) : (
-          <small style={{ opacity: 0.6 }}> (live FX unavailable right now)</small>
-        )}
+        ) : !fxRates ? (
+          <small style={{ opacity: 0.6 }}> (FX unavailable, showing base currency only)</small>
+        ) : null}
       </p>
       <ul style={{ margin: 0 }}>
         {subscriptions.map((s) => (

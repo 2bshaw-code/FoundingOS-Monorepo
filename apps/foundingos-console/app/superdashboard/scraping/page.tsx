@@ -6,6 +6,7 @@ import { readBrandScrapeRows, readRecentEngagementLog, readRecentAnomalyLog } fr
 import { buildCustomerPipeline } from '../customer-pipeline-store.server'
 import { ScrapingDashboard } from '@foundingos/ui/superdash/ScrapingDashboard'
 import { CustomerPipelinePanel } from '@foundingos/ui/superdash/CustomerPipelinePanel'
+import { RealPipelineValuePanel } from '@foundingos/ui/real-pipeline-value-panel'
 
 // FounderOS-only route (same access model as /superdashboard itself — middleware.ts already
 // gates this whole /superdashboard/* prefix: admin gets full read/write access, free-roam/
@@ -42,6 +43,8 @@ export default async function ScrapingDashboardPage({ searchParams }: { searchPa
         totalContacts={pipeline.totalContacts}
         totalSubmissions={pipeline.totalSubmissions}
       />
+
+      <RealPipelineValuePanel />
     </section>
   )
 }
