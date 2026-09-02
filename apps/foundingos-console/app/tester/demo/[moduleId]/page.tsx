@@ -126,8 +126,10 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
         <h1>{tester.moduleLabel} demo</h1>
         <span>
           {hasCompletedSurvey
-            ? `Revisiting your assigned module demo for ${tester.moduleLabel}.`
-            : `Explore your assigned module demo before starting your ${tester.moduleLabel} survey.`}
+            ? `Revisiting the ${tester.moduleLabel} demo.`
+            : needsModuleQueryParam
+              ? `Exploring the ${tester.moduleLabel} demo before starting its survey.`
+              : `Explore your assigned module demo before starting your ${tester.moduleLabel} survey.`}
         </span>
       </header>
 
