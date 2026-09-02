@@ -140,7 +140,12 @@ export type ModuleMismatch = { app: string; navHref: string; missingModuleId: st
 // override, so these two are a real, confirmed false positive, not real drift — excluded by
 // exact href match rather than by module id, so a genuinely new/broken /modules/* entry is
 // still caught.
-const KNOWN_EXPLICIT_OVERRIDE_HREFS = new Set(['/modules/marketing', '/modules/foundai-demo'])
+// /modules/sales added for the same reason: a real, dedicated SalesModule component (its own
+// tabs: Pipeline/Quotes/Activities/Analytics) with no config.modules entry, since — unlike
+// accounting/messaging/customer-service/marketing-suite, which DO have real config.modules
+// entries left over from when they used the generic BrandModulePage fallback — Sales never
+// had a page or a module entry anywhere in the ecosystem before now.
+const KNOWN_EXPLICIT_OVERRIDE_HREFS = new Set(['/modules/marketing', '/modules/foundai-demo', '/modules/sales'])
 
 async function scanOwnModuleMismatches(): Promise<ModuleMismatch[]> {
   const { brandConfig } = await import('../../brand-config')
