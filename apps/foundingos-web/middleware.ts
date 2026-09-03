@@ -54,11 +54,19 @@ const SURVEY_URL = 'https://console.foundingos.com/tester/survey'
 // "/" itself is the real Quantum login page — never gate it (that would be a redirect
 // loop), checked explicitly inside the function body rather than via a matcher trick, for
 // reliability. Every other route in this app (the real Homepage at /home, /about,
-// /pricing, /contact, plus the dormant /landing /survey /tester-login /onboarding demo
-// pages) goes through the same real role check as every other app on the shared session
-// domain.
+// /pricing, plus the dormant /landing /survey /tester-login /onboarding demo pages) goes
+// through the same real role check as every other app on the shared session domain.
+//
+// /legal and /contact are the one deliberate exception: real Terms/Privacy/Cookie
+// information and real support info have to be reachable by anyone — regulators,
+// prospective users deciding whether to sign up, testers who forgot their access code —
+// without first requiring a login. Gating legal/support pages behind a session would be a
+// genuine, real problem (and is a standard carve-out on every gated site), not just an
+// inconsistency with this specific tester program.
+const PUBLIC_PATHS = new Set(['/legal', '/contact'])
+
 export async function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname === '/') return NextResponse.next()
+  if (request.nextUrl.pathname === '/' || PUBLIC_PATHS.has(request.nextUrl.pathname)) return NextResponse.next()
 
   const adminToken = request.cookies.get(ADMIN_COOKIE)?.value
   const adminId = adminToken ? await verifyToken('admin', adminToken) : null

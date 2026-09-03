@@ -500,6 +500,10 @@ export function FounderLauncher() {
         </article>
       </section>
       <footer className="site-footer">
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center', marginBottom: 16, fontSize: 13 }}>
+          <Link href="/legal">Legal &amp; Privacy</Link>
+          <Link href="/contact">Contact &amp; Support</Link>
+        </div>
         <PremiumSocialLinks accent="#00E0FF" mode="full" label="Social & messaging" />
       </footer>
       <FoundAI brand={brands.foundingos} />

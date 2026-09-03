@@ -5,12 +5,14 @@
 import { FounderLauncher } from '@foundingos/ui'
 import { notFound } from 'next/navigation'
 
-const pages = new Set(['about', 'pricing', 'contact'])
+const pages = new Set(['home', 'about', 'pricing', 'contact'])
 
+// Required (non-optional) catch-all — deliberately does NOT match "/" itself, so the
+// real root page.tsx (the Quantum login gate) is never shadowed. /home is the real
+// Homepage destination testers/admin/free-roam land on after logging in at "/".
 export default async function Page({ params }: { params: Promise<{ slug?: string[] }> }) {
   const { slug = [] } = await params
   const page = slug[0] || 'home'
-  if (page === 'home') return <FounderLauncher />
   if (!pages.has(page)) notFound()
   return <FounderLauncher />
 }

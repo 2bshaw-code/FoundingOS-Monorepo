@@ -174,7 +174,7 @@ export default function FounderConsolePage() {
     { label: copy.businesses, value: geo.formatNumber(5), trend: copy.active, icon: '◍', tone: 'good' as const },
     { label: copy.totalRevenue, value: geo.formatCurrency(48200), trend: geo.locale, icon: '£', tone: 'good' as const },
     { label: copy.totalOrders, value: geo.formatNumber(458), trend: copy.live, icon: '▦', tone: 'watch' as const },
-    { label: copy.ai, value: geo.formatNumber(12), trend: copy.active, icon: 'B', tone: 'good' as const },
+    { label: copy.ai, value: geo.formatNumber(12), trend: copy.active, icon: '✦', tone: 'good' as const },
   ]
 
   return (

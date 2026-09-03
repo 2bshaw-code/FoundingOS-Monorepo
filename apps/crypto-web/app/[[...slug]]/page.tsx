@@ -152,7 +152,7 @@ export default function Page() {
         <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 28, background: 'linear-gradient(135deg, rgba(153,51,255,0.12), rgba(13,18,22,0.8))', padding: 28 }}>
           <div style={{ minHeight: 320, borderRadius: 24, background: 'radial-gradient(circle at top, rgba(153,51,255,0.28), transparent 58%), rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', display: 'grid', placeItems: 'center', padding: 20, textAlign: 'center' }}>
             <div style={{ display: 'grid', gap: 14, justifyItems: 'center', width: '100%' }}>
-              <div style={{ width: 132, height: 132, borderRadius: '50%', background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.34), transparent 38%), #9933FF', color: '#061018', display: 'grid', placeItems: 'center', fontSize: 56, fontWeight: 900, boxShadow: '0 0 0 14px rgba(255,255,255,0.04), 0 0 44px rgba(153,51,255,0.45)', animation: 'foundAiFloat 4s ease-in-out infinite' }}>B</div>
+              <div style={{ width: 132, height: 132, borderRadius: '50%', background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.34), transparent 38%), #9933FF', color: '#061018', display: 'grid', placeItems: 'center', fontSize: 56, fontWeight: 900, boxShadow: '0 0 0 14px rgba(255,255,255,0.04), 0 0 44px rgba(153,51,255,0.45)', animation: 'foundAiFloat 4s ease-in-out infinite' }}>AI</div>
               <div>
                 <div style={{ letterSpacing: '0.18em', textTransform: 'uppercase', fontSize: 12, fontWeight: 800, color: '#ddd6fe' }}>FoundAI</div>
                 <h3 style={{ margin: '10px 0 0', fontSize: 28, lineHeight: 1.1 }}>Premium support for modern trading conversations</h3>
@@ -284,7 +284,7 @@ export default function Page() {
             <div onClick={(event) => event.stopPropagation()} style={{ position: 'relative', width: 'min(440px, 92vw)', background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(10, 15, 20, 0.98))', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 28, boxShadow: '0 28px 80px rgba(0,0,0,0.45)', padding: 24, color: '#edf7ff' }}>
               <button type="button" onClick={() => setFoundAiOpen(false)} style={{ position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', color: '#edf7ff', cursor: 'pointer', fontSize: 18 }}>×</button>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
-                <div style={{ width: 74, height: 74, borderRadius: '50%', background: '#9933FF', color: '#071014', display: 'grid', placeItems: 'center', fontWeight: 900, fontSize: 28, boxShadow: '0 0 0 8px rgba(255,255,255,0.04)', animation: 'foundAiFloat 4s ease-in-out infinite' }}>B</div>
+                <div style={{ width: 74, height: 74, borderRadius: '50%', background: '#9933FF', color: '#071014', display: 'grid', placeItems: 'center', fontWeight: 900, fontSize: 28, boxShadow: '0 0 0 8px rgba(255,255,255,0.04)', animation: 'foundAiFloat 4s ease-in-out infinite' }}>AI</div>
                 <div>
                   <div style={{ letterSpacing: '0.16em', textTransform: 'uppercase', fontSize: 11, fontWeight: 800, color: '#9933FF' }}>FoundAI</div>
                   <h3 style={{ margin: '8px 0 0', fontSize: 24 }}>Your smart brand assistant</h3>

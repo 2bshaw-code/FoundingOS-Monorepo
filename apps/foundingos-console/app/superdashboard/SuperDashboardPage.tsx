@@ -186,7 +186,7 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
     { label: 'Accounting health', value: `${aggregates.avgAccounting}%`, trend: 'Across 8 brands', icon: '£', tone: 'good', history: [90, 91, 92, 93, 92, aggregates.avgAccounting] },
     { label: 'Service load', value: aggregates.totalServiceLoad.toLocaleString('en-GB'), trend: 'Open tickets, all brands', icon: '◌', tone: aggregates.totalServiceLoad > 250 ? 'watch' : 'good', history: [210, 225, 240, 260, 270, aggregates.totalServiceLoad] },
     { label: 'Messaging activity', value: aggregates.totalMessaging.toLocaleString('en-GB'), trend: 'Messages / day', icon: '✉', tone: 'good', history: [6200, 6800, 7100, 7600, 7900, aggregates.totalMessaging] },
-    { label: 'AI actions', value: aggregates.totalAiActions.toLocaleString('en-GB'), trend: 'Autonomous actions / day', icon: 'B', tone: 'good', history: [560, 610, 650, 700, 780, aggregates.totalAiActions] },
+    { label: 'AI actions', value: aggregates.totalAiActions.toLocaleString('en-GB'), trend: 'Autonomous actions / day', icon: '✦', tone: 'good', history: [560, 610, 650, 700, 780, aggregates.totalAiActions] },
     { label: 'System health', value: '99.9%', trend: 'Global infrastructure', icon: '✓', tone: 'good', history: [99.6, 99.7, 99.8, 99.9, 99.9, 99.9] },
     { label: 'Global ecosystem score', value: `${ecosystemScore}`, trend: 'Weighted composite KPI', icon: '◈', tone: ecosystemScore >= 80 ? 'good' : ecosystemScore >= 60 ? 'watch' : 'risk', history: [78, 80, 81, 82, 83, ecosystemScore] },
   ]
