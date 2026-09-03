@@ -29,7 +29,7 @@ export default function Page() {
     <main style={{ minHeight: '100vh', background: '#07131d', color: '#edf7ff', fontFamily: 'Inter, Segoe UI, sans-serif' }}>
       <header style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(7,12,20,0.75)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px', minHeight: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20 }}>
-          <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: '#edf7ff' }}>
+          <a href="/website" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: '#edf7ff' }}>
             <div style={{ width: 42, height: 42, borderRadius: 12, background: '#00E676', color: '#071014', display: 'grid', placeItems: 'center', fontWeight: 900 }}>◉</div>
             <div>
               <strong style={{ display: 'block', fontSize: 22, lineHeight: 1.1 }}>FoundRetail</strong>
@@ -38,9 +38,9 @@ export default function Page() {
           </a>
 
           <nav style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, justifyContent: 'flex-end' }}>
-            <a href="/" style={navChip}>Home</a>
-            <a href="/#features" style={navChip}>Features</a>
-            <a href="/#messaging" style={navChip}>Messaging Channels</a>
+            <a href="/website" style={navChip}>Home</a>
+            <a href="/website#features" style={navChip}>Features</a>
+            <a href="/website#messaging" style={navChip}>Messaging Channels</a>
             <details className={styles.detailsOpen} style={{ position: 'relative', display: 'inline-block' }}>
               <summary className={styles.summaryToggle} style={navChip}>Consoles</summary>
               <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 10px)', minWidth: 280, background: 'rgba(8,13,20,0.98)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: 12, boxShadow: '0 20px 40px rgba(0,0,0,0.35)', display: 'grid', gap: 8, zIndex: 30 }}>
