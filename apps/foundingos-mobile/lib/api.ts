@@ -44,6 +44,24 @@ export async function logout(): Promise<void> {
   await SecureStore.deleteItemAsync(SESSION_KEY)
 }
 
+// Real one-time SSO handoff (see apps/foundingos-console/app/api/tester/handoff/route.ts) —
+// re-presents this app's on-device session as a real cookie on the shared .foundingos.com
+// domain before redirecting, so opening SuperDashboard in-app lands already signed in.
+// Checks the admin cookie first since FoundingOS's own app most often carries an admin
+// session (e.g. the founder opening SuperDashboard), falling back to a tester session.
+export async function getHandoffUrl(consoleUrl: string): Promise<string> {
+  const rawSetCookie = await getStoredSession()
+  const token =
+    rawSetCookie?.match(/fo_tester_admin_session=([^;,]+)/)?.[1] ||
+    rawSetCookie?.match(/fo_tester_session=([^;,]+)/)?.[1]
+  if (!token) return consoleUrl
+
+  const handoff = new URL(`${API_BASE}/api/tester/handoff`)
+  handoff.searchParams.set('token', token)
+  handoff.searchParams.set('redirect', consoleUrl)
+  return handoff.toString()
+}
+
 // Real, live, publicly-readable engagement data — the same feed that powers SuperDash on the
 // web. No auth required for this one endpoint, so it works even before the cookie-relay
 // approach above is fully proven on-device.

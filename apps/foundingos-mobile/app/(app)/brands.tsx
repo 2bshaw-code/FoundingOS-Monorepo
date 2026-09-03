@@ -4,18 +4,34 @@
 */
 import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
+import * as WebBrowser from 'expo-web-browser'
 import { BRANDS } from '../../lib/brands'
-import { logout } from '../../lib/api'
+import { logout, getHandoffUrl } from '../../lib/api'
 
 // Real founder-facing brand directory — FoundingOS's own app is the founder's aggregated
 // reporting console (see the Activity tab for real live cross-brand numbers), not a way to
 // browse into each brand's own product. Each brand now has its own dedicated native app for
-// that (retail-mobile, crypto-mobile, etc.), so this screen stays informational: real name,
-// tagline, and core modules per brand, matching packages/config/src/index.ts exactly.
+// that (retail-mobile, crypto-mobile, etc.). Tapping the card body drills into that brand's
+// own real activity detail (see app/brand-detail/[slug].tsx); tapping an individual module
+// chip opens that brand's real, live module page (e.g. real Inventory/Customers/Orders
+// views already built for FoundRetail) via the SSO handoff, in-app.
+//
+// Route note: this screen lives at app/(app)/brands.tsx rather than app/(app)/index.tsx —
+// naming it "index" inside the (app) group previously collided with the top-level
+// app/index.tsx login screen (an unnamed group folder contributes no path segment, so both
+// resolved to the same "/" route), which silently broke router.replace('/') / dismissTo('/')
+// from here since the router considered you already at the destination.
 export default function DashboardScreen() {
   async function handleLogout() {
     await logout()
-    router.replace('/')
+    router.dismissTo('/')
+  }
+
+  async function openModule(slug: string, accent: string, module: string) {
+    const moduleId = module.toLowerCase().replaceAll(' ', '-')
+    const consoleUrl = `https://${slug}-console.foundingos.com/modules/${moduleId}`
+    const url = await getHandoffUrl(consoleUrl)
+    await WebBrowser.openBrowserAsync(url, { controlsColor: accent, toolbarColor: '#05060a' })
   }
 
   return (
@@ -28,22 +44,31 @@ export default function DashboardScreen() {
       </View>
 
       {BRANDS.map((brand) => (
-        <View key={brand.slug} style={[styles.card, { borderColor: brand.accent }]}>
+        <Pressable
+          key={brand.slug}
+          style={[styles.card, { borderColor: brand.accent }]}
+          onPress={() => router.push(`/brand-detail/${brand.slug}`)}
+        >
           <View style={styles.cardHeader}>
             <View style={[styles.dot, { backgroundColor: brand.accent }]} />
             <View style={{ flex: 1 }}>
               <Text style={styles.cardTitle}>{brand.name}</Text>
               <Text style={styles.cardSubtitle}>{brand.tagline}</Text>
             </View>
+            <Text style={[styles.arrow, { color: brand.accent }]}>›</Text>
           </View>
           <View style={styles.moduleGrid}>
             {brand.modules.map((module) => (
-              <View key={module} style={[styles.moduleChip, { borderColor: brand.accent }]}>
+              <Pressable
+                key={module}
+                style={[styles.moduleChip, { borderColor: brand.accent }]}
+                onPress={() => openModule(brand.slug, brand.accent, module)}
+              >
                 <Text style={styles.moduleChipText}>{module}</Text>
-              </View>
+              </Pressable>
             ))}
           </View>
-        </View>
+        </Pressable>
       ))}
 
       <Pressable style={styles.logoutButton} onPress={handleLogout}>
@@ -69,9 +94,10 @@ const styles = StyleSheet.create({
   dot: { width: 10, height: 10, borderRadius: 5 },
   cardTitle: { color: '#ffffff', fontSize: 16, fontWeight: '700' },
   cardSubtitle: { color: '#b9c2cf', fontSize: 13, marginTop: 2 },
+  arrow: { fontSize: 22, fontWeight: '700' },
   moduleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   moduleChip: { borderWidth: 1, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 },
   moduleChipText: { color: '#ffffff', fontSize: 12, fontWeight: '600' },
-  logoutButton: { marginTop: 12, marginBottom: 40, alignItems: 'center', padding: 14 },
+  logoutButton: { marginTop: 12, marginBottom: 100, alignItems: 'center', padding: 14 },
   logoutText: { color: '#ff5470', fontWeight: '700' },
 })

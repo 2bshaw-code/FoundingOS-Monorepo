@@ -20,7 +20,7 @@ export default function LoginScreen() {
 
   useEffect(() => {
     getStoredSession().then((session) => {
-      if (session) router.replace('/(app)')
+      if (session) router.replace('/(app)/brands')
       setCheckingSession(false)
     })
   }, [])
@@ -38,7 +38,7 @@ export default function LoginScreen() {
       setError(result.error)
       return
     }
-    router.replace('/(app)')
+    router.replace('/(app)/brands')
   }
 
   if (checkingSession) {
