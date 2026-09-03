@@ -11,6 +11,7 @@ import { categorizeCredential, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT,
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands as brandRegistry } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
 import { readBrandMetrics } from '../superdashboard/brand-metric-store.server'
+import { DemoWizard } from '../tester/demo/DemoWizard'
 
 const ADMIN_INVESTOR_MODULE_ID = 'investor-overview'
 
@@ -91,77 +92,66 @@ export default async function InvestorPage() {
       </header>
 
       {isBriefingPhase ? (
-        <div className="module-card-grid">
-          <article className="module-card fo-card quantum-frame">
-            <div className="module-card-top"><span>👋</span><strong>Welcome</strong></div>
-            <div className="quantum-narrator-panel">
-              <p>{OPENING_NARRATOR_LINE}</p>
-            </div>
-          </article>
+        <>
+          <div className="quantum-audio-bar">
+            <button type="button" data-audio-toggle suppressHydrationWarning>🔊 Audio: ON</button>
+            <label>
+              <input type="checkbox" id="narrator-enabled-toggle" defaultChecked />
+              Narrator text: ON / OFF
+            </label>
+          </div>
 
-          <article className="module-card fo-card quantum-frame">
-            <div className="module-card-top"><span>ℹ</span><strong>{TESTER_INSTRUCTION_CARD.title}</strong></div>
-            <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 6 }}>
-              {TESTER_INSTRUCTION_CARD.lines.map((line) => (
-                <li key={line}><small>{line}</small></li>
-              ))}
-            </ul>
-            <div className="quantum-narrator-panel">
-              <p>{TESTER_INSTRUCTION_CARD.narratorLine}</p>
-            </div>
-          </article>
+          <div className="quantum-demo-hero">
+            <DemoWizard steps={INVESTOR_NARRATOR_STEPS} />
+          </div>
 
-          <article className="module-card fo-card quantum-frame">
-            <div className="module-card-top"><span>ℹ</span><strong>Before you begin</strong></div>
-            <p>{DEMO_INTRO}</p>
-          </article>
+          <div className="module-card-grid" style={{ marginTop: 16 }}>
+            <article className="module-card fo-card quantum-frame">
+              <div className="module-card-top"><span>→</span><strong>Ready for the live demo?</strong></div>
+              <p>Once you've reviewed the briefing above, continue to the live cross-brand data demo.</p>
+              <p><small>{DEMO_END_BELONGING_LINE}</small></p>
+              <form action={continueToDemo}>
+                <button type="submit" className="btn btn-primary quantum-btn">Continue to demo</button>
+              </form>
+            </article>
+          </div>
 
-          <article className="module-card fo-card quantum-frame">
-            <div className="module-card-top"><span>◈</span><strong>The business plan, in short</strong></div>
-            <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 6 }}>
-              {BUSINESS_PLAN_FACTS.map((fact) => (
-                <li key={fact}><small>{fact}</small></li>
-              ))}
-            </ul>
-          </article>
-
-          <article className="module-card fo-card quantum-frame" data-narration="Alright, let's dive in.">
-            <div className="module-card-top"><span>🔊</span><strong>Your narrator — the FoundingOS story</strong></div>
-            <div className="quantum-narrator-panel">
-              <p>Alright, let's dive in.</p>
-            </div>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-              <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle suppressHydrationWarning>Audio: ON</button>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-                <input type="checkbox" id="narrator-enabled-toggle" defaultChecked />
-                Narrator: ON / OFF
-              </label>
-            </div>
-          </article>
-
-          {INVESTOR_NARRATOR_STEPS.map((beat) => (
-            <article key={beat.step} className="module-card fo-card quantum-frame" data-narration={beat.text}>
-              <div className="module-card-top">
-                <span className="quantum-step-badge">{beat.step.split(' · ')[0]}</span>
-                <strong>{beat.step.split(' · ')[1]}</strong>
-                <button type="button" className="quantum-step-narrate-btn" data-narrate-btn data-idle-label="🔊" data-playing-label="⏹" aria-label="Play this step's narrator line" style={{ marginLeft: 'auto' }}>🔊</button>
-              </div>
-              <p>{beat.detail}</p>
+          <p className="quantum-demo-secondary-label">More about this briefing</p>
+          <div className="module-card-grid">
+            <article className="module-card fo-card quantum-frame">
+              <div className="module-card-top"><span>👋</span><strong>Welcome</strong></div>
               <div className="quantum-narrator-panel">
-                <p>{beat.text}</p>
+                <p>{OPENING_NARRATOR_LINE}</p>
               </div>
             </article>
-          ))}
 
-          <article className="module-card fo-card quantum-frame">
-            <div className="module-card-top"><span>→</span><strong>Ready for the live demo?</strong></div>
-            <p>Once you've reviewed the briefing above, continue to the live cross-brand data demo.</p>
-            <p><small>{DEMO_END_BELONGING_LINE}</small></p>
-            <form action={continueToDemo}>
-              <button type="submit" className="btn btn-primary quantum-btn">Continue to demo</button>
-            </form>
-          </article>
-        </div>
+            <article className="module-card fo-card quantum-frame">
+              <div className="module-card-top"><span>ℹ</span><strong>{TESTER_INSTRUCTION_CARD.title}</strong></div>
+              <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 6 }}>
+                {TESTER_INSTRUCTION_CARD.lines.map((line) => (
+                  <li key={line}><small>{line}</small></li>
+                ))}
+              </ul>
+              <div className="quantum-narrator-panel">
+                <p>{TESTER_INSTRUCTION_CARD.narratorLine}</p>
+              </div>
+            </article>
+
+            <article className="module-card fo-card quantum-frame">
+              <div className="module-card-top"><span>ℹ</span><strong>Before you begin</strong></div>
+              <p>{DEMO_INTRO}</p>
+            </article>
+
+            <article className="module-card fo-card quantum-frame">
+              <div className="module-card-top"><span>◈</span><strong>The business plan, in short</strong></div>
+              <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 6 }}>
+                {BUSINESS_PLAN_FACTS.map((fact) => (
+                  <li key={fact}><small>{fact}</small></li>
+                ))}
+              </ul>
+            </article>
+          </div>
+        </>
       ) : (
         <>
           <div className="module-card-grid">

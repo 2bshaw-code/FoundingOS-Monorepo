@@ -62,6 +62,9 @@ function ActualTopbar({ config, variant = 'console' }: { config?: BrandConsoleCo
 
   return (
     <header className="topbar" style={theme}>
+     <button type="button" className="sidebar-toggle" onClick={() => setCollapsed((value) => !value)} aria-label={toggleLabel}>
+       ☰
+     </button>
      <div className="topbar-title">
        <QuantumSphereLogo size={28} accent={sphereAccent} />
        <div>
@@ -70,15 +73,11 @@ function ActualTopbar({ config, variant = 'console' }: { config?: BrandConsoleCo
          <small style={{ display: 'block', opacity: 0.6, fontSize: 11 }}>FoundingOS — The Operating System for WhatsApp, Telegram, and global message-based businesses.</small>
        </div>
      </div>
-     <div className="topbar-nav">
-       <button type="button" className="sidebar-toggle" onClick={() => setCollapsed((value) => !value)} aria-label={toggleLabel}>
-         ☰
-       </button>
-     </div>
+     <div className="topbar-nav" />
      <div className="topbar-actions">
-       <a href="https://www.foundingos.com/home" style={{ fontSize: 12, opacity: 0.8 }}>FoundingOS Homepage</a>
+       <a href="https://www.foundingos.com/home" className="topbar-pill quantum-btn quantum-link-glow">FoundingOS Homepage</a>
        <form action="https://console.foundingos.com/api/tester/logout" method="POST" style={{ display: 'inline' }}>
-         <button type="submit" style={{ background: 'none', border: 'none', color: 'inherit', textDecoration: 'underline', cursor: 'pointer', padding: 0, font: 'inherit', fontSize: 12, opacity: 0.8 }}>Log out</button>
+         <button type="submit" className="topbar-pill topbar-pill-danger quantum-btn">Log out</button>
        </form>
        <ThemeToggle />
      </div>

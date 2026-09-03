@@ -177,8 +177,7 @@ const SUPER_FOUNDER_ADMINS: AdminAccount[] = [
   { name: 'Founder', email: SUPER_FOUNDER_ADMIN_EMAIL, password: process.env.SUPER_FOUNDER_ADMIN_PASSWORD ?? 'founderos-super-admin-dev-only' },
   { name: 'Darren Watts', email: 'darrenwatts8@yahoo.co.uk', password: process.env.SUPER_FOUNDER_ADMIN_PASSWORD_DARREN ?? 'founderos-super-admin-dev-only-darren' },
   { name: 'Paul Bogard', email: 'palloran.g@gmail.com', password: process.env.SUPER_FOUNDER_ADMIN_PASSWORD_PAUL ?? 'founderos-super-admin-dev-only-paul' },
-  // Dave Alexandre — real email + password not provided yet ("tbc"); not added until both are
-  // real, so there's never a guessed/placeholder password silently granting real admin access.
+  { name: 'Dave Alexandre', email: 'dpa123uk@gmail.com', password: process.env.SUPER_FOUNDER_ADMIN_PASSWORD_DAVE ?? 'founderos-super-admin-dev-only-dave' },
 ]
 
 export function isSuperFounderAdmin(email: string, password: string): boolean {
@@ -761,20 +760,23 @@ const MARKETING_SUITE_NARRATOR_STEPS: NarratorStep[] = [
 ]
 MODULE_NARRATOR_STEPS['marketing-suite'] = MARKETING_SUITE_NARRATOR_STEPS
 
-// Accounting: Invoices / Expenses / Reports / Reconciliation — see
-// packages/ui/src/modules/AccountingModule.tsx. Invoices is the one tab backed by a real,
-// Prisma-persisted model (wired earlier this session) — genuinely real numbers, honest zero
-// until a real invoice exists. The other three tabs are real, interactive client-state
-// workspaces, clearly labeled illustrative where the numbers are.
+// Accounting: Invoices / Expenses / Reports / Reconciliation / Tax Summary / Cashflow /
+// Integrations — see packages/ui/src/modules/AccountingModule.tsx. Invoices is the one tab
+// backed by a real, Prisma-persisted model (wired earlier this session) — genuinely real
+// numbers, honest zero until a real invoice exists. The other six tabs are real, interactive
+// client-state workspaces, clearly labeled illustrative where the numbers are.
 const ACCOUNTING_NARRATOR_STEPS: NarratorStep[] = [
-  { step: '1 · Overview', text: 'Welcome to Accounting.', detail: 'Four real tabs — Invoices, Expenses, Reports, and Reconciliation. Invoices is genuinely database-backed (the same real system wired into SuperDash and CRM this session); the other three are real, interactive workspaces with illustrative example numbers.' },
+  { step: '1 · Overview', text: 'Welcome to Accounting.', detail: 'Seven real tabs — Invoices, Expenses, Reports, Reconciliation, Tax Summary, Cashflow, and Integrations. Invoices is genuinely database-backed (the same real system wired into SuperDash and CRM this session); the rest are real, interactive workspaces with illustrative example numbers.' },
   { step: '2 · Invoices tab (real, database-backed)', text: 'This one\u2019s the real deal.', detail: 'Every invoice here is a real Prisma-persisted record — honestly zero until a real one is created. Add one with a real amount and currency, and it\u2019s genuinely stored, not just held in this page\u2019s memory like the other tabs.' },
   { step: '3 · Expenses tab', text: 'Now let\u2019s track what\u2019s going out.', detail: 'Click the Expenses tab. Log spend by category and vendor, and move it through Pending \u2192 Approved \u2192 Paid — the same real approval flow a bookkeeper would actually use.' },
   { step: '4 · Reports tab', text: 'Here\u2019s the summary view.', detail: 'Click the Reports tab for a revenue/expenses/net snapshot. These are illustrative summary cards — for the honest, real, database-backed figures, see the real Finance module or SuperDash.' },
   { step: '5 · Reconciliation tab', text: 'And here\u2019s where it all gets matched up.', detail: 'Click the Reconciliation tab. Every real bank transaction gets matched against a real invoice or expense — Matched, Unmatched, or Review — exactly the last step of a real month-end close.' },
-  { step: '6 · Cross-brand integration', text: 'This feeds the bigger picture too.', detail: "A real invoice's outstanding balance is exactly the kind of signal Autonomous watches for, and Guardian keeps this brand's financial data completely separate from every other brand's, even though they all run the same Accounting module." },
-  { step: '7 · AI guidance', text: "FoundAI's ready to help here too.", detail: 'Open FoundAI (bottom-right) on any Accounting tab — it knows which brand\u2019s books it\u2019s looking at and can explain a real invoice status or reconciliation match.' },
-  { step: '8 · Summary + next action', text: "That's Accounting — nice work.", detail: 'Real invoices, real database persistence, and three more real workspaces around it. Your survey\u2019s up next, then Free Roam.' },
+  { step: '6 · Tax Summary tab', text: 'Never miss a filing date.', detail: 'Click Tax Summary. Every VAT and Corporation Tax period lives here, with what\u2019s due and when — Filed, Due soon, or Overdue, all in plain language.' },
+  { step: '7 · Cashflow tab', text: 'See the money moving, month by month.', detail: 'Click Cashflow. Money in, money out, and what\u2019s left at the end of each month — including a simple next-month forecast, no spreadsheet required.' },
+  { step: '8 · Integrations tab', text: 'Connect the tools you already use.', detail: 'Click Integrations. Bank feed, payroll, payment processor, receipt scanning — see what\u2019s connected and what isn\u2019t, and connect more with one click.' },
+  { step: '9 · Cross-brand integration', text: 'This feeds the bigger picture too.', detail: "A real invoice's outstanding balance is exactly the kind of signal Autonomous watches for, and Guardian keeps this brand's financial data completely separate from every other brand's, even though they all run the same Accounting module." },
+  { step: '10 · AI guidance', text: "FoundAI's ready to help here too.", detail: 'Open FoundAI (bottom-right) on any Accounting tab — it knows which brand\u2019s books it\u2019s looking at and can explain a real invoice status or reconciliation match.' },
+  { step: '11 · Summary + next action', text: "That's Accounting — nice work.", detail: 'Real invoices, real database persistence, and six more real workspaces around it — expenses, reports, reconciliation, tax, cashflow, and integrations. Your survey\u2019s up next, then Free Roam.' },
 ]
 MODULE_NARRATOR_STEPS['accounting'] = ACCOUNTING_NARRATOR_STEPS
 

@@ -11,6 +11,43 @@ import { brands } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
 import { SurveyEngine } from './SurveyEngine'
 
+// Real, working "preview while you answer" links for the ecosystem-validation section
+// (every module survey's tail end — see SURVEYS in tester-data.ts) — a question about
+// "Retail console" or "Meat website" now links straight to that real, live page, so a
+// tester never has to answer from memory or go hunting for the right tab themselves.
+// Deliberately conservative: a target only gets a link when it maps cleanly to a real,
+// resolvable brand + page; ambiguous ones (e.g. "WhatsApp OS landing pages") are simply
+// left without one rather than guessing.
+const TARGET_BRAND_SLUGS: Record<string, keyof typeof brands> = {
+  retail: 'retail', meat: 'meat', logistics: 'logistics', talent: 'talent', crypto: 'crypto',
+  finance: 'finance', health: 'health', foundthat: 'foundthat', foundingos: 'foundingos',
+}
+function resolveTargetPreviewUrl(target: string): string | null {
+  const lower = target.toLowerCase()
+  const brandKey = Object.keys(TARGET_BRAND_SLUGS).find((key) => lower.startsWith(key) || lower.includes(`(${key})`) || (key === 'foundthat' && lower.includes('marketplace')))
+  if (!brandKey) {
+    if (lower.includes('superdash') || lower.includes('guardian') || lower.includes('autonomous') || lower.includes('brandmetric')) {
+      return `${brands.foundingos.consoleUrl}/superdashboard?readOnly=1`
+    }
+    return null
+  }
+  const brand = brands[TARGET_BRAND_SLUGS[brandKey]]
+  if (lower.includes('website')) return brand.webUrl
+  if (lower.includes('console')) return brand.consoleUrl
+  if (lower.includes('pos') || lower.includes('ats') || lower.includes('seller flow')) return `${brand.consoleUrl}/modules/pos`
+  return null
+}
+function buildTargetPreviewUrls(questions: { target?: string }[]): Record<string, string> {
+  const map: Record<string, string> = {}
+  for (const question of questions) {
+    if (question.target && !map[question.target]) {
+      const url = resolveTargetPreviewUrl(question.target)
+      if (url) map[question.target] = url
+    }
+  }
+  return map
+}
+
 export default async function TesterSurveyPage({ searchParams }: { searchParams: Promise<{ moduleId?: string }> }) {
   // Real Super Founder Admin only (see tester-data.ts's adminTesterId doc comment) — never the
   // separate passcode-only /tester/admin reviewer (id === 'admin'), whose access is unchanged.
@@ -140,6 +177,7 @@ export default async function TesterSurveyPage({ searchParams }: { searchParams:
         initialAnswers={tester.currentAnswers}
         moduleId={tester.moduleId}
         freeRoamHref={freeRoamHref}
+        targetPreviewUrls={buildTargetPreviewUrls(survey.questions)}
         completeNarratorLine={SURVEY_COMPLETE_NARRATOR_LINE}
         completeCelebrationLine={SURVEY_COMPLETE_CELEBRATION_LINE}
         freeRoamEnteredLine={FREE_ROAM_ENTERED_LINE}

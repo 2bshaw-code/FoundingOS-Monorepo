@@ -1943,14 +1943,53 @@ body[data-sidebar-collapsed='true'] .nav-card {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 40px;
-  min-height: 40px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0;
-  border: 1px solid var(--line);
+  border: 2px solid var(--accent);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  background: color-mix(in srgb, var(--accent) 26%, var(--surface));
   color: var(--text);
   font-weight: 900;
+  font-size: 18px;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent);
+  flex-shrink: 0;
+}
+
+.sidebar-toggle:hover {
+  background: color-mix(in srgb, var(--accent) 38%, var(--surface));
+}
+
+.topbar-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.topbar-pill:hover {
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface));
+  border-color: var(--accent);
+}
+
+.topbar-pill-danger {
+  border-color: color-mix(in srgb, #ff5470 45%, var(--line));
+  color: #ff5470;
+}
+
+.topbar-pill-danger:hover {
+  background: color-mix(in srgb, #ff5470 16%, var(--surface));
+  border-color: #ff5470;
 }
 
 .console-shell-main {
@@ -1971,15 +2010,46 @@ body[data-sidebar-collapsed='true'] .nav-card {
      the FoundingOS Homepage/Log out links, the positioning tagline) without ever covering
      the content below it — a sticky element always reserves its own real space in the
      normal document flow, so no matter how tall it renders, nothing underneath (including
-     the tester demo/survey pages) can ever be obscured. */
+     the tester demo/survey pages) can ever be obscured. A near-solid background (instead of
+     the desktop's 78%-opacity blur) is deliberate here too: on a phone, content scrolling
+     underneath a translucent sticky header was visible through it and made the header's own
+     text hard to read — this keeps the header legible regardless of what's beneath it. */
   .topbar {
     position: sticky;
     left: 0;
     padding: 14px 16px;
+    background: var(--surface-strong);
+    backdrop-filter: blur(24px);
+    flex-wrap: wrap;
   }
 
+  /* Real fix: while the sidebar is open (expanded) on a phone, the full-height header (logo,
+     title, tagline, Homepage/Log out pills) was rendering above the sidebar (z-index 40 vs
+     30) and visually covering its top rows, making the sidebar hard to read right when it's
+     most in view. Minimising the header down to just the toggle button — the one thing still
+     needed, to close the sidebar again — removes that overlap entirely instead of just
+     tweaking stacking order, which would still leave the header's own content unreadably
+     squashed next to the open sidebar. */
+  body[data-sidebar-collapsed='false'] .topbar {
+    min-height: auto;
+    padding: 10px 16px;
+    justify-content: flex-start;
+  }
+
+  body[data-sidebar-collapsed='false'] .topbar-title,
+  body[data-sidebar-collapsed='false'] .topbar-nav,
+  body[data-sidebar-collapsed='false'] .topbar-actions {
+    display: none;
+  }
+
+  /* Always reserve only the narrow icon-rail width on mobile, even while the sidebar is
+     fully expanded (open) — real fix for a genuine bug: previously this tracked the same
+     --sidebar-width as desktop, so opening the sidebar on a phone squeezed the whole page's
+     content into a thin sliver instead of the sidebar overlaying on top of it, which is what
+     a fixed-position sidebar should do (and does correctly above 900px, where there's enough
+     room for both to coexist). */
   .console-shell-main {
-    margin-left: var(--sidebar-width);
+    margin-left: var(--sidebar-collapsed-width);
     padding-top: 0;
   }
 
@@ -2599,6 +2669,101 @@ body.superdash-heatmap-off .quantum-heatmap {
   cursor: default;
   transform: none;
 }
+
+/* Prominent, always-visible top-of-page Audio control bar — real fix for it being buried
+   inside a mid-page card where it was easy to miss entirely. Sits directly under the page
+   header, before any tutorial/info content, and uses the same bold accent-glow language as
+   .sidebar-toggle so it reads as a real, unmissable control rather than a quiet toggle. */
+.quantum-audio-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--accent) 30%, transparent);
+  margin-bottom: 4px;
+}
+
+.quantum-audio-bar button[data-audio-toggle] {
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: none;
+  background: var(--accent);
+  color: #071014;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.quantum-audio-bar label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* The demo tutorial wizard is the main, primary box on a demo page — everything else (the
+   welcome note, business plan facts, message-style preview, currency card) is real,
+   supplementary context and now visually reads that way underneath it, instead of every card
+   competing for equal weight in one long grid. */
+.quantum-demo-hero {
+  border: 2px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: 26px;
+  padding: 6px;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  box-shadow: 0 30px 70px color-mix(in srgb, var(--accent) 14%, var(--shadow));
+}
+
+.quantum-demo-hero .module-card {
+  border: none;
+  box-shadow: none;
+}
+
+.quantum-demo-secondary-label {
+  margin: 28px 0 4px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Real, in-context "how to use this" guide shown on the actual module page (Marketing,
+   Accounting, etc.) for whichever tab is open — not just in the separate demo walkthrough.
+   Toggleable, quantum-themed, sits right under the tab bar so it's the first thing seen when
+   switching tabs. */
+.quantum-guide-panel {
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  padding: 4px 16px;
+}
+
+.quantum-guide-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.quantum-guide-panel p {
+  margin: 0 0 12px;
+  color: var(--text);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
 
 /* Full-width Quantum Free Roam invitation — same hover lift as .module-card, plus a slow
    ambient glow pulse (shadow only, never opacity, so the text never fades/flickers). */

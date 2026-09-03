@@ -12,6 +12,7 @@ import { GLOBAL_ACCESSIBILITY_SCRIPT, brands } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
 import { AnimatedMessageFlow } from '@foundingos/ui/animated-message-flow'
 import { DemoCurrencyCard } from '../../DemoCurrencyCard'
+import { DemoWizard } from '../DemoWizard'
 
 export default async function TesterDemoPage({ params }: { params: Promise<{ moduleId: string }> }) {
   const { moduleId } = await params
@@ -134,6 +135,58 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
         </span>
       </header>
 
+      {/* Prominent, always-visible Audio control — real fix for it previously being buried
+          inside a mid-page card where it was easy to miss. suppressHydrationWarning: see the
+          long-form explanation kept below on the button itself for why this is needed. */}
+      <div className="quantum-audio-bar">
+        <button type="button" data-audio-toggle suppressHydrationWarning>🔊 Audio: ON</button>
+        <label>
+          <input type="checkbox" id="narrator-enabled-toggle" defaultChecked />
+          Narrator text: ON / OFF
+        </label>
+      </div>
+
+      {/* The tutorial wizard is the main box on this page — everything else below it (welcome
+          note, business plan facts, message-style preview, currency card) is real, genuinely
+          useful, but secondary context, and now reads that way instead of competing for equal
+          visual weight in one long grid of same-sized cards. */}
+      <div className="quantum-demo-hero">
+        <DemoWizard steps={narratorSteps} />
+      </div>
+
+      <div className="module-card-grid" style={{ marginTop: 16 }}>
+        {isSuperDashboardDemo ? (
+          <article className="module-card fo-card quantum-frame">
+            <div className="module-card-top"><span>◈</span><strong>SuperDashboard (read-only)</strong></div>
+            <p>View the FounderOS cross-brand intelligence layer in read-only mode.</p>
+            <Link className="btn btn-primary quantum-btn" href="/superdashboard?readOnly=1">Open SuperDashboard</Link>
+          </article>
+        ) : directModuleHref ? (
+          <article className="module-card fo-card quantum-frame">
+            <div className="module-card-top"><span>▣</span><strong>{tester.moduleLabel}</strong></div>
+            <p>Open the {tester.moduleLabel} module inside FounderOS.</p>
+            <Link className="btn btn-primary quantum-btn" href={directModuleHref}>Open {tester.moduleLabel}</Link>
+          </article>
+        ) : (
+          <article className="module-card fo-card quantum-frame">
+            <div className="module-card-top"><span>▣</span><strong>{tester.moduleLabel}</strong></div>
+            <p>This is your assigned {tester.moduleLabel} module overview for this tester program.</p>
+          </article>
+        )}
+
+        {!hasCompletedSurvey && (
+          <article className="module-card fo-card quantum-frame">
+            <div className="module-card-top"><span>→</span><strong>Ready for your survey?</strong></div>
+            <p>Once you've explored the demo above, continue to your tailored {tester.moduleLabel} survey.</p>
+            <p><small>{DEMO_END_BELONGING_LINE}</small></p>
+            <form action={continueToSurvey}>
+              <button type="submit" className="btn btn-primary quantum-btn">Continue to survey</button>
+            </form>
+          </article>
+        )}
+      </div>
+
+      <p className="quantum-demo-secondary-label">More about this demo</p>
       <div className="module-card-grid">
         {tester.status === 'registered' ? (
           <>
@@ -178,29 +231,6 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
           </ul>
         </article>
 
-        <article className="module-card fo-card quantum-frame" data-narration="Alright, let's dive in.">
-          <div className="module-card-top"><span>🔊</span><strong>Your narrator</strong></div>
-          <div className="quantum-narrator-panel">
-            <p>Alright, let's dive in.</p>
-          </div>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* suppressHydrationWarning: NARRATION_PLAYER_SCRIPT's inline <script> tag runs
-                synchronously during initial HTML parse — before this JS bundle loads and React's
-                own hydration commit runs — so it may already have set this button's real stored
-                text before React reconciles. Without this, React's hydration treats its own SSR
-                text as ground truth and silently overwrites the script's correction back to this
-                static default (root cause of the "audio label reverts" bug). This is the same,
-                documented React pattern used for legitimately server/client-differing content
-                (e.g. a live timestamp) — it tells React to trust the DOM's existing text for this
-                one node instead of re-asserting its own. */}
-            <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle suppressHydrationWarning>Audio: ON</button>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-              <input type="checkbox" id="narrator-enabled-toggle" defaultChecked />
-              Narrator: ON / OFF
-            </label>
-          </div>
-        </article>
-
         <article className="module-card fo-card quantum-frame">
           <div className="module-card-top"><span>💬</span><strong>Message style preview</strong></div>
           <p><small>A quick, lighthearted look at how FoundAI banter feels across familiar messaging styles — purely for fun, not a real conversation log.</small></p>
@@ -208,51 +238,8 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
         </article>
 
         <DemoCurrencyCard moduleId={moduleId} />
-
-        {narratorSteps.map((beat) => (
-          <article key={beat.step} className="module-card fo-card quantum-frame" data-narration={beat.text}>
-            <div className="module-card-top">
-              <span className="quantum-step-badge">{beat.step.split(' · ')[0]}</span>
-              <strong>{beat.step.split(' · ')[1]}</strong>
-              <button type="button" className="quantum-step-narrate-btn" data-narrate-btn data-idle-label="🔊" data-playing-label="⏹" aria-label="Play this step's narrator line" style={{ marginLeft: 'auto' }}>🔊</button>
-            </div>
-            <p>{beat.detail}</p>
-            <div className="quantum-narrator-panel">
-              <p>{beat.text}</p>
-            </div>
-          </article>
-        ))}
-
-        {isSuperDashboardDemo ? (
-          <article className="module-card fo-card quantum-frame">
-            <div className="module-card-top"><span>◈</span><strong>SuperDashboard (read-only)</strong></div>
-            <p>View the FounderOS cross-brand intelligence layer in read-only mode.</p>
-            <Link className="btn btn-primary quantum-btn" href="/superdashboard?readOnly=1">Open SuperDashboard</Link>
-          </article>
-        ) : directModuleHref ? (
-          <article className="module-card fo-card quantum-frame">
-            <div className="module-card-top"><span>▣</span><strong>{tester.moduleLabel}</strong></div>
-            <p>Open the {tester.moduleLabel} module inside FounderOS.</p>
-            <Link className="btn btn-primary quantum-btn" href={directModuleHref}>Open {tester.moduleLabel}</Link>
-          </article>
-        ) : (
-          <article className="module-card fo-card quantum-frame">
-            <div className="module-card-top"><span>▣</span><strong>{tester.moduleLabel}</strong></div>
-            <p>This is your assigned {tester.moduleLabel} module overview for this tester program.</p>
-          </article>
-        )}
-
-        {!hasCompletedSurvey && (
-          <article className="module-card fo-card quantum-frame">
-            <div className="module-card-top"><span>→</span><strong>Ready for your survey?</strong></div>
-            <p>Once you've explored the demo above, continue to your tailored {tester.moduleLabel} survey.</p>
-            <p><small>{DEMO_END_BELONGING_LINE}</small></p>
-            <form action={continueToSurvey}>
-              <button type="submit" className="btn btn-primary quantum-btn">Continue to survey</button>
-            </form>
-          </article>
-        )}
       </div>
+
 
       {hasCompletedSurvey && (
         <div className="stack" style={{ marginTop: 24 }}>
