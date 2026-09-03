@@ -93,5 +93,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|login).*)'],
+  // Real fix: PWA assets (the web app manifest, its icons, and the service worker itself)
+  // must be publicly fetchable — a browser installing/registering a service worker or
+  // reading the manifest for "Add to Home Screen" does so without the tester/admin session
+  // context these gated routes expect, so they were previously redirected to login (breaking
+  // installability entirely, not just showing a cosmetic issue).
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|login|manifest.webmanifest|sw.js|icons/).*)'],
 }

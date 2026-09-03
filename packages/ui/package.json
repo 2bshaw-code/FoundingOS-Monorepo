@@ -14,6 +14,7 @@
     "./modules/foundai-demo": "./src/modules/FoundAIDemoModule.tsx",
     "./modules/sales": "./src/modules/SalesModule.tsx",
     "./modules/crypto-wallet-views": "./src/modules/CryptoWalletViews.tsx",
+    "./modules/retail-operations-views": "./src/modules/retail-operations-views.tsx",
     "./superdash/SuperDashTile": "./src/superdash/SuperDashTile.tsx",
     "./superdash/SuperDashQuantumTiles": "./src/superdash/SuperDashQuantumTiles.tsx",
     "./superdash/SuperDashChat": "./src/superdash/SuperDashChat.tsx",
@@ -82,7 +83,8 @@
     "@foundingos/config": "*",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
-    "odometer": "^0.4.8"
+    "odometer": "^0.4.8",
+    "xlsx": "^0.18.5"
   },
   "peerDependencies": {
     "next": "^14.2.23",

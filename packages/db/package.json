@@ -8,6 +8,7 @@
     "./survey-service": "./src/survey-service.ts"
   },
   "scripts": {
+    "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "build": "tsc --noEmit"

@@ -12,11 +12,14 @@
   "dependencies": {
     "@foundingos/auth": "*",
     "@foundingos/config": "*",
+    "@foundingos/db": "*",
     "@foundingos/ui": "*",
+    "@serwist/next": "^9.5.12",
     "next": "^14.2.23",
     "next-auth": "^4.24.11",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "serwist": "^9.5.12"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
