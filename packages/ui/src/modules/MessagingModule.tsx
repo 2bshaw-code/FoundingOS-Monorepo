@@ -46,6 +46,7 @@ export function MessagingModule({ config }: { config: BrandConsoleConfig }) {
       id: 'inbox',
       label: 'Inbox',
       icon: '💬',
+      guide: 'This is where real conversations across WhatsApp/SMS/Email/Telegram land in one place — open a conversation to reply, and it stays here even after you switch tabs.',
       render: () => (
         <article className="module-card fo-card quantum-frame">
           <div className="module-card-top"><span>💬</span><strong>Unified inbox</strong></div>
@@ -58,6 +59,7 @@ export function MessagingModule({ config }: { config: BrandConsoleConfig }) {
       id: 'templates',
       label: 'Templates',
       icon: '📄',
+      guide: 'Write a message once, approve it, and reuse it across every channel instead of retyping the same reply. Move Status from Draft to Approved when it\u2019s ready.',
       render: () => (
         <DataWorkbench
           title="Message templates"
@@ -78,6 +80,7 @@ export function MessagingModule({ config }: { config: BrandConsoleConfig }) {
       id: 'automations',
       label: 'Automations',
       icon: '⚡',
+      guide: 'Set a Trigger (e.g. "order placed") and an Action (e.g. "send confirmation") so replies go out automatically without someone typing them each time. Pause one anytime by changing its Status.',
       render: () => (
         <DataWorkbench
           title="Automations"
@@ -98,6 +101,7 @@ export function MessagingModule({ config }: { config: BrandConsoleConfig }) {
       id: 'analytics',
       label: 'Analytics',
       icon: '📊',
+      guide: 'A quick read on messaging volume and response speed. Illustrative for now — useful as a template for what a real messaging analytics view should track.',
       render: () => (
         <div className="module-card-grid">
           <article className="module-card fo-card quantum-frame">

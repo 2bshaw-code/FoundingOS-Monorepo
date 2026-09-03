@@ -63,6 +63,7 @@ export function MarketingModule({ config }: { config: BrandConsoleConfig }) {
       id: 'campaigns',
       label: 'Campaigns',
       icon: '📣',
+      guide: 'Click "Create new" below to start a campaign — give it a name, pick a channel (Email/SMS/WhatsApp/Social), set a budget, and choose a start date. Click a row\u2019s Edit to update its status as it moves from Draft → Scheduled → Live → Completed.',
       render: () => (
         <DataWorkbench
           title="Campaigns"
@@ -84,6 +85,7 @@ export function MarketingModule({ config }: { config: BrandConsoleConfig }) {
       id: 'templates',
       label: 'Templates',
       icon: '📄',
+      guide: 'Build a reusable message here once, then reuse it across every future campaign instead of rewriting it each time. Set its Subject/preview text, then move its Status from Draft to Approved once it\u2019s ready to send.',
       render: () => (
         <DataWorkbench
           title="Message templates"
@@ -104,6 +106,7 @@ export function MarketingModule({ config }: { config: BrandConsoleConfig }) {
       id: 'segments',
       label: 'Segments',
       icon: '👥',
+      guide: 'Group your contacts by real criteria (e.g. "spent over £100" or "hasn\u2019t ordered in 60 days") so a campaign can target exactly the right people instead of everyone at once. The Size field is how many contacts currently match.',
       render: () => (
         <DataWorkbench
           title="Audience segments"
@@ -124,6 +127,7 @@ export function MarketingModule({ config }: { config: BrandConsoleConfig }) {
       id: 'analytics',
       label: 'Analytics',
       icon: '📊',
+      guide: 'A quick read on how your marketing is performing overall — open rate, click-through, and conversion. These are illustrative summary cards for now; use them as a template for what a real analytics view should show once a send/delivery engine is wired up.',
       render: () => (
         <div className="module-card-grid">
           <article className="module-card fo-card quantum-frame">

@@ -70,6 +70,7 @@ export function FoundAIDemoModule({ brand: config }: { brand: BrandConsoleConfig
       id: 'workflows',
       label: 'Workflows',
       icon: '⚙',
+      guide: 'Chat with the real FoundAI widget below to build or ask about a workflow, or manage them directly in the table — set Trigger and Action, then Pause/Activate as needed.',
       render: () => (
         <>
           <DataWorkbench
@@ -99,6 +100,7 @@ export function FoundAIDemoModule({ brand: config }: { brand: BrandConsoleConfig
       id: 'triggers',
       label: 'Triggers',
       icon: '🔔',
+      guide: 'The Event + Condition pairs that decide when a workflow fires — e.g. "order placed" + "value over £50" → "flag for review".',
       render: () => (
         <DataWorkbench
           title="Triggers"
@@ -118,6 +120,7 @@ export function FoundAIDemoModule({ brand: config }: { brand: BrandConsoleConfig
       id: 'run-logs',
       label: 'Run Logs',
       icon: '📜',
+      guide: 'Every past run of every workflow, with whether it Succeeded or Failed and how long it took — the real audit trail if something needs checking.',
       render: () => (
         <DataWorkbench
           title="Run history"
@@ -137,6 +140,7 @@ export function FoundAIDemoModule({ brand: config }: { brand: BrandConsoleConfig
       id: 'templates',
       label: 'Templates',
       icon: '📋',
+      guide: 'Ready-made workflow starting points by category (Inventory/Customer/Finance/Support) — a faster way to set one up than starting from a blank workflow.',
       render: () => (
         <DataWorkbench
           title="Automation templates"

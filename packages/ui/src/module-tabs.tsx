@@ -10,6 +10,7 @@ export type ModuleTab = {
   id: string
   label: string
   icon?: string
+  guide?: string
   render: () => React.ReactNode
 }
 
@@ -35,6 +36,7 @@ export function ModuleTabs({
 }) {
   const [activeId, setActiveId] = useState(defaultTabId ?? tabs[0]?.id)
   const active = tabs.find((tab) => tab.id === activeId) ?? tabs[0]
+  const [guideOpen, setGuideOpen] = useState(true)
 
   return (
     <section className="stack" style={accentStyle} data-module-tabs>
@@ -58,6 +60,19 @@ export function ModuleTabs({
           </button>
         ))}
       </div>
+      {/* Real, in-context "how to use this" guide for whichever tab is actually open right
+          now — the same teaching-moment content that used to only live in the separate demo
+          walkthrough, now available on the real page itself, tab by tab, for anyone who lands
+          here directly. Toggleable rather than a fixed banner, so it doesn't get in the way
+          once someone already knows the tab. */}
+      {active?.guide && (
+        <div className="quantum-guide-panel">
+          <button type="button" className="quantum-guide-toggle" onClick={() => setGuideOpen((v) => !v)}>
+            📖 How to use {active.label} {guideOpen ? '▲' : '▼'}
+          </button>
+          {guideOpen && <p>{active.guide}</p>}
+        </div>
+      )}
       {/* key={active?.id} is required, not cosmetic: without it, React treats each tab's panel
           as the SAME component instance across tab switches (same type, same tree position) and
           only re-renders it with new props — it does NOT remount. Confirmed live: switching from

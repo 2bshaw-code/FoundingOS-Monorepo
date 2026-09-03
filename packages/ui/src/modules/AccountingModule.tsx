@@ -42,6 +42,40 @@ const reconciliationRows = (brand: string): DataRow[] => [
   { id: `${brand}-rec-4`, values: { transactionDate: '2026-09-02', bankRef: 'FPS-90142', amount: '£1,500', matchedStatus: 'Unmatched' } },
 ]
 
+const taxFields: DataField[] = [
+  { key: 'period', label: 'Period' },
+  { key: 'scheme', label: 'Scheme', type: 'select', options: ['VAT — Standard', 'VAT — Flat Rate', 'Corporation Tax', 'Self Assessment'] },
+  { key: 'amountDue', label: 'Amount due' },
+  { key: 'dueDate', label: 'Due date', type: 'date' },
+  { key: 'status', label: 'Status', type: 'select', options: ['Filed', 'Due soon', 'Overdue'] },
+]
+const taxRows = (brand: string): DataRow[] => [
+  { id: `${brand}-tax-1`, values: { period: 'Q2 2026', scheme: 'VAT — Standard', amountDue: '£1,860', dueDate: '2026-08-07', status: 'Filed' } },
+  { id: `${brand}-tax-2`, values: { period: 'Q3 2026', scheme: 'VAT — Standard', amountDue: '£2,040', dueDate: '2026-11-07', status: 'Due soon' } },
+  { id: `${brand}-tax-3`, values: { period: 'FY 2025', scheme: 'Corporation Tax', amountDue: '£4,120', dueDate: '2026-09-30', status: 'Due soon' } },
+]
+
+const cashflowFields: DataField[] = [
+  { key: 'month', label: 'Month' },
+  { key: 'inflow', label: 'Money in' },
+  { key: 'outflow', label: 'Money out' },
+  { key: 'net', label: 'Net' },
+  { key: 'closingBalance', label: 'Closing balance' },
+]
+const cashflowRows = (brand: string): DataRow[] => [
+  { id: `${brand}-cf-1`, values: { month: 'Jul 2026', inflow: '£11,200', outflow: '£8,940', net: '£2,260', closingBalance: '£14,080' } },
+  { id: `${brand}-cf-2`, values: { month: 'Aug 2026', inflow: '£12,480', outflow: '£9,410', net: '£3,070', closingBalance: '£17,150' } },
+  { id: `${brand}-cf-3`, values: { month: 'Sep 2026 (forecast)', inflow: '£13,050', outflow: '£9,900', net: '£3,150', closingBalance: '£20,300' } },
+]
+
+type Integration = { name: string; status: 'Connected' | 'Not connected'; syncs: string }
+const integrations: Integration[] = [
+  { name: 'Business bank feed', status: 'Connected', syncs: 'Transactions, daily' },
+  { name: 'Payroll', status: 'Not connected', syncs: 'Payslips, expenses' },
+  { name: 'Payment processor', status: 'Connected', syncs: 'Sales, fees, payouts' },
+  { name: 'Receipt scanning', status: 'Not connected', syncs: 'Expense receipts' },
+]
+
 export function AccountingModule({ config }: { config: BrandConsoleConfig }) {
   const accentStyle = consoleStyle(config)
   const brand = config.name.toLowerCase().replaceAll(' ', '-')
@@ -52,6 +86,7 @@ export function AccountingModule({ config }: { config: BrandConsoleConfig }) {
       id: 'invoices',
       label: 'Invoices',
       icon: '🧾',
+      guide: 'This is the one real, database-backed tab here. Enter a real amount and currency below and click "Add real invoice" — it\u2019s genuinely stored, and the totals above update instantly. Nothing here resets when you leave the page.',
       render: () => (
         <div className="module-card-grid">
           {brandSlug ? <RealInvoicesPanel brandSlug={brandSlug} brandName={config.name} /> : (
@@ -64,6 +99,7 @@ export function AccountingModule({ config }: { config: BrandConsoleConfig }) {
       id: 'expenses',
       label: 'Expenses',
       icon: '💳',
+      guide: 'Log spend here by category and vendor. Use "Create new" to add one, then edit its Status as it moves Pending → Approved → Paid — the same real approval flow a bookkeeper would use.',
       render: () => (
         <DataWorkbench
           title="Expenses"
@@ -85,6 +121,7 @@ export function AccountingModule({ config }: { config: BrandConsoleConfig }) {
       id: 'reports',
       label: 'Reports',
       icon: '📈',
+      guide: 'A one-glance revenue/expenses/net snapshot for the period shown. These are illustrative summary cards — for the honest, real, database-backed figures, see the real Finance module or SuperDash.',
       render: () => (
         <div className="module-card-grid">
           <article className="module-card fo-card quantum-frame">
@@ -111,6 +148,7 @@ export function AccountingModule({ config }: { config: BrandConsoleConfig }) {
       id: 'reconciliation',
       label: 'Reconciliation',
       icon: '🔄',
+      guide: 'Match each real bank transaction to an invoice or expense — mark it Matched, Unmatched, or Review. This is the last step of a real month-end close.',
       render: () => (
         <DataWorkbench
           title="Bank reconciliation"
@@ -128,12 +166,79 @@ export function AccountingModule({ config }: { config: BrandConsoleConfig }) {
         />
       ),
     },
+    {
+      id: 'tax-summary',
+      label: 'Tax Summary',
+      icon: '🧮',
+      guide: 'Every VAT/Corporation Tax filing period lives here. Add one with its due date and amount, and mark it Filed once submitted — so nothing sneaks up on you.',
+      render: () => (
+        <DataWorkbench
+          title="Tax summary"
+          description="Every filing period, what's due, and when — VAT and Corporation Tax in one place."
+          fields={taxFields}
+          rows={taxRows(brand)}
+          cards={[
+            { label: 'Filed', value: '1', trend: 'Up to date', icon: '✓' },
+            { label: 'Due soon', value: '2', trend: 'Plan ahead', icon: '◷' },
+            { label: 'Next due date', value: '30 Sep 2026', trend: 'Illustrative', icon: '!' },
+          ]}
+          accentStyle={accentStyle}
+          pageSize={5}
+          emptyCopy="No filing periods yet."
+        />
+      ),
+    },
+    {
+      id: 'cashflow',
+      label: 'Cashflow',
+      icon: '📉',
+      guide: 'See money in, money out, and what\u2019s left at the end of each month, including a simple next-month forecast — no spreadsheet needed.',
+      render: () => (
+        <DataWorkbench
+          title="Cashflow"
+          description="Money in, money out, and what's left at the end of each month — including a simple forecast."
+          fields={cashflowFields}
+          rows={cashflowRows(brand)}
+          cards={[
+            { label: 'This month, net', value: '£3,070', trend: 'Positive', icon: '✓' },
+            { label: 'Closing balance', value: '£17,150', trend: 'Illustrative', icon: '£' },
+            { label: 'Forecast next month', value: '£20,300', trend: 'Projected', icon: '↗' },
+          ]}
+          accentStyle={accentStyle}
+          pageSize={5}
+          emptyCopy="Cashflow will build up month by month."
+        />
+      ),
+    },
+    {
+      id: 'integrations',
+      label: 'Integrations',
+      icon: '🔌',
+      guide: 'See what\u2019s already connected (bank feed, payment processor) and what isn\u2019t (payroll, receipt scanning) — click Connect to turn one on.',
+      render: () => (
+        <div className="module-card-grid">
+          {integrations.map((item) => (
+            <article key={item.name} className="module-card fo-card quantum-frame">
+              <div className="module-card-top">
+                <span>{item.status === 'Connected' ? '✓' : '○'}</span>
+                <strong>{item.name}</strong>
+              </div>
+              <p><small>{item.syncs}</small></p>
+              <p style={{ fontWeight: 700, color: item.status === 'Connected' ? '#1f9d55' : '#8a8a8a' }}>{item.status}</p>
+              <button type="button" className="btn btn-secondary quantum-btn">
+                {item.status === 'Connected' ? 'Manage' : 'Connect'}
+              </button>
+            </article>
+          ))}
+        </div>
+      ),
+    },
   ]
 
   return (
     <ModuleTabs
       title="Accounting"
-      description={`Invoices, expenses, reports, and reconciliation for ${config.name}.`}
+      description={`Invoices, expenses, reports, reconciliation, tax, cashflow, and integrations for ${config.name}.`}
       tabs={tabs}
       accentStyle={accentStyle}
     />

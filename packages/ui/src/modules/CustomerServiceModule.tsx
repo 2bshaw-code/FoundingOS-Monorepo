@@ -47,6 +47,7 @@ export function CustomerServiceModule({ config }: { config: BrandConsoleConfig }
       id: 'tickets',
       label: 'Tickets',
       icon: '🎫',
+      guide: 'Every customer issue lands here. Set its Priority and Assignee, then move Status Open → In Progress → Resolved → Closed as you work it.',
       render: () => (
         <DataWorkbench
           title="Support tickets"
@@ -68,6 +69,7 @@ export function CustomerServiceModule({ config }: { config: BrandConsoleConfig }
       id: 'live-chat',
       label: 'Live Chat',
       icon: '💬',
+      guide: 'A real-time chat view for talking to a customer directly, side by side with their open ticket.',
       render: () => (
         <article className="module-card fo-card quantum-frame">
           <div className="module-card-top"><span>💬</span><strong>Live chat preview</strong></div>
@@ -80,6 +82,7 @@ export function CustomerServiceModule({ config }: { config: BrandConsoleConfig }
       id: 'knowledge-base',
       label: 'Knowledge Base',
       icon: '📚',
+      guide: 'Publish real help articles here (Orders/Delivery/Returns/Account) so customers — and your team — can self-serve answers instead of opening a ticket every time.',
       render: () => (
         <DataWorkbench
           title="Knowledge base"
@@ -100,6 +103,7 @@ export function CustomerServiceModule({ config }: { config: BrandConsoleConfig }
       id: 'sla',
       label: 'SLA',
       icon: '⏱',
+      guide: 'Shows how fast tickets are actually being handled against your service targets — a fast way to spot if response times are slipping before customers complain.',
       render: () => (
         <div className="module-card-grid">
           <article className="module-card fo-card quantum-frame">

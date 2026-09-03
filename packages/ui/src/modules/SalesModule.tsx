@@ -63,6 +63,7 @@ export function SalesModule({ config }: { config: BrandConsoleConfig }) {
       id: 'pipeline',
       label: 'Pipeline',
       icon: '📈',
+      guide: 'Every open deal, with its Stage and expected close date. Drag it forward by editing Stage: Prospecting → Qualified → Proposal → Negotiation → Won/Lost.',
       render: () => (
         <DataWorkbench
           title="Sales pipeline"
@@ -84,6 +85,7 @@ export function SalesModule({ config }: { config: BrandConsoleConfig }) {
       id: 'quotes',
       label: 'Quotes',
       icon: '📃',
+      guide: 'Send a priced quote to a customer, track it Sent, and update it to Accepted or Rejected once they respond.',
       render: () => (
         <DataWorkbench
           title="Quotes"
@@ -105,6 +107,7 @@ export function SalesModule({ config }: { config: BrandConsoleConfig }) {
       id: 'activities',
       label: 'Activities',
       icon: '📞',
+      guide: 'Log every real call, email, and meeting with a contact here, along with its outcome — a real activity history for every deal.',
       render: () => (
         <DataWorkbench
           title="Activities"
@@ -124,6 +127,7 @@ export function SalesModule({ config }: { config: BrandConsoleConfig }) {
       id: 'analytics',
       label: 'Analytics',
       icon: '📊',
+      guide: 'A quick read on pipeline value and win rate. Illustrative for now — a template for what real sales analytics should surface.',
       render: () => (
         <div className="module-card-grid">
           <article className="module-card fo-card quantum-frame">

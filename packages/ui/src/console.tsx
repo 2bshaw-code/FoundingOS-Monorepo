@@ -15,6 +15,7 @@ import { resolveBrandSlugFromName } from './real-monetary'
 import { brands } from '@foundingos/config'
 import { recommendQuantumOS, type BusinessProfile } from '@foundingos/config/quantum-recommendation'
 import { RecommendationBadge } from './onboarding/RecommendationBadge'
+import { ImportDataButton } from './import-data'
 
 export type BrandMetric = { label: string; value: string; trend?: string; icon?: string; tone?: 'good' | 'watch' | 'risk' }
 export type BrandModule = { id: string; label: string; description: string; metrics: BrandMetric[]; actions: string[]; workflow?: string[] }
@@ -303,6 +304,20 @@ function workbenchFilterOptions(rows: DataRow[], fields: DataField[]) {
   return { filterField, options }
 }
 
+// A select field's dropdown always includes its originally-configured options, PLUS any
+// distinct value already present in the real records (including freshly imported ones) — the
+// real fix behind "auto-create missing categories": importing a Products sheet with a
+// "Chicken" category that was never in the original Fresh/Frozen/Prepared/Core list makes
+// "Chicken" a real, selectable option from then on, not just an inert string in the table.
+function fieldOptions(field: DataField, records: DataRow[]): string[] {
+  const seen = new Set(field.options ?? [])
+  for (const row of records) {
+    const value = row.values[field.key]
+    if (value) seen.add(value)
+  }
+  return Array.from(seen)
+}
+
 export function DataWorkbench({ title, description, fields, rows, cards, accentStyle, pageSize = 4, emptyCopy = 'No records yet.' }: WorkbenchProps) {
   const [records, setRecords] = useState<DataRow[]>(() => cloneRows(rows))
   const [query, setQuery] = useState('')
@@ -397,7 +412,7 @@ export function DataWorkbench({ title, description, fields, rows, cards, accentS
                     onChange={(event) => setDraft((current) => ({ ...current, [field.key]: event.target.value }))}
                   >
                     <option value="">Select</option>
-                    {(field.options ?? []).map((option) => <option key={option} value={option}>{option}</option>)}
+                    {fieldOptions(field, records).map((option) => <option key={option} value={option}>{option}</option>)}
                   </select>
                 ) : field.type === 'file' ? (
                   <>
@@ -441,6 +456,11 @@ export function DataWorkbench({ title, description, fields, rows, cards, accentS
             )}
           </div>
           <div className="manager-empty">{filtered.length === 0 ? emptyCopy : `${filtered.length} records ready.`}</div>
+          <ImportDataButton
+            fields={fields}
+            idPrefix={title.toLowerCase().replaceAll(' ', '-')}
+            onImport={(newRows) => setRecords((current) => [...newRows, ...current])}
+          />
         </article>
       </div>
 
