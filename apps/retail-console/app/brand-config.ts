@@ -3,6 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import type { BrandConsoleConfig } from '@foundingos/ui/console'
+import { brands } from '@foundingos/config'
 
 export const brandConfig: BrandConsoleConfig = {
   "name": "FoundRetail",
@@ -717,7 +718,7 @@ export const brandConfig: BrandConsoleConfig = {
     },
     {
       "label": "Demos & Surveys",
-      "href": "/tester/dashboard",
+      "href": `${brands.foundingos.consoleUrl}/tester/dashboard?fromBrand=retail`,
       "icon": "🧭",
       "section": "Core"
     },
@@ -732,6 +733,12 @@ export const brandConfig: BrandConsoleConfig = {
       "href": "/crm",
       "icon": "◎",
       "section": "Core"
+    },
+    {
+      "label": "Products",
+      "href": "/modules/products",
+      "icon": "▣",
+      "section": "Modules"
     },
     {
       "label": "Pos",

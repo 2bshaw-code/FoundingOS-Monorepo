@@ -3,6 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import type { BrandConsoleConfig } from '@foundingos/ui/console'
+import { brands } from '@foundingos/config'
 
 export const brandConfig: BrandConsoleConfig = {
   "name": "FoundLogistics",
@@ -716,7 +717,7 @@ export const brandConfig: BrandConsoleConfig = {
     },
     {
       "label": "Demos & Surveys",
-      "href": "/tester/dashboard",
+      "href": `${brands.foundingos.consoleUrl}/tester/dashboard?fromBrand=logistics`,
       "icon": "🧭",
       "section": "Core"
     },
