@@ -17,14 +17,14 @@ export async function POST(request: Request) {
   const testerId = typeof body?.testerId === 'string' ? body.testerId : ''
   const moduleId = typeof body?.moduleId === 'string' ? body.moduleId : ''
 
-  const tester = getTester(testerId)
+  const tester = await getTester(testerId)
   if (!tester) return NextResponse.json({ error: 'Tester not found' }, { status: 404 })
 
   const moduleOption = findModuleOption(moduleId)
   if (!moduleOption) return NextResponse.json({ error: 'Unknown module' }, { status: 400 })
 
   // Reassignment starts a fresh working buffer for the new survey — completed run history is untouched.
-  const updated = upsertTester(testerId, {
+  const updated = await upsertTester(testerId, {
     moduleId: moduleOption.moduleId,
     moduleLabel: moduleOption.moduleLabel,
     surveyId: moduleOption.surveyId,

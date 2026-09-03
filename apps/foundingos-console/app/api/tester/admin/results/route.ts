@@ -12,5 +12,5 @@ export async function GET() {
   const adminId = token ? await verifyToken('admin', token) : null
   if (!adminId) return NextResponse.json({ error: 'Not authorized' }, { status: 401 })
 
-  return NextResponse.json({ testers: Object.values(readTesters()) })
+  return NextResponse.json({ testers: Object.values(await readTesters()) })
 }
