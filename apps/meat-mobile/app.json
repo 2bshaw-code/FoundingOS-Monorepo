@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "FoundMeat",
+    "slug": "meat-mobile",
+    "scheme": "meat",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#05060a",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.foundingos.meat"
+    },
+    "android": {
+      "package": "com.foundingos.meat",
+      "adaptiveIcon": {
+        "backgroundColor": "#05060a",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      "expo-web-browser"
+    ]
+  }
+}
