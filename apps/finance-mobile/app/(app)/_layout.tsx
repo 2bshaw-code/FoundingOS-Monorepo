@@ -18,7 +18,7 @@ export default function AppTabsLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
           title: 'Console',
           headerTitle: BRAND.name,

@@ -14,12 +14,17 @@ import { logout, getHandoffUrl } from '../../lib/api'
 export default function HomeScreen() {
   async function handleLogout() {
     await logout()
-    router.replace('/')
+    router.dismissTo('/')
   }
 
   async function openConsole(consoleUrl: string) {
     const url = await getHandoffUrl(consoleUrl)
     await WebBrowser.openBrowserAsync(url, { controlsColor: BRAND.accent, toolbarColor: '#05060a' })
+  }
+
+  async function openModule(module: string) {
+    const moduleId = module.toLowerCase().replaceAll(' ', '-')
+    await openConsole(`${GROWTH_CONSOLE_URL}/modules/${moduleId}`)
   }
 
   return (
@@ -42,9 +47,13 @@ export default function HomeScreen() {
       <Text style={styles.modulesLabel}>Core modules</Text>
       <View style={styles.moduleGrid}>
         {BRAND.modules.map((module) => (
-          <View key={module} style={[styles.moduleChip, { borderColor: BRAND.accent }]}>
+          <Pressable
+            key={module}
+            style={[styles.moduleChip, { borderColor: BRAND.accent }]}
+            onPress={() => openModule(module)}
+          >
             <Text style={styles.moduleChipText}>{module}</Text>
-          </View>
+          </Pressable>
         ))}
       </View>
 
@@ -67,6 +76,6 @@ const styles = StyleSheet.create({
   moduleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   moduleChip: { borderWidth: 1, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 },
   moduleChipText: { color: '#ffffff', fontSize: 13, fontWeight: '600' },
-  logoutButton: { marginTop: 12, marginBottom: 40, alignItems: 'center', padding: 14 },
+  logoutButton: { marginTop: 12, marginBottom: 100, alignItems: 'center', padding: 14 },
   logoutText: { color: '#ff5470', fontWeight: '700' },
 })

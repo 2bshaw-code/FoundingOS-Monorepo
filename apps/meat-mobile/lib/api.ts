@@ -48,7 +48,9 @@ export async function logout(): Promise<void> {
 // domain before redirecting into the console, so the in-app browser opens already signed in.
 export async function getHandoffUrl(consoleUrl: string): Promise<string> {
   const rawSetCookie = await getStoredSession()
-  const token = rawSetCookie?.match(/fo_tester_session=([^;,]+)/)?.[1]
+  const token =
+    rawSetCookie?.match(/fo_tester_admin_session=([^;,]+)/)?.[1] ||
+    rawSetCookie?.match(/fo_tester_session=([^;,]+)/)?.[1]
   if (!token) return consoleUrl
 
   const handoff = new URL(`${API_BASE}/api/tester/handoff`)
