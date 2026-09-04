@@ -76,7 +76,7 @@ export async function middleware(request: NextRequest) {
   // via a deterministic, seeded, no-external-network generator — there is no real data
   // exposure or write risk from leaving these specific, exact paths open. Every other route
   // (including the free-roam-blocking checks below) is completely unaffected.
-  const SYNTHETIC_GENERATOR_PATHS = new Set(['/api/scrape/refresh', '/api/feeds/update', '/api/dashboard/refresh'])
+  const SYNTHETIC_GENERATOR_PATHS = new Set(['/api/scrape/refresh', '/api/feeds/update', '/api/dashboard/refresh', '/api/crypto/poll'])
   if (SYNTHETIC_GENERATOR_PATHS.has(pathname)) return NextResponse.next()
 
   const adminToken = request.cookies.get(ADMIN_COOKIE)?.value

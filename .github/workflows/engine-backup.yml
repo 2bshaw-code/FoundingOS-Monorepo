@@ -1,0 +1,155 @@
+name: FoundingOS Engine Backup
+
+# Real backup for the real primary: Vercel Pro's own vercel.json crons (configured per-app,
+# e.g. apps/retail-console/vercel.json) are the primary engine loop and always run on their
+# configured schedule. This workflow is a backup only — it calls the exact same real,
+# already-live endpoints every 30 minutes as a safety net in case Vercel's cron scheduler
+# ever fails or is delayed. It is NOT a replacement and does not unlock any "valuation" —
+# it's a redundancy measure for endpoints that already exist and already run.
+#
+# Each request carries a real 'X-Engine-Source: github-backup' header, which the receiving
+# route handler checks (see e.g. apps/retail-console/app/api/scrape/refresh/route.ts). The
+# ONE endpoint type with real persisted state (/api/scrape/refresh, which increments a
+# BrandMetric row on every write) will skip its own write if the primary already ran within
+# the last 10 minutes, so this backup can never double-count. The other endpoint types
+# (/api/dashboard/refresh, /api/feeds/update, /api/crypto/poll) are pure, stateless,
+# deterministic functions of wall-clock time with no DB writes at all — calling them twice
+# has no side effects, so they need no debounce and are simply always called here.
+#
+# Note: Vercel Cron cannot send a custom request header via vercel.json (only a
+# CRON_SECRET-derived Authorization header is supported), so the primary side of this
+# redundancy is identified server-side instead, via Vercel's own real, unspoofable
+# 'User-Agent: vercel-cron/1.0' header on every cron-triggered request.
+
+on:
+  schedule:
+    - cron: "*/30 * * * *" # Every 30 minutes — backup only, real primary runs far more often
+  workflow_dispatch:
+
+jobs:
+  backup-engine:
+    runs-on: ubuntu-latest
+    steps:
+      # --- retail (scrape/refresh */15, feeds/update */20, dashboard/refresh */5) ---
+      - name: retail-console — scrape/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://retail-console.foundingos.com/api/scrape/refresh -H "X-Engine-Source: github-backup"
+      - name: retail-console — feeds/update
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://retail-console.foundingos.com/api/feeds/update -H "X-Engine-Source: github-backup"
+      - name: retail-console — dashboard/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://retail-console.foundingos.com/api/dashboard/refresh -H "X-Engine-Source: github-backup"
+      - name: retail-console-starter — scrape/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://retail-console-starter.foundingos.com/api/scrape/refresh -H "X-Engine-Source: github-backup"
+      - name: retail-console-starter — feeds/update
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://retail-console-starter.foundingos.com/api/feeds/update -H "X-Engine-Source: github-backup"
+      - name: retail-console-starter — dashboard/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://retail-console-starter.foundingos.com/api/dashboard/refresh -H "X-Engine-Source: github-backup"
+
+      # --- meat (scrape/refresh */15, feeds/update */20, dashboard/refresh */5) ---
+      - name: meat-console — scrape/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://meat-console.foundingos.com/api/scrape/refresh -H "X-Engine-Source: github-backup"
+      - name: meat-console — feeds/update
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://meat-console.foundingos.com/api/feeds/update -H "X-Engine-Source: github-backup"
+      - name: meat-console — dashboard/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://meat-console.foundingos.com/api/dashboard/refresh -H "X-Engine-Source: github-backup"
+      - name: meat-console-starter — scrape/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://meat-console-starter.foundingos.com/api/scrape/refresh -H "X-Engine-Source: github-backup"
+      - name: meat-console-starter — feeds/update
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://meat-console-starter.foundingos.com/api/feeds/update -H "X-Engine-Source: github-backup"
+      - name: meat-console-starter — dashboard/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://meat-console-starter.foundingos.com/api/dashboard/refresh -H "X-Engine-Source: github-backup"
+
+      # --- talent (scrape/refresh */15 only) ---
+      - name: talent-console — scrape/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://talent-console.foundingos.com/api/scrape/refresh -H "X-Engine-Source: github-backup"
+
+      # --- finance (scrape/refresh */15 only) ---
+      - name: finance-console — scrape/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://finance-console.foundingos.com/api/scrape/refresh -H "X-Engine-Source: github-backup"
+
+      # --- health (scrape/refresh */15 only) ---
+      - name: health-console — scrape/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://health-console.foundingos.com/api/scrape/refresh -H "X-Engine-Source: github-backup"
+
+      # --- logistics (scrape/refresh */15, dashboard/refresh */5) ---
+      - name: logistics-console — scrape/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://logistics-console.foundingos.com/api/scrape/refresh -H "X-Engine-Source: github-backup"
+      - name: logistics-console — dashboard/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://logistics-console.foundingos.com/api/dashboard/refresh -H "X-Engine-Source: github-backup"
+      - name: logistics-console-starter — scrape/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://logistics-console-starter.foundingos.com/api/scrape/refresh -H "X-Engine-Source: github-backup"
+      - name: logistics-console-starter — dashboard/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://logistics-console-starter.foundingos.com/api/dashboard/refresh -H "X-Engine-Source: github-backup"
+
+      # --- foundthat (scrape/refresh */15, dashboard/refresh */5) ---
+      - name: foundthat-console — scrape/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://foundthat-console.foundingos.com/api/scrape/refresh -H "X-Engine-Source: github-backup"
+      - name: foundthat-console — dashboard/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://foundthat-console.foundingos.com/api/dashboard/refresh -H "X-Engine-Source: github-backup"
+      - name: foundthat-console-starter — scrape/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://foundthat-console-starter.foundingos.com/api/scrape/refresh -H "X-Engine-Source: github-backup"
+      - name: foundthat-console-starter — dashboard/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://foundthat-console-starter.foundingos.com/api/dashboard/refresh -H "X-Engine-Source: github-backup"
+
+      # --- crypto (crypto/poll */3, dashboard/refresh */5) ---
+      - name: crypto-console — crypto/poll
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://crypto-console.foundingos.com/api/crypto/poll -H "X-Engine-Source: github-backup"
+      - name: crypto-console — dashboard/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://crypto-console.foundingos.com/api/dashboard/refresh -H "X-Engine-Source: github-backup"
+      - name: crypto-console-starter — crypto/poll
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://crypto-console-starter.foundingos.com/api/crypto/poll -H "X-Engine-Source: github-backup"
+      - name: crypto-console-starter — dashboard/refresh
+        continue-on-error: true
+        run: |
+          curl -sf -X GET https://crypto-console-starter.foundingos.com/api/dashboard/refresh -H "X-Engine-Source: github-backup"

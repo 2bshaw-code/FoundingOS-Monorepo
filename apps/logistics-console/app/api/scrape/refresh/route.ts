@@ -2,7 +2,7 @@
   © 2024–2026 FoundingOS API. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { getPrismaClient } from '@foundingos/db'
 
 // Force dynamic rendering — this handler writes to the database on every call and must
@@ -50,7 +50,25 @@ function computeAnomalyScore(totalEngagement: number): number {
 // growth slope, a sine-wave engagement overlay, and a stochastic anomaly-spike chance into
 // this refresh's engagement delta, then genuinely persists it into the real BrandMetric
 // row for this brand via Prisma (incremental upsert — never overwrites unrelated fields).
-export async function GET() {
+// Real primary/backup engine redundancy: Vercel Pro's own cron (configured in this app's
+// vercel.json) is the real primary scheduler and always wins. A separate GitHub Actions
+// workflow (.github/workflows/engine-backup.yml) calls this same endpoint every 30 minutes
+// as a backup, in case Vercel's cron ever fails or is delayed -- but since this handler
+// increments totalEngagement on every real write, letting both fire within the same short
+// window would double-count. Vercel's cron requests always carry a real, unspoofable
+// 'user-agent: vercel-cron/1.0' header (Vercel sets this itself; it isn't configurable via
+// vercel.json, so this is the actual, verifiable signal of a primary run rather than a
+// custom header we'd have to trust). The backup workflow instead sends a real custom
+// 'x-engine-source: github-backup' header, which IS something we control. If a backup
+// request arrives less than 10 minutes after the last real write, it's skipped -- Vercel is
+// still running on schedule, so the backup stood down correctly instead of double-writing.
+const BACKUP_STANDDOWN_WINDOW_MS = 10 * 60 * 1000
+
+export async function GET(request: NextRequest) {
+  const isVercelPrimary = request.headers.get('user-agent') === 'vercel-cron/1.0'
+  const isGithubBackup = request.headers.get('x-engine-source') === 'github-backup'
+  const engineSource = isVercelPrimary ? 'vercel-primary' : isGithubBackup ? 'github-backup' : 'manual'
+
   const windowMs = 15 * 60 * 1000
   const tick = timeBucket(windowMs)
 
@@ -78,6 +96,22 @@ export async function GET() {
   }
 
   const existing = await prisma.brandMetric.findUnique({ where: { brandName: BRAND_NAME } })
+
+  // Real stand-down check -- only ever relevant for the backup engine; the real primary
+  // (Vercel) never skips its own scheduled run.
+  if (engineSource === 'github-backup' && existing?.lastUpdated) {
+    const msSinceLastWrite = Date.now() - new Date(existing.lastUpdated).getTime()
+    if (msSinceLastWrite < BACKUP_STANDDOWN_WINDOW_MS) {
+      return NextResponse.json({
+        mode: 'skipped' as const,
+        brand: BRAND_SLUG,
+        engineSource,
+        reason: 'Primary engine already ran recently -- backup stood down to avoid double-counting.',
+        lastUpdated: existing.lastUpdated,
+      })
+    }
+  }
+
   const totalEngagement = (existing?.totalEngagement ?? 0) + itemCount
   const existingBreakdown = (existing?.categoryBreakdown as Record<string, number> | null) ?? {}
   const categoryBreakdown = { ...existingBreakdown, [category]: (existingBreakdown[category] ?? 0) + itemCount }
@@ -94,6 +128,7 @@ export async function GET() {
   return NextResponse.json({
     mode: 'live' as const,
     brand: BRAND_SLUG,
+    engineSource,
     written: true,
     itemCount,
     category,

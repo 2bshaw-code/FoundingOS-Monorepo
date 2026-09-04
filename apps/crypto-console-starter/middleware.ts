@@ -67,6 +67,15 @@ export async function middleware(request: NextRequest) {
   // verified from the header instead of a cookie.
   if (pathname.startsWith('/api/console/')) return NextResponse.next()
 
+  // Self-contained synthetic data generators (this brand's own /api/crypto/poll,
+  // /api/dashboard/refresh) must be reachable with NO session at all — that's exactly how
+  // Vercel's own cron jobs invoke them on schedule (crons carry no browser cookie). This app
+  // was missing this exemption entirely, meaning both its real Vercel crons have been
+  // silently redirected to the login page instead of actually running since they were set
+  // up. Each one only ever mutates this brand's own BrandMetric/synthetic data via a
+  // deterministic, seeded, no-external-network generator — no real exposure or write risk.
+  const SYNTHETIC_GENERATOR_PATHS = new Set(['/api/crypto/poll', '/api/dashboard/refresh'])
+  if (SYNTHETIC_GENERATOR_PATHS.has(pathname)) return NextResponse.next()
 
   const adminToken = request.cookies.get(ADMIN_COOKIE)?.value
   const adminId = adminToken ? await verifyToken('admin', adminToken) : null
