@@ -59,6 +59,15 @@ const SURVEY_URL = 'https://console.foundingos.com/tester/survey'
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Real native-app API surface (/api/console/config, /api/console/modules/[id],
+  // /api/console/ai-actions) does its own real Authorization-header-based session check
+  // (see app/lib/session-auth.ts) — React Native has no shared browser cookie jar, so this
+  // cookie-only gate would otherwise always redirect a native request before it even reaches
+  // that check. Bypassing here is safe: each route still requires a valid session, just
+  // verified from the header instead of a cookie.
+  if (pathname.startsWith('/api/console/')) return NextResponse.next()
+
+
   // Self-contained synthetic data generators (this brand's own /api/scrape/refresh,
   // /api/feeds/update, /api/dashboard/refresh) must be reachable with NO session at all —
   // that's exactly how Vercel's own cron jobs invoke them on schedule (crons carry no
