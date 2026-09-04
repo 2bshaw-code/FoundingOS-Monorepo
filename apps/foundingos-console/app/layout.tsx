@@ -64,6 +64,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <html lang="en">
         <body className="min-h-screen bg-black tester-shell" style={tintStyle}>
           <main className="tester-shell-content">{children}</main>
+          {/* Real testers/survey-takers/investors previously had NO AI helper at all —
+              FoundAI already has friendly, context-aware content for every one of these
+              routes (Switcher Hub, Survey, Guided Demo, Investor Briefing); it just wasn't
+              mounted here. Reusing it as-is is the cheapest, safest way to make AI help
+              visible on every real tester screen too. */}
+          <FoundAI brand={tinted} />
         </body>
       </html>
     )
