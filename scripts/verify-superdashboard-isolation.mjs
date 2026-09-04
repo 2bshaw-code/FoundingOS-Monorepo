@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const appsDir = join(root, 'apps')
-const allowedApp = 'foundingos-console'
+const allowedApps = new Set(['foundingos-console', 'foundingos-mobile'])
 const pattern = /superdashboard/gi
 const safeMarketingPattern = /'SuperDashboard'/g
 const scannedExtensions = new Set(['.ts', '.tsx', '.js', '.jsx', '.css', '.mjs', '.json'])
@@ -40,7 +40,7 @@ function walk(dir) {
 }
 
 for (const app of readdirSync(appsDir)) {
-  if (app === allowedApp) continue
+  if (allowedApps.has(app)) continue
   const appPath = join(appsDir, app)
   if (!statSync(appPath).isDirectory()) continue
   walk(appPath)
@@ -50,5 +50,5 @@ if (violations > 0) {
   console.error(`[verify-superdashboard-isolation] FAILED: ${violations} violation(s) — SuperDashboard must be FounderOS-only.`)
   process.exitCode = 1
 } else {
-  console.log('[verify-superdashboard-isolation] OK: no SuperDashboard references found outside foundingos-console.')
+  console.log(`[verify-superdashboard-isolation] OK: no SuperDashboard references found outside ${[...allowedApps].join(', ')}.`)
 }

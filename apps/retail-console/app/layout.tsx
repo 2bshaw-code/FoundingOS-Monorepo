@@ -10,7 +10,6 @@ import type { ReactNode } from 'react'
 import { Sidebar } from '@foundingos/ui/sidebar'
 import { FoundAI } from '@foundingos/ui/found-ai'
 import { Topbar } from '@foundingos/ui/topbar'
-import { LockdownBanner } from '@foundingos/ui/lockdown-banner'
 import { brandConfig } from './brand-config'
 
 // Real "add to home screen" support (installable web app) — the manifest itself lives in
@@ -32,8 +31,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <Sidebar config={brandConfig} />
         <div className="flex-1 flex flex-col console-shell-main">
           <Topbar config={brandConfig} />
-          <LockdownBanner brandName={brandConfig.name} logo={brandConfig.logo} accent={brandConfig.accent} />
-          <main className="console-shell-content lockdown-readonly">{children}</main>
+          <main className="console-shell-content">{children}</main>
         </div>
         <FoundAI brand={brandConfig} />
       <FoundingOSFooter /></body>
