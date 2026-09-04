@@ -243,9 +243,24 @@ function consoleTitle(config: BrandConsoleConfig) {
   }
 }
 
+// Quantum glow intensity per brand (locked spec) — how strong the glow effect is on active
+// elements only (buttons, headers, focused inputs), never applied to full backgrounds.
+const GLOW_INTENSITY: Record<string, number> = {
+  FoundingOS: 0.55,
+  FoundRetail: 0.45,
+  FoundMeat: 0.50,
+  FoundTalent: 0.40,
+  FoundThat: 0.35,
+  FoundCrypto: 0.50,
+  FoundFinance: 0.45,
+  FoundHealth: 0.40,
+  FoundLogistics: 0.50,
+}
+
 export function consoleStyle(config: BrandConsoleConfig): CSSProperties {
   return {
     '--accent': config.colors.accent,
+    '--glow-intensity': GLOW_INTENSITY[config.name] ?? 0.45,
   } as CSSProperties
 }
 
@@ -743,11 +758,12 @@ export function AIOnboardingWelcomeGeneric({ brandKey, brandName, description, f
   }
 
   return (
-    <div className="ai-onboarding-card">
+    <div className="ai-onboarding-card ai-onboarding-glow">
       <span className="ai-insight-badge">AI</span>
       <div className="ai-onboarding-body">
         <strong>Welcome to {brandName}!</strong>
-        <p>{description}</p>
+        <p className="ai-onboarding-purpose">{description}</p>
+        <p className="ai-onboarding-next">Here's what you can do here: {firstAction ? `open ${firstAction.label}, or explore any module below.` : 'explore your real modules below.'}</p>
         <div className="ai-onboarding-actions">
           {firstAction && (
             <Link href={firstAction.href} className="ai-hint-cta" onClick={dismiss}>

@@ -72,17 +72,20 @@ export default function GuardianScreen() {
               const info = aiEnabled ? explainGuardianWarning(warning) : null
               return (
                 <View key={warning} style={[styles.card, { borderColor: '#FF0033' }]}>
-                  <Text style={styles.cardText}>{warning}</Text>
-                  {info && (
+                  {info ? (
                     <View style={[styles.aiHint, { borderColor: FOUNDINGOS_ACCENT }]}>
                       <View style={[styles.aiBadge, { backgroundColor: FOUNDINGOS_ACCENT }]}><Text style={styles.aiBadgeText}>AI</Text></View>
-                      <View style={{ flex: 1, gap: 8 }}>
-                        <Text style={styles.aiText}>{info.explanation}</Text>
+                      <View style={{ flex: 1, gap: 6 }}>
+                        <Text style={styles.aiText}><Text style={styles.aiLabel}>What I noticed: </Text>{info.whatINoticed}</Text>
+                        <Text style={styles.aiText}><Text style={styles.aiLabel}>Why it matters: </Text>{info.whyItMatters}</Text>
+                        <Text style={styles.aiText}><Text style={styles.aiLabel}>What you can do: </Text>{info.whatYouCanDo}</Text>
                         <Pressable style={[styles.aiCta, { backgroundColor: FOUNDINGOS_ACCENT }]} onPress={() => router.push('/(app)/superdash')}>
                           <Text style={styles.aiCtaText}>Investigate — {info.investigateLabel}</Text>
                         </Pressable>
                       </View>
                     </View>
+                  ) : (
+                    <Text style={styles.cardText}>{warning}</Text>
                   )}
                 </View>
               )
@@ -115,6 +118,7 @@ const styles = StyleSheet.create({
   aiBadge: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   aiBadgeText: { color: '#071014', fontWeight: '900', fontSize: 10 },
   aiText: { color: '#ffffff', fontSize: 12 },
+  aiLabel: { color: '#b9c2cf', fontWeight: '700' },
   aiCta: { alignSelf: 'flex-start', borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 },
   aiCtaText: { color: '#071014', fontSize: 11, fontWeight: '700' },
 })

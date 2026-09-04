@@ -308,7 +308,7 @@ function CRMBadge({ label, value, hint }: { label: string; value: string; hint: 
 
 function CRMPanel({ title, children, className = '' }: { title: string; children: JSX.Element | JSX.Element[] | string | number | null | undefined; className?: string }) {
   return (
-    <article className={`crm-panel ${className}`.trim()}>
+    <article className={`crm-panel panel-premium ${className}`.trim()}>
       <h2>{title}</h2>
       {children}
     </article>

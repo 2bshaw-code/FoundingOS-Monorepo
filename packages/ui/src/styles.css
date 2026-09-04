@@ -287,6 +287,13 @@ a {
   padding-left: 12px;
 }
 
+
+.ai-onboarding-next {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .btn:focus-visible,
 .nav-card:focus-visible,
 button:focus-visible,
@@ -3797,4 +3804,109 @@ html[data-accessibility-simplified='true'] .btn {
   border-radius: 50%;
   background: var(--brand-glow, #00E5FF);
   box-shadow: 0 0 6px var(--brand-glow, #00E5FF);
+}
+
+/* ============================================================
+   Quantum Identity + AI Experience — locked spec (this block is
+   intentionally placed at the very end of the file so its rules always
+   win the cascade over any earlier same-property declaration on the
+   same selectors, without having to audit every prior rule in this
+   3800+ line file for conflicts). Every rule here is additive: it only
+   adds glow/gradient/texture/underline layers on top of the existing
+   solid colours, borders, and spacing already in place — nothing here
+   changes layout, removes a class, or alters spacing/structure.
+   Glow uses --glow-intensity (0.35–0.55, set per-brand in
+   consoleStyle()) and is applied only to active elements (buttons,
+   headers, focused inputs) per the locked spec — never to full
+   backgrounds.
+   ============================================================ */
+
+/* Headers: thin neon underline + slight glow + a touch more top padding. */
+.header-premium {
+  position: relative;
+  padding-top: 8px;
+  text-shadow: 0 0 16px color-mix(in srgb, var(--accent) calc(var(--glow-intensity, 0.45) * 100%), transparent);
+}
+
+.header-premium::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 0;
+  bottom: -6px;
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 55%, transparent), transparent 75%);
+}
+
+/* Cards/Panels: soft top-to-bottom gradient (6%), faint diagonal quantum texture (5%),
+   1px neon edge, and a real depth shadow — layered in one background-image/box-shadow
+   declaration so nothing here can be partially overridden by an earlier rule. */
+.card-premium,
+.panel-premium {
+  border-width: 1px;
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: 10px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+  background-image:
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--accent) 5%, transparent) 0 2px, transparent 2px 14px),
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 6%, transparent), transparent 60%);
+}
+
+/* Active panel — brand-colour accent ring (glow-only on the active element, not the whole
+   background), matching the locked spec's "accent ring on active panel". */
+.panel-premium:focus-within,
+.card-premium:focus-within {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) calc(var(--glow-intensity, 0.45) * 100%), transparent), 0 12px 24px rgba(0, 0, 0, 0.18);
+}
+
+/* Buttons: brand-colour border, subtle glow on hover/focus, a quick 80ms pulse on active —
+   short enough to read as tactile feedback, not a decorative animation. */
+.btn-premium,
+.quantum-btn {
+  border: 1px solid color-mix(in srgb, var(--accent) 60%, var(--line));
+  transition: box-shadow 160ms ease, transform 80ms ease;
+}
+
+.btn-premium:hover,
+.quantum-btn:hover,
+.btn-premium:focus-visible,
+.quantum-btn:focus-visible {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) calc(var(--glow-intensity, 0.45) * 100%), transparent), 0 10px 22px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.btn-premium:active,
+.quantum-btn:active {
+  transform: scale(0.98);
+  transition-duration: 80ms;
+}
+
+/* SuperDash: premium quantum header bar (a touch stronger glow, matching the spec's
+   "high-depth, king-level" SuperDash treatment) and a glow ring around each AI summary
+   card, in the same accent colour already driving everything else on the page. */
+.stack.quantum-ambient-grid > .header-premium {
+  text-shadow: 0 0 22px color-mix(in srgb, var(--accent) calc(var(--glow-intensity, 0.45) * 110%), transparent);
+}
+
+.superdash-ai-card {
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) calc(var(--glow-intensity, 0.45) * 100%), transparent), 0 14px 28px rgba(0, 0, 0, 0.18);
+}
+
+/* Onboarding V2: soft quantum glow around the welcome card — reuses the same gentle pulse
+   already defined for .glow-premium above, so no new animation is introduced. */
+.ai-onboarding-card.ai-onboarding-glow {
+  border-radius: 10px;
+  animation: premium-soft-pulse 3.6s ease-in-out infinite;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) calc(var(--glow-intensity, 0.45) * 100%), transparent), 0 16px 32px rgba(0, 0, 0, 0.18);
+}
+
+.ai-onboarding-purpose {
+  margin: 0 0 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-onboarding-card.ai-onboarding-glow,
+  .btn-premium:active,
+  .quantum-btn:active { animation: none; transition: none; }
 }

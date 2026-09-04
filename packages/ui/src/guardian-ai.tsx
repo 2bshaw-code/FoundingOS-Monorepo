@@ -6,40 +6,48 @@
 
 // Guardian + AI Fusion — every real Guardian alert (see
 // packages/ui/src/superdash/SuperDashSurveyGuardian.ts, the only real source of these
-// strings) gets a plain-language explanation and a real "Investigate" link. There is no
-// real automated "fix" for any of these three real warning shapes (they're observations
-// about survey engagement and route health, not something a button can repair), so the
-// honest action is always "go look at the real page that shows this," never a fabricated
-// one-click fix.
+// strings) gets a plain-language explanation and a real "Investigate" link, in the
+// standard "What I noticed / Why it matters / What you can do" format. There is no real
+// automated "fix" for any of these three real warning shapes (they're observations about
+// survey engagement and route health, not something a button can repair), so "what you can
+// do" is always "go look at the real page that shows this," never a fabricated one-click fix.
 import Link from 'next/link'
 import { useAIAssistance } from './ai-assistance'
 
-type GuardianExplanation = { explanation: string; investigateHref: string; investigateLabel: string }
+type GuardianExplanation = { whatINoticed: string; whyItMatters: string; whatYouCanDo: string; investigateHref: string; investigateLabel: string }
 
 export function explainGuardianWarning(warning: string): GuardianExplanation {
   if (warning.includes('no tester submissions yet')) {
     return {
-      explanation: 'Nobody has completed this survey yet. It isn\u2019t broken \u2014 just low engagement so far. You could invite a few more testers.',
+      whatINoticed: warning,
+      whyItMatters: 'It isn\u2019t broken \u2014 just low engagement so far.',
+      whatYouCanDo: 'Invite a few more testers, or check back later.',
       investigateHref: '/superdashboard',
       investigateLabel: 'Open SuperDash',
     }
   }
   if (warning.includes('missing/blank answer')) {
     return {
-      explanation: 'Some testers left one or more answers blank. Worth a quick look in case a question was confusing.',
+      whatINoticed: warning,
+      whyItMatters: 'A question may have been unclear, or a tester skipped it on purpose.',
+      whatYouCanDo: 'Take a quick look at the responses when you have a moment.',
       investigateHref: '/superdashboard',
       investigateLabel: 'Review responses',
     }
   }
   if (warning.includes('route(s) are not responding correctly')) {
     return {
-      explanation: 'One or more brand websites returned an error when Guardian checked them just now \u2014 could be a real outage or a temporary blip. Worth checking again shortly.',
+      whatINoticed: warning,
+      whyItMatters: 'Could be a real outage, or just a temporary blip \u2014 not yet clear which.',
+      whatYouCanDo: 'Check again shortly to see if it clears up on its own.',
       investigateHref: '/superdashboard',
       investigateLabel: 'Check again',
     }
   }
   return {
-    explanation: 'Guardian flagged this \u2014 take a look when you can.',
+    whatINoticed: warning,
+    whyItMatters: 'Guardian flagged this as worth a look.',
+    whatYouCanDo: 'Take a look when you can \u2014 nothing urgent.',
     investigateHref: '/superdashboard',
     investigateLabel: 'Open SuperDash',
   }
@@ -58,15 +66,18 @@ export function GuardianAlertList({ warnings }: { warnings: string[] }) {
         const info = aiEnabled ? explainGuardianWarning(warning) : null
         return (
           <li key={warning} className="guardian-alert-item">
-            <p className="guardian-alert-raw">{warning}</p>
-            {info && (
+            {info ? (
               <div className="ai-hint-banner guardian-ai-hint">
                 <span className="ai-insight-badge">AI</span>
-                <div className="ai-hint-body">
-                  <p>{info.explanation}</p>
+                <div className="ai-hint-body guardian-tone-spec">
+                  <p><strong>What I noticed:</strong> {info.whatINoticed}</p>
+                  <p><strong>Why it matters:</strong> {info.whyItMatters}</p>
+                  <p><strong>What you can do:</strong> {info.whatYouCanDo}</p>
                   <Link href={info.investigateHref} className="ai-hint-cta">Investigate — {info.investigateLabel}</Link>
                 </div>
               </div>
+            ) : (
+              <p className="guardian-alert-raw">{warning}</p>
             )}
           </li>
         )
