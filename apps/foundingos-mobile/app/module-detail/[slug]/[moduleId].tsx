@@ -7,6 +7,7 @@ import { ScrollView, View, Text, Pressable, StyleSheet, ActivityIndicator, Refre
 import { useLocalSearchParams, router } from 'expo-router'
 import { BRANDS } from '../../../lib/brands'
 import { authedFetch } from '../../../lib/api'
+import { AIHintBanner } from '../../../components/AIHintBanner'
 
 type ModuleMetric = { label: string; value: string; trend?: string; icon?: string; tone?: 'good' | 'watch' | 'risk' }
 type ModuleData = { id: string; label: string; description: string; metrics: ModuleMetric[]; actions: string[]; workflow?: string[] }
@@ -83,6 +84,13 @@ export default function ModuleDetailScreen() {
             <Text style={styles.title}>{data.label}</Text>
             <Text style={styles.subtitle}>{data.description}</Text>
           </View>
+
+          <AIHintBanner
+            accent={brand.accent}
+            description={`${data.label}: ${data.description}`}
+            recommendedAction={data.actions[0]?.toLowerCase() ?? 'review this module'}
+            onDoThisForMe={() => data.actions[0] && handleActionTap(data.actions[0])}
+          />
 
           <View style={styles.metricGrid}>
             {data.metrics.map((metric) => (

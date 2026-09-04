@@ -7,6 +7,7 @@ import { ScrollView, View, Text, Pressable, StyleSheet, ActivityIndicator, Refre
 import { router } from 'expo-router'
 import { BRAND, GROWTH_CONSOLE_URL } from '../../lib/brand'
 import { logout, authedFetch } from '../../lib/api'
+import { AIOnboardingCard } from '../../components/AIOnboardingCard'
 
 type ConsoleConfig = {
   dashboard: { title: string; subtitle: string; metrics: { label: string; value: string; trend?: string; tone?: 'good' | 'watch' | 'risk' }[] }
@@ -53,6 +54,8 @@ export default function HomeScreen() {
     router.dismissTo('/')
   }
 
+  const firstModule = config?.modules[0]
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -71,6 +74,15 @@ export default function HomeScreen() {
         <Text style={styles.heroTitle}>{BRAND.name}</Text>
         <Text style={styles.heroSubtitle}>{BRAND.tagline}</Text>
       </View>
+
+      <AIOnboardingCard
+        accent={BRAND.accent}
+        brandKey={`${BRAND.slug}-home`}
+        brandName={BRAND.name}
+        description={`This is your ${BRAND.name} console — ${BRAND.tagline.toLowerCase()} Tap a module below to dive in.`}
+        actionLabel={firstModule ? `open ${firstModule.label}` : undefined}
+        onDoThisForMe={firstModule ? () => router.push(`/module-detail/${firstModule.id}`) : undefined}
+      />
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 

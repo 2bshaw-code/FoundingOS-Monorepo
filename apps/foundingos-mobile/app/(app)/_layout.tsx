@@ -58,6 +58,14 @@ export default function AppTabsLayout() {
           tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>✧</Text>,
         }}
       />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          headerTitle: 'Settings',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>⚙</Text>,
+        }}
+      />
     </Tabs>
   )
 }

@@ -6,7 +6,7 @@
 
 import Link from 'next/link'
 import KPIWidget from '../components/KPIWidget'
-import { AIInsightBanner } from '@foundingos/ui/console'
+import { AIInsightBanner, AIOnboardingWelcomeGeneric } from '@foundingos/ui/console'
 import { ClientDate } from './ClientDate'
 import { useFounderGlobalisation, currencyOptions, languageOptions } from './founder-globalisation'
 
@@ -187,6 +187,12 @@ export default function FounderConsolePage() {
         <span>{copy.subtitle}</span>
       </header>
 
+      <AIOnboardingWelcomeGeneric
+        brandKey="foundingos-founder"
+        brandName="FoundingOS"
+        description={copy.subtitle}
+        firstAction={sections[0] ? { href: sections[0].href ?? '/superdashboard', label: copy[sections[0].key as keyof typeof copy] as string } : undefined}
+      />
       <AIInsightBanner metrics={metrics} brandLabel="FoundingOS" />
 
       <div className="kpi-grid">

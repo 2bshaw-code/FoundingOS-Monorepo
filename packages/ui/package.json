@@ -41,6 +41,8 @@
     "./superdash/SuperDashTeamViewer": "./src/superdash/SuperDashTeamViewer.tsx",
     "./superdash/SuperDashCommercialPanel": "./src/superdash/SuperDashCommercialPanel.tsx",
     "./found-ai-context": "./src/found-ai-context.tsx",
+    "./ai-assistance": "./src/ai-assistance.tsx",
+    "./guardian-ai": "./src/guardian-ai.tsx",
     "./package-data": "./src/package-data.ts",
     "./found-ai": "./src/found-ai.tsx",
     "./animated-message-flow": "./src/animated-message-flow.tsx",

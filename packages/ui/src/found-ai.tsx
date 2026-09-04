@@ -7,6 +7,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import type { BrandConsoleConfig } from './console'
+import { useAIAssistance } from './ai-assistance'
 
 type Message = { role: 'assistant' | 'user'; text: string }
 
@@ -389,6 +390,7 @@ function matchKnowledge(text: string): string | null {
 
 export function FoundAI({ brand }: { brand: FoundAIBrand }) {
   const pathname = usePathname()
+  const aiEnabled = useAIAssistance()
   const [open, setOpen] = useState(false)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -409,6 +411,10 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
       },
     ])
   }, [open, messages.length, brand.name, context])
+
+  // Respects the global AI Assistance toggle (Settings) — hides the floating button and
+  // panel entirely, everywhere, the instant it's turned off.
+  if (!aiEnabled) return null
 
   const submit = (text: string) => {
     const clean = text.trim()

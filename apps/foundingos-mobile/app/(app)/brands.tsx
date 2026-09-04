@@ -6,6 +6,7 @@ import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
 import { BRANDS } from '../../lib/brands'
 import { logout } from '../../lib/api'
+import { AIOnboardingCard } from '../../components/AIOnboardingCard'
 
 // Real founder-facing brand directory — FoundingOS's own app is the founder's aggregated
 // reporting console (see the Activity tab for real live cross-brand numbers), not a way to
@@ -35,6 +36,15 @@ export default function DashboardScreen() {
           See every brand at a glance. Each brand has its own app for day-to-day work.
         </Text>
       </View>
+
+      <AIOnboardingCard
+        accent="#00E0FF"
+        brandKey="foundingos-brands"
+        brandName="FoundingOS"
+        description="This is your control room — every brand you manage, at a glance. Tap a brand to see its live activity, or tap a module chip to open it directly."
+        actionLabel={BRANDS[0] ? `open ${BRANDS[0].name}` : undefined}
+        onDoThisForMe={BRANDS[0] ? () => router.push(`/brand-detail/${BRANDS[0].slug}`) : undefined}
+      />
 
       {BRANDS.map((brand) => (
         <Pressable

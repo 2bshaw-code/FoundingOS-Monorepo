@@ -12,6 +12,7 @@ import { GetStartedChecklist } from './get-started-checklist'
 import { DataMigrationHub } from './data-migration-hub'
 import { RealDealsPanel, RealBrandFinancePanel, RealInvoicesPanel } from './real-monetary-panels'
 import { resolveBrandSlugFromName } from './real-monetary'
+import { useAIAssistance, hasSeenOnboarding, markOnboardingSeen, AIAssistanceToggle } from './ai-assistance'
 import { brands } from '@foundingos/config'
 import { recommendQuantumOS, type BusinessProfile } from '@foundingos/config/quantum-recommendation'
 import { RecommendationBadge } from './onboarding/RecommendationBadge'
@@ -65,6 +66,7 @@ export type WorkbenchProps = {
   accentStyle: CSSProperties
   pageSize?: number
   emptyCopy?: string
+  aiRecommendedAction?: string
 }
 
 function parseMetricValue(value: string) {
@@ -318,13 +320,33 @@ function fieldOptions(field: DataField, records: DataRow[]): string[] {
   return Array.from(seen)
 }
 
-export function DataWorkbench({ title, description, fields, rows, cards, accentStyle, pageSize = 4, emptyCopy = 'No records yet.' }: WorkbenchProps) {
+// Small, friendly AI hint shown at the top of every module — explains the module in plain
+// language and gives one real, working "Do this for me" shortcut. The action is always real:
+// it calls straight into DataWorkbench's own beginCreate()/scroll-into-view below, so
+// clicking it genuinely starts the most common task (adding a new record) rather than
+// promising automation that doesn't exist.
+function AIModuleHint({ title, description, recommendedAction, onDoThisForMe }: { title: string; description: string; recommendedAction: string; onDoThisForMe: () => void }) {
+  const aiEnabled = useAIAssistance()
+  if (!aiEnabled) return null
+  return (
+    <div className="ai-hint-banner">
+      <span className="ai-insight-badge">AI</span>
+      <div className="ai-hint-body">
+        <p><strong>{title}:</strong> {description}</p>
+        <button type="button" className="ai-hint-cta" onClick={onDoThisForMe}>Do this for me — {recommendedAction}</button>
+      </div>
+    </div>
+  )
+}
+
+export function DataWorkbench({ title, description, fields, rows, cards, accentStyle, pageSize = 4, emptyCopy = 'No records yet.', aiRecommendedAction }: WorkbenchProps) {
   const [records, setRecords] = useState<DataRow[]>(() => cloneRows(rows))
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('all')
   const [page, setPage] = useState(1)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState<Record<string, string>>(() => seedDraft(fields))
+  const formRef = useRef<HTMLElement>(null)
 
   const { filterField, options } = useMemo(() => workbenchFilterOptions(records, fields), [records, fields])
 
@@ -383,6 +405,16 @@ export function DataWorkbench({ title, description, fields, rows, cards, accentS
         <span>{description}</span>
       </header>
 
+      <AIModuleHint
+        title={title}
+        description={description}
+        recommendedAction={aiRecommendedAction ?? `add your first ${title.toLowerCase()}`}
+        onDoThisForMe={() => {
+          beginCreate()
+          formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }}
+      />
+
       <div className="kpi-grid">
         {summaryCards.map((card) => (
           <article key={card.label} className="dashboard-card">
@@ -394,7 +426,7 @@ export function DataWorkbench({ title, description, fields, rows, cards, accentS
       </div>
 
       <div className="module-card-grid">
-        <article className="panel">
+        <article className="panel" ref={formRef}>
           <h2>{editingId ? `Edit ${title}` : `Create ${title}`}</h2>
           <div className="manager-form">
             {fields.map((field) => (
@@ -673,15 +705,72 @@ export function DashboardCard({ metric }: { metric: BrandMetric }) {
 // all-clear when nothing needs attention. This is visible immediately, not hidden behind a
 // click into the FoundAI panel.
 export function AIInsightBanner({ metrics, brandLabel }: { metrics: BrandMetric[]; brandLabel?: string }) {
+  const aiEnabled = useAIAssistance()
   const flagged = metrics.find((metric) => metric.tone === 'risk') ?? metrics.find((metric) => metric.tone === 'watch')
   const message = flagged
     ? `Heads up — ${flagged.label} needs a look (${flagged.value}${flagged.trend ? `, ${flagged.trend}` : ''}). Want me to help with it?`
     : `Everything looks good${brandLabel ? ` for ${brandLabel}` : ''} today — nothing urgent to flag.`
+  if (!aiEnabled) return null
   return (
     <div className="ai-insight-banner">
       <span className="ai-insight-badge">AI</span>
       <p>{message}</p>
     </div>
+  )
+}
+
+// Real "first time in this brand console" welcome — child-level clarity, explains what the
+// screen does, and offers ONE real, working "Do this for me" action: a genuine link into a
+// real page (no fabricated automation). Generic (brandKey/brandName/description/firstAction)
+// so it works for both a brand's own BrandConsoleConfig (see the AIOnboardingWelcome wrapper
+// below) and foundingos-console's own bespoke founder dashboard, which has no
+// BrandConsoleConfig of its own. Seen-state is a cookie shared across every
+// *.foundingos.com subdomain (see ai-assistance.tsx), so once dismissed it stays dismissed.
+export function AIOnboardingWelcomeGeneric({ brandKey, brandName, description, firstAction }: { brandKey: string; brandName: string; description: string; firstAction?: { href: string; label: string } }) {
+  const aiEnabled = useAIAssistance()
+  const [dismissed, setDismissed] = useState(true) // starts hidden; corrected on mount below to avoid a flash for returning users
+
+  useEffect(() => {
+    if (!aiEnabled) return
+    setDismissed(hasSeenOnboarding(brandKey))
+  }, [aiEnabled, brandKey])
+
+  if (!aiEnabled || dismissed) return null
+
+  const dismiss = () => {
+    markOnboardingSeen(brandKey)
+    setDismissed(true)
+  }
+
+  return (
+    <div className="ai-onboarding-card">
+      <span className="ai-insight-badge">AI</span>
+      <div className="ai-onboarding-body">
+        <strong>Welcome to {brandName}!</strong>
+        <p>{description}</p>
+        <div className="ai-onboarding-actions">
+          {firstAction && (
+            <Link href={firstAction.href} className="ai-hint-cta" onClick={dismiss}>
+              Do this for me — open {firstAction.label}
+            </Link>
+          )}
+          <button type="button" className="ai-onboarding-dismiss" onClick={dismiss}>Got it, thanks</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function AIOnboardingWelcome({ config }: { config: BrandConsoleConfig }) {
+  const brandSlug = resolveBrandSlugFromName(config.name) ?? config.name.toLowerCase()
+  const firstModule = consoleModules(config)[0]
+  return (
+    <AIOnboardingWelcomeGeneric
+      brandKey={brandSlug}
+      brandName={config.name}
+      description={config.dashboard.subtitle}
+      firstAction={firstModule ? { href: firstModule.href, label: firstModule.label } : undefined}
+    />
   )
 }
 
@@ -699,6 +788,7 @@ export function BrandDashboard({ config, variant = 'growth' }: { config: BrandCo
       <div className="quantum-particle-drift"><span className="quantum-particle" /><span className="quantum-particle" /><span className="quantum-particle" /></div>
       <ModuleHeader config={config} title={config.dashboard.title} description={config.dashboard.subtitle} />
 
+      <AIOnboardingWelcome config={config} />
       <AIInsightBanner metrics={config.dashboard.metrics} brandLabel={config.name} />
 
       <div className="kpi-grid">
@@ -1270,6 +1360,7 @@ export function BrandModulePage({ config, moduleId }: { config: BrandConsoleConf
         accentStyle={accentStyle}
         pageSize={4}
         emptyCopy="Add your first product to start managing the catalog."
+        aiRecommendedAction="add your first product"
       />
     )
   }
@@ -1298,6 +1389,7 @@ export function BrandModulePage({ config, moduleId }: { config: BrandConsoleConf
         accentStyle={accentStyle}
         pageSize={5}
         emptyCopy={`No ${module.label.toLowerCase()} records yet.`}
+        aiRecommendedAction={module.actions[0]?.toLowerCase() ?? `add your first ${module.label.toLowerCase()} record`}
       />
       {module.id === 'accounting' && brandSlug && (
         <div className="module-card-grid" style={{ marginTop: 16 }}>
@@ -1313,6 +1405,11 @@ export function BrandSettingsPage({ config }: { config: BrandConsoleConfig }) {
   return (
     <section className="console-page" style={accentStyle}>
       <ModuleHeader config={config} title="Settings" description={`${config.name} configuration, permissions, appearance, CRM, and module controls.`} />
+      <div className="panel panel-premium ai-assistance-panel">
+        <h2>AI Assistance</h2>
+        <p>Turn off to hide onboarding welcomes, module hints, Guardian explanations, and the FoundAI helper everywhere in FoundingOS — on this device, across every brand.</p>
+        <AIAssistanceToggle />
+      </div>
       <div className="settings-grid">
         {config.settings.map((setting) => (
           <article key={setting} className="panel panel-premium">

@@ -4,8 +4,10 @@
 */
 import { useCallback, useEffect, useState } from 'react'
 import { ScrollView, View, Text, Pressable, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native'
+import { router } from 'expo-router'
 import { authedFetch } from '../../lib/api'
 import { BRAND, GROWTH_CONSOLE_URL } from '../../lib/brand'
+import { useAIAssistance } from '../../lib/ai-assistance'
 
 type Action = { label: string; fetchPath: string | null }
 
@@ -13,6 +15,7 @@ type Action = { label: string; fetchPath: string | null }
 // actions (GET ${GROWTH_CONSOLE_URL}/api/console/ai-actions) — tapping a data-backed action
 // calls that real endpoint and shows the actual JSON returned.
 export default function AIActionsScreen() {
+  const [aiEnabled] = useAIAssistance()
   const [actions, setActions] = useState<Action[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -68,6 +71,18 @@ export default function AIActionsScreen() {
     )
   }
 
+  if (!aiEnabled) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.disabledTitle}>AI Assistance is turned off</Text>
+        <Text style={styles.disabledText}>Turn it back on in Settings to use AI actions.</Text>
+        <Pressable style={[styles.settingsLink, { borderColor: BRAND.accent }]} onPress={() => router.push('/(app)/settings')}>
+          <Text style={[styles.settingsLinkText, { color: BRAND.accent }]}>Open Settings</Text>
+        </Pressable>
+      </View>
+    )
+  }
+
   return (
     <ScrollView
       style={styles.container}
@@ -102,6 +117,10 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0F2942' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0F2942' },
   error: { color: '#ff5470', fontSize: 13 },
+  disabledTitle: { color: '#ffffff', fontSize: 16, fontWeight: '700', marginBottom: 6 },
+  disabledText: { color: '#b9c2cf', fontSize: 13, marginBottom: 16, textAlign: 'center' },
+  settingsLink: { borderWidth: 1, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 18 },
+  settingsLinkText: { fontSize: 13, fontWeight: '700' },
   actionCard: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: '#11161f', borderWidth: 1, borderRadius: 14, padding: 16,

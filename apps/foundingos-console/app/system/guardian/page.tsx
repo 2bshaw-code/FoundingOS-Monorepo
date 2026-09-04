@@ -6,6 +6,7 @@ import { readSurveyFeedEntries } from '../../superdashboard/survey-feed-store.se
 import { checkAllBrandRouteHealth } from '../../superdashboard/route-health.server'
 import { SuperDashSurveyGuardian } from '@foundingos/ui/superdash/SuperDashSurveyGuardian'
 import { SuperDashGuardian } from '@foundingos/ui/superdash/SuperDashGuardian'
+import { GuardianAlertList } from '@foundingos/ui/guardian-ai'
 
 export const metadata = { title: 'System Alert | FoundingOS' }
 
@@ -28,13 +29,7 @@ export default async function GuardianPage() {
 
       <article className="fo-card fo-panel-glow" style={{ padding: 24 }}>
         <h2 style={{ marginTop: 0 }}>Survey feed warnings</h2>
-        {surveyWarnings.length === 0 ? (
-          <p><small>No warnings — every category has submissions and every route is responding.</small></p>
-        ) : (
-          <ul>
-            {surveyWarnings.map((warning) => <li key={warning}>{warning}</li>)}
-          </ul>
-        )}
+        <GuardianAlertList warnings={surveyWarnings} />
       </article>
 
       <article className="fo-card fo-panel-glow" style={{ padding: 24 }}>
