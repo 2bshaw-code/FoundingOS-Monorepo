@@ -5,12 +5,14 @@
 import { useEffect, useState } from 'react'
 import { View, Text, TextInput, Pressable, ActivityIndicator, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
 import { router } from 'expo-router'
-import { login, getStoredSession } from '../lib/api'
+import { login, getToken } from '../lib/api'
 import { BRAND } from '../lib/brand'
+import { QuantumSphere } from '../components/QuantumSphere'
 
 // Real login screen — calls the same real /api/tester/login endpoint every web brand console
 // uses. No demo/mock accounts: a real tester/admin email and password/access code is required,
-// exactly like the web sign-in.
+// exactly like the web sign-in. The quantum gradient background renders once at the root
+// layout (app/_layout.tsx), tinted with this brand's own real accent colour.
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,8 +21,8 @@ export default function LoginScreen() {
   const [checkingSession, setCheckingSession] = useState(true)
 
   useEffect(() => {
-    getStoredSession().then((session) => {
-      if (session) router.replace('/(app)/home')
+    getToken().then((token) => {
+      if (token) router.replace('/(app)/home')
       setCheckingSession(false)
     })
   }, [])
@@ -52,9 +54,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.brand}>
-        <View style={[styles.logo, { backgroundColor: BRAND.accent }]}>
-          <Text style={styles.logoText}>RE</Text>
-        </View>
+        <QuantumSphere size={64} accent={BRAND.accent} />
         <Text style={styles.title}>{BRAND.name}</Text>
         <Text style={styles.subtitle}>{BRAND.tagline}</Text>
       </View>
@@ -81,7 +81,7 @@ export default function LoginScreen() {
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <Pressable
-          style={[styles.button, { backgroundColor: BRAND.accent }]}
+          style={[styles.button, { backgroundColor: BRAND.accent, shadowColor: BRAND.accent }]}
           onPress={handleSignIn}
           disabled={loading}
         >
@@ -93,12 +93,10 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#05060a', padding: 24, justifyContent: 'center' },
-  center: { flex: 1, backgroundColor: '#05060a', alignItems: 'center', justifyContent: 'center' },
-  brand: { alignItems: 'center', marginBottom: 40 },
-  logo: { width: 64, height: 64, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  logoText: { color: '#071014', fontWeight: '900', fontSize: 18 },
-  title: { color: '#ffffff', fontSize: 26, fontWeight: '800', marginBottom: 8 },
+  container: { flex: 1, padding: 24, justifyContent: 'center', backgroundColor: '#0F2942' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0F2942' },
+  brand: { alignItems: 'center', marginBottom: 40, gap: 16 },
+  title: { color: '#ffffff', fontSize: 26, fontWeight: '800' },
   subtitle: { color: '#b9c2cf', fontSize: 14, textAlign: 'center', paddingHorizontal: 20 },
   form: { gap: 8 },
   label: { color: '#b9c2cf', fontSize: 13, fontWeight: '600', marginTop: 12 },
@@ -112,6 +110,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   error: { color: '#ff5470', fontSize: 13, marginTop: 8 },
-  button: { marginTop: 20, borderRadius: 999, paddingVertical: 14, alignItems: 'center' },
+  button: {
+    marginTop: 20, borderRadius: 999, paddingVertical: 14, alignItems: 'center',
+    shadowOpacity: 0.5, shadowRadius: 14, shadowOffset: { width: 0, height: 0 }, elevation: 8,
+  },
   buttonText: { color: '#071014', fontWeight: '800', fontSize: 15 },
 })

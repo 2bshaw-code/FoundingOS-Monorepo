@@ -4,22 +4,25 @@
 */
 import * as SecureStore from 'expo-secure-store'
 
-// Real API client — talks to the real, live foundingos-console backend, the same one every
-// web brand console and the main website use (session cookies are shared across the whole
-// .foundingos.com domain). No mock data, no fabricated endpoints.
-const API_BASE = 'https://console.foundingos.com'
-const SESSION_KEY = 'fo_foundthat_mobile_session_cookie'
+// Real API client — talks to the real, live foundingos-console backend for login, and this
+// brand's own real console API for everything else. No mock data, no fabricated endpoints,
+// no WebView/browser handoff: the session token is sent as a real Authorization: Bearer
+// header on every request (see apps/foundthat-console/app/lib/session-auth.ts, which
+// checks that header first, falling back to a cookie only for browser-based callers).
+const AUTH_BASE = 'https://console.foundingos.com'
+const TOKEN_KEY = 'fo_foundthat_mobile_session_token'
 
 export type LoginResult =
   | { ok: true; category: string }
   | { ok: false; error: string }
 
-// The real /api/tester/login endpoint sets an HttpOnly session cookie via Set-Cookie — React
-// Native's fetch does not expose that header to JS (for the same reason browsers don't), so
-// we read it back from the raw response headers where the underlying networking stack does
-// surface it, and store it ourselves for manual attachment on every later request.
+// The real /api/tester/login endpoint sets the session token via Set-Cookie — React Native's
+// fetch does not expose that header's full semantics to JS the way a browser does, but the
+// underlying networking stack does surface the raw header value, so the real token substring
+// is extracted from it once at login and stored — everything after this is header-based, not
+// cookie-based.
 export async function login(email: string, password: string): Promise<LoginResult> {
-  const response = await fetch(`${API_BASE}/api/tester/login`, {
+  const response = await fetch(`${AUTH_BASE}/api/tester/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password, agreedToLegalTerms: true }),
@@ -29,34 +32,29 @@ export async function login(email: string, password: string): Promise<LoginResul
     return { ok: false, error: data?.error ?? 'Sign in failed. Check your email and password.' }
   }
   const setCookie = response.headers.get('set-cookie')
-  if (setCookie) {
-    await SecureStore.setItemAsync(SESSION_KEY, setCookie)
+  const token =
+    setCookie?.match(/fo_tester_admin_session=([^;,]+)/)?.[1] ||
+    setCookie?.match(/fo_tester_session=([^;,]+)/)?.[1]
+  if (token) {
+    await SecureStore.setItemAsync(TOKEN_KEY, token)
   }
   return { ok: true, category: data?.category ?? 'tester' }
 }
 
-export async function getStoredSession(): Promise<string | null> {
-  return SecureStore.getItemAsync(SESSION_KEY)
+export async function getToken(): Promise<string | null> {
+  return SecureStore.getItemAsync(TOKEN_KEY)
 }
 
 export async function logout(): Promise<void> {
-  await SecureStore.deleteItemAsync(SESSION_KEY)
+  await SecureStore.deleteItemAsync(TOKEN_KEY)
 }
 
-// Real one-time SSO handoff (see apps/foundingos-console/app/api/tester/handoff/route.ts) —
-// re-presents this app's on-device session as a real cookie on the shared .foundingos.com
-// domain before redirecting into the console, so the in-app browser opens already signed in.
-export async function getHandoffUrl(consoleUrl: string): Promise<string> {
-  const rawSetCookie = await getStoredSession()
-  const token =
-    rawSetCookie?.match(/fo_tester_admin_session=([^;,]+)/)?.[1] ||
-    rawSetCookie?.match(/fo_tester_session=([^;,]+)/)?.[1]
-  if (!token) return consoleUrl
-
-  const handoff = new URL(`${API_BASE}/api/tester/handoff`)
-  handoff.searchParams.set('token', token)
-  handoff.searchParams.set('redirect', consoleUrl)
-  return handoff.toString()
+// Every authenticated call in the app goes through this — attaches the real Bearer token.
+export async function authedFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  const token = await getToken()
+  const headers = new Headers(init.headers)
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  return fetch(url, { ...init, headers })
 }
 
 // Real, live, publicly-readable engagement data — the same feed that powers SuperDash on the
@@ -70,7 +68,7 @@ export type BrandMetric = {
 }
 
 export async function fetchOwnBrandMetric(): Promise<BrandMetric | null> {
-  const response = await fetch(`${API_BASE}/api/superdash/brand-metrics`)
+  const response = await fetch(`${AUTH_BASE}/api/superdash/brand-metrics`)
   if (!response.ok) return null
   const data = await response.json().catch(() => ({ brands: [] }))
   const rows: BrandMetric[] = Array.isArray(data?.brands) ? data.brands : []

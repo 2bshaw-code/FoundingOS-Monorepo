@@ -72,8 +72,8 @@ export default function ActivityScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#05060a' },
-  center: { flex: 1, backgroundColor: '#05060a', alignItems: 'center', justifyContent: 'center' },
+  container: { flex: 1, backgroundColor: '#0F2942' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0F2942' },
   intro: { color: '#b9c2cf', fontSize: 13, marginBottom: 4 },
   error: { color: '#ff5470', fontSize: 13 },
   empty: { color: '#b9c2cf', fontSize: 13 },

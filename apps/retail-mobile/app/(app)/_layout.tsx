@@ -15,6 +15,7 @@ export default function AppTabsLayout() {
         tabBarStyle: { backgroundColor: '#0b0e14', borderTopColor: '#242c38' },
         tabBarActiveTintColor: BRAND.accent,
         tabBarInactiveTintColor: '#5b6472',
+        sceneStyle: { backgroundColor: 'transparent' },
       }}
     >
       <Tabs.Screen
@@ -31,6 +32,14 @@ export default function AppTabsLayout() {
           title: 'Activity',
           headerTitle: 'Live Activity',
           tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>◈</Text>,
+        }}
+      />
+      <Tabs.Screen
+        name="ai-actions"
+        options={{
+          title: 'AI Actions',
+          headerTitle: 'AI Actions',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>✧</Text>,
         }}
       />
     </Tabs>

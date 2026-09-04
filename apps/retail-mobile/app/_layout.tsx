@@ -2,15 +2,20 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { Stack } from 'expo-router'
+import { Stack, ThemeProvider, DarkTheme } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
-import { View } from 'react-native'
+import { QuantumBackground } from '../components/QuantumBackground'
+import { BRAND } from '../lib/brand'
 
+// Real quantum gradient background, applied once here (not per-screen), tinted with this
+// brand's own real accent colour — Stack's contentStyle is transparent so it shows through.
 export default function RootLayout() {
   return (
-    <View style={{ flex: 1, backgroundColor: '#05060a' }}>
-      <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#05060a' } }} />
-    </View>
+    <ThemeProvider value={DarkTheme}>
+      <QuantumBackground accent={BRAND.accent}>
+        <StatusBar style="light" />
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }} />
+      </QuantumBackground>
+    </ThemeProvider>
   )
 }
