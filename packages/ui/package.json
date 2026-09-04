@@ -36,6 +36,7 @@
     "./superdash/SuperDashRecovery": "./src/superdash/SuperDashRecovery.ts",
     "./superdash/SuperDashAudit": "./src/superdash/SuperDashAudit.ts",
     "./superdash/SuperDashGuardian": "./src/superdash/SuperDashGuardian.ts",
+    "./superdash/SuperDashAISummary": "./src/superdash/SuperDashAISummary.tsx",
     "./superdash/SuperDashOperator": "./src/superdash/SuperDashOperator.ts",
     "./superdash/SuperDashCinematic": "./src/superdash/SuperDashCinematic.tsx",
     "./superdash/SuperDashTeamViewer": "./src/superdash/SuperDashTeamViewer.tsx",

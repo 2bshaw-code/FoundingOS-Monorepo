@@ -1420,6 +1420,37 @@ body[data-sidebar-collapsed='true'] .nav-card {
   margin-bottom: 0;
 }
 
+/* SuperDash AI summaries — three real, plain-language cards above all tiles. */
+.superdash-ai-summary {
+  display: grid;
+  gap: 12px;
+}
+
+.superdash-ai-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+}
+
+.superdash-ai-card strong {
+  display: block;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.superdash-ai-card p {
+  margin: 0 0 8px;
+  font-size: 15px;
+  color: var(--text);
+}
+
 .kpi-grid strong {
   display: block;
   font-size: 32px;

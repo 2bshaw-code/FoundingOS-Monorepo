@@ -34,6 +34,7 @@ import { SuperDashCommercialPanel } from '@foundingos/ui/superdash/SuperDashComm
 import { SuperDashSurveyPanel } from '@foundingos/ui/superdash/SuperDashSurveyPanel'
 import { SuperDashSurveyFeedPanel } from '@foundingos/ui/superdash/SuperDashSurveyFeedPanel'
 import { SuperDashBrandMetricsPanel } from '@foundingos/ui/superdash/SuperDashBrandMetricsPanel'
+import { SuperDashAISummary } from '@foundingos/ui/superdash/SuperDashAISummary'
 
 type Tone = 'good' | 'watch' | 'risk'
 
@@ -141,7 +142,7 @@ function SuperKPICard({ label, value, trend, icon, tone, history }: { label: str
   )
 }
 
-export default function SuperDashboardPage({ readOnly = false, quantumSignals = [], verificationStatus, testerSummary }: { readOnly?: boolean; quantumSignals?: Array<BrandSignal & QuantumEnrichedFields>; verificationStatus?: { lastRun: string | null; driftCount: number; safeFixCount: number; pendingGuardian: number }; testerSummary?: { activation: string; engagement: number; retention: number; stability: number; autonomy: string } }) {
+export default function SuperDashboardPage({ readOnly = false, quantumSignals = [], verificationStatus, testerSummary, guardianWarnings = [] }: { readOnly?: boolean; quantumSignals?: Array<BrandSignal & QuantumEnrichedFields>; verificationStatus?: { lastRun: string | null; driftCount: number; safeFixCount: number; pendingGuardian: number }; testerSummary?: { activation: string; engagement: number; retention: number; stability: number; autonomy: string }; guardianWarnings?: string[] }) {
   const handleCommand = useSuperDashCommandHandler()
   const superDashTiles = useMemo(() => getSuperDashTiles(), [])
   const autoActions = useMemo(
@@ -200,6 +201,8 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
         <span>Live marketing, accounting, service, messaging, and AI signal for every brand in the group — FounderOS only.</span>
       </header>
 
+      <SuperDashAISummary brandRows={BRAND_ROWS} anomalies={ANOMALIES} guardianWarnings={guardianWarnings} />
+
       <div className="kpi-grid">
         {summaryMetrics.map((metric) => <SuperKPICard key={metric.label} {...metric} />)}
       </div>
@@ -231,7 +234,7 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
           </ul>
         </article>
 
-        <article className="module-card fo-card panel-premium">
+        <article className="module-card fo-card panel-premium" id="anomaly-detection">
           <div className="module-card-top">
             <span>03</span>
             <strong>Anomaly detection {hasAnomalies && <span className="quantum-sync-dot" aria-hidden="true" />}</strong>
@@ -274,7 +277,7 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
       </div>
 
       <div className="console-grid">
-        <article className="panel panel-premium wide fo-card">
+        <article className="panel panel-premium wide fo-card" id="brand-performance">
           <h2>Brand performance matrix</h2>
           <table className="superdashboard-brand-table">
             <thead>

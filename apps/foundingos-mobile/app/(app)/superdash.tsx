@@ -4,8 +4,9 @@
 */
 import { useCallback, useEffect, useState } from 'react'
 import { ScrollView, View, Text, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native'
-import { fetchSuperDashOverview, fetchBrandMetrics, type SuperDashOverview, type BrandMetric } from '../../lib/api'
+import { fetchSuperDashOverview, fetchBrandMetrics, fetchGuardianStatus, type SuperDashOverview, type BrandMetric } from '../../lib/api'
 import { FOUNDINGOS_ACCENT } from '../../lib/brands'
+import { SuperDashAISummary } from '../../components/SuperDashAISummary'
 
 const TONE_COLOR: Record<string, string> = { good: '#00FF66', watch: '#FFDD00', risk: '#FF0033' }
 
@@ -17,6 +18,7 @@ const TONE_COLOR: Record<string, string> = { good: '#00FF66', watch: '#FFDD00', 
 export default function SuperDashScreen() {
   const [overview, setOverview] = useState<SuperDashOverview | null>(null)
   const [metrics, setMetrics] = useState<BrandMetric[]>([])
+  const [guardianWarnings, setGuardianWarnings] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
@@ -25,12 +27,15 @@ export default function SuperDashScreen() {
     if (isRefresh) setRefreshing(true)
     setError('')
     try {
-      const [overviewData, metricsData] = await Promise.all([fetchSuperDashOverview(), fetchBrandMetrics()])
+      const [overviewData, metricsData, guardianData] = await Promise.all([fetchSuperDashOverview(), fetchBrandMetrics(), fetchGuardianStatus()])
       if (!overviewData) {
         setError('Could not load SuperDashboard. Your session may have expired.')
       }
       setOverview(overviewData)
       setMetrics(metricsData)
+      // Guardian is admin-only and returns null for a non-admin session -- that's fine, the
+      // AI summary's "What Matters" simply falls back to real anomalies/brand-status instead.
+      setGuardianWarnings(guardianData?.surveyWarnings ?? [])
     } catch {
       setError('Could not load SuperDashboard. Pull down to try again.')
     } finally {
@@ -58,6 +63,15 @@ export default function SuperDashScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={FOUNDINGOS_ACCENT} />}
     >
       {error ? <Text style={styles.error}>{error}</Text> : null}
+
+      {overview && (
+        <SuperDashAISummary
+          brandRows={overview.brandRows}
+          anomalies={overview.anomalies}
+          guardianWarnings={guardianWarnings}
+          accent={FOUNDINGOS_ACCENT}
+        />
+      )}
 
       {overview ? (
         <>
