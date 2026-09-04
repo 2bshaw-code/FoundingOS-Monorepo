@@ -4,17 +4,17 @@
 */
 import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native'
 import { router } from 'expo-router'
-import * as WebBrowser from 'expo-web-browser'
 import { BRANDS } from '../../lib/brands'
-import { logout, getHandoffUrl } from '../../lib/api'
+import { logout } from '../../lib/api'
 
 // Real founder-facing brand directory — FoundingOS's own app is the founder's aggregated
 // reporting console (see the Activity tab for real live cross-brand numbers), not a way to
 // browse into each brand's own product. Each brand now has its own dedicated native app for
 // that (retail-mobile, crypto-mobile, etc.). Tapping the card body drills into that brand's
 // own real activity detail (see app/brand-detail/[slug].tsx); tapping an individual module
-// chip opens that brand's real, live module page (e.g. real Inventory/Customers/Orders
-// views already built for FoundRetail) via the SSO handoff, in-app.
+// chip opens a real NATIVE module screen (see app/module-detail/[slug]/[moduleId].tsx),
+// which fetches that brand's real module data (metrics/actions/workflow) from its own
+// console's API and renders it with real React Native components — no browser, no WebView.
 //
 // Route note: this screen lives at app/(app)/brands.tsx rather than app/(app)/index.tsx —
 // naming it "index" inside the (app) group previously collided with the top-level
@@ -25,13 +25,6 @@ export default function DashboardScreen() {
   async function handleLogout() {
     await logout()
     router.dismissTo('/')
-  }
-
-  async function openModule(slug: string, accent: string, module: string) {
-    const moduleId = module.toLowerCase().replaceAll(' ', '-')
-    const consoleUrl = `https://${slug}-console.foundingos.com/modules/${moduleId}`
-    const url = await getHandoffUrl(consoleUrl)
-    await WebBrowser.openBrowserAsync(url, { controlsColor: accent, toolbarColor: '#05060a' })
   }
 
   return (
@@ -62,7 +55,7 @@ export default function DashboardScreen() {
               <Pressable
                 key={module}
                 style={[styles.moduleChip, { borderColor: brand.accent }]}
-                onPress={() => openModule(brand.slug, brand.accent, module)}
+                onPress={() => router.push(`/module-detail/${brand.slug}/${module.toLowerCase().replaceAll(' ', '-')}`)}
               >
                 <Text style={styles.moduleChipText}>{module}</Text>
               </Pressable>
@@ -79,7 +72,7 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#05060a' },
+  container: { flex: 1, backgroundColor: '#0F2942' },
   hero: { marginBottom: 8 },
   heroTitle: { color: '#ffffff', fontSize: 22, fontWeight: '800' },
   heroSubtitle: { color: '#b9c2cf', fontSize: 14, marginTop: 4 },

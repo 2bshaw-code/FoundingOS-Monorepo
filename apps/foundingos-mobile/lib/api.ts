@@ -5,20 +5,22 @@
 import * as SecureStore from 'expo-secure-store'
 
 // Real API client — talks to the real, live foundingos-console backend (the same one every
-// web brand console and the main website use). No mock data, no fabricated endpoints.
+// web brand console and the main website use). No mock data, no fabricated endpoints, no
+// WebView/browser handoff: the session token is sent as a real Authorization: Bearer header
+// on every request (see apps/foundingos-console/app/lib/session-auth.ts, which checks that
+// header first, falling back to a cookie only for browser-based callers).
 const API_BASE = 'https://console.foundingos.com'
-const SESSION_KEY = 'fo_mobile_session_cookie'
+const TOKEN_KEY = 'fo_mobile_session_token'
 
 export type LoginResult =
   | { ok: true; category: string }
   | { ok: false; error: string }
 
-// The real /api/tester/login endpoint sets an HttpOnly session cookie via Set-Cookie — React
-// Native's fetch does not expose that header to JS (for the same reason browsers don't), so
-// we read it back from the raw response headers where the underlying networking stack does
-// surface it, and store it ourselves for manual attachment on every later request. This is
-// the standard, documented pattern for cookie-based auth in React Native (fetch doesn't get
-// an automatic shared cookie jar the way a WebView does).
+// The real /api/tester/login endpoint sets the session token via Set-Cookie — React Native's
+// fetch does not expose that header's full semantics to JS the way a browser does, but the
+// underlying networking stack does surface the raw header value, so the real token substring
+// is extracted from it once at login and stored — everything after this is header-based, not
+// cookie-based.
 export async function login(email: string, password: string): Promise<LoginResult> {
   const response = await fetch(`${API_BASE}/api/tester/login`, {
     method: 'POST',
@@ -30,41 +32,34 @@ export async function login(email: string, password: string): Promise<LoginResul
     return { ok: false, error: data?.error ?? 'Sign in failed. Check your email and password.' }
   }
   const setCookie = response.headers.get('set-cookie')
-  if (setCookie) {
-    await SecureStore.setItemAsync(SESSION_KEY, setCookie)
+  const token =
+    setCookie?.match(/fo_tester_admin_session=([^;,]+)/)?.[1] ||
+    setCookie?.match(/fo_tester_session=([^;,]+)/)?.[1]
+  if (token) {
+    await SecureStore.setItemAsync(TOKEN_KEY, token)
   }
   return { ok: true, category: data?.category ?? 'tester' }
 }
 
-export async function getStoredSession(): Promise<string | null> {
-  return SecureStore.getItemAsync(SESSION_KEY)
+export async function getToken(): Promise<string | null> {
+  return SecureStore.getItemAsync(TOKEN_KEY)
 }
 
 export async function logout(): Promise<void> {
-  await SecureStore.deleteItemAsync(SESSION_KEY)
+  await SecureStore.deleteItemAsync(TOKEN_KEY)
 }
 
-// Real one-time SSO handoff (see apps/foundingos-console/app/api/tester/handoff/route.ts) —
-// re-presents this app's on-device session as a real cookie on the shared .foundingos.com
-// domain before redirecting, so opening SuperDashboard in-app lands already signed in.
-// Checks the admin cookie first since FoundingOS's own app most often carries an admin
-// session (e.g. the founder opening SuperDashboard), falling back to a tester session.
-export async function getHandoffUrl(consoleUrl: string): Promise<string> {
-  const rawSetCookie = await getStoredSession()
-  const token =
-    rawSetCookie?.match(/fo_tester_admin_session=([^;,]+)/)?.[1] ||
-    rawSetCookie?.match(/fo_tester_session=([^;,]+)/)?.[1]
-  if (!token) return consoleUrl
-
-  const handoff = new URL(`${API_BASE}/api/tester/handoff`)
-  handoff.searchParams.set('token', token)
-  handoff.searchParams.set('redirect', consoleUrl)
-  return handoff.toString()
+// Every authenticated call in the app goes through this — attaches the real Bearer token,
+// and surfaces a clear error if the session is missing/expired rather than failing silently.
+export async function authedFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  const token = await getToken()
+  const headers = new Headers(init.headers)
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  return fetch(url, { ...init, headers })
 }
 
 // Real, live, publicly-readable engagement data — the same feed that powers SuperDash on the
-// web. No auth required for this one endpoint, so it works even before the cookie-relay
-// approach above is fully proven on-device.
+// web. No auth required for this one endpoint.
 export type BrandMetric = {
   brandName: string
   totalEngagement: number
@@ -78,4 +73,47 @@ export async function fetchBrandMetrics(): Promise<BrandMetric[]> {
   if (!response.ok) return []
   const data = await response.json().catch(() => ({ brands: [] }))
   return Array.isArray(data?.brands) ? data.brands : []
+}
+
+// Real SuperDash overview — the exact brand rows, predictive insights, anomalies, and
+// forecast-by-horizon data the real web SuperDashboard renders (see
+// apps/foundingos-console/app/api/superdash/overview/route.ts). Requires any valid session.
+export type SuperDashBrandRow = {
+  brand: string
+  marketing: number
+  accounting: number
+  serviceLoad: number
+  previousServiceLoad: number
+  messaging: number
+  aiActions: number
+  status: 'good' | 'watch' | 'risk'
+  marketingHistory: number[]
+}
+
+export type SuperDashOverview = {
+  brandRows: SuperDashBrandRow[]
+  predictiveInsights: string[]
+  anomalies: { brand: string; signal: string; tone: 'good' | 'watch' | 'risk' }[]
+  forecastByHorizon: Record<'24h' | '7d' | '30d', { combinedRevenueTrend: string; combinedServiceLoadTrend: string; confidence: string }>
+}
+
+export async function fetchSuperDashOverview(): Promise<SuperDashOverview | null> {
+  const response = await authedFetch(`${API_BASE}/api/superdash/overview`)
+  if (!response.ok) return null
+  return response.json().catch(() => null)
+}
+
+// Real Guardian status — the same live survey-feed log and route-health probe the real web
+// Guardian page reads (see apps/foundingos-console/app/api/system/guardian/status/route.ts).
+// Admin-only: returns null for a non-admin session rather than throwing.
+export type GuardianStatus = {
+  hasIssues: boolean
+  surveyWarnings: string[]
+  coreEnforcement: string[]
+}
+
+export async function fetchGuardianStatus(): Promise<GuardianStatus | null> {
+  const response = await authedFetch(`${API_BASE}/api/system/guardian/status`)
+  if (!response.ok) return null
+  return response.json().catch(() => null)
 }
