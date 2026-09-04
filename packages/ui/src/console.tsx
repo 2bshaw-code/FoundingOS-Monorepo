@@ -666,6 +666,25 @@ export function DashboardCard({ metric }: { metric: BrandMetric }) {
   return <KPIWidget metric={metric} />
 }
 
+// Real, friendly, at-a-glance AI insight for the top of a dashboard — no separate fetch, no
+// fabricated numbers. It just reads the same real, already-tone-classified metrics already
+// shown in the KPI grid below and says the single most useful thing in plain language: the
+// first metric marked 'risk' (or 'watch' if nothing's flagged as urgent), or a genuine
+// all-clear when nothing needs attention. This is visible immediately, not hidden behind a
+// click into the FoundAI panel.
+export function AIInsightBanner({ metrics, brandLabel }: { metrics: BrandMetric[]; brandLabel?: string }) {
+  const flagged = metrics.find((metric) => metric.tone === 'risk') ?? metrics.find((metric) => metric.tone === 'watch')
+  const message = flagged
+    ? `Heads up — ${flagged.label} needs a look (${flagged.value}${flagged.trend ? `, ${flagged.trend}` : ''}). Want me to help with it?`
+    : `Everything looks good${brandLabel ? ` for ${brandLabel}` : ''} today — nothing urgent to flag.`
+  return (
+    <div className="ai-insight-banner">
+      <span className="ai-insight-badge">AI</span>
+      <p>{message}</p>
+    </div>
+  )
+}
+
 export function ModuleHeader({ config, title, description }: { config: BrandConsoleConfig; title: string; description: string }) {
   return <header className="module-header header-premium" style={consoleStyle(config)}><p>{bobLabel(config)}</p><h1>{title}</h1><span>{description}</span></header>
 }
@@ -679,6 +698,8 @@ export function BrandDashboard({ config, variant = 'growth' }: { config: BrandCo
     <section className="console-page quantum-ambient-grid" style={accentStyle}>
       <div className="quantum-particle-drift"><span className="quantum-particle" /><span className="quantum-particle" /><span className="quantum-particle" /></div>
       <ModuleHeader config={config} title={config.dashboard.title} description={config.dashboard.subtitle} />
+
+      <AIInsightBanner metrics={config.dashboard.metrics} brandLabel={config.name} />
 
       <div className="kpi-grid">
         {config.dashboard.metrics.map((metric, index) => <KPIWidget key={metric.label} metric={metric} index={index} />)}

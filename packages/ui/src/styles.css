@@ -1239,6 +1239,39 @@ body[data-sidebar-collapsed='true'] .nav-card {
   gap: 16px;
 }
 
+/* Friendly, plain-language AI insight strip shown at the top of every dashboard — clean,
+   simple, one line, no jargon. Uses the same --accent variable as the rest of the console so
+   it always matches the active brand tint without any extra config. */
+.ai-insight-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+.ai-insight-badge {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #061018;
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.ai-insight-banner p {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text);
+}
+
 .kpi-grid strong {
   display: block;
   font-size: 32px;

@@ -6,6 +6,7 @@
 
 import Link from 'next/link'
 import KPIWidget from '../components/KPIWidget'
+import { AIInsightBanner } from '@foundingos/ui/console'
 import { ClientDate } from './ClientDate'
 import { useFounderGlobalisation, currencyOptions, languageOptions } from './founder-globalisation'
 
@@ -185,6 +186,8 @@ export default function FounderConsolePage() {
         <h1>{copy.title}</h1>
         <span>{copy.subtitle}</span>
       </header>
+
+      <AIInsightBanner metrics={metrics} brandLabel="FoundingOS" />
 
       <div className="kpi-grid">
         {metrics.map((metric, index) => <KPIWidget key={metric.label} metric={metric} index={index} />)}
