@@ -8,6 +8,8 @@ import { useMemo, useState } from 'react'
 import type { CSSProperties, FormEvent } from 'react'
 import type { BrandConsoleConfig } from './console'
 import { ModuleHeader } from './console'
+import { RealDealsPanel } from './real-monetary-panels'
+import { resolveBrandSlugFromName } from './real-monetary'
 
 type CRMKind = 'customer' | 'lead' | 'supplier' | 'client' | 'investor' | 'ticket' | 'project'
 type PipelineStage = 'New' | 'Contacted' | 'Qualified' | 'In Progress' | 'Closed Won' | 'Closed Lost'
@@ -315,6 +317,7 @@ function CRMPanel({ title, children, className = '' }: { title: string; children
 
 export function CRMBoard({ config }: { config: BrandConsoleConfig }) {
   const blueprint = brandBlueprints[config.name] ?? brandBlueprints.FoundingOS
+  const brandSlug = resolveBrandSlugFromName(config.name)
   const tabs = brandTabs()
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]['key']>('dashboard')
   const [activeKind, setActiveKind] = useState<CRMKind>(blueprint.forms[0]?.kind ?? blueprint.kind)
@@ -615,6 +618,8 @@ export function CRMBoard({ config }: { config: BrandConsoleConfig }) {
             ))}
           </div>
         </CRMPanel>
+
+        {brandSlug && <RealDealsPanel brandSlug={brandSlug} brandName={config.name} />}
       </div>
     </div>
   )

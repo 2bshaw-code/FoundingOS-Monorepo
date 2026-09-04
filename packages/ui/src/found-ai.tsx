@@ -106,6 +106,13 @@ type SmartAction = {
   // corresponding endpoint deployed.
   fetchPath?: string
   interpret?: (data: any) => string
+  // Real, single-step AI Auto-Action: navigates straight to a real page that already has the
+  // real create/update handler (RealDealsPanel/RealInvoicesPanel/RealBrandFinancePanel — the
+  // only three database-persisted create/update handlers anywhere in the app), landing on and
+  // focusing its one truly-required input via a real URL anchor. Never creates anything
+  // itself and never invents the record's real data (name/value/amount) — the user still
+  // types that; this only removes the friction of finding the form.
+  href?: string
   // Text-to-speech-ready voice pack — picked at click time (not fixed at render), read via
   // the browser's own speechSynthesis (same mechanism the narrator already uses), and always
   // also shown as a normal text message first. Never auto-plays; only this explicit,
@@ -166,6 +173,25 @@ if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
 // Universal smart action, appended in every context/brand (see FoundAI component below) —
 // the voice pack isn't brand- or context-specific, so it doesn't belong in smartActions().
 const FOUNDAI_STORY_ACTION: SmartAction = { label: '\ud83d\udd0a Hear a FoundAI story', audioBank: AUDIO_SET }
+
+// Real, single-step AI Auto-Actions — appended in every real console context (see FoundAI
+// component below), since CRM Deals, Accounting Invoices, and Brand Finance are the only
+// three database-persisted create/update handlers anywhere in the app. Each one is real
+// navigation straight to that real form's one truly-required field (via a real URL anchor)
+// — never a fabricated zero-input creation, since the record's real name/value/amount still
+// has to come from the user, not be invented.
+function aiAutoActions(brand: FoundAIBrand): SmartAction[] {
+  const actions: SmartAction[] = [
+    { label: '\u2795 Create a deal for me', href: '/crm#quick-add-deal' },
+    { label: '\u2795 Log an invoice for me', href: '/modules/accounting#quick-add-invoice' },
+  ]
+  // FoundingOS's own dashboard (/founder) is a bespoke founder view, not BrandDashboard — it
+  // never renders RealBrandFinancePanel, so this action would land nowhere real there.
+  if (brand.name !== 'FoundingOS') {
+    actions.push({ label: '\u2795 Update brand finance for me', href: '/dashboard#quick-add-finance' })
+  }
+  return actions
+}
 
 // Interpreters for the Full Demo Mode data engines (/api/crypto/poll, /api/scrape/refresh,
 // /api/feeds/update, /api/dashboard/refresh) — pure functions that turn the JSON payload into
@@ -399,7 +425,7 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
   const context = useMemo(() => routeLabel(pathname), [pathname])
   const theme = useMemo(() => foundAITheme(brand), [brand])
   const prompts = useMemo(() => suggestedPrompts(brand, context), [brand, context])
-  const actions = useMemo(() => [...smartActions(brand, context), FOUNDAI_STORY_ACTION], [brand, context])
+  const actions = useMemo(() => [...smartActions(brand, context), ...aiAutoActions(brand), FOUNDAI_STORY_ACTION], [brand, context])
 
   useEffect(() => {
     if (!open) return
@@ -432,6 +458,12 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
   }
 
   const runAction = (action: SmartAction) => {
+    if (action.href) {
+      // Real navigation to a real page's real create/update form — never fabricates the
+      // record itself, just removes the friction of finding the right screen and field.
+      window.location.href = action.href
+      return
+    }
     setLoading(true)
     if (action.audioBank && action.audioBank.length > 0) {
       // Picked at click time (not fixed at render) so it varies across opens. Always shown

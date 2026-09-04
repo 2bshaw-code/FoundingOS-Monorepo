@@ -13,6 +13,20 @@
 import { useEffect, useState } from 'react'
 import { realMonetaryUrl, useRealFxRates, FxHint } from './real-monetary'
 
+// Real, single-step AI Auto-Action support: when FoundAI (or a module hint/onboarding
+// card) navigates here with e.g. "#quick-add-deal", this focuses that real input the
+// instant it's on screen — the browser's own anchor scroll already brings it into view, this
+// just adds focus so the user can start typing immediately. Never fills in a value itself.
+function useFocusOnHashMatch(id: string, ready: boolean) {
+  useEffect(() => {
+    if (!ready) return
+    if (typeof window === 'undefined') return
+    if (window.location.hash !== `#${id}`) return
+    const el = document.getElementById(id)
+    el?.focus()
+  }, [id, ready])
+}
+
 type RealDeal = { id: string; name: string; stage: string; dealValue: number; currency: string; expectedValue: number; probabilityWeightedValue: number }
 type DealTotals = { totalDealValue: number; totalExpectedValue: number; totalWeightedValue: number; count: number }
 
@@ -24,6 +38,10 @@ export function RealDealsPanel({ brandSlug, brandName }: { brandSlug: string; br
   const [dealValue, setDealValue] = useState('')
   const [stage, setStage] = useState('Discovery')
   const [saving, setSaving] = useState(false)
+  // AI Simplification Flow — "Discovery" is already the real, sensible default for a brand-
+  // new deal, so Simple Mode just hides the stage picker until asked for; the same real
+  // submit() handler and the same real 'Discovery' default is used either way.
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const fx = useRealFxRates()
 
   const load = () => {
@@ -58,6 +76,8 @@ export function RealDealsPanel({ brandSlug, brandName }: { brandSlug: string; br
     }
   }
 
+  useFocusOnHashMatch('quick-add-deal', loaded)
+
   if (!loaded) return null
 
   return (
@@ -79,11 +99,15 @@ export function RealDealsPanel({ brandSlug, brandName }: { brandSlug: string; br
         <p><small>No real deals for {brandName} yet.</small></p>
       )}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-        <input placeholder="Deal name" value={name} onChange={(e) => setName(e.target.value)} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)' }} />
+        <input id="quick-add-deal" placeholder="Deal name" value={name} onChange={(e) => setName(e.target.value)} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)' }} />
         <input placeholder="Value (GBP)" type="number" min="0" value={dealValue} onChange={(e) => setDealValue(e.target.value)} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)', width: 120 }} />
-        <select value={stage} onChange={(e) => setStage(e.target.value)} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)' }}>
-          {['Discovery', 'Qualified', 'Proposal', 'Won', 'Lost'].map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
+        {showAdvanced ? (
+          <select value={stage} onChange={(e) => setStage(e.target.value)} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)' }}>
+            {['Discovery', 'Qualified', 'Proposal', 'Won', 'Lost'].map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        ) : (
+          <button type="button" className="btn btn-secondary" onClick={() => setShowAdvanced(true)} style={{ fontSize: 12 }}>More options (stage: {stage})</button>
+        )}
         <button type="button" className="btn btn-secondary quantum-btn" disabled={saving} onClick={submit}>Add real deal</button>
       </div>
     </article>
@@ -100,6 +124,10 @@ export function RealInvoicesPanel({ brandSlug, brandName }: { brandSlug: string;
   const [invoiceAmount, setInvoiceAmount] = useState('')
   const [paidAmount, setPaidAmount] = useState('0')
   const [saving, setSaving] = useState(false)
+  // AI Simplification Flow — most new invoices start fully unpaid, so '0' is already the
+  // real, sensible default; Simple Mode just hides this field until a real part-payment
+  // needs recording. Same real submit() handler and default either way.
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const fx = useRealFxRates()
 
   const load = () => {
@@ -135,6 +163,8 @@ export function RealInvoicesPanel({ brandSlug, brandName }: { brandSlug: string;
     }
   }
 
+  useFocusOnHashMatch('quick-add-invoice', loaded)
+
   if (!loaded) return null
 
   return (
@@ -156,8 +186,12 @@ export function RealInvoicesPanel({ brandSlug, brandName }: { brandSlug: string;
         <p><small>No real invoices for {brandName} yet.</small></p>
       )}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-        <input placeholder="Invoice amount (GBP)" type="number" min="0" value={invoiceAmount} onChange={(e) => setInvoiceAmount(e.target.value)} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)', width: 160 }} />
-        <input placeholder="Paid so far (GBP)" type="number" min="0" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)', width: 160 }} />
+        <input id="quick-add-invoice" placeholder="Invoice amount (GBP)" type="number" min="0" value={invoiceAmount} onChange={(e) => setInvoiceAmount(e.target.value)} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)', width: 160 }} />
+        {showAdvanced ? (
+          <input placeholder="Paid so far (GBP)" type="number" min="0" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)', width: 160 }} />
+        ) : (
+          <button type="button" className="btn btn-secondary" onClick={() => setShowAdvanced(true)} style={{ fontSize: 12 }}>+ Add payment already received</button>
+        )}
         <button type="button" className="btn btn-secondary quantum-btn" disabled={saving} onClick={submit}>Add real invoice</button>
       </div>
     </article>
@@ -202,6 +236,8 @@ export function RealBrandFinancePanel({ brandSlug, brandName }: { brandSlug: str
     }
   }
 
+  useFocusOnHashMatch('quick-add-finance', loaded && Boolean(finance))
+
   if (!loaded || !finance) return null
 
   return (
@@ -212,7 +248,7 @@ export function RealBrandFinancePanel({ brandSlug, brandName }: { brandSlug: str
         Revenue: {formatGbp(finance.brandRevenue)}<FxHint amountBase={finance.brandRevenue} baseCurrency={finance.currency} fx={fx} /> · Expenses: {formatGbp(finance.expenses)} · Profit: {formatGbp(finance.brandProfit)}<FxHint amountBase={finance.brandProfit} baseCurrency={finance.currency} fx={fx} />
       </p>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-        <input placeholder="Revenue (GBP)" type="number" min="0" value={revenue} onChange={(e) => setRevenue(e.target.value)} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)', width: 140 }} />
+        <input id="quick-add-finance" placeholder="Revenue (GBP)" type="number" min="0" value={revenue} onChange={(e) => setRevenue(e.target.value)} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)', width: 140 }} />
         <input placeholder="Expenses (GBP)" type="number" min="0" value={expenses} onChange={(e) => setExpenses(e.target.value)} style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)', width: 140 }} />
         <button type="button" className="btn btn-secondary quantum-btn" disabled={saving} onClick={submit}>Save real figures for {brandName}</button>
       </div>
