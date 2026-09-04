@@ -61,6 +61,29 @@
   letter-spacing: 0.04em;
 }
 
+/* Real fix: this page has the single job of getting someone signed in, but on a phone the
+   header (logo + title + this full-sentence strapline) plus the purely decorative WhatsApp
+   demo banter below it was pushing the actual Sign In form almost entirely off-screen —
+   confirmed live at a 390×844 viewport, the form's own heading didn't even reach halfway
+   down the first screen. The strapline is marketing copy (already on every marketing page),
+   not needed to sign in, so it's hidden here; the demo banter is purely illustrative, so
+   it's hidden here too. Nothing functional is removed — only decoration, and only below the
+   breakpoint where it was crowding out the one thing this page actually needs to do. */
+@media (max-width: 480px) {
+  .quantumHeader {
+    margin-bottom: 12px;
+    gap: 6px;
+  }
+
+  .quantumStrapline {
+    display: none;
+  }
+
+  .quantumMessageDemo {
+    display: none;
+  }
+}
+
 .quantumCardWrap {
   position: relative;
   z-index: 1;

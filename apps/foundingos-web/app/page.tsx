@@ -196,7 +196,7 @@ export default function RootLoginPage() {
           <p className={styles.quantumStrapline}>FoundingOS — The Operating System for WhatsApp, Telegram, and global message-based businesses.</p>
         </div>
 
-        <div style={{ marginBottom: 20 }}>
+        <div className={`${styles.quantumMessageDemo}`} style={{ marginBottom: 20 }}>
           <AnimatedMessageFlow />
         </div>
 

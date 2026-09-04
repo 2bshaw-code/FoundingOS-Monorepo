@@ -70,13 +70,13 @@ function ActualTopbar({ config, variant = 'console' }: { config?: BrandConsoleCo
        <div>
          <strong>{consoleTitle(config?.name, variant)}</strong>
          <span>{config?.name ?? 'Workspace'} command center</span>
-         <small style={{ display: 'block', opacity: 0.6, fontSize: 11 }}>FoundingOS — The Operating System for WhatsApp, Telegram, and global message-based businesses.</small>
+        <small className="topbar-tagline">FoundingOS — The Operating System for WhatsApp, Telegram, and global message-based businesses.</small>
        </div>
      </div>
      <div className="topbar-nav" />
      <div className="topbar-actions">
-       <a href="https://www.foundingos.com/home" className="topbar-pill quantum-btn quantum-link-glow">FoundingOS Homepage</a>
-       <form action="https://console.foundingos.com/api/tester/logout" method="POST" style={{ display: 'inline' }}>
+       <a href="https://www.foundingos.com/home" className="topbar-pill topbar-pill-homepage quantum-btn quantum-link-glow">FoundingOS Homepage</a>
+       <form action="https://console.foundingos.com/api/tester/logout" method="POST" className="topbar-logout-form">
          <button type="submit" className="topbar-pill topbar-pill-danger quantum-btn">Log out</button>
        </form>
        <ThemeToggle />

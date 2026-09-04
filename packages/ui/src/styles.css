@@ -481,6 +481,16 @@ body[data-sidebar-collapsed='true'] .nav-card {
   font-size: 13px;
 }
 
+.topbar-tagline {
+  display: block;
+  opacity: 0.6;
+  font-size: 11px;
+}
+
+.topbar-logout-form {
+  display: inline;
+}
+
 .workspace {
   padding: 28px;
 }
@@ -2061,6 +2071,36 @@ body[data-sidebar-collapsed='true'] .nav-card {
   .topbar-actions {
     width: 100%;
     flex-wrap: wrap;
+  }
+
+  /* Real fix: the header comment above explains why it's allowed to grow tall instead of
+     overlapping content — but "doesn't overlap" isn't the same as "doesn't dominate a small
+     screen". Confirmed live: the tagline plus wrapped Homepage/Log out/theme pills pushed the
+     header past 150px tall on a phone, shoving the actual page content (including every
+     brand console and the tester demo/survey pages) below the fold before a single real row
+     of content was visible. The tagline is decorative marketing copy, not needed once you're
+     already inside the console — hidden here. The "FoundingOS Homepage" pill's full text is
+     the least essential action on a phone (the sidebar already has a way back); collapsed to
+     a compact icon-only pill so Log out and the theme toggle stay reachable without the row
+     wrapping to its own extra line in the common case.
+  */
+  .topbar-tagline {
+    display: none;
+  }
+
+  .topbar-pill-homepage {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0;
+  }
+
+  .topbar-pill-homepage::before {
+    content: '⌂';
+    font-size: 16px;
   }
 
   .topbar-search {
