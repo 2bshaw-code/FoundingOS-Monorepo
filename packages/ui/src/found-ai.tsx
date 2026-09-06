@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { LOCKED_BRAND_COLORS } from '@foundingos/config'
 import type { BrandConsoleConfig } from './console'
 import { useAIAssistance } from './ai-assistance'
 
@@ -51,17 +52,17 @@ function routeLabel(pathname: string) {
 function foundAITheme(brand: FoundAIBrand) {
   switch (brand.name) {
     case 'FoundRetail':
-      return { accent: '#00E676', glow: 'rgba(0,230,118,0.35)' }
+      return { accent: LOCKED_BRAND_COLORS.retail, glow: 'color-mix(in srgb, var(--found-ai-accent) 35%, transparent)' }
     case 'FoundMeat':
-      return { accent: '#E53935', glow: 'rgba(229,57,53,0.35)' }
+      return { accent: LOCKED_BRAND_COLORS.meat, glow: 'color-mix(in srgb, var(--found-ai-accent) 35%, transparent)' }
     case 'FoundThat':
-      return { accent: '#FFD600', glow: 'rgba(255,214,0,0.35)' }
+      return { accent: LOCKED_BRAND_COLORS.foundthat, glow: 'color-mix(in srgb, var(--found-ai-accent) 35%, transparent)' }
     case 'FoundTalent':
-      return { accent: '#FFB300', glow: 'rgba(255,179,0,0.35)' }
+      return { accent: LOCKED_BRAND_COLORS.talent, glow: 'color-mix(in srgb, var(--found-ai-accent) 35%, transparent)' }
     case 'FoundCrypto':
-      return { accent: '#9C27B0', glow: 'rgba(156,39,176,0.35)' }
+      return { accent: LOCKED_BRAND_COLORS.crypto, glow: 'color-mix(in srgb, var(--found-ai-accent) 35%, transparent)' }
     default:
-      return { accent: brand.accent, glow: 'rgba(74,144,226,0.35)' }
+      return { accent: brand.accent, glow: 'color-mix(in srgb, var(--found-ai-accent) 35%, transparent)' }
   }
 }
 

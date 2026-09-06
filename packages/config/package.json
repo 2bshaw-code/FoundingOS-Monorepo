@@ -12,6 +12,7 @@
     "./package-model-d": "./src/package-model-d.ts",
     "./pricing-engine": "./src/pricing-engine.ts",
     "./quantum-recommendation": "./src/quantum-recommendation.ts",
+    "./quantum-brand-uplift": "./src/quantum-brand-uplift.ts",
     "./commercial-mode": "./src/commercial-mode.ts",
     "./tester-profile": "./src/tester-profile.ts",
     "./surveys/survey-definitions": "./src/surveys/survey-definitions.ts",

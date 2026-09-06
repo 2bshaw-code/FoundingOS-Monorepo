@@ -4,6 +4,67 @@
 */
 @import '@foundingos/ui/styles.css';
 
+.console-quantum-background {
+  width: 100%;
+}
+
+.console-quantum-shell {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.superdashboard-capitalize {
+  text-transform: capitalize;
+}
+
+.superdashboard-quantum-panel {
+  margin-top: 24px;
+}
+
+.superdashboard-panel-copy,
+.superdashboard-feed-line {
+  color: var(--muted-foreground, var(--q-neutral-200));
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.superdashboard-panel-copy {
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.superdashboard-guardian-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 16px;
+  font-size: 12px;
+}
+
+.superdashboard-meta-footer {
+  margin-top: 24px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.superdashboard-meta-footer-compact {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 0;
+}
+
+.brand-pulse-dot[data-brand='retail'] { --brand-color: var(--q-retail); }
+.brand-pulse-dot[data-brand='meat'] { --brand-color: var(--q-meat); }
+.brand-pulse-dot[data-brand='foundthat'] { --brand-color: var(--q-foundthat); }
+.brand-pulse-dot[data-brand='talent'] { --brand-color: var(--q-talent); }
+.brand-pulse-dot[data-brand='crypto'] { --brand-color: var(--q-crypto); }
+.brand-pulse-dot[data-brand='finance'] { --brand-color: var(--q-finance); }
+.brand-pulse-dot[data-brand='health'] { --brand-color: var(--q-health); }
+.brand-pulse-dot[data-brand='logistics'] { --brand-color: var(--q-logistics); }
+
 /* SuperDashboard is FounderOS-only — kept in this console's globals.css so no brand console inherits it. */
 @keyframes fo-breathe {
   0%, 100% { transform: scale(1); }
@@ -238,4 +299,118 @@
   background: var(--surface-soft);
   color: var(--text);
   padding: 4px 8px;
+}
+
+.quantum-section-spaced {
+  margin-top: 16px;
+}
+
+.quantum-section-spaced-lg {
+  margin-top: 24px;
+}
+
+.quantum-section-bottom {
+  margin-bottom: 20px;
+}
+
+.quantum-compact-list,
+.quantum-switcher-options {
+  display: grid;
+  gap: 8px;
+}
+
+.quantum-compact-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.quantum-switcher-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quantum-switcher-code-row {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quantum-switcher-code-row .q-field {
+  flex: 1 1 220px;
+}
+
+.quantum-switcher-option {
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.quantum-switcher-option-disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.quantum-switcher-option-disabled small {
+  margin-left: 6px;
+}
+
+.brand-foundingos { --brand-glow: var(--q-accent); }
+.brand-retail { --brand-glow: var(--q-retail); }
+.brand-meat { --brand-glow: var(--q-meat); }
+.brand-foundthat { --brand-glow: var(--q-foundthat); }
+.brand-talent { --brand-glow: var(--q-talent); }
+.brand-crypto { --brand-glow: var(--q-crypto); }
+.brand-finance { --brand-glow: var(--q-finance); }
+.brand-health { --brand-glow: var(--q-health); }
+.brand-logistics { --brand-glow: var(--q-logistics); }
+
+.quantum-step-narrate-btn-spacer {
+  margin-left: auto;
+}
+
+.quantum-step-progress-row {
+  display: flex;
+  gap: 4px;
+  margin: 10px 0;
+}
+
+.quantum-step-progress-dot {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border-radius: 999px;
+  flex: 1;
+  height: 6px;
+}
+
+.quantum-step-progress-dot.active {
+  background: var(--accent);
+}
+
+.quantum-step-nav-row {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+
+.quantum-step-count {
+  opacity: 0.7;
+}
+
+.quantum-step-complete {
+  color: var(--q-success);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.quantum-preview-link {
+  display: inline-flex;
+  margin-top: 6px;
+}
+
+.quantum-sync-progress {
+  accent-color: var(--accent);
+  height: 8px;
+  width: 100%;
 }

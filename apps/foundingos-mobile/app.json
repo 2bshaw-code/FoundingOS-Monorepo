@@ -1,16 +1,28 @@
 {
   "expo": {
-    "name": "FoundingOS",
+    "name": "FoundingOS Quantum Mobile",
     "slug": "foundingos-mobile",
     "scheme": "foundingos",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#05060a"
+    },
     "userInterfaceStyle": "dark",
     "backgroundColor": "#05060a",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.foundingos.app"
+      "bundleIdentifier": "com.foundingos.quantum",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "FoundingOS Quantum uses the camera to scan shelves, receipts, product labels, and workflow media for AI-assisted actions.",
+        "NSMicrophoneUsageDescription": "FoundingOS Quantum uses the microphone to capture voice commands for AI-assisted workflows.",
+        "NSPhotoLibraryUsageDescription": "FoundingOS Quantum uses your photo library to select receipts, product photos, videos, and workflow media for AI-assisted actions.",
+        "NSPhotoLibraryAddUsageDescription": "FoundingOS Quantum may save generated receipts, workflow captures, and AI confirmation assets to your photo library when requested."
+      }
     },
     "android": {
       "package": "com.foundingos.app",
@@ -30,7 +42,9 @@
       "expo-router",
       "expo-status-bar",
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-image-picker",
+      "expo-sqlite"
     ]
   }
 }

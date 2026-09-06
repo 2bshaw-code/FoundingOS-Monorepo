@@ -5,6 +5,8 @@
 'use client'
 
 import { useState } from 'react'
+import { brands } from '@foundingos/config'
+import { QuantumButtonPrimary, QuantumCard, QuantumHeader } from '@foundingos/ui/quantum'
 
 // First survey question for the /landing flow. Intentionally self-contained —
 // no console components, no shared survey engine — this is a separate, simple
@@ -19,27 +21,24 @@ export default function LandingSurveyPage() {
   }
 
   return (
-    <main className="stack quantum-ambient-grid" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div className="login-card fo-card fo-panel-glow" style={{ maxWidth: 480, width: '100%' }}>
+    <main className="q-shell q-centered-shell">
+      <QuantumCard brand={brands.foundingos}>
         {submitted ? (
           <>
-            <h1>Thank you</h1>
-            <p style={{ opacity: 0.8 }}>Your response has been recorded.</p>
+            <h1 className="q-text-h1">Thank you</h1>
+            <p className="q-text-body">Your response has been recorded.</p>
           </>
         ) : (
-          <form onSubmit={onSubmit}>
-            <h1 style={{ marginBottom: 8 }}>Quick question</h1>
-            <p style={{ opacity: 0.75, marginBottom: 20 }}>What brought you to FounderOS today?</p>
+          <form onSubmit={onSubmit} className="q-form-stack">
+            <QuantumHeader brand={brands.foundingos} eyebrow="FounderOS survey" title="Quick question" description="What brought you to FounderOS today?" />
             <label className="manager-field">
               <span>Your answer</span>
               <textarea rows={4} value={answer} onChange={(event) => setAnswer(event.target.value)} />
             </label>
-            <button type="submit" className="btn btn-primary quantum-btn" style={{ marginTop: 16, width: '100%' }}>
-              Submit
-            </button>
+            <QuantumButtonPrimary type="submit">Submit</QuantumButtonPrimary>
           </form>
         )}
-      </div>
+      </QuantumCard>
     </main>
   )
 }

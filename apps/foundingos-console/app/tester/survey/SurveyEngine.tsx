@@ -7,6 +7,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { isSimplifiedRegion } from '@foundingos/config'
+import { QuantumButtonGhost, QuantumButtonPrimary, QuantumCard, QuantumNotice, QuantumTextField } from '@foundingos/ui/quantum'
 
 type SectionKind = 'module' | 'businessplan' | 'legal' | 'website' | 'console' | 'pos' | 'intelligence'
 type Question = { id: string; prompt: string; section?: string; sectionKind?: SectionKind; target?: string }
@@ -215,16 +216,16 @@ export function SurveyEngine({
   if (completed) {
     return (
       <div className="stack">
-        <article className="panel fo-card quantum-frame">
+        <QuantumCard className="panel quantum-frame">
           <h2>Survey complete</h2>
           <p>Thanks — your {survey.title.replace(/^Survey [A-Z—]*\s*—?\s*/, '') || 'survey'} answers are saved.</p>
-        </article>
+        </QuantumCard>
         {!hasCompletedSurveyBefore && (
-          <article className="panel fo-card quantum-frame">
+          <QuantumCard className="panel quantum-frame">
             <div className="quantum-narrator-panel">
               <p>{signatureMomentLine}</p>
             </div>
-          </article>
+          </QuantumCard>
         )}
         <div className="quantum-narrator-panel">
           <p>{freeRoamUnlockLine}</p>
@@ -242,36 +243,36 @@ export function SurveyEngine({
           <p>{emotionalClosingLine}</p>
         </div>
 
-        <article className="panel fo-card quantum-frame">
+        <QuantumCard className="panel quantum-frame">
           <div className="module-card-top"><span>🧭</span><strong>{switcherTitle}</strong></div>
           <div className="quantum-narrator-panel">
             <p>{switcherNarratorLine}</p>
           </div>
-          <div style={{ display: 'grid', gap: 8 }}>
+          <div className="quantum-switcher-options">
             {switcherOptions.map((option) => (
               option.available ? (
-                <Link key={option.code} href={option.href} className="btn btn-secondary quantum-btn" style={{ width: '100%', justifyContent: 'flex-start' }}>{option.code} · {option.label}</Link>
+                <Link key={option.code} href={option.href} className="btn btn-secondary quantum-btn quantum-switcher-option">{option.code} · {option.label}</Link>
               ) : (
-                <div key={option.code} className="btn btn-secondary" style={{ width: '100%', justifyContent: 'flex-start', opacity: 0.5, cursor: 'default' }}>
-                  {option.code} · {option.label} <small style={{ marginLeft: 6 }}>({option.note})</small>
+                <div key={option.code} className="btn btn-secondary quantum-switcher-option quantum-switcher-option-disabled">
+                  {option.code} · {option.label} <small>({option.note})</small>
                 </div>
               )
             ))}
           </div>
-          <form onSubmit={submitSwitcherCode} style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              <input
+          <form onSubmit={submitSwitcherCode} className="quantum-switcher-form quantum-section-spaced">
+            <div className="quantum-switcher-code-row">
+              <QuantumTextField
+                label="Switcher code"
                 type="text"
                 value={switcherCode}
                 onChange={(e) => setSwitcherCode(e.target.value)}
                 placeholder="Enter a code (e.g. R1, M1, S1)"
-                style={{ padding: '10px 14px', borderRadius: 999, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)' }}
               />
-              <button type="submit" className="btn btn-primary quantum-btn">Go</button>
+              <QuantumButtonPrimary type="submit">Go</QuantumButtonPrimary>
             </div>
             {switcherMessage && <p><small>{switcherMessage}</small></p>}
           </form>
-        </article>
+        </QuantumCard>
       </div>
     )
   }
@@ -291,19 +292,19 @@ export function SurveyEngine({
       )}
 
       {isNewSection && (
-        <article className="panel fo-card quantum-frame">
+        <QuantumCard className="panel quantum-frame">
           <div className="module-card-top">
             <span className="quantum-step-badge">Section {sectionIndex + 1} of {sectionOrder.length}</span>
             <strong>{SECTION_ICON[current.kind]} {current.label}</strong>
           </div>
-          <div className="quantum-narrator-panel">
+          <QuantumNotice>
             <p>{sectionNarratorLines[current.kind]}</p>
             <p><small>{pacingReassuranceLines[sectionIndex % pacingReassuranceLines.length]}</small></p>
             {current.kind !== 'module' && current.kind !== 'businessplan' && (
               <p><small>{accessibilityReminderLines[sectionIndex % accessibilityReminderLines.length]}</small></p>
             )}
-          </div>
-        </article>
+          </QuantumNotice>
+        </QuantumCard>
       )}
 
       {!isNewSection && isNewTarget && question.target && (
@@ -311,7 +312,7 @@ export function SurveyEngine({
           <p>Let's look at {question.target}.{targetJokes[question.target] ? ` ${targetJokes[question.target]}` : ''}</p>
           {targetPreviewUrls?.[question.target] && (
             <p>
-              <a href={targetPreviewUrls[question.target]} target="_blank" rel="noopener noreferrer" className="btn btn-secondary quantum-btn" style={{ display: 'inline-flex', marginTop: 6 }}>
+              <a href={targetPreviewUrls[question.target]} target="_blank" rel="noopener noreferrer" className="btn btn-secondary quantum-btn quantum-preview-link">
                 👁 Open a live preview of {question.target}
               </a>
             </p>
@@ -319,10 +320,8 @@ export function SurveyEngine({
         </div>
       )}
 
-      <article className="panel fo-card">
-        <div className="quantum-sync-meter" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
-          <span style={{ width: `${progress}%` }} />
-        </div>
+      <QuantumCard className="panel">
+        <progress className="quantum-sync-progress" value={progress} max={100} aria-label="Survey progress" />
         <p><small>Section {sectionIndex + 1} of {sectionOrder.length} — Question {withinSectionIndex} of {withinSectionTotal} in this section · {current.label}{question.target ? ` · ${question.target}` : ''}</small></p>
 
         {followUp ? (
@@ -334,8 +333,8 @@ export function SurveyEngine({
               <textarea value={followUpDraft} onChange={(event) => setFollowUpDraft(event.target.value)} rows={3} />
             </label>
             <div className="tester-survey-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => submitFollowUp(true)}>Skip</button>
-              <button type="button" className="btn btn-primary" onClick={() => submitFollowUp(false)}>Submit follow-up</button>
+              <QuantumButtonGhost type="button" onClick={() => submitFollowUp(true)}>Skip</QuantumButtonGhost>
+              <QuantumButtonPrimary type="button" onClick={() => submitFollowUp(false)}>Submit follow-up</QuantumButtonPrimary>
             </div>
           </>
         ) : (
@@ -347,15 +346,15 @@ export function SurveyEngine({
             </label>
             <p><small>{saving ? 'Saving…' : savedAt ? `Auto-saved ${savedAt}` : 'Answers auto-save as you type.'}</small></p>
             <div className="tester-survey-actions">
-              <button type="button" className="btn btn-primary" disabled={!draft.trim()} onClick={submitAnswer}>
+              <QuantumButtonPrimary type="button" disabled={!draft.trim()} onClick={submitAnswer}>
                 {simplified
                   ? (index + 1 === survey.questions.length ? 'Send' : 'Next')
                   : (index + 1 === survey.questions.length ? 'Finish survey' : 'Next question')}
-              </button>
+              </QuantumButtonPrimary>
             </div>
           </>
         )}
-      </article>
+      </QuantumCard>
     </div>
   )
 }

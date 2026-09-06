@@ -2,13 +2,11 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { router } from 'expo-router'
 import { useAIAssistance } from '../lib/ai-assistance'
+import { QuantumButton, QuantumCard, QuantumText, quantumSpace } from './QuantumUI'
 
-// Same real computation as the web version (packages/ui/src/superdash/SuperDashAISummary.tsx)
-// -- computed entirely from data this screen already fetches and displays below (overview
-// brandRows/anomalies, and real Guardian warnings). No new data source, no invented numbers.
 export type SuperDashBrandRow = { brand: string; serviceLoad: number; previousServiceLoad: number; status: 'good' | 'watch' | 'risk' }
 export type SuperDashAnomaly = { brand: string; signal: string; tone: 'good' | 'watch' | 'risk' }
 
@@ -24,9 +22,9 @@ export function computeSuperDashAISummary(brandRows: SuperDashBrandRow[], anomal
     const watchNote = watchCount > 0 ? `, and ${watchCount} more worth watching` : ''
     dailySummary = `${riskCount} of ${brandRows.length} brands ${riskCount > 1 ? 'need' : 'needs'} attention right now${watchNote}.`
   } else if (watchCount > 0) {
-    dailySummary = `Everything's stable — just ${watchCount} brand${watchCount > 1 ? 's' : ''} worth keeping an eye on.`
+    dailySummary = `Everything is stable with ${watchCount} brand${watchCount > 1 ? 's' : ''} worth monitoring.`
   } else {
-    dailySummary = `All ${brandRows.length} brands are in great shape today — nothing needs your attention.`
+    dailySummary = `All ${brandRows.length} brands are operating cleanly today.`
   }
 
   let whatChanged: string | null = null
@@ -34,8 +32,7 @@ export function computeSuperDashAISummary(brandRows: SuperDashBrandRow[], anomal
     const biggest = brandRows.reduce((a, b) => (Math.abs(b.serviceLoad - b.previousServiceLoad) > Math.abs(a.serviceLoad - a.previousServiceLoad) ? b : a))
     const delta = biggest.serviceLoad - biggest.previousServiceLoad
     if (delta !== 0) {
-      const direction = delta > 0 ? 'up' : 'down'
-      whatChanged = `${biggest.brand}'s service load is ${direction} ${Math.abs(delta)} (from ${biggest.previousServiceLoad} to ${biggest.serviceLoad}) since the last check.`
+      whatChanged = `${biggest.brand} service load moved ${delta > 0 ? 'up' : 'down'} ${Math.abs(delta)} from ${biggest.previousServiceLoad} to ${biggest.serviceLoad}.`
     }
   }
 
@@ -47,7 +44,7 @@ export function computeSuperDashAISummary(brandRows: SuperDashBrandRow[], anomal
     whatMatters = { text: `${topAnomaly.brand}: ${topAnomaly.signal}`, investigateLabel: 'View anomalies below', investigateHref: '' }
   } else {
     const worstBrand = brandRows.find((row) => row.status === 'risk') ?? brandRows.find((row) => row.status === 'watch')
-    if (worstBrand) whatMatters = { text: `${worstBrand.brand} is flagged as ${worstBrand.status} right now.`, investigateLabel: 'View brand rows below', investigateHref: '' }
+    if (worstBrand) whatMatters = { text: `${worstBrand.brand} is flagged as ${worstBrand.status}.`, investigateLabel: 'View brand rows below', investigateHref: '' }
   }
 
   return { dailySummary, whatChanged, whatMatters }
@@ -60,52 +57,36 @@ export function SuperDashAISummary({ brandRows, anomalies, guardianWarnings, acc
   const summary = computeSuperDashAISummary(brandRows, anomalies, guardianWarnings)
 
   return (
-    <View style={{ gap: 10 }}>
-      <View style={[styles.card, { borderColor: accent }]}>
-        <View style={[styles.badge, { backgroundColor: accent }]}><Text style={styles.badgeText}>AI</Text></View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.label}>Daily summary</Text>
-          <Text style={styles.text}>{summary.dailySummary}</Text>
-        </View>
-      </View>
+    <View style={styles.stack}>
+      <QuantumCard accent={accent}>
+        <QuantumText variant="overline" color={accent}>AI daily summary</QuantumText>
+        <QuantumText>{summary.dailySummary}</QuantumText>
+      </QuantumCard>
 
-      {summary.whatChanged && (
-        <View style={[styles.card, { borderColor: accent }]}>
-          <View style={[styles.badge, { backgroundColor: accent }]}><Text style={styles.badgeText}>AI</Text></View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.label}>What changed</Text>
-            <Text style={styles.text}>{summary.whatChanged}</Text>
-          </View>
-        </View>
-      )}
+      {summary.whatChanged ? (
+        <QuantumCard accent={accent}>
+          <QuantumText variant="overline" color={accent}>What changed</QuantumText>
+          <QuantumText>{summary.whatChanged}</QuantumText>
+        </QuantumCard>
+      ) : null}
 
-      {summary.whatMatters && (
-        <View style={[styles.card, { borderColor: accent }]}>
-          <View style={[styles.badge, { backgroundColor: accent }]}><Text style={styles.badgeText}>AI</Text></View>
-          <View style={{ flex: 1, gap: 8 }}>
-            <Text style={styles.label}>What matters</Text>
-            <Text style={styles.text}>{summary.whatMatters.text}</Text>
-            {summary.whatMatters.investigateHref ? (
-              <Pressable style={[styles.cta, { backgroundColor: accent }]} onPress={() => router.push(summary.whatMatters!.investigateHref as any)}>
-                <Text style={styles.ctaText}>Investigate — {summary.whatMatters.investigateLabel}</Text>
-              </Pressable>
-            ) : (
-              <Text style={styles.hint}>{summary.whatMatters.investigateLabel} ↓</Text>
-            )}
-          </View>
-        </View>
-      )}
+      {summary.whatMatters ? (
+        <QuantumCard accent={accent}>
+          <QuantumText variant="overline" color={accent}>What matters</QuantumText>
+          <QuantumText>{summary.whatMatters.text}</QuantumText>
+          {summary.whatMatters.investigateHref ? (
+            <QuantumButton onPress={() => router.push(summary.whatMatters!.investigateHref as any)}>
+              Investigate — {summary.whatMatters.investigateLabel}
+            </QuantumButton>
+          ) : (
+            <QuantumText variant="caption">{summary.whatMatters.investigateLabel}</QuantumText>
+          )}
+        </QuantumCard>
+      ) : null}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  card: { flexDirection: 'row', gap: 10, borderWidth: 1, borderRadius: 14, padding: 14, backgroundColor: '#11161f' },
-  badge: { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  badgeText: { color: '#071014', fontWeight: '900', fontSize: 11 },
-  label: { color: '#b9c2cf', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 4 },
-  text: { color: '#ffffff', fontSize: 14 },
-  cta: { alignSelf: 'flex-start', borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 },
-  ctaText: { color: '#071014', fontSize: 12, fontWeight: '700' },
-  hint: { color: '#5b6472', fontSize: 12 },
+  stack: { gap: quantumSpace.md },
 })
