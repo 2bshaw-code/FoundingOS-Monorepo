@@ -3,15 +3,14 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { useEffect, useState } from 'react'
-import { View, Text, TextInput, Pressable, ActivityIndicator, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
+import { ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { login, getToken } from '../lib/api'
-import { FOUNDINGOS_ACCENT } from '../lib/brands'
+import { FOUNDINGOS_ACCENT, FOUNDINGOS_BASE } from '../lib/brands'
 import { QuantumSphere } from '../components/QuantumSphere'
+import { QuantumButton, QuantumCard, QuantumFormField, QuantumNotice, QuantumText, QuantumTextInput, quantumSpace } from '../components/QuantumUI'
 
-// Real login screen — calls the same real /api/tester/login endpoint every web brand console
-// uses. No demo/mock accounts: a real tester/admin email and password/access code is required,
-// exactly like the web sign-in.
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -44,74 +43,49 @@ export default function LoginScreen() {
 
   if (checkingSession) {
     return (
-      <View style={styles.center}>
+      <SafeAreaView style={styles.center}>
         <ActivityIndicator color={FOUNDINGOS_ACCENT} />
-      </View>
+      </SafeAreaView>
     )
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.brand}>
-        <QuantumSphere size={64} />
-        <Text style={styles.title}>FoundingOS</Text>
-        <Text style={styles.subtitle}>One control room for all your money, tools, and apps.</Text>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={styles.brand}>
+          <QuantumSphere size={72} />
+          <QuantumText variant="h1" align="center">FoundingOS Quantum</QuantumText>
+          <QuantumText color="#D8D8D8" align="center">
+            One premium mobile command system for every FoundingOS brand.
+          </QuantumText>
+        </View>
 
-      <View style={styles.form}>
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="you@example.com"
-          placeholderTextColor="#5b6472"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <Text style={styles.label}>Password or access code</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="••••••••"
-          placeholderTextColor="#5b6472"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Pressable
-          style={[styles.button, { backgroundColor: FOUNDINGOS_ACCENT, shadowColor: FOUNDINGOS_ACCENT }]}
-          onPress={handleSignIn}
-          disabled={loading}
-        >
-          {loading ? <ActivityIndicator color="#071014" /> : <Text style={styles.buttonText}>Sign in</Text>}
-        </Pressable>
-      </View>
-    </KeyboardAvoidingView>
+        <QuantumCard accent={FOUNDINGOS_ACCENT}>
+          <QuantumFormField label="Email">
+            <QuantumTextInput
+              placeholder="you@example.com"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+            />
+          </QuantumFormField>
+          <QuantumFormField label="Password or access code">
+            <QuantumTextInput placeholder="••••••••" secureTextEntry value={password} onChangeText={setPassword} />
+          </QuantumFormField>
+          {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
+          <QuantumButton onPress={handleSignIn} disabled={loading}>
+            {loading ? <ActivityIndicator color={FOUNDINGOS_BASE} /> : 'Sign in'}
+          </QuantumButton>
+        </QuantumCard>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, justifyContent: 'center', backgroundColor: '#0F2942' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0F2942' },
-  brand: { alignItems: 'center', marginBottom: 40, gap: 16 },
-  title: { color: '#ffffff', fontSize: 26, fontWeight: '800' },
-  subtitle: { color: '#b9c2cf', fontSize: 14, textAlign: 'center', paddingHorizontal: 20 },
-  form: { gap: 8 },
-  label: { color: '#b9c2cf', fontSize: 13, fontWeight: '600', marginTop: 12 },
-  input: {
-    backgroundColor: '#11161f',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#242c38',
-    padding: 14,
-    color: '#ffffff',
-    fontSize: 15,
-  },
-  error: { color: '#ff5470', fontSize: 13, marginTop: 8 },
-  button: {
-    marginTop: 20, borderRadius: 999, paddingVertical: 14, alignItems: 'center',
-    shadowOpacity: 0.5, shadowRadius: 14, shadowOffset: { width: 0, height: 0 }, elevation: 8,
-  },
-  buttonText: { color: '#071014', fontWeight: '800', fontSize: 15 },
+  container: { flex: 1, backgroundColor: FOUNDINGOS_BASE, padding: quantumSpace.xl },
+  keyboard: { flex: 1, justifyContent: 'center', gap: quantumSpace.xxl },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: FOUNDINGOS_BASE },
+  brand: { alignItems: 'center', gap: quantumSpace.lg },
 })
