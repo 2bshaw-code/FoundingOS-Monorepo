@@ -20,8 +20,27 @@ const ALLOWED_ORIGINS = new Set([
   'https://console.foundingos.com',
 ])
 
+// Local development origins — never allowed in production builds.
+const DEV_ORIGINS = new Set([
+  'http://localhost:1000',
+  'http://localhost:8000',
+])
+
+function isAllowedOrigin(origin: string | null): origin is string {
+  if (!origin) return false
+  if (ALLOWED_ORIGINS.has(origin)) return true
+  return process.env.NODE_ENV !== 'production' && DEV_ORIGINS.has(origin)
+}
+
+// Cookie domain: shared .foundingos.com in production so sessions span subdomains;
+// host-only (undefined) in local dev, because browsers reject Domain=.foundingos.com
+// cookies set from localhost and silently drop the session.
+function sessionCookieDomain(): string | undefined {
+  return process.env.NODE_ENV === 'production' ? '.foundingos.com' : undefined
+}
+
 function corsHeaders(origin: string | null): HeadersInit {
-  if (!origin || !ALLOWED_ORIGINS.has(origin)) return {}
+  if (!isAllowedOrigin(origin)) return {}
   return {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Credentials': 'true',
@@ -78,8 +97,8 @@ export async function POST(request: Request) {
 
     const token = await signToken('admin', 'super-founder-admin')
     const response = NextResponse.json({ ok: true, redirect: `${brands.foundingos.webUrl}/home`, category: 'admin' })
-    response.cookies.set(ADMIN_COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', domain: '.foundingos.com', maxAge: 60 * 60 * 8 })
-    response.cookies.set(SESSION_COOKIE, '', { path: '/', domain: '.foundingos.com', maxAge: 0 })
+    response.cookies.set(ADMIN_COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', domain: sessionCookieDomain(), maxAge: 60 * 60 * 8 })
+    response.cookies.set(SESSION_COOKIE, '', { path: '/', domain: sessionCookieDomain(), maxAge: 0 })
     return withCors(response)
   }
 
@@ -145,7 +164,7 @@ export async function POST(request: Request) {
 
   const token = await signToken('tester', tester.id)
   const response = NextResponse.json({ ok: true, redirect: categoryRedirect[category], category })
-  response.cookies.set(SESSION_COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', domain: '.foundingos.com', maxAge: 60 * 60 * 8 })
+  response.cookies.set(SESSION_COOKIE, token, { httpOnly: true, sameSite: 'lax', path: '/', domain: sessionCookieDomain(), maxAge: 60 * 60 * 8 })
   // Real, pre-existing gap found and fixed: the admin login above already clears any stale
   // SESSION_COOKIE so an admin session can never coexist with a leftover tester one — but this
   // real tester login never did the same in reverse. A stale ADMIN_COOKIE from an earlier admin
@@ -153,6 +172,6 @@ export async function POST(request: Request) {
   // page's own layout), silently masking a brand-new real tester login behind the old admin
   // view. Confirmed live: logging in as a real tester right after an admin session, without
   // this, still showed the admin dashboard.
-  response.cookies.set(ADMIN_COOKIE, '', { path: '/', domain: '.foundingos.com', maxAge: 0 })
+  response.cookies.set(ADMIN_COOKIE, '', { path: '/', domain: sessionCookieDomain(), maxAge: 0 })
   return withCors(response)
 }
