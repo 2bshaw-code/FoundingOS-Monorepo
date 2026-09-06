@@ -3,19 +3,15 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { useCallback, useEffect, useState } from 'react'
-import { ScrollView, View, Text, Pressable, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native'
+import { ActivityIndicator, RefreshControl, StyleSheet, View } from 'react-native'
 import { router } from 'expo-router'
 import { authedFetch } from '../../lib/api'
-import { FOUNDINGOS_ACCENT } from '../../lib/brands'
 import { useAIAssistance } from '../../lib/ai-assistance'
+import { FOUNDINGOS_ACCENT } from '../../lib/brands'
+import { QuantumButton, QuantumCard, QuantumLoadingScreen, QuantumNotice, QuantumScreen, QuantumText, quantumSpace } from '../../components/QuantumUI'
 
 type Action = { label: string; fetchPath: string | null }
 
-// Real NATIVE AI Actions screen — no browser, no WebView. Lists this app's real quick
-// actions (from GET /api/console/ai-actions, backed by foundingos-console's own
-// brand-config.ts quickActions list) — tapping a data-backed action (fetchPath set) calls
-// that real endpoint and shows the actual JSON returned, in plain language; a purely
-// informational action just confirms what it does (no fabricated LLM response).
 export default function AIActionsScreen() {
   const [aiEnabled] = useAIAssistance()
   const [actions, setActions] = useState<Action[]>([])
@@ -50,7 +46,7 @@ export default function AIActionsScreen() {
 
   async function runAction(action: Action) {
     if (!action.fetchPath) {
-      setResult({ label: action.label, text: `${action.label} is ready — open the relevant module to act on it.` })
+      setResult({ label: action.label, text: `${action.label} is ready. Open the relevant module to act on it.` })
       return
     }
     setRunning(action.label)
@@ -65,71 +61,44 @@ export default function AIActionsScreen() {
     }
   }
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={FOUNDINGOS_ACCENT} />
-      </View>
-    )
-  }
+  if (loading) return <QuantumLoadingScreen />
 
   if (!aiEnabled) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.disabledTitle}>AI Assistance is turned off</Text>
-        <Text style={styles.disabledText}>Turn it back on in Settings to use AI actions.</Text>
-        <Pressable style={[styles.settingsLink, { borderColor: FOUNDINGOS_ACCENT }]} onPress={() => router.push('/(app)/settings')}>
-          <Text style={[styles.settingsLinkText, { color: FOUNDINGOS_ACCENT }]}>Open Settings</Text>
-        </Pressable>
-      </View>
+      <QuantumScreen scroll={false} contentStyle={styles.center}>
+        <QuantumCard accent={FOUNDINGOS_ACCENT}>
+          <QuantumText variant="h2" align="center">AI Assistance is off</QuantumText>
+          <QuantumText align="center">Turn it back on in Settings to use AI actions.</QuantumText>
+          <QuantumButton onPress={() => router.push('/(app)/settings')}>Open Settings</QuantumButton>
+        </QuantumCard>
+      </QuantumScreen>
     )
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ padding: 16, gap: 10 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={FOUNDINGOS_ACCENT} />}
-    >
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-
+    <QuantumScreen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={FOUNDINGOS_ACCENT} />}>
+      {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
       {actions.map((action) => (
-        <Pressable
-          key={action.label}
-          style={[styles.actionCard, { borderColor: FOUNDINGOS_ACCENT }]}
-          onPress={() => runAction(action)}
-          disabled={running === action.label}
-        >
-          <Text style={styles.actionLabel}>{action.label}</Text>
-          {running === action.label ? <ActivityIndicator color={FOUNDINGOS_ACCENT} /> : <Text style={[styles.actionArrow, { color: FOUNDINGOS_ACCENT }]}>›</Text>}
-        </Pressable>
+        <QuantumCard key={action.label} accent={FOUNDINGOS_ACCENT}>
+          <View style={styles.rowBetween}>
+            <QuantumText variant="h3">{action.label}</QuantumText>
+            <QuantumButton onPress={() => runAction(action)} disabled={running === action.label}>
+              {running === action.label ? <ActivityIndicator color="#0A0A0A" /> : 'Run'}
+            </QuantumButton>
+          </View>
+        </QuantumCard>
       ))}
-
       {result ? (
-        <View style={styles.resultCard}>
-          <Text style={styles.resultLabel}>{result.label}</Text>
-          <Text style={styles.resultText}>{result.text}</Text>
-        </View>
+        <QuantumCard>
+          <QuantumText variant="h3">{result.label}</QuantumText>
+          <QuantumText variant="caption">{result.text}</QuantumText>
+        </QuantumCard>
       ) : null}
-    </ScrollView>
+    </QuantumScreen>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F2942' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0F2942' },
-  error: { color: '#ff5470', fontSize: 13 },
-  disabledTitle: { color: '#ffffff', fontSize: 16, fontWeight: '700', marginBottom: 6 },
-  disabledText: { color: '#b9c2cf', fontSize: 13, marginBottom: 16, textAlign: 'center' },
-  settingsLink: { borderWidth: 1, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 18 },
-  settingsLinkText: { fontSize: 13, fontWeight: '700' },
-  actionCard: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#11161f', borderWidth: 1, borderRadius: 14, padding: 16,
-  },
-  actionLabel: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
-  actionArrow: { fontSize: 20, fontWeight: '700' },
-  resultCard: { backgroundColor: '#11161f', borderRadius: 12, padding: 14, marginTop: 8 },
-  resultLabel: { color: '#ffffff', fontSize: 14, fontWeight: '700', marginBottom: 6 },
-  resultText: { color: '#b9c2cf', fontSize: 12, fontFamily: 'monospace' },
+  center: { flex: 1, justifyContent: 'center' },
+  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: quantumSpace.md },
 })

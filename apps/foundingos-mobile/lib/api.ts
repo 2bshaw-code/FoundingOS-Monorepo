@@ -103,6 +103,37 @@ export async function fetchSuperDashOverview(): Promise<SuperDashOverview | null
   return response.json().catch(() => null)
 }
 
+const AAL_ACTION_ENDPOINTS: Record<string, string> = {
+  weeklyReport: '/api/ai/marketing/director/weekly-report?tier=Premium',
+  suggestCampaigns: '/api/ai/marketing/director/suggest-campaigns?tier=Premium',
+  prioritizePipeline: '/api/ai/sales/pipeline/prioritize',
+  dealStrategy: '/api/ai/sales/deal/strategy',
+  detectUnhappy: '/api/ai/crm/relationship/unhappy?tier=Premium',
+  upsellSequence: '/api/ai/crm/relationship/upsell',
+  monthlyReport: '/api/ai/finance/controller/monthly-report?tier=Premium',
+  cashflowForecast: '/api/ai/finance/controller/cashflow-forecast?tier=Premium',
+  boardSummary: '/api/ai/finance/revenue/board-summary?tier=Premium',
+}
+
+export type MobileAALResult =
+  | { success: true; data?: unknown; meta?: Record<string, unknown> }
+  | { success: false; error: string; meta?: Record<string, unknown> }
+
+export async function runAALAction(actionId: string): Promise<MobileAALResult> {
+  const endpoint = AAL_ACTION_ENDPOINTS[actionId]
+  if (!endpoint) return { success: false, error: `No mobile AAL endpoint registered for ${actionId}.` }
+
+  const method = endpoint.includes('?') ? 'GET' : 'POST'
+  const response = await authedFetch(`${API_BASE}${endpoint}`, {
+    method,
+    headers: method === 'POST' ? { 'Content-Type': 'application/json' } : undefined,
+    body: method === 'POST' ? JSON.stringify({ tier: 'Premium', inputs: { customerId: 'mobile-superdash-customer', dealId: 'mobile-superdash-deal' } }) : undefined,
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) return { success: false, error: data?.error ?? 'AAL action failed.', meta: data?.meta }
+  return data
+}
+
 // Real Guardian status — the same live survey-feed log and route-health probe the real web
 // Guardian page reads (see apps/foundingos-console/app/api/system/guardian/status/route.ts).
 // Admin-only: returns null for a non-admin session rather than throwing.

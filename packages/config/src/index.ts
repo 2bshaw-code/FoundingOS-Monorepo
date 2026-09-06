@@ -3,12 +3,15 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 export type BrandSlug = 'foundingos' | 'retail' | 'meat' | 'foundthat' | 'talent' | 'crypto' | 'finance' | 'health' | 'logistics'
+export { getQuantumBrandUplift, getQuantumBrandUpliftForDemo, QUANTUM_BRAND_UPLIFTS, MODULE_BRAND_UPLIFT, DEMO_BRAND_CARDS, type QuantumBrandUplift, type QuantumSphereVariant, type QuantumDemoBrandCard } from './quantum-brand-uplift'
 
 export type BrandTypography = { heading: string; body: string }
 
 export type BrandDefinition = {
+  id?: BrandSlug
   slug: BrandSlug
   name: string
+  default?: boolean
   legalName: string
   marketingName: string
   tagline: string
@@ -24,18 +27,51 @@ export type BrandDefinition = {
   dashboardUrl: string
   modules: string[]
   summary: string
+  theme?: {
+    background: string
+    surface: string
+    accent: string
+    glow: string
+    quantumLines: 'enabled'
+  }
+}
+
+export const FOUNDINGOS_BASE = '#001B3D'
+export const FOUNDINGOS_SURFACE = '#002455'
+export const FOUNDINGOS_SURFACE_GRADIENT = 'linear-gradient(180deg, #002455 0%, #001B3D 100%)'
+export const FOUNDINGOS_GLOW = 'rgba(76, 201, 255, 0.45)'
+
+export const LOCKED_BRAND_COLORS: Record<BrandSlug, string> = {
+  foundingos: '#4CC9FF',
+  retail: '#00A651',
+  meat: '#FF3B3B',
+  foundthat: '#FFD300',
+  talent: '#FF7A00',
+  crypto: '#9D00FF',
+  finance: '#A8A8A8',
+  health: '#4FC3F7',
+  logistics: '#DC143C',
 }
 
 const RAW_BRANDS: Record<BrandSlug, BrandDefinition> = {
   foundingos: {
+    id: 'foundingos',
     slug: 'foundingos',
     name: 'FoundingOS',
+    default: true,
     legalName: 'FoundingOS',
     marketingName: 'FoundingOS',
     tagline: 'One ecosystem. Every brand connected.',
     description: 'The core command layer for the multi-brand SaaS ecosystem — govern every brand website, console, and subscription from one place.',
-    accent: '#00E0FF',
-    brandColors: { primary: '#00E0FF', accent: '#00E0FF' },
+    accent: LOCKED_BRAND_COLORS.foundingos,
+    brandColors: { primary: FOUNDINGOS_BASE, accent: LOCKED_BRAND_COLORS.foundingos },
+    theme: {
+      background: FOUNDINGOS_BASE,
+      surface: FOUNDINGOS_SURFACE_GRADIENT,
+      accent: LOCKED_BRAND_COLORS.foundingos,
+      glow: FOUNDINGOS_GLOW,
+      quantumLines: 'enabled',
+    },
     webUrl: process.env.NEXT_PUBLIC_FOUNDINGOS_WEB_URL || 'http://localhost:1000',
     consoleUrl: process.env.NEXT_PUBLIC_FOUNDINGOS_CONSOLE_URL || 'http://localhost:8000',
     starterConsoleUrl: process.env.NEXT_PUBLIC_FOUNDINGOS_CONSOLE_URL || 'http://localhost:8000',
@@ -53,8 +89,8 @@ const RAW_BRANDS: Record<BrandSlug, BrandDefinition> = {
     marketingName: 'FoundRetail',
     tagline: 'Retail operations, connected.',
     description: 'FoundRetail helps growing businesses guide product discovery, support customers, and manage messaging-first retail workflows with more clarity and less manual effort.',
-    accent: '#00FF66',
-    brandColors: { primary: '#00FF66', accent: '#00FF66' },
+    accent: LOCKED_BRAND_COLORS.retail,
+    brandColors: { primary: LOCKED_BRAND_COLORS.retail, accent: LOCKED_BRAND_COLORS.retail },
     webUrl: process.env.NEXT_PUBLIC_RETAIL_WEB_URL || 'http://localhost:1001',
     consoleUrl: process.env.NEXT_PUBLIC_RETAIL_CONSOLE_URL || 'http://localhost:8017',
     starterConsoleUrl: process.env.NEXT_PUBLIC_RETAIL_CONSOLE_STARTER_URL || 'http://localhost:8001',
@@ -72,8 +108,8 @@ const RAW_BRANDS: Record<BrandSlug, BrandDefinition> = {
     marketingName: 'FoundMeat',
     tagline: 'Supply chain clarity, cut to order.',
     description: 'Trade and supply chain operating software for meat businesses — suppliers, stock, traceability, and orders in one operating layer.',
-    accent: '#FF0033',
-    brandColors: { primary: '#FF0033', accent: '#FF0033' },
+    accent: LOCKED_BRAND_COLORS.meat,
+    brandColors: { primary: LOCKED_BRAND_COLORS.meat, accent: LOCKED_BRAND_COLORS.meat },
     webUrl: process.env.NEXT_PUBLIC_MEAT_WEB_URL || 'http://localhost:1002',
     consoleUrl: process.env.NEXT_PUBLIC_MEAT_CONSOLE_URL || 'http://localhost:8018',
     starterConsoleUrl: process.env.NEXT_PUBLIC_MEAT_CONSOLE_STARTER_URL || 'http://localhost:8002',
@@ -91,8 +127,8 @@ const RAW_BRANDS: Record<BrandSlug, BrandDefinition> = {
     marketingName: 'FoundTalent',
     tagline: 'Hiring intelligence, made human.',
     description: 'Hiring analytics and workforce intelligence for modern teams — applicants, recruiters, jobs, and workforce intel in one place.',
-    accent: '#FF8800',
-    brandColors: { primary: '#FF8800', accent: '#FF8800' },
+    accent: LOCKED_BRAND_COLORS.talent,
+    brandColors: { primary: LOCKED_BRAND_COLORS.talent, accent: LOCKED_BRAND_COLORS.talent },
     webUrl: process.env.NEXT_PUBLIC_TALENT_WEB_URL || 'http://localhost:1004',
     consoleUrl: process.env.NEXT_PUBLIC_TALENT_CONSOLE_URL || 'http://localhost:8020',
     starterConsoleUrl: process.env.NEXT_PUBLIC_TALENT_CONSOLE_STARTER_URL || 'http://localhost:8004',
@@ -110,8 +146,8 @@ const RAW_BRANDS: Record<BrandSlug, BrandDefinition> = {
     marketingName: 'FoundCrypto',
     tagline: 'Market intelligence, always on.',
     description: 'Crypto intelligence, monitoring, and automation control — charts, signals, automation, and risk in one console.',
-    accent: '#9933FF',
-    brandColors: { primary: '#9933FF', accent: '#9933FF' },
+    accent: LOCKED_BRAND_COLORS.crypto,
+    brandColors: { primary: LOCKED_BRAND_COLORS.crypto, accent: LOCKED_BRAND_COLORS.crypto },
     webUrl: process.env.NEXT_PUBLIC_CRYPTO_WEB_URL || 'http://localhost:1005',
     consoleUrl: process.env.NEXT_PUBLIC_CRYPTO_CONSOLE_URL || 'http://localhost:8021',
     starterConsoleUrl: process.env.NEXT_PUBLIC_CRYPTO_CONSOLE_STARTER_URL || 'http://localhost:8005',
@@ -129,8 +165,8 @@ const RAW_BRANDS: Record<BrandSlug, BrandDefinition> = {
     marketingName: 'FoundFinance',
     tagline: 'Cashflow clarity, every day.',
     description: 'Finance operations, cashflow visibility, and reconciliation tooling — invoicing, reconciliation, and reporting in one console.',
-    accent: '#0033AA',
-    brandColors: { primary: '#0033AA', accent: '#0033AA' },
+    accent: LOCKED_BRAND_COLORS.finance,
+    brandColors: { primary: LOCKED_BRAND_COLORS.finance, accent: LOCKED_BRAND_COLORS.finance },
     webUrl: process.env.NEXT_PUBLIC_FINANCE_WEB_URL || 'http://localhost:1006',
     consoleUrl: process.env.NEXT_PUBLIC_FINANCE_CONSOLE_URL || 'http://localhost:8022',
     starterConsoleUrl: process.env.NEXT_PUBLIC_FINANCE_CONSOLE_STARTER_URL || 'http://localhost:8006',
@@ -148,8 +184,8 @@ const RAW_BRANDS: Record<BrandSlug, BrandDefinition> = {
     marketingName: 'FoundHealth',
     tagline: 'Care operations, coordinated.',
     description: 'Health operations, scheduling, and compliance tracking — patients, scheduling, records, and compliance in one console.',
-    accent: '#33CCFF',
-    brandColors: { primary: '#33CCFF', accent: '#33CCFF' },
+    accent: LOCKED_BRAND_COLORS.health,
+    brandColors: { primary: LOCKED_BRAND_COLORS.health, accent: LOCKED_BRAND_COLORS.health },
     webUrl: process.env.NEXT_PUBLIC_HEALTH_WEB_URL || 'http://localhost:1007',
     consoleUrl: process.env.NEXT_PUBLIC_HEALTH_CONSOLE_URL || 'http://localhost:8023',
     starterConsoleUrl: process.env.NEXT_PUBLIC_HEALTH_CONSOLE_STARTER_URL || 'http://localhost:8007',
@@ -167,8 +203,8 @@ const RAW_BRANDS: Record<BrandSlug, BrandDefinition> = {
     marketingName: 'FoundLogistics',
     tagline: 'Fleet and freight, in flow.',
     description: 'Logistics operations, fleet tracking, and delivery orchestration — fleet, routes, warehousing, and deliveries in one console.',
-    accent: '#DC143C',
-    brandColors: { primary: '#DC143C', accent: '#DC143C' },
+    accent: LOCKED_BRAND_COLORS.logistics,
+    brandColors: { primary: LOCKED_BRAND_COLORS.logistics, accent: LOCKED_BRAND_COLORS.logistics },
     webUrl: process.env.NEXT_PUBLIC_LOGISTICS_WEB_URL || 'http://localhost:1008',
     consoleUrl: process.env.NEXT_PUBLIC_LOGISTICS_CONSOLE_URL || 'http://localhost:8024',
     starterConsoleUrl: process.env.NEXT_PUBLIC_LOGISTICS_CONSOLE_STARTER_URL || 'http://localhost:8008',
@@ -186,8 +222,8 @@ const RAW_BRANDS: Record<BrandSlug, BrandDefinition> = {
     marketingName: 'FoundThat',
     tagline: 'Discovery intelligence, on demand.',
     description: 'Discovery intelligence and data operations for local markets — market intel, lead capture, and data quality in one console.',
-    accent: '#FFDD00',
-    brandColors: { primary: '#FFDD00', accent: '#FFDD00' },
+    accent: LOCKED_BRAND_COLORS.foundthat,
+    brandColors: { primary: LOCKED_BRAND_COLORS.foundthat, accent: LOCKED_BRAND_COLORS.foundthat },
     webUrl: process.env.NEXT_PUBLIC_FOUNDTHAT_WEB_URL || 'http://localhost:1003',
     consoleUrl: process.env.NEXT_PUBLIC_FOUNDTHAT_CONSOLE_URL || 'http://localhost:8019',
     starterConsoleUrl: process.env.NEXT_PUBLIC_FOUNDTHAT_CONSOLE_STARTER_URL || 'http://localhost:8003',

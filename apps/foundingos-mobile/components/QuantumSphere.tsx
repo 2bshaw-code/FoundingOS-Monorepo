@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { useEffect, useRef } from 'react'
-import { Animated, Easing } from 'react-native'
+import { Animated, Easing, StyleSheet } from 'react-native'
 import Svg, { Defs, RadialGradient, LinearGradient, Stop, Circle } from 'react-native-svg'
 
 // Real native equivalent of the web's QuantumSphereLogo (packages/ui/src/QuantumSphereLogo.tsx)
@@ -26,7 +26,7 @@ export function QuantumSphere({ size = 48, accent }: { size?: number; accent?: s
   const spin = rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] })
 
   return (
-    <Animated.View style={{ width: size, height: size, transform: accent ? undefined : [{ rotate: spin }] }}>
+    <Animated.View style={[styles.sphere, { width: size, height: size }, accent ? null : { transform: [{ rotate: spin }] }]}>
       <Svg width={size} height={size} viewBox="0 0 512 512">
         <Defs>
           {accent ? (
@@ -37,11 +37,11 @@ export function QuantumSphere({ size = 48, accent }: { size?: number; accent?: s
             </RadialGradient>
           ) : (
             <LinearGradient id="sphereFill" x1="106" y1="106" x2="406" y2="406" gradientUnits="userSpaceOnUse">
-              <Stop offset="0%" stopColor="#00E0FF" />
-              <Stop offset="25%" stopColor="#9933FF" />
-              <Stop offset="50%" stopColor="#FF0033" />
-              <Stop offset="75%" stopColor="#FFDD00" />
-              <Stop offset="100%" stopColor="#00FF66" />
+              <Stop offset="0%" stopColor="#4FC3F7" />
+              <Stop offset="25%" stopColor="#9D00FF" />
+              <Stop offset="50%" stopColor="#FF3B3B" />
+              <Stop offset="75%" stopColor="#FFD300" />
+              <Stop offset="100%" stopColor="#00A651" />
             </LinearGradient>
           )}
           <RadialGradient id="innerGlow" cx="38%" cy="32%" r="65%">
@@ -56,3 +56,7 @@ export function QuantumSphere({ size = 48, accent }: { size?: number; accent?: s
     </Animated.View>
   )
 }
+
+const styles = StyleSheet.create({
+  sphere: {},
+})

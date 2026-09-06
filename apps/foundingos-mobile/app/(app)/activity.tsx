@@ -3,18 +3,16 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { useCallback, useEffect, useState } from 'react'
-import { ScrollView, View, Text, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native'
+import { RefreshControl, StyleSheet, View } from 'react-native'
 import { fetchBrandMetrics, type BrandMetric } from '../../lib/api'
 import { BRANDS, FOUNDINGOS_ACCENT } from '../../lib/brands'
+import { QuantumCard, QuantumLoadingScreen, QuantumMetric, QuantumNotice, QuantumScreen, QuantumSectionHeader, QuantumText, quantumSpace } from '../../components/QuantumUI'
 
 function accentFor(brandName: string): string {
-  const match = BRANDS.find((b) => brandName.toLowerCase().includes(b.name.replace(/^Found/, '').toLowerCase()))
+  const match = BRANDS.find((brand) => brandName.toLowerCase().includes(brand.name.replace(/^Found/, '').toLowerCase()))
   return match?.accent ?? FOUNDINGOS_ACCENT
 }
 
-// Real, live module screen — this is genuinely the same engagement data (totalEngagement,
-// anomalyScore, category breakdown, last updated) shown on the web SuperDash, fetched from
-// the real /api/superdash/brand-metrics endpoint on every pull-to-refresh. No mock numbers.
 export default function ActivityScreen() {
   const [metrics, setMetrics] = useState<BrandMetric[]>([])
   const [loading, setLoading] = useState(true)
@@ -25,8 +23,7 @@ export default function ActivityScreen() {
     if (isRefresh) setRefreshing(true)
     setError('')
     try {
-      const rows = await fetchBrandMetrics()
-      setMetrics(rows)
+      setMetrics(await fetchBrandMetrics())
     } catch {
       setError('Could not load live activity. Pull down to try again.')
     } finally {
@@ -39,53 +36,32 @@ export default function ActivityScreen() {
     load()
   }, [load])
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={FOUNDINGOS_ACCENT} />
-      </View>
-    )
-  }
+  if (loading) return <QuantumLoadingScreen />
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ padding: 16, gap: 12 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={FOUNDINGOS_ACCENT} />}
-    >
-      <Text style={styles.intro}>Live engagement across every brand — pull down to refresh.</Text>
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      {metrics.length === 0 && !error ? <Text style={styles.empty}>No activity yet.</Text> : null}
-
-      {metrics.map((brand) => (
-        <View key={brand.brandName} style={[styles.card, { borderColor: accentFor(brand.brandName) }]}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>{brand.brandName}</Text>
-            <Text style={[styles.engagement, { color: accentFor(brand.brandName) }]}>{brand.totalEngagement}</Text>
-          </View>
-          <Text style={styles.cardMeta}>Anomaly score: {brand.anomalyScore.toFixed(2)}</Text>
-          <Text style={styles.cardMeta}>
-            {Object.entries(brand.categoryBreakdown)
-              .map(([key, value]) => `${key}: ${value}`)
-              .join(' · ')}
-          </Text>
-          <Text style={styles.cardTime}>Updated {new Date(brand.lastUpdated).toLocaleString('en-GB')}</Text>
-        </View>
-      ))}
-    </ScrollView>
+    <QuantumScreen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={FOUNDINGOS_ACCENT} />}>
+      <QuantumSectionHeader label="Live engagement" />
+      {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
+      {metrics.length === 0 && !error ? <QuantumNotice>No activity yet.</QuantumNotice> : null}
+      {metrics.map((metric) => {
+        const accent = accentFor(metric.brandName)
+        return (
+          <QuantumCard key={metric.brandName} accent={accent}>
+            <View style={styles.metricRow}>
+              <QuantumMetric label={metric.brandName} value={metric.totalEngagement} tone="info" />
+              <QuantumMetric label="Anomaly" value={metric.anomalyScore.toFixed(2)} tone={metric.anomalyScore > 0.55 ? 'watch' : 'good'} />
+            </View>
+            <QuantumText variant="caption">
+              {Object.entries(metric.categoryBreakdown).map(([key, value]) => `${key}: ${value}`).join(' · ')}
+            </QuantumText>
+            <QuantumText variant="caption" color="#7F7F7F">Updated {new Date(metric.lastUpdated).toLocaleString('en-GB')}</QuantumText>
+          </QuantumCard>
+        )
+      })}
+    </QuantumScreen>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F2942' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0F2942' },
-  intro: { color: '#b9c2cf', fontSize: 13, marginBottom: 4 },
-  error: { color: '#ff5470', fontSize: 13 },
-  empty: { color: '#b9c2cf', fontSize: 13 },
-  card: { backgroundColor: '#11161f', borderWidth: 1, borderRadius: 16, padding: 16, gap: 4 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardTitle: { color: '#ffffff', fontSize: 16, fontWeight: '700' },
-  engagement: { fontSize: 20, fontWeight: '800' },
-  cardMeta: { color: '#b9c2cf', fontSize: 12 },
-  cardTime: { color: '#5b6472', fontSize: 11, marginTop: 4 },
+  metricRow: { flexDirection: 'row', gap: quantumSpace.sm },
 })
