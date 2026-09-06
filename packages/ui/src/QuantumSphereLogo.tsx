@@ -3,6 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { useId } from 'react'
+import { LOCKED_BRAND_COLORS } from '@foundingos/config'
 import './QuantumSphereLogo.css'
 
 // FoundingOS keeps the unified multi-brand colour wheel (no `accent`). Passing `accent`
@@ -33,11 +34,11 @@ export function QuantumSphereLogo({ size = 48, className = '', accent }: { size?
           </radialGradient>
         ) : (
           <linearGradient id={sphereGradientId} gradientUnits="userSpaceOnUse" x1="106" y1="106" x2="406" y2="406">
-            <stop offset="0%" stopColor="#00E0FF" />
-            <stop offset="25%" stopColor="#9933FF" />
-            <stop offset="50%" stopColor="#FF0033" />
-            <stop offset="75%" stopColor="#FFDD00" />
-            <stop offset="100%" stopColor="#00FF66" />
+            <stop offset="0%" stopColor={LOCKED_BRAND_COLORS.health} />
+            <stop offset="25%" stopColor={LOCKED_BRAND_COLORS.crypto} />
+            <stop offset="50%" stopColor={LOCKED_BRAND_COLORS.meat} />
+            <stop offset="75%" stopColor={LOCKED_BRAND_COLORS.foundthat} />
+            <stop offset="100%" stopColor={LOCKED_BRAND_COLORS.retail} />
             <animateTransform
               attributeName="gradientTransform"
               type="rotate"

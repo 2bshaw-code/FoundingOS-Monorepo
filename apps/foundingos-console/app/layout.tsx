@@ -11,6 +11,7 @@ import { cookies } from 'next/headers'
 import { Sidebar } from '@foundingos/ui/sidebar'
 import { FoundAI } from '@foundingos/ui/found-ai'
 import { Topbar } from '@foundingos/ui/topbar'
+import { QuantumBackground } from '@foundingos/ui/quantum'
 import { brandConfig } from './brand-config'
 import { SESSION_COOKIE, verifyToken } from './tester/session'
 import { categorizeCredential } from './tester/tester-data'
@@ -63,7 +64,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     return (
       <html lang="en">
         <body className="min-h-screen bg-black tester-shell" style={tintStyle}>
-          <main className="tester-shell-content">{children}</main>
+          <QuantumBackground brand={tinted}>
+            <main className="tester-shell-content">{children}</main>
+          </QuantumBackground>
           {/* Real testers/survey-takers/investors previously had NO AI helper at all —
               FoundAI already has friendly, context-aware content for every one of these
               routes (Switcher Hub, Survey, Guided Demo, Investor Briefing); it just wasn't
@@ -77,15 +80,19 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   return (
     <html lang="en">
-      <body className="min-h-screen flex bg-black console-shell-page">
-        <Sidebar config={tinted} />
-        <div className="flex-1 flex flex-col console-shell-main">
-          <Topbar config={tinted} />
-          <main className="console-shell-content">{children}</main>
-        </div>
-        <FoundAI brand={tinted} />
-      <FoundingOSFooter /></body>
+      <body className="min-h-screen bg-black console-shell-page">
+        <QuantumBackground brand={tinted} className="console-quantum-background">
+          <div className="console-quantum-shell">
+            <Sidebar config={tinted} />
+            <div className="flex-1 flex flex-col console-shell-main">
+              <Topbar config={tinted} />
+              <main className="console-shell-content">{children}</main>
+            </div>
+          </div>
+          <FoundAI brand={tinted} />
+          <FoundingOSFooter />
+        </QuantumBackground>
+      </body>
     </html>
   )
 }
-

@@ -7,6 +7,8 @@ import { checkAllBrandRouteHealth } from '../../superdashboard/route-health.serv
 import { SuperDashSurveyGuardian } from '@foundingos/ui/superdash/SuperDashSurveyGuardian'
 import { SuperDashGuardian } from '@foundingos/ui/superdash/SuperDashGuardian'
 import { GuardianAlertList } from '@foundingos/ui/guardian-ai'
+import { brands } from '@foundingos/config'
+import { QuantumCard, QuantumHeader } from '@foundingos/ui/quantum'
 
 export const metadata = { title: 'System Alert | FoundingOS' }
 
@@ -20,24 +22,25 @@ export default async function GuardianPage() {
   const hasIssues = surveyWarnings.length > 0
 
   return (
-    <section className="stack quantum-ambient-grid" style={{ maxWidth: 900, margin: '0 auto', padding: '48px 20px' }}>
-      <header className="module-header header-premium">
-        <p>Guardian Mode</p>
-        <h1>{hasIssues ? 'Guardian detected an issue — please review.' : 'Guardian: all clear'}</h1>
-        <span>Live checks across all 8 brand websites' survey feeds and route health.</span>
-      </header>
+    <section className="q-shell">
+      <QuantumHeader
+        brand={brands.foundingos}
+        eyebrow="Guardian Mode"
+        title={hasIssues ? 'Guardian detected an issue — please review.' : 'Guardian: all clear'}
+        description="Live checks across all 8 brand websites' survey feeds and route health."
+      />
 
-      <article className="fo-card fo-panel-glow" style={{ padding: 24 }}>
-        <h2 style={{ marginTop: 0 }}>Survey feed warnings</h2>
+      <QuantumCard brand={brands.foundingos}>
+        <h2 className="q-text-h2">Survey feed warnings</h2>
         <GuardianAlertList warnings={surveyWarnings} />
-      </article>
+      </QuantumCard>
 
-      <article className="fo-card fo-panel-glow" style={{ padding: 24 }}>
-        <h2 style={{ marginTop: 0 }}>Core enforcement</h2>
+      <QuantumCard brand={brands.foundingos}>
+        <h2 className="q-text-h2">Core enforcement</h2>
         <ul>
           {coreEnforcement.map((item) => <li key={item}>{item}</li>)}
         </ul>
-      </article>
+      </QuantumCard>
     </section>
   )
 }

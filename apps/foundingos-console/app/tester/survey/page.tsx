@@ -8,7 +8,9 @@ import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../session'
 import { getTester, getOrCreateAdminTester } from '../store.server'
 import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, DEMO_COMPLETE_CELEBRATION_LINE, SURVEY_COMPLETE_NARRATOR_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, SURVEY_MISSION_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, SIGNATURE_MOMENT_LINE, FREE_ROAM_FIRST_STEP_LINE, SECTION_NARRATOR_LINES, PACING_REASSURANCE_LINES, ACCESSIBILITY_REMINDER_LINES, TARGET_JOKES, MICRO_BREAK_LINES, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, NARRATION_PLAYER_SCRIPT, getFreeRoamHref, BRAND_ROW_NARRATOR_LINE, adminTesterId, exploreTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type CredentialCategory, type SurveyId } from '../tester-data'
 import { brands } from '@foundingos/config'
+import { getQuantumBrandUpliftForDemo } from '@foundingos/config/quantum-brand-uplift'
 import { QuantumSphereLogo } from '@foundingos/ui'
+import { QuantumCard, QuantumHeader, QuantumNotice, QuantumTextField } from '@foundingos/ui/quantum'
 import { SurveyEngine } from './SurveyEngine'
 
 // Real, working "preview while you answer" links for the ecosystem-validation section
@@ -112,7 +114,7 @@ export default async function TesterSurveyPage({ searchParams }: { searchParams:
   const isSurveyTaker = category === 'tester' || category === 'survey' || category === 'investor' || category === 'buyer' || category === 'customer' || category === 'admin'
   const demoNotYetViewed = tester.status === 'registered' || tester.status === 'briefing-viewed'
   if (isSurveyTaker && demoNotYetViewed) {
-    redirect(category === 'investor' ? '/investor' : exploredModuleId ? `/tester/demo/${exploredModuleId}` : '/tester/dashboard')
+    redirect(category === 'investor' ? '/investor' : `/tester/demo/${exploredModuleId ?? tester.moduleId}`)
   }
 
   const survey = SURVEYS[tester.surveyId as SurveyId]
@@ -122,6 +124,7 @@ export default async function TesterSurveyPage({ searchParams }: { searchParams:
   // completion (about to happen) apart from a repeat one.
   const hasCompletedSurveyBefore = tester.runs.length > 0
   const switcherOptions = buildSwitcherOptions(category)
+  const { brand: surveyBrand, uplift } = getQuantumBrandUpliftForDemo(tester.moduleId)
 
   return (
     <section className="stack">
@@ -129,48 +132,55 @@ export default async function TesterSurveyPage({ searchParams }: { searchParams:
         <QuantumSphereLogo size={48} />
         <div className="quantum-gradient-bar" />
       </div>
-      <header className="module-header">
-        <p>FounderOS Tester Program</p>
-        <h1>{survey.title}</h1>
-        <span>Tailored for {tester.moduleLabel}. Answers auto-save as you go — surveys can always be retaken.</span>
-      </header>
-      <div className="module-card-grid" style={{ marginBottom: 20 }}>
-        <article className="module-card fo-card quantum-frame" data-narration={NARRATOR_SURVEY_LINE}>
+      <QuantumHeader
+        brand={surveyBrand}
+        eyebrow="FounderOS Tester Program"
+        title={survey.title}
+        description={`Tailored for ${tester.moduleLabel}. Answers auto-save as you go — surveys can always be retaken.`}
+      />
+      <div className="module-card-grid quantum-section-bottom">
+        <QuantumCard className="module-card quantum-frame" brand={brands.foundingos} data-narration={NARRATOR_SURVEY_LINE}>
           <div className="module-card-top"><span>ℹ</span><strong>Before you start</strong></div>
-          <div className="quantum-narrator-panel">
+          <QuantumNotice>
             <p>{DEMO_COMPLETE_CELEBRATION_LINE}</p>
             <p>{NARRATOR_SURVEY_LINE}</p>
-          </div>
+          </QuantumNotice>
+          <QuantumNotice>
+            <strong>{uplift.icon} {surveyBrand.name} survey focus</strong>
+            <ul className="quantum-compact-list">
+              {uplift.surveyRefinements.map((refinement) => <li key={refinement}>{refinement}</li>)}
+            </ul>
+          </QuantumNotice>
           <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle suppressHydrationWarning>Audio: ON</button>
           <p>{SURVEY_INTRO}</p>
-        </article>
+        </QuantumCard>
 
-        <article className="module-card fo-card quantum-frame">
+        <QuantumCard className="module-card quantum-frame" brand={brands.foundingos}>
           <div className="module-card-top"><span>🧭</span><strong>{SWITCHER_PANEL_TITLE}</strong></div>
           <div className="quantum-narrator-panel">
             <p>{SWITCHER_PANEL_NARRATOR_LINE}</p>
           </div>
-          <form data-switcher-form style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ display: 'grid', gap: 8 }}>
+          <form data-switcher-form className="quantum-switcher-form">
+            <div className="quantum-switcher-options">
               {switcherOptions.map((option) => (
                 <div key={option.code} data-code={option.code} data-href={option.href} data-available={String(option.available)} data-note={option.note ?? ''}>
                   {option.available ? (
-                    <a href={option.href} className="btn btn-secondary quantum-btn" style={{ width: '100%', justifyContent: 'flex-start' }}>{option.code} · {option.label}</a>
+                    <a href={option.href} className="btn btn-secondary quantum-btn quantum-switcher-option">{option.code} · {option.label}</a>
                   ) : (
-                    <div className="btn btn-secondary" style={{ width: '100%', justifyContent: 'flex-start', opacity: 0.5, cursor: 'default' }}>
-                      {option.code} · {option.label} <small style={{ marginLeft: 6 }}>({option.note})</small>
+                    <div className="btn btn-secondary quantum-switcher-option quantum-switcher-option-disabled">
+                      {option.code} · {option.label} <small>({option.note})</small>
                     </div>
                   )}
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-              <input type="text" data-switcher-code placeholder="Enter a code (e.g. R1, M1, S1)" style={{ padding: '10px 14px', borderRadius: 999, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)' }} />
+            <div className="quantum-switcher-code-row">
+              <QuantumTextField label="Switcher code" type="text" data-switcher-code placeholder="Enter a code (e.g. R1, M1, S1)" />
               <button type="submit" className="btn btn-primary quantum-btn">Go</button>
             </div>
             <p data-switcher-message><small></small></p>
           </form>
-        </article>
+        </QuantumCard>
       </div>
       <SurveyEngine
         survey={survey}
@@ -203,7 +213,7 @@ export default async function TesterSurveyPage({ searchParams }: { searchParams:
       </div>
       <div className="quantum-brand-row">
         {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat', 'finance', 'health', 'logistics'] as const).map((slug) => (
-          <a key={slug} href={brands[slug].webUrl} className="quantum-brand-card" style={{ ['--brand-glow' as string]: brands[slug].accent }}>
+          <a key={slug} href={brands[slug].webUrl} className={`quantum-brand-card brand-${slug}`}>
             <span className="quantum-brand-card-dot" />
             {brands[slug].name}
           </a>

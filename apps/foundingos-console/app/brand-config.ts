@@ -3,23 +3,24 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import type { BrandConsoleConfig } from '@foundingos/ui/console'
+import { FOUNDINGOS_BASE, LOCKED_BRAND_COLORS } from '@foundingos/config'
 
 export const brandConfig: BrandConsoleConfig = {
   "name": "FoundingOS",
   "logo": "FO",
-  "accent": "#00E0FF",
+  "accent": LOCKED_BRAND_COLORS.foundingos,
   "typography": {
     "heading": "Inter",
     "body": "Inter"
   },
   "colors": {
-    "primary": "#4A90E2",
-    "secondary": "#0F2742",
-    "accent": "#00E0FF",
-    "background": "#0B0C10",
-    "panel": "#141820",
-    "text": "#FFFFFF",
-    "muted": "#A8B3C3"
+    "primary": FOUNDINGOS_BASE,
+    "secondary": FOUNDINGOS_BASE,
+    "accent": LOCKED_BRAND_COLORS.foundingos,
+    "background": FOUNDINGOS_BASE,
+    "panel": FOUNDINGOS_BASE,
+    "text": LOCKED_BRAND_COLORS.foundingos,
+    "muted": LOCKED_BRAND_COLORS.finance
   },
   "dashboard": {
     "title": "Ecosystem overview",

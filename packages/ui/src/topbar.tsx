@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BrandConsoleConfig } from './console'
 import { ThemeToggle } from './theme'
 import { QuantumSphereLogo } from './QuantumSphereLogo'
+import { qColors } from './quantum'
 
 const SIDEBAR_KEY = 'foundingos-sidebar-collapsed'
 
@@ -31,7 +32,7 @@ function consoleTitle(name?: string, variant: 'console' | 'starter' = 'console')
 }
 
 function ActualTopbar({ config, variant = 'console' }: { config?: BrandConsoleConfig; variant?: 'console' | 'starter' }) {
-  const theme = { '--accent': config?.colors.accent ?? '#00E0FF' } as React.CSSProperties
+  const theme = { '--accent': config?.colors.accent ?? qColors.foundingos } as React.CSSProperties
   const sphereAccent = config?.name && config.name !== 'FoundingOS' ? config.colors.accent : undefined
   const [collapsed, setCollapsed] = useState(false)
   // Real fix for a genuine double-write/visible-flash bug (confirmed live via instrumented
@@ -75,9 +76,9 @@ function ActualTopbar({ config, variant = 'console' }: { config?: BrandConsoleCo
      </div>
      <div className="topbar-nav" />
      <div className="topbar-actions">
-       <a href="https://www.foundingos.com/home" className="topbar-pill topbar-pill-homepage quantum-btn quantum-link-glow">FoundingOS Homepage</a>
+       <a href="https://www.foundingos.com/home" className="q-button q-button-ghost topbar-pill-homepage">FoundingOS Homepage</a>
        <form action="https://console.foundingos.com/api/tester/logout" method="POST" className="topbar-logout-form">
-         <button type="submit" className="topbar-pill topbar-pill-danger quantum-btn">Log out</button>
+         <button type="submit" className="q-button q-button-primary topbar-pill-danger">Log out</button>
        </form>
        <ThemeToggle />
      </div>

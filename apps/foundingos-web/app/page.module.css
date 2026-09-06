@@ -10,7 +10,7 @@
   display: grid;
   min-height: 100vh;
   place-items: center;
-  background: linear-gradient(160deg, #0D0D0D 0%, #111827 100%);
+  background: linear-gradient(160deg, var(--q-base) 0%, var(--q-neutral-800) 100%);
   position: relative;
   overflow: hidden;
 }
@@ -19,11 +19,18 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 229, 255, 0.05) 1px, transparent 1px);
+    linear-gradient(color-mix(in srgb, var(--q-accent) 8%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--q-accent) 8%, transparent) 1px, transparent 1px);
   background-size: 42px 42px;
   animation: quantumGridDrift 24s linear infinite;
   pointer-events: none;
+}
+
+.quantumContent {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
 }
 
 @keyframes quantumGridDrift {
@@ -49,13 +56,19 @@
   place-items: center;
   font-weight: 900;
   font-size: 18px;
-  color: #0D0D0D;
-  background: linear-gradient(135deg, #00E5FF, #2EE6D6);
-  box-shadow: 0 0 24px rgba(0, 229, 255, 0.45);
+  color: var(--q-base);
+  background: var(--q-accent);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--q-accent) 45%, transparent);
+}
+
+.quantumBrandTitle {
+  color: var(--q-neutral-0);
+  font-size: 15px;
+  letter-spacing: 0.03em;
 }
 
 .quantumStrapline {
-  color: #F5F7FA;
+  color: var(--q-neutral-0);
   opacity: 0.75;
   font-size: 13px;
   letter-spacing: 0.04em;
@@ -93,22 +106,22 @@
   content: '';
   position: absolute;
   inset: -40px;
-  background: radial-gradient(circle, rgba(0, 229, 255, 0.22), transparent 65%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--q-accent) 22%, transparent), transparent 65%);
   filter: blur(10px);
   z-index: -1;
   pointer-events: none;
 }
 
 @keyframes brandGlow {
-  0%   { box-shadow: 0 0 14px #00FF66; }
-  12%  { box-shadow: 0 0 14px #FF0033; }
-  24%  { box-shadow: 0 0 14px #FF8800; }
-  36%  { box-shadow: 0 0 14px #9933FF; }
-  48%  { box-shadow: 0 0 14px #FFDD00; }
-  60%  { box-shadow: 0 0 14px #00CCFF; }
-  72%  { box-shadow: 0 0 14px #00FFCC; }
-  84%  { box-shadow: 0 0 14px #FF6600; }
-  100% { box-shadow: 0 0 14px #00FF66; }
+  0%   { box-shadow: 0 0 14px var(--q-retail); }
+  12%  { box-shadow: 0 0 14px var(--q-meat); }
+  24%  { box-shadow: 0 0 14px var(--q-talent); }
+  36%  { box-shadow: 0 0 14px var(--q-crypto); }
+  48%  { box-shadow: 0 0 14px var(--q-foundthat); }
+  60%  { box-shadow: 0 0 14px var(--q-health); }
+  72%  { box-shadow: 0 0 14px var(--q-finance); }
+  84%  { box-shadow: 0 0 14px var(--q-logistics); }
+  100% { box-shadow: 0 0 14px var(--q-retail); }
 }
 
 .quantumCard {
@@ -117,8 +130,8 @@
   gap: 18px;
   border-radius: 20px;
   padding: 28px;
-  background: #1B212C;
-  border: 1px solid rgba(0, 229, 255, 0.35);
+  background: var(--q-neutral-800);
+  border: 1px solid color-mix(in srgb, var(--q-accent) 35%, transparent);
   backdrop-filter: blur(18px);
   transition: border-color 200ms ease;
   animation: brandGlow 6s infinite ease-in-out;
@@ -126,23 +139,32 @@
 
 .quantumCard:hover,
 .quantumCard:focus-within {
-  border-color: #2EE6D6;
+  border-color: var(--q-accent);
 }
 
 .quantumCard input:focus {
   outline: none;
-  border-color: #00E5FF !important;
-  box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.35);
+  border-color: var(--q-accent) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--q-accent) 35%, transparent);
 }
 
 .quantumButton {
-  background: linear-gradient(135deg, #00E5FF, #2EE6D6) !important;
-  color: #0D0D0D !important;
+  background: var(--q-accent) !important;
+  color: var(--q-base) !important;
   border: none !important;
   animation: quantumPulse 3.2s ease-in-out infinite;
 }
 
+.quantumCardHint {
+  opacity: 0.75;
+  margin: 0;
+}
+
+.quantumMessageDemo {
+  margin-bottom: 20px;
+}
+
 @keyframes quantumPulse {
-  0%, 100% { box-shadow: 0 0 12px rgba(0, 229, 255, 0.35); }
-  50% { box-shadow: 0 0 22px rgba(46, 230, 214, 0.6); }
+  0%, 100% { box-shadow: 0 0 12px color-mix(in srgb, var(--q-accent) 35%, transparent); }
+  50% { box-shadow: 0 0 22px color-mix(in srgb, var(--q-accent) 60%, transparent); }
 }
