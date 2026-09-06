@@ -9,10 +9,12 @@ import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../../session'
 import { getTester, upsertTester, getOrCreateAdminTester } from '../../store.server'
 import { MODULE_NARRATOR_STEPS, buildNarratorSteps, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_FACTS, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, categorizeCredential, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, adminTesterId, exploreTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type ModuleId } from '../../tester-data'
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands } from '@foundingos/config'
+import { getQuantumBrandUpliftForDemo } from '@foundingos/config/quantum-brand-uplift'
 import { QuantumSphereLogo } from '@foundingos/ui'
 import { AnimatedMessageFlow } from '@foundingos/ui/animated-message-flow'
+import { QuantumDemoViewer } from '@foundingos/ui/quantum-demo'
+import { QuantumTextField } from '@foundingos/ui/quantum'
 import { DemoCurrencyCard } from '../../DemoCurrencyCard'
-import { DemoWizard } from '../DemoWizard'
 
 export default async function TesterDemoPage({ params }: { params: Promise<{ moduleId: string }> }) {
   const { moduleId } = await params
@@ -116,6 +118,12 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
   // categorizeCredential must use the real underlying tester id, never a synthetic explore id
   // (exploreTesterId's "::explore::" suffix would break the credential-prefix checks it does).
   const switcherOptions = buildSwitcherOptions(isSuperFounderAdminSession ? 'admin' : categorizeCredential(realTesterIdForCategory!))
+  const { brand: demoBrand, uplift } = getQuantumBrandUpliftForDemo(moduleId)
+  const demoImages = uplift.demoImageRequirements
+  const demoSteps = [...uplift.demoSteps, ...narratorSteps.map((step) => {
+    const [, title = step.step] = step.step.split(' · ')
+    return `${title}: ${step.detail}`
+  })]
 
   return (
     <section className="stack">
@@ -151,10 +159,19 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
           useful, but secondary context, and now reads that way instead of competing for equal
           visual weight in one long grid of same-sized cards. */}
       <div className="quantum-demo-hero">
-        <DemoWizard steps={narratorSteps} />
+        <QuantumDemoViewer
+          title={`How to use ${tester.moduleLabel}`}
+          images={demoImages}
+          steps={demoSteps}
+          story={uplift.story}
+          icon={uplift.icon}
+          sphereVariant={uplift.sphereVariant}
+          brand={demoBrand}
+          onCompleteDemo={continueToSurvey}
+        />
       </div>
 
-      <div className="module-card-grid" style={{ marginTop: 16 }}>
+      <div className="module-card-grid quantum-section-spaced">
         {isSuperDashboardDemo ? (
           <article className="module-card fo-card quantum-frame">
             <div className="module-card-top"><span>◈</span><strong>SuperDashboard (read-only)</strong></div>
@@ -198,7 +215,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
             </article>
             <article className="module-card fo-card quantum-frame">
               <div className="module-card-top"><span>ℹ</span><strong>{TESTER_INSTRUCTION_CARD.title}</strong></div>
-              <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 6 }}>
+              <ul className="quantum-compact-list">
                 {TESTER_INSTRUCTION_CARD.lines.map((line) => (
                   <li key={line}><small>{line}</small></li>
                 ))}
@@ -224,7 +241,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
 
         <article className="module-card fo-card quantum-frame">
           <div className="module-card-top"><span>◈</span><strong>The business plan, in short</strong></div>
-          <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 6 }}>
+          <ul className="quantum-compact-list">
             {BUSINESS_PLAN_FACTS.map((fact) => (
               <li key={fact}><small>{fact}</small></li>
             ))}
@@ -242,7 +259,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
 
 
       {hasCompletedSurvey && (
-        <div className="stack" style={{ marginTop: 24 }}>
+        <div className="stack quantum-section-spaced-lg">
           <div className="quantum-narrator-panel">
             <p>{FREE_ROAM_UNLOCK_LINE}</p>
             <p>{FREE_ROAM_INVITE_LINES[0]}</p>
@@ -259,27 +276,27 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
         </div>
       )}
 
-      <article className="module-card fo-card quantum-frame" style={{ marginTop: 24 }}>
+      <article className="module-card fo-card quantum-frame quantum-section-spaced-lg">
         <div className="module-card-top"><span>🧭</span><strong>{SWITCHER_PANEL_TITLE}</strong></div>
         <div className="quantum-narrator-panel">
           <p>{SWITCHER_PANEL_NARRATOR_LINE}</p>
         </div>
-        <form data-switcher-form style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'grid', gap: 8 }}>
+        <form data-switcher-form className="quantum-switcher-form">
+          <div className="quantum-switcher-options">
             {switcherOptions.map((option) => (
               <div key={option.code} data-code={option.code} data-href={option.href} data-available={String(option.available)} data-note={option.note ?? ''}>
                 {option.available ? (
-                  <Link href={option.href} className="btn btn-secondary quantum-btn" style={{ width: '100%', justifyContent: 'flex-start' }}>{option.code} · {option.label}</Link>
+                  <Link href={option.href} className="btn btn-secondary quantum-btn quantum-switcher-option">{option.code} · {option.label}</Link>
                 ) : (
-                  <div className="btn btn-secondary" style={{ width: '100%', justifyContent: 'flex-start', opacity: 0.5, cursor: 'default' }}>
-                    {option.code} · {option.label} <small style={{ marginLeft: 6 }}>({option.note})</small>
+                  <div className="btn btn-secondary quantum-switcher-option quantum-switcher-option-disabled">
+                    {option.code} · {option.label} <small>({option.note})</small>
                   </div>
                 )}
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <input type="text" data-switcher-code placeholder="Enter a code (e.g. R1, M1, S1)" style={{ padding: '10px 14px', borderRadius: 999, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--text)' }} />
+          <div className="quantum-switcher-code-row">
+            <QuantumTextField label="Switcher code" type="text" data-switcher-code placeholder="Enter a code (e.g. R1, M1, S1)" />
             <button type="submit" className="btn btn-primary quantum-btn">Go</button>
           </div>
           <p data-switcher-message><small></small></p>
@@ -291,7 +308,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
       </div>
       <div className="quantum-brand-row">
         {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat', 'finance', 'health', 'logistics'] as const).map((slug) => (
-          <a key={slug} href={brands[slug].webUrl} className="quantum-brand-card" style={{ ['--brand-glow' as string]: brands[slug].accent }}>
+          <a key={slug} href={brands[slug].webUrl} className={`quantum-brand-card brand-${slug}`}>
             <span className="quantum-brand-card-dot" />
             {brands[slug].name}
           </a>

@@ -4,19 +4,21 @@
 */
 import { FoundingOSFooter } from '@foundingos/ui/footer'
 import { FoundAI } from '@foundingos/ui/found-ai'
+import { brands } from '@foundingos/config'
+import { QuantumBackground } from '@foundingos/ui/quantum'
 import '@foundingos/ui/styles.css'
 
 export const metadata = { title: 'FoundingOS', description: 'Unified multi-brand SaaS launcher.' }
-
-const FOUNDINGOS_BRAND = { name: 'FoundingOS', accent: '#00E0FF' }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        {children}
-        <FoundAI brand={FOUNDINGOS_BRAND} />
-        <FoundingOSFooter />
+        <QuantumBackground brand={brands.foundingos}>
+          {children}
+          <FoundAI brand={brands.foundingos} />
+          <FoundingOSFooter />
+        </QuantumBackground>
       </body>
     </html>
   )

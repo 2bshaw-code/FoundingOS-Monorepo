@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Megaphone, Banknote, MessageCircle, LifeBuoy, Sparkles, type LucideIcon } from 'lucide-react'
 import type { BrandConsoleConfig } from './console'
 import { QuantumSphereLogo } from './QuantumSphereLogo'
+import { qColors } from './quantum'
 
 // Some brand-config nav items carry named icon strings (from earlier module-icon data) instead of
 // the glyph characters most items use. Without this map those strings rendered as literal leftover
@@ -30,7 +31,7 @@ function consoleTitle(name?: string, variant: 'console' | 'starter' = 'console')
 }
 
 function ActualSidebar({ config, variant = 'console' }: { config?: BrandConsoleConfig; variant?: 'console' | 'starter' }) {
-  const theme = { '--accent': config?.colors.accent ?? '#00E0FF' } as React.CSSProperties
+  const theme = { '--accent': config?.colors.accent ?? qColors.foundingos } as React.CSSProperties
   const sphereAccent = config?.name && config.name !== 'FoundingOS' ? config.colors.accent : undefined
   const defaultItems = [
     { label: 'Dashboard', href: '/dashboard', icon: '▦', section: 'Core' },
@@ -73,7 +74,7 @@ function ActualSidebar({ config, variant = 'console' }: { config?: BrandConsoleC
           <div key={section} className="nav-section">
             <p className="nav-section-label">{section}</p>
             {sectionItems.map((item) => (
-              <Link key={item.href} className="nav-card" href={item.href}>
+              <Link key={item.href} className="nav-card q-list-row" href={item.href}>
                 <span className="nav-card-icon">{resolveIcon(item.icon)}</span>
                 <div>
                   <strong>{item.label}</strong>

@@ -14,7 +14,10 @@ import { CORE_MODULES } from '@foundingos/config/modules'
 // This replaces a previously-local, fully-hardcoded duplicate of this same data that
 // never read any env var — every "Website"/"Console" link on this page was silently
 // pointing at localhost in every production deployment until this fix.
-import { brands, brandList, type BrandSlug, type BrandDefinition } from '@foundingos/config'
+import { brands, brandList, LOCKED_BRAND_COLORS, type BrandSlug, type BrandDefinition } from '@foundingos/config'
+import { DEMO_BRAND_CARDS, getQuantumBrandUplift, type QuantumDemoBrandCard } from '@foundingos/config/quantum-brand-uplift'
+import { QuantumBrandUpliftPanel } from './quantum-brand-uplift'
+import { WebBrandModulePanel, WebBrandWheel, WebTutorialSystem } from './quantum-web-mirror'
 
 type ComponentChildren = any
 const consoleDashboardUrl = (brand: BrandDefinition) => brand.consoleUrl.replace(/\/+$/, '')
@@ -32,6 +35,8 @@ const founderPackages = [
 ] as const
 
 const founderPackageUrl = (slug: string) => `${brands.foundingos.consoleUrl.replace(/\/+$/, '')}/console/packages/${slug}`
+const foundingOsConsoleUrl = brands.foundingos.consoleUrl.replace(/\/+$/, '')
+const founderDemoUrl = (route: string) => `${foundingOsConsoleUrl}${route}`
 
 const brandConsideration: Record<BrandSlug, { painPoints: string[]; outcomes: string[]; reasons: string[] }> = {
   foundingos: { painPoints: [], outcomes: [], reasons: [] },
@@ -105,6 +110,27 @@ function brandBadge(brand: BrandDefinition) {
     default:
       return '⌂'
   }
+}
+
+function DemoPreviewCard({ demo }: { demo: QuantumDemoBrandCard }) {
+  const sourceBrand = brands[demo.sourceBrandSlug]
+  const uplift = getQuantumBrandUplift(demo.sourceBrandSlug)
+  const fallbackImage = uplift.demo.images[0] ?? demo.previewImage
+  return (
+    <article className="card-premium founder-demo-card">
+      <div className="founder-demo-preview">
+        <img src={founderDemoUrl(fallbackImage)} alt={`${demo.title} preview`} />
+      </div>
+      <div className="founder-demo-copy">
+        <p className="eyebrow">{sourceBrand.name}</p>
+        <h2>{demo.title}</h2>
+        <p>{demo.description}</p>
+      </div>
+      <a className="btn btn-primary btn-premium founder-demo-cta" href={founderDemoUrl(demo.route)}>
+        Open demo
+      </a>
+    </article>
+  )
 }
 
 function consoleStyle(brand: BrandDefinition): React.CSSProperties {
@@ -244,7 +270,7 @@ const brandGradient = (brand: BrandDefinition) => {
     case 'meat':
       return 'linear-gradient(135deg, color-mix(in srgb, #C62828 64%, var(--surface-strong)), color-mix(in srgb, #7F1D1D 32%, var(--surface)))'
     case 'talent':
-      return 'linear-gradient(135deg, color-mix(in srgb, #FFB300 64%, var(--surface-strong)), color-mix(in srgb, #F59E0B 32%, var(--surface)))'
+      return `linear-gradient(135deg, color-mix(in srgb, ${LOCKED_BRAND_COLORS.talent} 64%, var(--surface-strong)), color-mix(in srgb, ${LOCKED_BRAND_COLORS.talent} 32%, var(--surface)))`
     default:
       return `linear-gradient(135deg, color-mix(in srgb, ${brand.accent} 62%, var(--surface-strong)), color-mix(in srgb, ${brand.accent} 18%, var(--surface)))`
   }
@@ -290,6 +316,7 @@ export function BrandMarketingPage({ brand, page = 'home' }: { brand: BrandDefin
           </div>
         </div>
       </section>
+      <QuantumBrandUpliftPanel brand={brand} />
 
       <section id="pricing" className="module-grid">
         {packagePlans.map((plan) => (
@@ -337,7 +364,7 @@ export function FounderLauncher() {
   const packagePlans = founderPackages
 
   return (
-    <main className="site-shell founder-shell" style={{ '--accent': '#00E0FF' } as React.CSSProperties}>
+    <main className="site-shell founder-shell" style={{ '--accent': LOCKED_BRAND_COLORS.foundingos } as React.CSSProperties}>
       <nav className="quantum-header quantum-ambient-grid">
         <Link href="/">FoundingOS</Link>
         <div className="quantum-header-links">
@@ -428,6 +455,15 @@ export function FounderLauncher() {
           </div>
         </article>
       </section>
+      <WebBrandWheel />
+      <section id="brand-demos" className="module-grid founder-demo-menu">
+        <article className="card-premium founder-demo-intro">
+          <h2 className="header-premium">FoundingOS brand demos</h2>
+          <p>Preview every brand demo before entering the guided Quantum walkthrough.</p>
+        </article>
+        {DEMO_BRAND_CARDS.map((demo) => <DemoPreviewCard key={demo.id} demo={demo} />)}
+      </section>
+      <WebTutorialSystem />
       <section id="found-ai" className="founder-found-ai-intro">
         <div className="founder-found-ai-avatar">F</div>
         <div className="founder-found-ai-copy">
@@ -471,10 +507,9 @@ export function FounderLauncher() {
                 </div>
               </div>
             </details>
+            <WebBrandModulePanel brand={brand} />
             <div className="hero-actions">
-              {isInternalHref(brand.webUrl)
-                ? <Link className="btn btn-primary btn-premium" style={{ backgroundColor: brand.brandColors.primary, borderColor: brand.brandColors.accent }} href={brand.webUrl}>{brand.name} Website</Link>
-                : <a className="btn btn-primary btn-premium" style={{ backgroundColor: brand.brandColors.primary, borderColor: brand.brandColors.accent }} href={brand.webUrl}>{brand.name} Website</a>}
+              <a className="btn btn-primary btn-premium founder-demo-cta" href={founderDemoUrl(`/demo/${brand.slug}`)}>{brand.name} Demo</a>
               <QuantumConsoleEntry brandName={brand.name} glyph={brand.logo} starterUrl={brand.starterConsoleUrl} growthUrl={brand.consoleUrl} />
             </div>
           </article>
@@ -496,7 +531,7 @@ export function FounderLauncher() {
         <article className="card-premium">
           <h2 className="header-premium">Connect with FoundingOS</h2>
           <p>Explore the full social and messaging network used throughout the platform.</p>
-          <PremiumSocialLinks accent="#00E0FF" mode="inline" label="Social & messaging" />
+          <PremiumSocialLinks accent={LOCKED_BRAND_COLORS.foundingos} mode="inline" label="Social & messaging" />
         </article>
       </section>
       <footer className="site-footer">
@@ -504,7 +539,7 @@ export function FounderLauncher() {
           <Link href="/legal">Legal &amp; Privacy</Link>
           <Link href="/contact">Contact &amp; Support</Link>
         </div>
-        <PremiumSocialLinks accent="#00E0FF" mode="full" label="Social & messaging" />
+        <PremiumSocialLinks accent={LOCKED_BRAND_COLORS.foundingos} mode="full" label="Social & messaging" />
       </footer>
       <FoundAI brand={brands.foundingos} />
     </main>
@@ -513,6 +548,8 @@ export function FounderLauncher() {
 
 export { PremiumSocialLinks } from './social-links'
 export { QuantumSphereLogo } from './QuantumSphereLogo'
+export { QuantumBrandUpliftPanel } from './quantum-brand-uplift'
+export { WebBrandModulePanel, WebBrandWheel, WebCustomerJourney, WebTutorialSystem, WebUsedCarShop } from './quantum-web-mirror'
 
 export function ConsoleDashboard({ brand }: { brand: BrandDefinition }) {
   const widgets = kpiWidgets(brand)

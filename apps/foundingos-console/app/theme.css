@@ -2,4 +2,4 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-:root { --accent: #4A90E2; --brand-primary: #4A90E2; --brand-secondary: #0F2742; }
+:root { --accent: var(--q-accent); --brand-primary: var(--q-base); --brand-secondary: var(--q-base); }

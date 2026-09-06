@@ -28,26 +28,20 @@ export function DemoWizard({ steps }: { steps: NarratorStep[] }) {
         <strong>{title}</strong>
         <button
           type="button"
-          className="quantum-step-narrate-btn"
+          className="quantum-step-narrate-btn quantum-step-narrate-btn-spacer"
           data-narrate-btn
           data-idle-label="🔊"
           data-playing-label="⏹"
           aria-label="Play this step's narrator line"
-          style={{ marginLeft: 'auto' }}
         >
           🔊
         </button>
       </div>
-      <div style={{ display: 'flex', gap: 4, margin: '10px 0' }} aria-label={`Step ${index + 1} of ${steps.length}`}>
+      <div className="quantum-step-progress-row" aria-label={`Step ${index + 1} of ${steps.length}`}>
         {steps.map((_, i) => (
           <span
             key={i}
-            style={{
-              height: 6,
-              flex: 1,
-              borderRadius: 999,
-              background: i <= index ? 'var(--accent)' : 'color-mix(in srgb, var(--accent) 15%, transparent)',
-            }}
+            className={i <= index ? 'quantum-step-progress-dot active' : 'quantum-step-progress-dot'}
           />
         ))}
       </div>
@@ -55,13 +49,13 @@ export function DemoWizard({ steps }: { steps: NarratorStep[] }) {
       <div className="quantum-narrator-panel">
         <p>{step.text}</p>
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, gap: 10 }}>
+      <div className="quantum-step-nav-row">
         <button type="button" className="btn btn-secondary quantum-btn" onClick={() => setIndex((i) => Math.max(0, i - 1))} disabled={isFirst}>
           ← Back
         </button>
-        <small style={{ opacity: 0.7 }}>Step {index + 1} of {steps.length}</small>
+        <small className="quantum-step-count">Step {index + 1} of {steps.length}</small>
         {isLast ? (
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#1f9d55' }}>✓ Tutorial complete — try it below</span>
+          <span className="quantum-step-complete">✓ Tutorial complete — try it below</span>
         ) : (
           <button type="button" className="btn btn-primary quantum-btn" onClick={() => setIndex((i) => Math.min(steps.length - 1, i + 1))}>
             Next →

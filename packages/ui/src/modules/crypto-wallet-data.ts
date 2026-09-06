@@ -116,7 +116,7 @@ export function totalBalanceGbp(): number {
 }
 
 export const RISK_BADGE_COLOR: Record<RiskLevel, string> = {
-  Low: '#00E676',
-  Medium: '#FFB300',
-  High: '#FF3B30',
+  Low: 'var(--q-retail)',
+  Medium: 'var(--q-warning)',
+  High: 'var(--q-danger)',
 }

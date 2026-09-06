@@ -14,7 +14,7 @@ export default function TesterLoginPage() {
   }
 
   return (
-    <section className="stack quantum-ambient-grid" style={{ padding: '48px 24px', display: 'flex', justifyContent: 'center' }}>
+    <section className="q-shell q-centered-shell">
       <TesterLoginForm />
     </section>
   )

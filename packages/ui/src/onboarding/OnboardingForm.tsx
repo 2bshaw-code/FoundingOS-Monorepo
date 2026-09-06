@@ -5,7 +5,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { brands, type BrandSlug } from '@foundingos/config'
+import { brands, LOCKED_BRAND_COLORS, type BrandSlug } from '@foundingos/config'
 import { BASE_TIERS, INDUSTRY_PACKS, HARDWARE_PACKS, type BaseTierName, type PricingModel } from '@foundingos/config/package-model-d'
 import { calculateAddOnPrice, DEFAULT_USAGE, type UsageInputs } from '@foundingos/config/pricing-engine'
 import { recommendQuantumOS, type BusinessProfile, type BusinessSize, type DataVolume, type IntelligenceNeeds, type RiskLevel, type GrowthTrajectory } from '@foundingos/config/quantum-recommendation'
@@ -50,7 +50,7 @@ export function OnboardingForm({ commercialMode = 'demo' }: { commercialMode?: '
   const [pricingModel, setPricingModel] = useState<PricingModel>('A')
   const [usage, setUsage] = useState<UsageInputs>(DEFAULT_USAGE)
 
-  const [logoColor, setLogoColor] = useState('#00E0FF')
+  const [logoColor, setLogoColor] = useState(LOCKED_BRAND_COLORS.foundingos)
   const [cardName, setCardName] = useState('')
   const [cardNumber, setCardNumber] = useState('')
   const [cardExpiry, setCardExpiry] = useState('')

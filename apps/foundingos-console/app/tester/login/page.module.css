@@ -8,7 +8,7 @@
    page-local classes rather than touching those shared global rules. */
 
 .quantumShell {
-  background: linear-gradient(160deg, #0D0D0D 0%, #111827 100%);
+  background: linear-gradient(160deg, var(--q-base) 0%, var(--q-neutral-800) 100%);
   position: relative;
   overflow: hidden;
 }
@@ -17,8 +17,8 @@
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 229, 255, 0.05) 1px, transparent 1px);
+    linear-gradient(color-mix(in srgb, var(--q-accent) 8%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--q-accent) 8%, transparent) 1px, transparent 1px);
   background-size: 42px 42px;
   animation: quantumGridDrift 24s linear infinite;
   pointer-events: none;
@@ -47,13 +47,13 @@
   place-items: center;
   font-weight: 900;
   font-size: 18px;
-  color: #0D0D0D;
-  background: linear-gradient(135deg, #00E5FF, #2EE6D6);
-  box-shadow: 0 0 24px rgba(0, 229, 255, 0.45);
+  color: var(--q-base);
+  background: var(--q-accent);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--q-accent) 45%, transparent);
 }
 
 .quantumStrapline {
-  color: #F5F7FA;
+  color: var(--q-neutral-0);
   opacity: 0.75;
   font-size: 13px;
   letter-spacing: 0.04em;
@@ -68,41 +68,41 @@
   content: '';
   position: absolute;
   inset: -40px;
-  background: radial-gradient(circle, rgba(0, 229, 255, 0.22), transparent 65%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--q-accent) 22%, transparent), transparent 65%);
   filter: blur(10px);
   z-index: -1;
   pointer-events: none;
 }
 
 .quantumCard {
-  background: #1B212C !important;
-  border: 1px solid rgba(0, 229, 255, 0.35) !important;
+  background: var(--q-neutral-800) !important;
+  border: 1px solid color-mix(in srgb, var(--q-accent) 35%, transparent) !important;
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
 .quantumCard:hover,
 .quantumCard:focus-within {
-  border-color: #2EE6D6 !important;
-  box-shadow: 0 0 32px rgba(46, 230, 214, 0.25);
+  border-color: var(--q-accent) !important;
+  box-shadow: 0 0 32px color-mix(in srgb, var(--q-accent) 25%, transparent);
 }
 
 .quantumCard input:focus,
 .quantumCard select:focus,
 .quantumCard textarea:focus {
   outline: none;
-  border-color: #00E5FF !important;
-  box-shadow: 0 0 0 2px rgba(0, 229, 255, 0.35);
+  border-color: var(--q-accent) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--q-accent) 35%, transparent);
 }
 
 .quantumButton {
   position: relative;
-  background: linear-gradient(135deg, #00E5FF, #2EE6D6) !important;
-  color: #0D0D0D !important;
+  background: var(--q-accent) !important;
+  color: var(--q-base) !important;
   border: none !important;
   animation: quantumPulse 3.2s ease-in-out infinite;
 }
 
 @keyframes quantumPulse {
-  0%, 100% { box-shadow: 0 0 12px rgba(0, 229, 255, 0.35); }
-  50% { box-shadow: 0 0 22px rgba(46, 230, 214, 0.6); }
+  0%, 100% { box-shadow: 0 0 12px color-mix(in srgb, var(--q-accent) 35%, transparent); }
+  50% { box-shadow: 0 0 22px color-mix(in srgb, var(--q-accent) 60%, transparent); }
 }

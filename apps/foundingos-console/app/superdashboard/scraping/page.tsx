@@ -7,6 +7,8 @@ import { buildCustomerPipeline } from '../customer-pipeline-store.server'
 import { ScrapingDashboard } from '@foundingos/ui/superdash/ScrapingDashboard'
 import { CustomerPipelinePanel } from '@foundingos/ui/superdash/CustomerPipelinePanel'
 import { RealPipelineValuePanel } from '@foundingos/ui/real-pipeline-value-panel'
+import { brands } from '@foundingos/config'
+import { QuantumHeader } from '@foundingos/ui/quantum'
 
 // FounderOS-only route (same access model as /superdashboard itself — middleware.ts already
 // gates this whole /superdashboard/* prefix: admin gets full read/write access, free-roam/
@@ -27,12 +29,13 @@ export default async function ScrapingDashboardPage({ searchParams }: { searchPa
   ])
 
   return (
-    <section className="stack" style={{ maxWidth: 1100, margin: '0 auto', padding: '48px 20px' }}>
-      <header className="module-header header-premium">
-        <p>SuperDash</p>
-        <h1>Scraping & Customer Pipeline</h1>
-        <span>Real synthetic engagement data across all 8 brands, plus a segmentation view built on real survey submissions.</span>
-      </header>
+    <section className="q-shell">
+      <QuantumHeader
+        brand={brands.foundingos}
+        eyebrow="SuperDash"
+        title="Scraping & Customer Pipeline"
+        description="Real synthetic engagement data across all 8 brands, plus a segmentation view built on real survey submissions."
+      />
 
       <ScrapingDashboard initialRows={rows} initialEngagementLog={engagementLog} initialAnomalyLog={anomalyLog} readOnly={readOnly === '1'} />
 

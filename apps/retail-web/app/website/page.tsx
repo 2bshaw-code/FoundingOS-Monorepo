@@ -11,7 +11,7 @@ import { QuantumConsoleEntry } from '@foundingos/ui/quantum-console-modal'
 import { PackageModal } from '@foundingos/ui/package-modal'
 import { RotatingMessageFeed } from '@foundingos/ui/rotating-message-feed'
 import { CORE_MODULES } from '@foundingos/config/modules'
-import { PremiumSocialLinks, QuantumSphereLogo } from '@foundingos/ui'
+import { PremiumSocialLinks, QuantumBrandUpliftPanel, QuantumSphereLogo } from '@foundingos/ui'
 
 const features = [
   { title: 'Operational clarity', description: 'Keep every workflow, message, and update connected across the teams and channels your business uses.', icon: '◉' },
@@ -115,6 +115,7 @@ export default function Page() {
           </div>
         </div>
       </section>
+      <QuantumBrandUpliftPanel brand={brands.retail} />
 
       <section id="features" style={{ maxWidth: 1200, margin: '0 auto', padding: '72px 20px 24px' }}>
         <div style={{ display: 'grid', gap: 10, marginBottom: 24 }}>

@@ -9,7 +9,6 @@ import Link from 'next/link'
 import { QuantumSyncStatus } from './QuantumSyncStatus'
 import { Sparkline } from './Sparkline'
 import { aggregateBrandSignals, type BrandSignal } from '@foundingos/config/brandSignalFeed'
-import { BRAND_PERSONALITIES } from '@foundingos/config/brand-intelligence'
 import type { QuantumEnrichedFields } from '@foundingos/config/quantum-orchestration-layer'
 import { SuperDashQuantumTiles } from '@foundingos/ui/superdash/SuperDashQuantumTiles'
 import { SuperDashChat } from '@foundingos/ui/superdash/SuperDashChat'
@@ -35,6 +34,9 @@ import { SuperDashSurveyPanel } from '@foundingos/ui/superdash/SuperDashSurveyPa
 import { SuperDashSurveyFeedPanel } from '@foundingos/ui/superdash/SuperDashSurveyFeedPanel'
 import { SuperDashBrandMetricsPanel } from '@foundingos/ui/superdash/SuperDashBrandMetricsPanel'
 import { SuperDashAISummary } from '@foundingos/ui/superdash/SuperDashAISummary'
+import { brands } from '@foundingos/config'
+import { QuantumButtonGhost, QuantumButtonPrimary, QuantumCard, QuantumHeader, QuantumMetricCard } from '@foundingos/ui/quantum'
+import { QuantumAALArchitectureSummary, QuantumAIActionPanel, QuantumAICommandCenter, QuantumAIInsightsCard, QuantumAIRecommendationList, QuantumAISettingsPanel, QuantumAITrendGraph } from '@foundingos/ui/quantum/ai'
 
 type Tone = 'good' | 'watch' | 'risk'
 
@@ -76,12 +78,6 @@ const ANOMALIES = [
 // from the mock rows above. Computed once at module load with a fixed timestamp so SSR and client hydration match exactly.
 const BRAND_SIGNALS = aggregateBrandSignals(new Date(0).toISOString())
 
-// Small per-brand identity-color dots only (Pulse Map) — the rest of SuperDashboard's
-// chrome stays on FounderOS accent tokens; this mirrors the existing status-color pattern.
-const BRAND_PERSONALITY_COLORS = Object.fromEntries(
-  Object.values(BRAND_PERSONALITIES).map((layer) => [layer.brand, layer.color]),
-) as Record<string, string>
-
 const FORECAST_HORIZONS = ['24h', '7d', '30d'] as const
 type ForecastHorizon = (typeof FORECAST_HORIZONS)[number]
 
@@ -114,6 +110,40 @@ const UPGRADE_PATHS = [
 
 const REVENUE_PROJECTION = { horizon: '30d', mrr: 18240, projectedMrr: 20460, addOnAttachRate: '61%' }
 
+const AAL_ACTION_ENDPOINTS: Record<string, string> = {
+  weeklyReport: '/api/ai/marketing/director/weekly-report',
+  suggestCampaigns: '/api/ai/marketing/director/suggest-campaigns',
+  autonomousCampaign: '/api/ai/marketing/autonomous-campaign',
+  prioritizePipeline: '/api/ai/sales/pipeline/prioritize',
+  dealStrategy: '/api/ai/sales/deal/strategy',
+  detectUnhappy: '/api/ai/crm/relationship/unhappy',
+  upsellSequence: '/api/ai/crm/relationship/upsell',
+  monthlyReport: '/api/ai/finance/controller/monthly-report',
+  cashflowForecast: '/api/ai/finance/controller/cashflow-forecast',
+  boardSummary: '/api/ai/finance/revenue/board-summary',
+}
+
+const AAL_ACTIONS = {
+  marketing: [
+    { id: 'weeklyReport', label: 'Weekly report', description: 'Director summary for campaign health, CAC risk, and WhatsApp opportunities.' },
+    { id: 'suggestCampaigns', label: 'Suggest campaigns', description: 'Brand-safe campaign ideas with human approval before send.' },
+    { id: 'autonomousCampaign', label: 'Autonomous campaign', description: 'Queue campaign variants behind explicit tenant autonomy controls.' },
+  ],
+  sales: [
+    { id: 'prioritizePipeline', label: 'Prioritise pipeline', description: 'Rank deals by intent, risk, and next best action.' },
+    { id: 'dealStrategy', label: 'Deal strategy', description: 'Forecast deal probability and recommend a close strategy.' },
+  ],
+  crm: [
+    { id: 'detectUnhappy', label: 'Relationship sweep', description: 'Detect unhappy customers without cross-brand data mixing.' },
+    { id: 'upsellSequence', label: 'Upsell sequence', description: 'Generate value-led expansion steps for the selected customer.' },
+  ],
+  finance: [
+    { id: 'monthlyReport', label: 'Monthly report', description: 'Credit-safe finance controller summary.' },
+    { id: 'cashflowForecast', label: 'Cashflow forecast', description: 'Forecast cashflow without moving funds or approving payments.' },
+    { id: 'boardSummary', label: 'Board summary', description: 'Revenue intelligence summary with AI usage economics.' },
+  ],
+} as const
+
 function sum(values: number[]) {
   return values.reduce((total, value) => total + value, 0)
 }
@@ -130,15 +160,9 @@ function delta(current: number, previous: number) {
 
 function SuperKPICard({ label, value, trend, icon, tone, history }: { label: string; value: string; trend: string; icon: string; tone: Tone; history: number[] }) {
   return (
-    <article className={`dashboard-card fo-card card-premium ${tone}`}>
-      <div className="superdashboard-kpi-head">
-        <span>{icon}</span>
-        <strong>{value}</strong>
-      </div>
-      <p>{label}</p>
+    <QuantumMetricCard label={`${icon} ${label}`} value={value} detail={trend} tone={tone === 'good' ? 'success' : tone === 'watch' ? 'warning' : 'danger'}>
       <Sparkline points={history} tone={tone} />
-      {trend && <small>{trend}</small>}
-    </article>
+    </QuantumMetricCard>
   )
 }
 
@@ -154,6 +178,9 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
   const predictive = useMemo(() => SuperDashPredictive([1.0, 1.1, 0.9, 1.2, 1.3]), [])
   const [horizon, setHorizon] = useState<ForecastHorizon>('30d')
   const [actionQueue, setActionQueue] = useState(INITIAL_ACTION_QUEUE)
+  const [aalAssisted, setAalAssisted] = useState(true)
+  const [aalAutonomous, setAalAutonomous] = useState(false)
+  const [aalResult, setAalResult] = useState('No AAL action run yet.')
 
   // Quantum enrichment is purely additive — augments the existing panels below via brand lookup,
   // never replaces the deterministic BRAND_SIGNALS/BRAND_ROWS data those panels already render.
@@ -182,6 +209,23 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
     setActionQueue((current) => current.map((item) => (item.id === id ? { ...item, state } : item)))
   }
 
+  async function runAALAction(actionId: string) {
+    const endpoint = AAL_ACTION_ENDPOINTS[actionId]
+    if (!endpoint) {
+      setAalResult(`No endpoint registered for ${actionId}.`)
+      return
+    }
+    const method = endpoint.includes('weekly-report') || endpoint.includes('suggest-campaigns') || endpoint.includes('unhappy') || endpoint.includes('monthly-report') || endpoint.includes('cashflow-forecast') || endpoint.includes('board-summary') ? 'GET' : 'POST'
+    const tier = aalAutonomous ? 'Enterprise' : 'Premium'
+    const response = await fetch(method === 'GET' ? `${endpoint}?tier=${tier}` : endpoint, {
+      method,
+      headers: method === 'POST' ? { 'content-type': 'application/json' } : undefined,
+      body: method === 'POST' ? JSON.stringify({ tier, inputs: { customerId: 'superdash-customer', dealId: 'superdash-deal' } }) : undefined,
+    })
+    const result = await response.json()
+    setAalResult(result.success ? `${actionId}: ready — ${JSON.stringify(result.data)}` : `${actionId}: blocked — ${result.error ?? 'Unknown error'}`)
+  }
+
   const summaryMetrics: Array<{ label: string; value: string; trend: string; icon: string; tone: Tone; history: number[] }> = [
     { label: 'Marketing performance', value: `${aggregates.avgMarketing}%`, trend: 'Across 8 brands', icon: '▲', tone: 'good', history: [80, 82, 83, 84, 82, aggregates.avgMarketing] },
     { label: 'Accounting health', value: `${aggregates.avgAccounting}%`, trend: 'Across 8 brands', icon: '£', tone: 'good', history: [90, 91, 92, 93, 92, aggregates.avgAccounting] },
@@ -193,29 +237,46 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
   ]
 
   return (
-    <section className="stack quantum-ambient-grid">
+    <section className="q-shell">
       <div className="quantum-particle-drift"><span className="quantum-particle" /><span className="quantum-particle" /><span className="quantum-particle" /></div>
-      <header className="module-header header-premium">
-        <p>FounderOS · Cross-brand intelligence</p>
-        <h1>SuperDashboard</h1>
-        <span>Live marketing, accounting, service, messaging, and AI signal for every brand in the group — FounderOS only.</span>
-      </header>
+      <QuantumHeader
+        brand={brands.foundingos}
+        eyebrow="FounderOS · Cross-brand intelligence"
+        title="SuperDashboard"
+        description="Live marketing, accounting, service, messaging, and AI signal for every brand in the group — FounderOS only."
+      />
 
       <SuperDashAISummary brandRows={BRAND_ROWS} anomalies={ANOMALIES} guardianWarnings={guardianWarnings} />
+      <QuantumAICommandCenter />
+      <QuantumAALArchitectureSummary />
+      <QuantumAISettingsPanel enabled={aalAssisted} autonomousEnabled={aalAutonomous} tone="direct" onAssistanceChange={setAalAssisted} onAutonomyChange={setAalAutonomous} />
+      <div className="q-ai-domain-grid">
+        <QuantumAIActionPanel domain="marketing" actions={[...AAL_ACTIONS.marketing]} onRun={runAALAction} />
+        <QuantumAIActionPanel domain="sales" actions={[...AAL_ACTIONS.sales]} onRun={runAALAction} />
+        <QuantumAIActionPanel domain="crm" actions={[...AAL_ACTIONS.crm]} onRun={runAALAction} />
+        <QuantumAIActionPanel domain="finance" actions={[...AAL_ACTIONS.finance]} onRun={runAALAction} />
+      </div>
+      <QuantumAIInsightsCard title="Latest AAL response" insight={aalResult} status={aalAssisted ? (aalAutonomous ? 'autonomous' : 'assisted') : 'off'} />
+      <QuantumAIRecommendationList recommendations={[
+        { id: 'aal-marketing', label: 'Marketing director pass', detail: 'Run weeklyReport before campaign changes.', status: 'assisted' },
+        { id: 'aal-sales', label: 'Sales pipeline pass', detail: 'Prioritise pipeline before drafting new proposals.', status: 'assisted' },
+        { id: 'aal-finance', label: 'Finance guardrail pass', detail: 'Cashflow and board summaries stay human-approved.', status: 'assisted' },
+      ]} />
+      <QuantumAITrendGraph points={[42, 55, 61, 73, 80, aggregates.totalAiActions]} />
 
       <div className="kpi-grid">
         {summaryMetrics.map((metric) => <SuperKPICard key={metric.label} {...metric} />)}
       </div>
 
       <div className="module-card-grid">
-        <article className="module-card fo-card panel-premium">
+        <QuantumCard className="module-card panel-premium" brand={brands.foundingos}>
           <div className="module-card-top"><span>01</span><strong>FoundAI predictive insights</strong></div>
           <ul>
             {PREDICTIVE_INSIGHTS.map((insight) => <li key={insight}>{insight}</li>)}
           </ul>
-        </article>
+        </QuantumCard>
 
-        <article className="module-card fo-card panel-premium">
+        <QuantumCard className="module-card panel-premium" brand={brands.foundingos}>
           <div className="module-card-top"><span>02</span><strong>Autonomous action queue</strong></div>
           <ul className="superdashboard-action-queue">
             {actionQueue.map((item) => (
@@ -223,8 +284,8 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
                 <span>{item.description}</span>
                 {item.state === 'pending' && !readOnly ? (
                   <div className="superdashboard-action-buttons">
-                    <button type="button" className="btn-premium" onClick={() => resolveAction(item.id, 'approved')}>Approve</button>
-                    <button type="button" className="btn-premium" onClick={() => resolveAction(item.id, 'dismissed')}>Dismiss</button>
+                    <QuantumButtonPrimary type="button" onClick={() => resolveAction(item.id, 'approved')}>Approve</QuantumButtonPrimary>
+                    <QuantumButtonGhost type="button" onClick={() => resolveAction(item.id, 'dismissed')}>Dismiss</QuantumButtonGhost>
                   </div>
                 ) : (
                   <small>{item.state === 'pending' ? 'Read-only' : item.state === 'approved' ? 'Approved' : 'Dismissed'}</small>
@@ -232,9 +293,9 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
               </li>
             ))}
           </ul>
-        </article>
+        </QuantumCard>
 
-        <article className="module-card fo-card panel-premium" id="anomaly-detection">
+        <QuantumCard className="module-card panel-premium" brand={brands.foundingos} id="anomaly-detection">
           <div className="module-card-top">
             <span>03</span>
             <strong>Anomaly detection {hasAnomalies && <span className="quantum-sync-dot" aria-hidden="true" />}</strong>
@@ -244,15 +305,15 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
               <li key={anomaly.brand}><strong>{anomaly.brand}</strong> — {anomaly.signal}</li>
             ))}
           </ul>
-        </article>
+        </QuantumCard>
 
-        <article className="module-card fo-card panel-premium">
+        <QuantumCard className="module-card panel-premium" brand={brands.foundingos}>
           <div className="module-card-top"><span>◈</span><strong>Scraping & Customer Pipeline</strong></div>
           <p><small>Real synthetic engagement data across all 8 brands, a manual "Run Scrape" trigger, and a customer pipeline view built from real survey submissions.</small></p>
-          <Link className="btn btn-primary" href={readOnly ? '/superdashboard/scraping?readOnly=1' : '/superdashboard/scraping'}>Open Scraping Dashboard</Link>
-        </article>
+          <Link className="q-button q-button-primary" href={readOnly ? '/superdashboard/scraping?readOnly=1' : '/superdashboard/scraping'}>Open Scraping Dashboard</Link>
+        </QuantumCard>
 
-        <article className="module-card fo-card panel-premium">
+        <QuantumCard className="module-card panel-premium" brand={brands.foundingos}>
           <div className="module-card-top"><span>04</span><strong>Cross-brand forecasting</strong></div>
           <div className="superdashboard-horizon-selector" role="tablist" aria-label="Forecast horizon">
             {FORECAST_HORIZONS.map((option) => (
@@ -261,7 +322,7 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
                 type="button"
                 role="tab"
                 aria-selected={horizon === option}
-                className={horizon === option ? 'active' : ''}
+                className={horizon === option ? 'q-button q-button-primary active' : 'q-button q-button-ghost'}
                 onClick={() => setHorizon(option)}
               >
                 {option}
@@ -273,7 +334,7 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
             <small>Service load {forecast.combinedServiceLoadTrend}</small>
           </div>
           <p>Confidence: {forecast.confidence}</p>
-        </article>
+        </QuantumCard>
       </div>
 
       <div className="console-grid">
@@ -329,7 +390,7 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
             <div className="superdashboard-heatmap">
               {quantumSignals.filter((signal) => signal.quantumAnomaly).map((signal) => (
                 <div key={`quantum-anomaly-${signal.brand}`} className="superdashboard-heat-cell status-watch">
-                  <strong style={{ textTransform: 'capitalize' }}>{signal.brand} · Quantum anomaly</strong>
+                  <strong className="superdashboard-capitalize">{signal.brand} · Quantum anomaly</strong>
                   <small>{signal.quantumAnomaly}</small>
                 </div>
               ))}
@@ -343,7 +404,7 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
           <div className="superdashboard-heatmap">
             {BRAND_SIGNALS.map((signal) => (
               <div key={signal.brand} className="superdashboard-heat-cell status-good">
-                <strong style={{ textTransform: 'capitalize' }}>{signal.brand}</strong>
+                <strong className="superdashboard-capitalize">{signal.brand}</strong>
                 <small>{signal.kpi}</small>
               </div>
             ))}
@@ -362,7 +423,7 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
             <tbody>
               {BRAND_SIGNALS.map((signal) => (
                 <tr key={signal.brand}>
-                  <td style={{ textTransform: 'capitalize' }}>{signal.brand}</td>
+                  <td className="superdashboard-capitalize">{signal.brand}</td>
                   <td>{signal.insight}</td>
                   <td>{signal.risk}</td>
                   <td>{signal.opportunity}</td>
@@ -381,8 +442,8 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
               const quantum = quantumByBrand.get(signal.brand)
               return (
                 <div key={signal.brand} className="superdashboard-heat-cell status-good">
-                  <span className="brand-pulse-dot" style={{ '--brand-color': BRAND_PERSONALITY_COLORS[signal.brand] } as React.CSSProperties} aria-hidden="true" />
-                  <strong style={{ textTransform: 'capitalize' }}>{signal.brand}</strong>
+                  <span className="brand-pulse-dot" data-brand={signal.brand} aria-hidden="true" />
+                  <strong className="superdashboard-capitalize">{signal.brand}</strong>
                   <small>Pulse {signal.pulse}%{quantum && typeof quantum.quantumPulseAdjustment === 'number' ? ` (Quantum ${quantum.quantumPulseAdjustment > 0 ? '+' : ''}${quantum.quantumPulseAdjustment}%)` : ''}</small>
                 </div>
               )
@@ -402,7 +463,7 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
                 .map((signal, index) => (
                   <tr key={signal.brand}>
                     <td>#{index + 1}</td>
-                    <td style={{ textTransform: 'capitalize' }}>{signal.brand}</td>
+                    <td className="superdashboard-capitalize">{signal.brand}</td>
                     <td>{signal.contributionScore}</td>
                     <td>{quantumByBrand.get(signal.brand)?.quantumOpportunity ?? '—'}</td>
                   </tr>
@@ -437,10 +498,10 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
       <SuperDashSurveyFeedPanel />
       <SuperDashBrandMetricsPanel />
 
-      <article className="panel fo-card" style={{ marginTop: 24 }}>
+      <QuantumCard className="panel superdashboard-quantum-panel" brand={brands.foundingos}>
         <SuperDashCinematic>
         <h2>Core module quantum tiles</h2>
-        <p style={{ fontSize: 13, color: 'var(--muted-foreground, #9ca3af)', marginBottom: 12 }}>
+        <p className="superdashboard-panel-copy">
           Quantum-enhanced overview of every core module registered in the ecosystem.
         </p>
         <SuperDashQuantumTiles />
@@ -450,14 +511,14 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
         <SuperDashInsight tiles={superDashTiles} />
 
         {autonomousActions.map((action, index) => (
-          <div key={index} className="superdash-slide-up" style={{ fontSize: 12, marginTop: 8 }}>{action.message}</div>
+          <div key={index} className="superdash-slide-up superdashboard-feed-line">{action.message}</div>
         ))}
 
         {anomalies.map((anomaly, index) => (
-          <div key={index} className="superdash-slide-up" style={{ fontSize: 12, marginTop: 8 }}>{anomaly}</div>
+          <div key={index} className="superdash-slide-up superdashboard-feed-line">{anomaly}</div>
         ))}
 
-        <div className="superdash-fade-in" style={{ fontSize: 12, marginTop: 8 }}>
+        <div className="superdash-fade-in superdashboard-feed-line">
           Predicted next score: {predictive.nextScore} ({predictive.trendDirection})
         </div>
 
@@ -477,7 +538,7 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
 
         <DemoMessageBoard config={{ name: 'FoundingOS', logo: '⌂' }} variant="global" />
 
-        <section className="panel panel-premium quantum-card" style={{ marginTop: 24 }}>
+        <section className="panel panel-premium quantum-card superdashboard-quantum-panel">
           <span className="quantum-corner-marker">⌂</span>
           <h3 className="header-premium">Why FoundingOS Pays for Itself</h3>
           <ul className="checklist-list">
@@ -487,25 +548,25 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
           </ul>
         </section>
 
-        <div className="superdash-fade-in" style={{ fontSize: 12, marginTop: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div className="superdash-fade-in superdashboard-guardian-list">
           {SuperDashGuardian().map((g, i) => (
             <div key={i}>{g}</div>
           ))}
         </div>
 
         {verificationStatus && (
-          <footer style={{ fontSize: 11, opacity: 0.6, marginTop: 24, paddingTop: 12, borderTop: '1px solid var(--line)' }}>
+          <footer className="superdashboard-meta-footer">
             Verification: {verificationStatus.lastRun ? new Date(verificationStatus.lastRun).toLocaleString('en-GB', { timeZone: 'UTC' }) : 'never run'} • {verificationStatus.driftCount} drift • {verificationStatus.safeFixCount} safe-fixed • {verificationStatus.pendingGuardian} pending Guardian
           </footer>
         )}
 
         {testerSummary && (
-          <footer style={{ fontSize: 11, opacity: 0.6, marginTop: 4, paddingTop: 4 }}>
+          <footer className="superdashboard-meta-footer superdashboard-meta-footer-compact">
             Testers: {testerSummary.activation} activation • {testerSummary.engagement} engagement • {testerSummary.retention} retention • {testerSummary.stability} stability • {testerSummary.autonomy} autonomy
           </footer>
         )}
         </SuperDashCinematic>
-      </article>
+      </QuantumCard>
     </section>
   )
 }

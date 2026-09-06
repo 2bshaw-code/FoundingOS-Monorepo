@@ -17,12 +17,13 @@ import { QuantumSphereLogo } from '@foundingos/ui'
 import { RealDealsPanel, RealInvoicesPanel, RealBrandFinancePanel } from '@foundingos/ui/real-monetary-panels'
 import { RealPipelineValuePanel } from '@foundingos/ui/real-pipeline-value-panel'
 import { AnimatedMessageFlow } from '@foundingos/ui/animated-message-flow'
+import { brands } from '@foundingos/config'
 
 const BRANDS = [
-  { slug: 'retail', name: 'FoundRetail', accent: '#00E676', url: 'https://retail.foundingos.com' },
-  { slug: 'finance', name: 'FoundFinance', accent: '#4A90E2', url: 'https://finance.foundingos.com' },
-  { slug: 'talent', name: 'FoundTalent', accent: '#FFB300', url: 'https://talent.foundingos.com' },
-  { slug: 'crypto', name: 'FoundCrypto', accent: '#9C27B0', url: 'https://crypto.foundingos.com' },
+  { slug: 'retail', name: brands.retail.name, accent: brands.retail.accent, url: 'https://retail.foundingos.com' },
+  { slug: 'finance', name: brands.finance.name, accent: brands.finance.accent, url: 'https://finance.foundingos.com' },
+  { slug: 'talent', name: brands.talent.name, accent: brands.talent.accent, url: 'https://talent.foundingos.com' },
+  { slug: 'crypto', name: brands.crypto.name, accent: brands.crypto.accent, url: 'https://crypto.foundingos.com' },
 ]
 
 function DemoModeBadge() {

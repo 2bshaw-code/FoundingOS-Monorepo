@@ -30,127 +30,6 @@ const CATEGORY_DESTINATIONS: Record<string, string> = {
   lawyer: `${CONSOLE_URL}/legal`,
 }
 
-// Local copy of foundingos-console's tester-data.ts NARRATION_PLAYER_SCRIPT — this app can't
-// import it directly (separate deployment, no shared package boundary for this app-local
-// file), so the identical script is duplicated here rather than fabricating different
-// behavior. Keep in sync with tester-data.ts if that one changes.
-const NARRATION_PLAYER_SCRIPT = `
-(function () {
-  // Best-available free voice (see tester-data.ts's NARRATION_PLAYER_SCRIPT for the full
-  // explanation — kept in sync here). No paid API, just a smarter pick from whatever voices
-  // the browser already ships for free.
-  var cachedVoice = null;
-  function pickBestVoice() {
-    try {
-      if (!('speechSynthesis' in window)) return null;
-      var voices = window.speechSynthesis.getVoices();
-      if (!voices || voices.length === 0) return null;
-      var english = voices.filter(function (v) { return /^en/i.test(v.lang); });
-      var pool = english.length > 0 ? english : voices;
-      return pool.find(function (v) { return /natural/i.test(v.name); })
-        || pool.find(function (v) { return /enhanced|premium/i.test(v.name); })
-        || pool.find(function (v) { return /online/i.test(v.name); })
-        || pool.find(function (v) { return /google/i.test(v.name); })
-        || pool.find(function (v) { return v.localService === false; })
-        || pool[0];
-    } catch (err) { return null; }
-  }
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.onvoiceschanged = function () { cachedVoice = null; };
-  }
-
-  function speak(text, onEnd) {
-    try {
-      if (!text || !('speechSynthesis' in window)) return;
-      window.speechSynthesis.cancel();
-      var utter = new SpeechSynthesisUtterance(text);
-      utter.rate = 0.98;
-      if (!cachedVoice) cachedVoice = pickBestVoice();
-      if (cachedVoice) utter.voice = cachedVoice;
-      if (onEnd) utter.onend = onEnd;
-      window.speechSynthesis.speak(utter);
-    } catch (err) {}
-  }
-  function narrationFor(el) { return el ? el.getAttribute('data-narration') : ''; }
-  function setButtonLabel(btn, label) { if (btn) btn.textContent = label; }
-
-  // Defaults ON now (see tester-data.ts's NARRATION_PLAYER_SCRIPT — kept in sync here); an
-  // explicit OFF choice (stored '0') is still respected and persists.
-  var audioEnabled = true;
-  try { audioEnabled = localStorage.getItem('fo-audio-enabled') !== '0'; } catch (err) {}
-
-  function setAudioButtonLabels() {
-    var toggles = document.querySelectorAll('[data-audio-toggle]');
-    for (var i = 0; i < toggles.length; i += 1) toggles[i].textContent = audioEnabled ? 'Audio: ON' : 'Audio: OFF';
-  }
-
-  function setAudioEnabled(enabled) {
-    audioEnabled = enabled;
-    if (!enabled) { try { window.speechSynthesis.cancel(); } catch (err) {} }
-    try { localStorage.setItem('fo-audio-enabled', enabled ? '1' : '0'); } catch (err) {}
-    setAudioButtonLabels();
-  }
-
-  document.addEventListener('click', function (e) {
-    var toggle = e.target.closest('[data-audio-toggle]');
-    if (!toggle) return;
-    setAudioEnabled(!audioEnabled);
-  });
-
-  document.addEventListener('click', function (e) {
-    var btn = e.target.closest('[data-narrate-btn]');
-    if (!btn || btn.disabled) return;
-    if (!audioEnabled) return;
-    var idleLabel = btn.getAttribute('data-idle-label') || '▶ Play narration';
-    var playingLabel = btn.getAttribute('data-playing-label') || '■ Stop narration';
-    if (window.speechSynthesis && window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-      setButtonLabel(btn, idleLabel);
-      return;
-    }
-    speak(narrationFor(btn.closest('[data-narration]')), function () { setButtonLabel(btn, idleLabel); });
-    setButtonLabel(btn, playingLabel);
-  });
-
-  document.addEventListener('change', function (e) {
-    if (e.target && e.target.id === 'narrator-enabled-toggle') {
-      setNarratorEnabled(e.target.checked);
-    }
-  });
-
-  function setNarratorEnabled(enabled) {
-    var panels = document.querySelectorAll('.quantum-narrator-panel');
-    for (var i = 0; i < panels.length; i += 1) panels[i].style.display = enabled ? '' : 'none';
-    var buttons = document.querySelectorAll('[data-narrate-btn]');
-    for (var j = 0; j < buttons.length; j += 1) {
-      buttons[j].style.display = enabled ? '' : 'none';
-      buttons[j].disabled = !enabled;
-    }
-    if (!enabled) { try { window.speechSynthesis.cancel(); } catch (err) {} }
-    try { localStorage.setItem('fo-narrator-enabled', enabled ? '1' : '0'); } catch (err) {}
-  }
-
-  var narratorToggle = document.getElementById('narrator-enabled-toggle');
-  var narratorEnabled = true;
-  try { narratorEnabled = localStorage.getItem('fo-narrator-enabled') !== '0'; } catch (err) {}
-
-  // Re-applied at several delays — see tester-data.ts's NARRATION_PLAYER_SCRIPT for the full
-  // explanation (kept in sync here): a separate, pre-existing app-wide hydration quirk can
-  // make React silently revert these mutations shortly after the first pass.
-  function applyInitialState() {
-    if (narratorToggle) narratorToggle.checked = narratorEnabled
-    setNarratorEnabled(narratorEnabled)
-    setAudioButtonLabels()
-  }
-  ;[0, 60, 200, 500, 1200, 2000].forEach(function (delay) { window.setTimeout(applyInitialState, delay) })
-
-  window.setTimeout(function () {
-    if (!audioEnabled) return;
-    var first = document.querySelector('[data-narration]');
-    if (first) speak(narrationFor(first));
-  }, 2500);
-})();
-`
 
 export default function RootLoginPage() {
   const [email, setEmail] = useState('')
@@ -189,21 +68,21 @@ export default function RootLoginPage() {
     <main className={styles.quantumShell}>
       <div className={styles.quantumGrid} aria-hidden="true" />
 
-      <div style={{ position: 'relative', zIndex: 1, display: 'grid', justifyItems: 'center' }}>
+      <div className={styles.quantumContent}>
         <div className={styles.quantumHeader}>
           <div className={styles.quantumLogo} aria-hidden="true">FO</div>
-          <strong style={{ color: '#F5F7FA', fontSize: 15, letterSpacing: '0.03em' }}>FoundingOS</strong>
+          <strong className={styles.quantumBrandTitle}>FoundingOS</strong>
           <p className={styles.quantumStrapline}>FoundingOS — The Operating System for WhatsApp, Telegram, and global message-based businesses.</p>
         </div>
 
-        <div className={`${styles.quantumMessageDemo}`} style={{ marginBottom: 20 }}>
+        <div className={styles.quantumMessageDemo}>
           <AnimatedMessageFlow />
         </div>
 
         <div className={styles.quantumCardWrap}>
           <form className={styles.quantumCard} onSubmit={onSubmit}>
             <h1>Sign in</h1>
-            <p style={{ opacity: 0.75, margin: 0 }}>Enter your email and your password or access code to continue.</p>
+            <p className={styles.quantumCardHint}>Enter your email and your password or access code to continue.</p>
 
             <label className="manager-field">
               <span>Email</span>
@@ -231,17 +110,7 @@ export default function RootLoginPage() {
               </div>
             </label>
 
-            <div className="quantum-narrator-panel" data-narration="Quick legal bit — short and global. We keep this clear so anyone, anywhere understands how the OS works.">
-              <p>Quick legal bit — short and global. We keep this clear so anyone, anywhere understands how the OS works.</p>
-            </div>
-            {/* suppressHydrationWarning: real root-cause fix for the "audio label reverts to its
-                default shortly after page load" bug — NARRATION_PLAYER_SCRIPT's inline <script>
-                runs synchronously during initial HTML parse, before React's own hydration commit,
-                so it may already have set this button's real stored-preference text before React
-                reconciles. Without this, React treats its own SSR text as ground truth and
-                silently overwrites the script's correction. Same documented pattern as a
-                legitimately server/client-differing value (e.g. a live timestamp). */}
-            <button type="button" className="btn btn-secondary quantum-btn" data-audio-toggle suppressHydrationWarning>Audio: ON</button>
+            <p className={styles.quantumCardHint}>Quick legal bit — short and global. We keep this clear so anyone, anywhere understands how the OS works.</p>
             <label className="tester-legal-checkbox">
               <input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} />
               <span>I have read and agree to the Terms of Service, Privacy Policy, and applicable agreements.</span>
@@ -255,7 +124,6 @@ export default function RootLoginPage() {
           </form>
         </div>
       </div>
-      <script dangerouslySetInnerHTML={{ __html: NARRATION_PLAYER_SCRIPT }} />
     </main>
   )
 }
