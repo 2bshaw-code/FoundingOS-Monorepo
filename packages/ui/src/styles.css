@@ -4754,6 +4754,17 @@ html[data-accessibility-simplified='true'] .btn {
 
 .quantum-web-wheel-detail h3 { color: var(--accent); margin: 0 0 6px; }
 .quantum-web-wheel-detail p { margin: 0 0 12px; }
+.quantum-web-wheel-detail { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.quantum-web-wheel-detail strong { color: #fff; font-size: 16px; }
+.quantum-web-wheel-hub-link {
+  margin-top: 8px;
+  display: inline-flex;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+}
+.quantum-web-wheel-hub-link:hover { text-decoration: underline; }
 
 .quantum-web-wheel-modules {
   display: flex;

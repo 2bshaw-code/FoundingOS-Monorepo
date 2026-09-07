@@ -66,15 +66,16 @@ function stageConversion(index: number, cohort: JourneyCohort) {
 
 export function WebBrandWheel() {
   const brands = useMemo(() => brandList.filter((brand) => brand.slug !== 'foundingos'), [])
-  const [activeSlug, setActiveSlug] = useState<string>(brands[0]?.slug ?? 'retail')
-  const active = brands.find((brand) => brand.slug === activeSlug) ?? brands[0]
+  const foundingos = useMemo(() => brandList.find((brand) => brand.slug === 'foundingos'), [])
+  const [activeSlug, setActiveSlug] = useState<string | null>(null)
+  const active = brands.find((brand) => brand.slug === activeSlug) ?? null
 
   return (
     <section id="brand-wheel" className="module-grid quantum-web-wheel" aria-label="360 BrandWheel">
       <article className="card-premium quantum-card" style={{ gridColumn: '1 / -1' }}>
         <p className="eyebrow">360 BrandWheel</p>
         <h2 className="header-premium">Switch brands without leaving the page</h2>
-        <p>Exactly like the mobile BrandWheel — selecting a brand updates the accent, visuals, and module preview instantly, with no navigation.</p>
+        <p>Exactly like the mobile BrandWheel — FoundingOS stays at the center, and selecting a brand on the ring reveals its accent and a direct link to its website.</p>
         <div className="quantum-web-wheel-ring">
           {brands.map((brand, index) => {
             const angle = (index / brands.length) * 360 - 90
@@ -85,7 +86,7 @@ export function WebBrandWheel() {
                 type="button"
                 className={`quantum-web-wheel-node${isActive ? ' is-active' : ''}`}
                 style={{ '--accent': brand.accent, transform: `rotate(${angle}deg) translate(140px) rotate(${-angle}deg)` } as React.CSSProperties}
-                onClick={() => setActiveSlug(brand.slug)}
+                onClick={() => setActiveSlug((current) => (current === brand.slug ? null : brand.slug))}
                 aria-pressed={isActive}
               >
                 <span className="quantum-web-wheel-badge">{brand.logo}</span>
@@ -93,21 +94,20 @@ export function WebBrandWheel() {
               </button>
             )
           })}
-          {active ? (
-            <div className="quantum-web-wheel-hub" style={{ '--accent': active.accent } as React.CSSProperties}>
-              <span className="quantum-web-wheel-hub-badge">{active.logo}</span>
-              <strong>{active.name}</strong>
-              <span>{active.tagline}</span>
+          {foundingos ? (
+            <div className="quantum-web-wheel-hub" style={{ '--accent': foundingos.accent } as React.CSSProperties}>
+              <span className="quantum-web-wheel-hub-badge">{foundingos.logo}</span>
+              <strong>{foundingos.name}</strong>
+              <span>{foundingos.tagline}</span>
             </div>
           ) : null}
         </div>
         {active ? (
           <div className="quantum-web-wheel-detail" style={{ '--accent': active.accent } as React.CSSProperties}>
-            <h3>{active.name}</h3>
-            <p>{active.summary}</p>
-            <div className="quantum-web-wheel-modules">
-              {active.modules.map((module) => <span key={module} className="quantum-web-wheel-module">{module}</span>)}
-            </div>
+            <span className="quantum-web-wheel-hub-badge">{active.logo}</span>
+            <strong>{active.name}</strong>
+            <span>{active.tagline}</span>
+            <a className="quantum-web-wheel-hub-link" href={active.webUrl}>Visit {active.name} website &rarr;</a>
           </div>
         ) : null}
       </article>

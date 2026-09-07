@@ -359,31 +359,67 @@ export function MarketingPage({ brand, page = 'home' }: { brand: BrandDefinition
   return <BrandMarketingPage brand={brand} page={page} />
 }
 
-export function FounderLauncher() {
+export function FounderLauncher({ page = 'home' }: { page?: 'home' | 'about' | 'pricing' | 'contact' | 'demos' } = {}) {
   const foundAiActions = ['Open Retail dashboard', 'Check Meat compliance', 'Review FoundThat market intel', 'Find Talent candidates', 'Show Crypto wallet balance']
   const packagePlans = founderPackages
 
+  const nav = (
+    <nav className="quantum-header quantum-ambient-grid">
+      <Link href="/">FoundingOS</Link>
+      <div className="quantum-header-links">
+        <Link href="/home">Home</Link>
+        <Link href="/demos">Demos &amp; Tutorials</Link>
+        <a href="#pricing">Intelligence</a>
+        <a href="#found-ai">Insights</a>
+        {/* Real one-click path into the console's full Demo & Survey Switcher hub (every
+            real module demo + every survey, exactly like admin/testers already see once
+            inside) — an already-authenticated session (admin or tester; the session cookie
+            is shared across .foundingos.com) goes straight there; a signed-out visitor is
+            safely bounced to the real sign-in page by the console's own middleware, so this
+            link is never a broken/unsafe shortcut either way. */}
+        <a href={`${brands.foundingos.consoleUrl}/tester/dashboard`}>Console</a>
+        <a href="#contact">Support</a>
+      </div>
+      <div className="site-nav-links">
+        <ThemeToggle />
+      </div>
+    </nav>
+  )
+
+  if (page === 'demos') {
+    return (
+      <main className="site-shell founder-shell" style={{ '--accent': LOCKED_BRAND_COLORS.foundingos } as React.CSSProperties}>
+        {nav}
+        <section className="hero quantum-ambient-grid" id="top">
+          <div className="hero-copy">
+            <p className="eyebrow">FoundingOS</p>
+            <h1>Demos &amp; tutorials</h1>
+            <p>Preview every brand demo and step-by-step walkthrough before entering the guided Quantum experience.</p>
+          </div>
+        </section>
+        <section id="brand-demos" className="module-grid founder-demo-menu">
+          <article className="card-premium founder-demo-intro">
+            <h2 className="header-premium">FoundingOS brand demos</h2>
+            <p>Preview every brand demo before entering the guided Quantum walkthrough.</p>
+          </article>
+          {DEMO_BRAND_CARDS.map((demo) => <DemoPreviewCard key={demo.id} demo={demo} />)}
+        </section>
+        <WebTutorialSystem />
+        <footer className="site-footer">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center', marginBottom: 16, fontSize: 13 }}>
+            <Link href="/legal">Legal &amp; Privacy</Link>
+            <Link href="/contact">Contact &amp; Support</Link>
+          </div>
+          <PremiumSocialLinks accent={LOCKED_BRAND_COLORS.foundingos} mode="full" label="Social & messaging" />
+        </footer>
+        <FoundAI brand={brands.foundingos} />
+      </main>
+    )
+  }
+
   return (
     <main className="site-shell founder-shell" style={{ '--accent': LOCKED_BRAND_COLORS.foundingos } as React.CSSProperties}>
-      <nav className="quantum-header quantum-ambient-grid">
-        <Link href="/">FoundingOS</Link>
-        <div className="quantum-header-links">
-          <a href="#top">Home</a>
-          <a href="#pricing">Intelligence</a>
-          <a href="#found-ai">Insights</a>
-          {/* Real one-click path into the console's full Demo & Survey Switcher hub (every
-              real module demo + every survey, exactly like admin/testers already see once
-              inside) — an already-authenticated session (admin or tester; the session cookie
-              is shared across .foundingos.com) goes straight there; a signed-out visitor is
-              safely bounced to the real sign-in page by the console's own middleware, so this
-              link is never a broken/unsafe shortcut either way. */}
-          <a href={`${brands.foundingos.consoleUrl}/tester/dashboard`}>Console</a>
-          <a href="#contact">Support</a>
-        </div>
-        <div className="site-nav-links">
-          <ThemeToggle />
-        </div>
-      </nav>
+      {nav}
       <section className="hero quantum-ambient-grid" id="top">
         <div className="quantum-particle-drift"><span className="quantum-particle" /><span className="quantum-particle" /><span className="quantum-particle" /></div>
         <div className="hero-copy">
@@ -456,14 +492,6 @@ export function FounderLauncher() {
         </article>
       </section>
       <WebBrandWheel />
-      <section id="brand-demos" className="module-grid founder-demo-menu">
-        <article className="card-premium founder-demo-intro">
-          <h2 className="header-premium">FoundingOS brand demos</h2>
-          <p>Preview every brand demo before entering the guided Quantum walkthrough.</p>
-        </article>
-        {DEMO_BRAND_CARDS.map((demo) => <DemoPreviewCard key={demo.id} demo={demo} />)}
-      </section>
-      <WebTutorialSystem />
       <section id="found-ai" className="founder-found-ai-intro">
         <div className="founder-found-ai-avatar">F</div>
         <div className="founder-found-ai-copy">
@@ -506,9 +534,12 @@ export function FounderLauncher() {
                   <ul>{brandConsideration[brand.slug].reasons.map((point) => <li key={point}>{point}</li>)}</ul>
                 </div>
               </div>
+              <WebBrandModulePanel brand={brand} />
             </details>
-            <WebBrandModulePanel brand={brand} />
             <div className="hero-actions">
+              {isInternalHref(brand.webUrl)
+                ? <Link className="btn btn-secondary btn-premium" href={brand.webUrl}>{brand.name} Website</Link>
+                : <a className="btn btn-secondary btn-premium" href={brand.webUrl}>{brand.name} Website</a>}
               <a className="btn btn-primary btn-premium founder-demo-cta" href={founderDemoUrl(`/demo/${brand.slug}`)}>{brand.name} Demo</a>
               <QuantumConsoleEntry brandName={brand.name} glyph={brand.logo} starterUrl={brand.starterConsoleUrl} growthUrl={brand.consoleUrl} />
             </div>
