@@ -370,7 +370,7 @@ export function FounderLauncher({ page = 'home' }: { page?: 'home' | 'about' | '
       <Link href="/">FoundingOS</Link>
       <div className="quantum-header-links">
         <Link href="/home">Home</Link>
-        <Link href="/demos">Demos &amp; Tutorials</Link>
+        <Link href="/demos">Explore FoundingOS</Link>
         <a href="#pricing">Intelligence</a>
         <a href="#found-ai">Insights</a>
         {/* Real one-click path into the console's full Demo & Survey Switcher hub (every
@@ -458,7 +458,7 @@ export function FounderLauncher({ page = 'home' }: { page?: 'home' | 'about' | '
         <section className="hero quantum-ambient-grid" id="top">
           <div className="hero-copy">
             <p className="eyebrow">FoundingOS</p>
-            <h1>Demos &amp; tutorials</h1>
+            <h1>Explore FoundingOS</h1>
             <p>Preview every brand demo and step-by-step walkthrough before entering the guided Quantum experience.</p>
           </div>
         </section>
@@ -468,6 +468,11 @@ export function FounderLauncher({ page = 'home' }: { page?: 'home' | 'about' | '
             <p>Preview every brand demo before entering the guided Quantum walkthrough.</p>
           </article>
           {DEMO_BRAND_CARDS.map((demo) => <DemoPreviewCard key={demo.id} demo={demo} />)}
+          <article className="card-premium founder-demo-intro">
+            <h2 className="header-premium">Surveys</h2>
+            <p>Share feedback on any module once you're signed in as a tester — every demo above has its own quick survey waiting inside the console.</p>
+            <a className="btn btn-primary btn-premium" href={`${brands.foundingos.consoleUrl}/tester/dashboard`}>Open tester console</a>
+          </article>
         </section>
         <WebTutorialSystem />
         <footer className="site-footer">

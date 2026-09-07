@@ -80,9 +80,9 @@ export default async function TesterDashboardPage() {
       </header>
 
       <article className="module-card fo-card quantum-frame">
-        <div className="module-card-top"><span>◈</span><strong>Demos &amp; Tutorials</strong></div>
-        <p>Every real module's guided, step-by-step walkthrough — with real screenshots — now lives on its own tab.</p>
-        <Link className="btn btn-primary quantum-btn" href="/tester/demos">Open Demos &amp; Tutorials</Link>
+        <div className="module-card-top"><span>◈</span><strong>Explore FoundingOS</strong></div>
+        <p>Every real module's guided, step-by-step walkthrough — with real screenshots — plus its survey, now lives on its own tab.</p>
+        <Link className="btn btn-primary quantum-btn" href="/tester/demos">Open Explore FoundingOS</Link>
       </article>
 
       <article className="module-card fo-card quantum-frame" data-narration={SWITCHER_PANEL_NARRATOR_LINE}>

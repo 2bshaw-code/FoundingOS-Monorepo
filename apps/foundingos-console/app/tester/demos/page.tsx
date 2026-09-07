@@ -10,9 +10,9 @@ import { getTester } from '../store.server'
 import { MODULE_OPTIONS, adminTesterId, exploreTesterId } from '../tester-data'
 import { QuantumSphereLogo } from '@foundingos/ui'
 
-// A dedicated "Demos & Tutorials" tab for testers — mirrors the public website's own /demos
-// page (every brand demo, in one place, separate from the Switcher Hub/survey/history content
-// on /tester/dashboard) instead of dropping testers into one long mixed grid.
+// A dedicated "Explore FoundingOS" tab for testers — merges brand demos/tutorials and their
+// surveys into one destination (mirrors the public website's own /demos page: every brand demo,
+// in one place) instead of splitting demos and surveys across separate top-level nav items.
 export default async function TesterDemosPage() {
   const adminToken = cookies().get(ADMIN_COOKIE)?.value
   const adminId = adminToken ? await verifyToken('admin', adminToken) : null
@@ -50,8 +50,8 @@ export default async function TesterDemosPage() {
       </div>
       <header className="module-header">
         <p>FounderOS Tester Program</p>
-        <h1>Demos &amp; Tutorials</h1>
-        <span>Every real module's guided, step-by-step walkthrough — with real screenshots — in one place. Run or replay any of them, unlimited times.</span>
+        <h1>Explore FoundingOS</h1>
+        <span>Every real module's guided, step-by-step walkthrough — with real screenshots — plus its survey, all in one place. Run or replay any of them, unlimited times.</span>
       </header>
 
       <article className="module-card fo-card quantum-frame">
@@ -70,9 +70,14 @@ export default async function TesterDemosPage() {
               <article key={option.moduleId} className="module-card fo-card">
                 <div className="module-card-top"><span>▣</span><strong>{option.moduleLabel}</strong>{isOwnPrimary ? <small style={{ marginLeft: 'auto', opacity: 0.6 }}>your assigned module</small> : null}</div>
                 <p><small>{label}</small></p>
-                <Link className="btn btn-primary quantum-btn" href={`/tester/demo/${option.moduleId}`}>
-                  {record && record.runs.length > 0 ? 'Revisit demo' : 'Open demo'}
-                </Link>
+                <div className="hero-actions">
+                  <Link className="btn btn-primary quantum-btn" href={`/tester/demo/${option.moduleId}`}>
+                    {record && record.runs.length > 0 ? 'Revisit demo' : 'Open demo'}
+                  </Link>
+                  <Link className="btn btn-secondary quantum-btn" href={`/tester/survey?moduleId=${option.moduleId}`}>
+                    {record && record.runs.length > 0 ? 'Retake survey' : 'Take survey'}
+                  </Link>
+                </div>
               </article>
             )
           })}

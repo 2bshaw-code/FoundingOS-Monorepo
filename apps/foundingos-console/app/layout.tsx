@@ -71,8 +71,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <nav className="tester-tab-nav" aria-label="Tester navigation">
               <a href={homeUrl}>{homeLabel}</a>
               <Link href="/tester/dashboard">Dashboard</Link>
-              <Link href="/tester/demos">Demos &amp; Tutorials</Link>
-              <Link href="/tester/survey">Survey</Link>
+              <Link href="/tester/demos">Explore FoundingOS</Link>
               <ThemeToggle className="theme-toggle tester-theme-toggle" />
               <LiteModeToggle className="theme-toggle lite-mode-toggle tester-theme-toggle" />
             </nav>
