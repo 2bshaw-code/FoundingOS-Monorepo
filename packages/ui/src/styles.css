@@ -2859,6 +2859,45 @@ body[data-sidebar-collapsed='true'] .nav-card {
   border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
 }
 
+.lite-mode-toggle[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface-soft));
+  border-color: var(--accent);
+  color: var(--q-neutral-0, #fff);
+}
+
+/* ==========================================================================
+   Lite mode (Data Saver / low-end device mode) — activated via <html data-lite="true">.
+   Strips the purely decorative visual cost centers (blur/backdrop-filter layers, ambient
+   particle/gradient animation, glow pulses) so the app stays fast and light on data for
+   low-end Android hardware and slow/metered connections. Nothing here removes real content,
+   information, or interactivity — only continuous animation and GPU-heavy blur compositing.
+   ========================================================================== */
+[data-lite='true'] * {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  background-attachment: initial !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.001ms !important;
+}
+
+[data-lite='true'] .q-background-glow,
+[data-lite='true'] .quantum-ambient-grid,
+[data-lite='true'] .q-demo-sphere-field,
+[data-lite='true'] .glow-premium,
+[data-lite='true'] .ai-onboarding-glow {
+  animation: none !important;
+  box-shadow: none !important;
+  opacity: 0.4;
+}
+
+[data-lite='true'] .q-card,
+[data-lite='true'] .quantum-console-modal-backdrop,
+[data-lite='true'] .topbar,
+[data-lite='true'] .q-demo-image-step-overlay {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
 .founder-found-ai-intro {
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr) minmax(240px, 0.9fr);

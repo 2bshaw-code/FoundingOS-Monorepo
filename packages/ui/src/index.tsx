@@ -5,7 +5,7 @@
 import Link from 'next/link'
 import { FoundAI } from './found-ai'
 import { PremiumSocialLinks } from './social-links'
-import { ThemeToggle } from './theme'
+import { ThemeToggle, LiteModeToggle } from './theme'
 import { QuantumConsoleEntry } from './quantum-console-modal'
 import { QuantumSphereLogo } from './QuantumSphereLogo'
 import { CORE_MODULES } from '@foundingos/config/modules'
@@ -215,6 +215,7 @@ export function Topbar({ brand }: { brand: BrandDefinition }) {
       </div>
       <div className="topbar-actions">
         <ThemeToggle />
+        <LiteModeToggle />
       </div>
     </header>
   )
@@ -292,6 +293,7 @@ export function BrandMarketingPage({ brand, page = 'home' }: { brand: BrandDefin
           <Link href="/contact">Contact</Link>
           {isInternalHref(dashboardLink) ? <Link href={dashboardLink}>Dashboard</Link> : <a href={dashboardLink}>Dashboard</a>}
           <ThemeToggle />
+          <LiteModeToggle />
         </div>
       </nav>
 
@@ -382,6 +384,7 @@ export function FounderLauncher({ page = 'home' }: { page?: 'home' | 'about' | '
       </div>
       <div className="site-nav-links">
         <ThemeToggle />
+        <LiteModeToggle />
       </div>
     </nav>
   )

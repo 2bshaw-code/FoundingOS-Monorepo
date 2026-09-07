@@ -68,3 +68,82 @@ export function ThemeToggle({ className = 'theme-toggle' }: { className?: string
 }
 
 export default ThemeToggle
+
+const LITE_KEY = 'foundingos-lite-mode'
+
+function readCookieLite(): boolean | null {
+  if (typeof document === 'undefined') return null
+  const match = document.cookie.match(/(?:^|;\s*)foundingos-lite=(1|0)/)
+  if (!match) return null
+  return match[1] === '1'
+}
+
+function readStoredLite(): boolean {
+  if (typeof window === 'undefined') return false
+  const local = window.localStorage.getItem(LITE_KEY)
+  if (local === '1') return true
+  if (local === '0') return false
+  const cookieValue = readCookieLite()
+  if (cookieValue !== null) return cookieValue
+  // Sensible default for the target market: a slow connection (2G/3G, or a browser/data-saver
+  // proxy reporting "slow-2g"/"2g") starts in Lite mode automatically so a first-time visitor
+  // on constrained data never has to wait through the full quantum visuals to find the toggle.
+  const nav = window.navigator as Navigator & { connection?: { effectiveType?: string; saveData?: boolean } }
+  const conn = nav.connection
+  if (conn?.saveData) return true
+  if (conn?.effectiveType === 'slow-2g' || conn?.effectiveType === '2g') return true
+  return false
+}
+
+function applyLite(lite: boolean) {
+  if (typeof document === 'undefined') return
+  document.documentElement.dataset.lite = lite ? 'true' : 'false'
+  document.cookie = `foundingos-lite=${lite ? '1' : '0'}; path=/; max-age=31536000; SameSite=Lax`
+  window.localStorage.setItem(LITE_KEY, lite ? '1' : '0')
+}
+
+// Data Saver / low-end device mode — turns off the heaviest visual cost centers (blur/backdrop-
+// filter layers, particle/Lottie-style ambient animation, large gradient repaints) so the app
+// stays fast and cheap-on-data on the low-end Android hardware and slow/metered connections
+// common across our target developing-world markets. Every visual it disables is purely
+// decorative — no functionality changes, same real information density, just lighter to render
+// and ship over the wire.
+export function LiteModeToggle({ className = 'theme-toggle lite-mode-toggle' }: { className?: string }) {
+  const [lite, setLite] = useState(false)
+  const skipNextApplyRef = useRef(true)
+
+  useEffect(() => {
+    const initial = readStoredLite()
+    setLite(initial)
+    applyLite(initial)
+  }, [])
+
+  useEffect(() => {
+    if (skipNextApplyRef.current) { skipNextApplyRef.current = false; return }
+    applyLite(lite)
+  }, [lite])
+
+  useEffect(() => {
+    const sync = (event: StorageEvent) => {
+      if (event.key === LITE_KEY) {
+        const next = event.newValue === '1'
+        setLite(next)
+        applyLite(next)
+      }
+    }
+    window.addEventListener('storage', sync)
+    return () => window.removeEventListener('storage', sync)
+  }, [])
+
+  return (
+    <button
+      type="button"
+      className={className}
+      aria-pressed={lite}
+      title="Turn off heavy visual effects to save data and run faster on low-end devices"
+      onClick={() => setLite((value) => !value)}
+    >
+      {lite ? '⚡ Lite mode on' : '⚡ Lite mode'}
+    </button>
+  )
+}

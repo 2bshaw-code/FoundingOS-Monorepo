@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BrandConsoleConfig } from './console'
-import { ThemeToggle } from './theme'
+import { ThemeToggle, LiteModeToggle } from './theme'
 import { QuantumSphereLogo } from './QuantumSphereLogo'
 import { qColors } from './quantum'
 
@@ -81,6 +81,7 @@ function ActualTopbar({ config, variant = 'console' }: { config?: BrandConsoleCo
          <button type="submit" className="q-button q-button-primary topbar-pill-danger">Log out</button>
        </form>
        <ThemeToggle />
+       <LiteModeToggle />
      </div>
     </header>
   )
