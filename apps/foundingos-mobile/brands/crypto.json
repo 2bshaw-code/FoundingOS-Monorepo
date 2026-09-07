@@ -1,0 +1,20 @@
+{
+  "name": "FoundCrypto Mobile",
+  "slug": "foundcrypto-mobile",
+  "scheme": "foundcrypto",
+  "icon": "./assets/logos/crypto.png",
+  "splash": {
+    "image": "./assets/logos/crypto.png",
+    "resizeMode": "contain",
+    "backgroundColor": "#05060a"
+  },
+  "ios": {
+    "bundleIdentifier": "com.foundingos.foundcrypto"
+  },
+  "android": {
+    "package": "com.foundingos.foundcrypto"
+  },
+  "extra": {
+    "brand": "crypto"
+  }
+}

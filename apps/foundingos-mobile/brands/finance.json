@@ -1,0 +1,20 @@
+{
+  "name": "FoundFinance Mobile",
+  "slug": "foundfinance-mobile",
+  "scheme": "foundfinance",
+  "icon": "./assets/logos/finance.png",
+  "splash": {
+    "image": "./assets/logos/finance.png",
+    "resizeMode": "contain",
+    "backgroundColor": "#05060a"
+  },
+  "ios": {
+    "bundleIdentifier": "com.foundingos.foundfinance"
+  },
+  "android": {
+    "package": "com.foundingos.foundfinance"
+  },
+  "extra": {
+    "brand": "finance"
+  }
+}

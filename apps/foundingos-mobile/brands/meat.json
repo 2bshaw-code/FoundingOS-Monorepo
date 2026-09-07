@@ -1,0 +1,20 @@
+{
+  "name": "FoundMeat Mobile",
+  "slug": "foundmeat-mobile",
+  "scheme": "foundmeat",
+  "icon": "./assets/logos/meat.png",
+  "splash": {
+    "image": "./assets/logos/meat.png",
+    "resizeMode": "contain",
+    "backgroundColor": "#05060a"
+  },
+  "ios": {
+    "bundleIdentifier": "com.foundingos.foundmeat"
+  },
+  "android": {
+    "package": "com.foundingos.foundmeat"
+  },
+  "extra": {
+    "brand": "meat"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "FoundThat Mobile",
+  "slug": "foundthat-mobile",
+  "scheme": "foundthat",
+  "icon": "./assets/logos/foundthat.png",
+  "splash": {
+    "image": "./assets/logos/foundthat.png",
+    "resizeMode": "contain",
+    "backgroundColor": "#05060a"
+  },
+  "ios": {
+    "bundleIdentifier": "com.foundingos.foundthat"
+  },
+  "android": {
+    "package": "com.foundingos.foundthat"
+  },
+  "extra": {
+    "brand": "foundthat"
+  }
+}
