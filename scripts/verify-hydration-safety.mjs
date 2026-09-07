@@ -53,12 +53,16 @@ for (const root of appRoots) {
   }
 }
 
-if (audioToggleSitesChecked < 5) {
-  // 5 real sites as of the tester/dashboard layout unification (which merged what used to be
-  // two separate audio-toggle buttons — one for admin, one for real testers — into one shared
-  // layout for both): tester/demo/[moduleId], tester/dashboard, tester/survey, investor
-  // (foundingos-console), plus the root login page (foundingos-web).
-  throw new Error(`Expected at least 5 [data-audio-toggle] sites across the repo, found ${audioToggleSitesChecked} — did one get removed or renamed?`)
+if (audioToggleSitesChecked < 4) {
+  // 4 real sites, all in foundingos-console: tester/demo/[moduleId], tester/dashboard,
+  // tester/survey, and investor.
+  //
+  // This was 5 until the narrated audio player was deliberately removed from the
+  // foundingos-web root login page: narration is now an after-login experience only, so an
+  // unauthenticated visitor never gets audio. That removal is intentional, not a regression,
+  // hence the floor moved 5 -> 4. The guard above still enforces the property that actually
+  // matters — every surviving [data-audio-toggle] button must carry suppressHydrationWarning.
+  throw new Error(`Expected at least 4 [data-audio-toggle] sites across the repo, found ${audioToggleSitesChecked} — did one get removed or renamed?`)
 }
 
 const skipGuardFiles = ['packages/ui/src/topbar.tsx', 'packages/ui/src/theme.tsx']
