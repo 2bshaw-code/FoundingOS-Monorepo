@@ -562,12 +562,9 @@ export function FounderLauncher({ page = 'home' }: { page?: 'home' | 'about' | '
         <div className="founder-found-ai-copy">
           <p className="eyebrow">FoundAI</p>
           <h2>Meet FoundAI.</h2>
-          <p>FoundAI — The Best Onboarding Bot in the World.</p>
-          <p>FoundAI wasn’t created to be another chatbot. It wasn’t designed to be a gimmick, a feature, or a support tool. FoundAI was created to solve the single biggest problem in business software: people hate onboarding, people hate learning new systems, and people hate complicated dashboards.</p>
-          <p>FoundingOS fixes that by giving every user — from retail staff to meat suppliers, recruiters, IT teams, crypto traders, and founders — one universal guide who knows exactly what they need.</p>
-          <p>FoundAI is simple, huge-capable, friendly, approachable, human-first, and a co-founder rather than a tool. It handles onboarding, setup, training, workflows, tasks, and questions instantly.</p>
-          <p>FoundAI is the assistant that makes FoundingOS usable by SMEs, large companies, suppliers, retail staff, job seekers, recruiters, IT teams, crypto traders, and founders. It is the best onboarding assistant in the world, and it is the heart of the entire FoundingOS ecosystem.</p>
+          <p>FoundAI — The Best Onboarding Bot in the World. One universal guide for every user, handling onboarding, setup, and questions instantly across the entire FoundingOS ecosystem.</p>
           <div className="hero-actions">
+            <Link className="btn btn-secondary btn-premium" href="/about">Our story</Link>
             {isInternalHref(`${consoleDashboardUrl(brands.foundingos)}/console`)
               ? <Link className="btn btn-primary btn-premium" href={`${consoleDashboardUrl(brands.foundingos)}/console`}>Meet FoundAI</Link>
               : <a className="btn btn-primary btn-premium" href={`${consoleDashboardUrl(brands.foundingos)}/console`}>Meet FoundAI</a>}
