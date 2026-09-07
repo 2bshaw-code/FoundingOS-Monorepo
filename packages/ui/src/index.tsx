@@ -389,6 +389,68 @@ export function FounderLauncher({ page = 'home' }: { page?: 'home' | 'about' | '
     </nav>
   )
 
+  if (page === 'about') {
+    return (
+      <main className="site-shell founder-shell" style={{ '--accent': LOCKED_BRAND_COLORS.foundingos } as React.CSSProperties}>
+        {nav}
+        <section className="hero quantum-ambient-grid" id="top">
+          <div className="hero-copy">
+            <p className="eyebrow">FoundingOS</p>
+            <h1>The Operating System for message-based businesses</h1>
+            <p className="quantum-positioning-statement">One founder-built platform, every brand connected — built so growing teams stop drowning in disconnected tools.</p>
+            <p>FoundingOS unifies commerce, finance, talent, logistics, health, and crypto operations behind a single command layer — with FoundAI guiding every user through it.</p>
+          </div>
+        </section>
+        <section id="our-story" className="module-grid">
+          <article className="card-premium" style={{ gridColumn: '1 / -1' }}>
+            <h2 className="header-premium">Our story</h2>
+            <p>FoundingOS started with a simple observation: growing businesses hit the same wall — too many disconnected tools, no single source of truth, and no time left to actually run the business. We built one platform that connects every brand, every console, and every workflow, so operators can finally see and run their whole business from one place.</p>
+          </article>
+          <article className="card-premium quantum-card">
+            <span className="quantum-corner-marker">⌂</span>
+            <h3>Our mission</h3>
+            <p>Give every operator — from retail staff to meat suppliers, recruiters, IT teams, crypto traders, and founders — one connected system and one guide who knows exactly what they need.</p>
+          </article>
+          <article className="card-premium quantum-card">
+            <span className="quantum-corner-marker">⌂</span>
+            <h3>How we work</h3>
+            <p>Every brand console shares the same Quantum shell, the same AI layer, and the same real-time signals — so switching between Retail, Meat, Talent, Finance, Crypto, and more feels like one system, not ten.</p>
+          </article>
+          <article className="card-premium quantum-card">
+            <span className="quantum-corner-marker">⌂</span>
+            <h3>Built for WhatsApp-first businesses</h3>
+            <p>We designed FoundingOS around how message-based businesses actually operate — offline-friendly, mobile-first, and ready for teams anywhere in the world.</p>
+          </article>
+        </section>
+        <section id="found-ai" className="founder-found-ai-intro">
+          <div className="founder-found-ai-avatar">F</div>
+          <div className="founder-found-ai-copy">
+            <p className="eyebrow">FoundAI</p>
+            <h2>Meet FoundAI.</h2>
+            <p>FoundAI — The Best Onboarding Bot in the World. It handles onboarding, setup, training, workflows, tasks, and questions instantly, for every brand in the ecosystem.</p>
+          </div>
+        </section>
+        <section className="module-grid">
+          {brandList.filter((brand) => brand.slug !== 'foundingos').map((brand) => (
+            <article key={brand.slug} className="card-premium brand-directory-card">
+              <QuantumSphereLogo size={40} />
+              <h2>{brand.name}</h2>
+              <p>{brand.summary}</p>
+            </article>
+          ))}
+        </section>
+        <footer className="site-footer">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center', marginBottom: 16, fontSize: 13 }}>
+            <Link href="/legal">Legal &amp; Privacy</Link>
+            <Link href="/contact">Contact &amp; Support</Link>
+          </div>
+          <PremiumSocialLinks accent={LOCKED_BRAND_COLORS.foundingos} mode="full" label="Social & messaging" />
+        </footer>
+        <FoundAI brand={brands.foundingos} />
+      </main>
+    )
+  }
+
   if (page === 'demos') {
     return (
       <main className="site-shell founder-shell" style={{ '--accent': LOCKED_BRAND_COLORS.foundingos } as React.CSSProperties}>
