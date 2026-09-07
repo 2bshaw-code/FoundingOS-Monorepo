@@ -43,9 +43,10 @@ const TINTABLE_BRANDS = ['retail', 'crypto', 'meat', 'talent', 'foundthat', 'fin
 function tintedBrandConfig() {
   const tint = cookies().get(HUB_BRAND_TINT_COOKIE)?.value
   const match = TINTABLE_BRANDS.find((slug) => slug === tint)
-  if (!match) return brandConfig
+  if (!match) return { config: brandConfig, homeUrl: 'https://www.foundingos.com/home', homeLabel: 'Home' }
   const accent = brands[match].brandColors.accent
-  return { ...brandConfig, accent, colors: { ...brandConfig.colors, accent, primary: accent } }
+  const config = { ...brandConfig, accent, colors: { ...brandConfig.colors, accent, primary: accent } }
+  return { config, homeUrl: brands[match].webUrl, homeLabel: `${brands[match].name} Home` }
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
@@ -59,7 +60,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const testerId = token ? await verifyToken('tester', token) : null
   const category = testerId ? categorizeCredential(testerId) : null
   const isRealTesterSession = category === 'tester' || category === 'survey' || category === 'investor' || category === 'buyer' || category === 'customer'
-  const tinted = tintedBrandConfig()
+  const { config: tinted, homeUrl, homeLabel } = tintedBrandConfig()
   const tintStyle = { '--accent': tinted.colors.accent } as CSSProperties
 
   if (isRealTesterSession) {
@@ -68,6 +69,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <body className="min-h-screen bg-black tester-shell" style={tintStyle}>
           <QuantumBackground brand={tinted}>
             <nav className="tester-tab-nav" aria-label="Tester navigation">
+              <a href={homeUrl}>{homeLabel}</a>
               <Link href="/tester/dashboard">Dashboard</Link>
               <Link href="/tester/demos">Demos &amp; Tutorials</Link>
               <Link href="/tester/survey">Survey</Link>

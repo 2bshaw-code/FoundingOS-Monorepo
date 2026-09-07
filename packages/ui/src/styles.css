@@ -935,6 +935,21 @@
   --shadow: rgba(12, 18, 28, 0.12);
   --shell-shadow: rgba(12, 18, 28, 0.16);
   color-scheme: light;
+  /* The "Quantum" design-system tokens (--q-*) previously stayed hardcoded to their dark
+     values even in day mode — --q-neutral-0 is the real root cause of a genuine bug: any
+     text inheriting color from .q-background (every Quantum-shell page: console, tester
+     shell, and the public marketing site's FounderLauncher) rendered pure white on day
+     mode's light background, making most body copy unreadable. These mirror the same
+     light/dark swap already applied to --text/--bg/--surface above, scoped to the Quantum
+     token namespace so every .q-* component (cards, buttons, demo viewer, tutorials, etc.)
+     gets a real light theme instead of white-on-white. */
+  --q-base: #eef3fb;
+  --q-neutral-0: #101828;
+  --q-neutral-100: #1d2939;
+  --q-neutral-200: #344054;
+  --q-neutral-500: #667085;
+  --q-neutral-700: #d0d5dd;
+  --q-neutral-800: #eaecf0;
 }
 
 html {
@@ -3194,14 +3209,17 @@ body[data-sidebar-collapsed='true'] .nav-card {
   border-color: var(--accent);
 }
 
+/* Neutral (black/text-coloured) instead of the old red — the red clashed with
+   red-accented brands (FoundMeat #FF3B3B, FoundLogistics #DC143C), making the
+   button blend into the brand colour and become hard to read. */
 .topbar-pill-danger {
-  border-color: color-mix(in srgb, #ff5470 45%, var(--line));
-  color: #ff5470;
+  border-color: var(--line);
+  color: var(--text);
 }
 
 .topbar-pill-danger:hover {
-  background: color-mix(in srgb, #ff5470 16%, var(--surface));
-  border-color: #ff5470;
+  background: color-mix(in srgb, var(--text) 12%, var(--surface));
+  border-color: var(--text);
 }
 
 .console-shell-main {

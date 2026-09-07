@@ -9,6 +9,7 @@ import type { BrandConsoleConfig } from './console'
 import { ThemeToggle, LiteModeToggle } from './theme'
 import { QuantumSphereLogo } from './QuantumSphereLogo'
 import { qColors } from './quantum'
+import { brandList } from '@foundingos/config'
 
 const SIDEBAR_KEY = 'foundingos-sidebar-collapsed'
 
@@ -29,6 +30,15 @@ function applySidebarPreference(collapsed: boolean) {
 function consoleTitle(name?: string, variant: 'console' | 'starter' = 'console') {
   const brand = name ?? 'Workspace'
   return variant === 'starter' ? `${brand} Console Starter` : `${brand} Console`
+}
+
+// "Home" pill: when a specific brand console is open it should go to THAT brand's own
+// marketing website, not the generic FoundingOS homepage — matched by brand name since
+// BrandConsoleConfig doesn't carry a slug/webUrl of its own.
+function brandHomeLink(name?: string) {
+  if (!name || name === 'FoundingOS') return { href: 'https://www.foundingos.com/home', label: 'FoundingOS Homepage' }
+  const match = brandList.find((brand) => brand.name === name || brand.marketingName === name)
+  return { href: match?.webUrl ?? 'https://www.foundingos.com/home', label: `${name} Home` }
 }
 
 function ActualTopbar({ config, variant = 'console' }: { config?: BrandConsoleConfig; variant?: 'console' | 'starter' }) {
@@ -60,6 +70,7 @@ function ActualTopbar({ config, variant = 'console' }: { config?: BrandConsoleCo
   }, [collapsed])
 
   const toggleLabel = useMemo(() => (collapsed ? 'Open sidebar' : 'Close sidebar'), [collapsed])
+  const homeLink = brandHomeLink(config?.name)
 
   return (
     <header className="topbar" style={theme}>
@@ -76,7 +87,7 @@ function ActualTopbar({ config, variant = 'console' }: { config?: BrandConsoleCo
      </div>
      <div className="topbar-nav" />
      <div className="topbar-actions">
-       <a href="https://www.foundingos.com/home" className="q-button q-button-ghost topbar-pill-homepage">FoundingOS Homepage</a>
+       <a href={homeLink.href} className="q-button q-button-ghost topbar-pill-homepage">{homeLink.label}</a>
        <form action="https://console.foundingos.com/api/tester/logout" method="POST" className="topbar-logout-form">
          <button type="submit" className="q-button q-button-primary topbar-pill-danger">Log out</button>
        </form>
