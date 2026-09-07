@@ -19,6 +19,16 @@ import {
   useActiveQuantumTheme,
 } from '../../components/QuantumUI'
 
+// Short, plain-language steps only — no images, no long paragraphs — this app is built for
+// Africa-ready, low-end/low-data devices, so this stays light and collapsed by default.
+const WHATSAPP_SETUP_STEPS = [
+  'Your WhatsApp Business number (new or existing).',
+  'A verified Meta Business Account (Meta\u2019s own requirement, not ours).',
+  'Your WhatsApp Business Account ID + access token, added in Settings.',
+  'Approve your message templates (we provide ready-made ones).',
+  'Go live \u2014 FoundAI reads and replies automatically, with you always able to step in.',
+]
+
 const WHATSAPP_WORKFLOWS = [
   {
     id: 'wa_pay_link',
@@ -56,6 +66,7 @@ export default function AutomationScreen() {
   const [phone, setPhone] = useState('+254712345678')
   const [customMsg, setCustomMsg] = useState('')
   const [logNotice, setLogNotice] = useState('')
+  const [setupOpen, setSetupOpen] = useState(false)
 
   const queueWorkflow = async (workflow: (typeof WHATSAPP_WORKFLOWS)[number]) => {
     await enqueueOutboxAction(workflow.actionType, activeBrandSlug, { phone, ...workflow.payload })
@@ -82,6 +93,22 @@ export default function AutomationScreen() {
       </QuantumCard>
 
       {logNotice ? <QuantumNotice tone="success">{logNotice}</QuantumNotice> : null}
+
+      <QuantumCard>
+        <QuantumButton tone="ghost" onPress={() => setSetupOpen((open) => !open)}>
+          {setupOpen ? 'Hide what we need to connect WhatsApp' : 'What we need to connect your WhatsApp'}
+        </QuantumButton>
+        {setupOpen ? (
+          <View style={styles.setupList}>
+            {WHATSAPP_SETUP_STEPS.map((step, index) => (
+              <View style={styles.setupRow} key={step}>
+                <QuantumText variant="caption" color={quantumColors.whatsapp}>{index + 1}</QuantumText>
+                <QuantumText variant="caption" style={styles.flex}>{step}</QuantumText>
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </QuantumCard>
 
       <QuantumCard>
         <QuantumText variant="h3">Recipient</QuantumText>
@@ -122,4 +149,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: quantumSpace.md },
   messageInput: { minHeight: 88, textAlignVertical: 'top' },
+  setupList: { gap: quantumSpace.xs, marginTop: quantumSpace.sm },
+  setupRow: { flexDirection: 'row', gap: quantumSpace.sm, alignItems: 'flex-start' },
 })

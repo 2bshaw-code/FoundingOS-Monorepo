@@ -9,6 +9,7 @@ export type MobileQuantumBrandUplift = {
   icon: string
   sphereVariant: string
   story: string
+  setupHighlight: string
   demo: { images: string[] }
   demoImageRequirements: Array<{ uri: string; alt: string; caption: string; requirement: string }>
   demoSteps: string[]
@@ -55,6 +56,7 @@ const uplifts: Record<string, MobileQuantumBrandUplift> = {
     icon: '◈',
     sphereVariant: 'core-orbit',
     story: 'FoundingOS is the unified command layer connecting every brand, console, demo, survey, entitlement, and AI workflow across the ecosystem.',
+    setupHighlight: 'Set up in minutes: connect your brands once, and every console, demo, and AI workflow is unified — no separate logins, no separate setup.',
     demo: { images: demoImages('foundingos') },
     demoImageRequirements: [
       image('foundingos', 1, 'FoundingOS unified Superdash command center', 'Unified command center', 'Show Superdash with cross-brand cards, Package Model D visibility, and AI command states.'),
@@ -72,6 +74,7 @@ const uplifts: Record<string, MobileQuantumBrandUplift> = {
     icon: '◉',
     sphereVariant: 'retail-grid',
     story: 'FoundRetail helps retailers manage inventory, pricing, promotions, and customer engagement with clarity and automation.',
+    setupHighlight: 'Set up in minutes: connect your product catalogue once, and FoundRetail tracks stock, prices, and promotions automatically — no spreadsheets, no manual re-entry.',
     demo: { images: demoImages('retail') },
     demoImageRequirements: [
       image('retail', 1, 'Clean product shelves in a premium retail environment', 'Clean product shelves', 'Show clear product shelves with a premium Quantum retail treatment.'),
@@ -90,6 +93,7 @@ const uplifts: Record<string, MobileQuantumBrandUplift> = {
     icon: '◆',
     sphereVariant: 'trace-pulse',
     story: 'FoundMeat supports butchers, meat suppliers, and food distributors with traceability, batch management, and compliance workflows.',
+    setupHighlight: 'Set up in minutes: log your first batch, and FoundMeat handles traceability and compliance reporting automatically from then on — no paperwork chasing.',
     demo: { images: demoImages('meat') },
     demoImageRequirements: [
       image('meat', 1, 'Clean butcher counter prepared for FoundMeat operations', 'Clean butcher counter', 'Show a clean butcher counter with premium operational clarity.'),
@@ -108,6 +112,7 @@ const uplifts: Record<string, MobileQuantumBrandUplift> = {
     icon: '✦',
     sphereVariant: 'discovery-flare',
     story: 'FoundThat powers marketplaces and listing platforms with product discovery, listing management, and buyer engagement tools.',
+    setupHighlight: 'Set up in minutes: publish your first listing, and FoundThat surfaces it to buyers and tracks engagement automatically — no separate marketplace tools needed.',
     demo: { images: demoImages('foundthat') },
     demoImageRequirements: [
       image('foundthat', 1, 'Marketplace grid for FoundThat product discovery', 'Marketplace grid', 'Show marketplace listings in a clear Quantum-consistent grid.'),
@@ -126,6 +131,7 @@ const uplifts: Record<string, MobileQuantumBrandUplift> = {
     icon: '⬢',
     sphereVariant: 'talent-helix',
     story: 'FoundTalent helps recruiters and HR teams manage candidates, interviews, and hiring pipelines with intelligence and automation.',
+    setupHighlight: 'Set up in minutes: add your first candidate, and FoundTalent manages the whole pipeline from application to interview — no spreadsheets, no missed follow-ups.',
     demo: { images: demoImages('talent') },
     demoImageRequirements: [
       image('talent', 1, 'FoundTalent candidate profile screenshot', 'Candidate profile screenshot', 'Show candidate details, skills, role fit, and recruiter context.'),
@@ -144,6 +150,7 @@ const uplifts: Record<string, MobileQuantumBrandUplift> = {
     icon: '∞',
     sphereVariant: 'crypto-ring',
     story: 'FoundCrypto provides traders and crypto businesses with portfolio tracking, transaction history, and market insights.',
+    setupHighlight: 'Set up in minutes: connect your wallet or exchange, and FoundCrypto tracks your portfolio and compliance automatically — no manual reconciliation.',
     demo: { images: demoImages('crypto') },
     demoImageRequirements: [
       image('crypto', 1, 'FoundCrypto portfolio dashboard', 'Portfolio dashboard', 'Show portfolio balances and tracked assets with clear status.'),
@@ -162,6 +169,7 @@ const uplifts: Record<string, MobileQuantumBrandUplift> = {
     icon: '£',
     sphereVariant: 'finance-ledger',
     story: 'FoundFinance helps businesses manage invoices, payments, cashflow, and financial reporting with clarity and automation.',
+    setupHighlight: 'Set up in minutes: connect your invoices once, and FoundFinance tracks payments and cashflow automatically — no manual reconciliation, no missed due dates.',
     demo: { images: demoImages('finance') },
     demoImageRequirements: [
       image('finance', 1, 'FoundFinance invoice list', 'Invoice list', 'Show outstanding invoices, due dates, and payment readiness.'),
@@ -180,6 +188,7 @@ const uplifts: Record<string, MobileQuantumBrandUplift> = {
     icon: '✚',
     sphereVariant: 'health-wave',
     story: 'FoundHealth supports clinics and health providers with patient records, appointment scheduling, and care workflows.',
+    setupHighlight: 'Set up in minutes: add your first patient record, and FoundHealth manages scheduling and care workflows automatically — no separate booking system needed.',
     demo: { images: demoImages('health') },
     demoImageRequirements: [
       image('health', 1, 'FoundHealth patient profile', 'Patient profile', 'Show patient details and care context in a calm Quantum surface.'),
@@ -198,6 +207,7 @@ const uplifts: Record<string, MobileQuantumBrandUplift> = {
     icon: '▲',
     sphereVariant: 'logistics-route',
     story: 'FoundLogistics helps logistics teams manage shipments, tracking, delivery routes, and fleet performance.',
+    setupHighlight: 'Set up in minutes: add your first shipment, and FoundLogistics tracks routes and fleet performance automatically — no manual dispatch sheets.',
     demo: { images: demoImages('logistics') },
     demoImageRequirements: [
       image('logistics', 1, 'FoundLogistics shipment list', 'Shipment list', 'Show active shipments, status, and delivery ownership clearly.'),

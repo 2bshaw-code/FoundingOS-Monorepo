@@ -123,6 +123,7 @@ export default function AppTabsLayout() {
         <Tabs.Screen name="superdash" options={{ href: null }} />
         <Tabs.Screen name="guardian" options={{ href: null }} />
         <Tabs.Screen name="ai-actions" options={{ href: null }} />
+        <Tabs.Screen name="about" options={{ href: null, headerTitle: () => renderHeaderTitle('About FoundingOS') }} />
       </Tabs>
       <QuantumShellFooter brandName={activeBrandName} accent={shellAccent} shellTheme={shellTheme} />
       <FloatingFoundAIButton />

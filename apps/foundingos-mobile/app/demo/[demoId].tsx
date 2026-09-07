@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react'
 import { Image, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import * as SecureStore from 'expo-secure-store'
-import { QuantumButton, QuantumCard, QuantumScreen, QuantumSectionHeader, QuantumText, quantumSpace, useActiveQuantumTheme } from '../../components/QuantumUI'
+import { QuantumButton, QuantumCard, QuantumNotice, QuantumScreen, QuantumSectionHeader, QuantumText, quantumSpace, useActiveQuantumTheme } from '../../components/QuantumUI'
 import { getMobileQuantumBrandUpliftForDemo } from '../../lib/quantum-brand-uplift'
 
 const demoCompletedKey = (demoId: string) => `fo_demo_completed_${demoId}`
@@ -37,8 +37,8 @@ export default function MobileDemoScreen() {
       <QuantumCard accent={brand.accent ?? theme.accent} style={[styles.viewer, { minHeight: Math.max(320, height * 0.5) }]}>
         <QuantumSectionHeader label={`How to use ${title}`} action={<QuantumText variant="h3" color={brand.accent}>{uplift.icon}</QuantumText>} />
         <View style={styles.story}>
+          <QuantumText variant="caption" color={theme.accent}>WHY THIS MATTERS</QuantumText>
           <QuantumText>{uplift.story}</QuantumText>
-          <QuantumText variant="caption" color={theme.subtextColor}>Sphere variant: {uplift.sphereVariant}</QuantumText>
         </View>
         <ScrollView
           horizontal
@@ -67,6 +67,7 @@ export default function MobileDemoScreen() {
           ))}
         </View>
         <QuantumButton onPress={completeDemo}>Continue to Survey</QuantumButton>
+        <QuantumNotice tone="success">⚡ How easy this is — {uplift.setupHighlight}</QuantumNotice>
       </QuantumCard>
     </QuantumScreen>
   )

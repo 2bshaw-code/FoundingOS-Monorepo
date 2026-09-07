@@ -56,6 +56,7 @@ export default function DashboardScreen() {
       ))}
 
       <QuantumButton tone="danger" onPress={handleLogout}>Log out</QuantumButton>
+      <QuantumButton tone="ghost" onPress={() => router.push('/about')}>About FoundingOS</QuantumButton>
       <QuantumText variant="caption" align="center">FoundingOS Base · #0A0A0A · white accents</QuantumText>
     </QuantumScreen>
   )
