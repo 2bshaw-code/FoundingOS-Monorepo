@@ -235,10 +235,13 @@ export function WebUsedCarShop({ accent }: { accent: string }) {
 }
 
 export function WebBrandModulePanel({ brand }: { brand: BrandDefinition }) {
+  // Note: the Used Car Shop example (previously shown here for the retail brand) now lives
+  // inside the real FoundRetail console (apps/foundingos-console/app/retail/page.tsx) — this
+  // public marketing website should only ever show the generic customer journey, not a
+  // full product demo module.
   return (
     <div className="quantum-web-brand-modules">
       <WebCustomerJourney accent={brand.accent} brandName={brand.name} />
-      {brand.slug === 'retail' ? <WebUsedCarShop accent={brand.accent} /> : null}
     </div>
   )
 }

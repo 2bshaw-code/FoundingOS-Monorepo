@@ -76,7 +76,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  if (pathname.startsWith('/finance') || pathname.startsWith('/crypto')) {
+  if (
+    pathname.startsWith('/finance') ||
+    pathname.startsWith('/crypto') ||
+    pathname.startsWith('/retail') ||
+    pathname.startsWith('/meat') ||
+    pathname.startsWith('/talent') ||
+    pathname.startsWith('/foundthat') ||
+    pathname.startsWith('/health') ||
+    pathname.startsWith('/logistics')
+  ) {
     const sessionToken = request.cookies.get(SESSION_COOKIE)?.value
     const adminToken = request.cookies.get(ADMIN_COOKIE)?.value
     const testerId = sessionToken ? await verifyToken('tester', sessionToken) : null
@@ -108,6 +117,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/tester/dashboard/:path*', '/tester/survey/:path*', '/tester/demo/:path*', '/tester/admin/:path*', '/founder/:path*', '/ecosystem-demo/:path*', '/finance/:path*', '/crypto/:path*', '/investor/:path*', '/legal/:path*', '/superdashboard/:path*', '/system/guardian/:path*'],
+  matcher: ['/tester/dashboard/:path*', '/tester/survey/:path*', '/tester/demo/:path*', '/tester/admin/:path*', '/founder/:path*', '/ecosystem-demo/:path*', '/finance/:path*', '/crypto/:path*', '/retail/:path*', '/meat/:path*', '/talent/:path*', '/foundthat/:path*', '/health/:path*', '/logistics/:path*', '/investor/:path*', '/legal/:path*', '/superdashboard/:path*', '/system/guardian/:path*'],
 }
 
