@@ -2,14 +2,20 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
+import { View } from 'react-native'
 import { BRANDS, FOUNDINGOS_ACCENT } from '../../lib/brands'
 import { QuantumCard, QuantumHeader, QuantumScreen, QuantumSectionHeader, QuantumText, quantumSpace } from '../../components/QuantumUI'
+import { QuantumSphere } from '../../components/QuantumSphere'
 
 // Mirrors the web /about page (packages/ui/src/index.tsx) — same story/mission/how-we-work
 // copy, ported here so the mobile app matches the website instead of having no About screen.
 export default function AboutScreen() {
   return (
     <QuantumScreen>
+      <View style={{ alignItems: 'center', marginBottom: quantumSpace.sm }}>
+        <QuantumSphere size={80} />
+      </View>
+
       <QuantumHeader
         eyebrow="FoundingOS"
         title="The Operating System for message-based businesses"
@@ -59,8 +65,13 @@ export default function AboutScreen() {
       <QuantumSectionHeader label="Every brand in FoundingOS" />
       {BRANDS.filter((brand) => brand.slug !== 'foundingos').map((brand) => (
         <QuantumCard key={brand.slug} accent={brand.accent}>
-          <QuantumText variant="h3" color={brand.accent}>{brand.name}</QuantumText>
-          <QuantumText variant="caption">{brand.tagline}</QuantumText>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: quantumSpace.sm }}>
+            <QuantumSphere size={36} accent={brand.accent} />
+            <View style={{ flex: 1 }}>
+              <QuantumText variant="h3" color={brand.accent}>{brand.name}</QuantumText>
+              <QuantumText variant="caption">{brand.tagline}</QuantumText>
+            </View>
+          </View>
         </QuantumCard>
       ))}
     </QuantumScreen>
