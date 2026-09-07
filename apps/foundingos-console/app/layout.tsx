@@ -13,6 +13,7 @@ import { Sidebar } from '@foundingos/ui/sidebar'
 import { FoundAI } from '@foundingos/ui/found-ai'
 import { Topbar } from '@foundingos/ui/topbar'
 import { QuantumBackground } from '@foundingos/ui/quantum'
+import { ThemeToggle } from '@foundingos/ui/theme'
 import { brandConfig } from './brand-config'
 import { SESSION_COOKIE, verifyToken } from './tester/session'
 import { categorizeCredential } from './tester/tester-data'
@@ -70,6 +71,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <Link href="/tester/dashboard">Dashboard</Link>
               <Link href="/tester/demos">Demos &amp; Tutorials</Link>
               <Link href="/tester/survey">Survey</Link>
+              <ThemeToggle className="theme-toggle tester-theme-toggle" />
             </nav>
             <main className="tester-shell-content">{children}</main>
           </QuantumBackground>

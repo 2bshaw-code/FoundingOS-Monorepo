@@ -1430,12 +1430,18 @@ body[data-sidebar-collapsed='true'] .nav-card {
 }
 
 .tester-tab-nav {
+  align-items: center;
   display: flex;
   gap: 8px;
   justify-content: center;
   max-width: 1080px;
   margin: 0 auto;
   padding: 20px 28px 0;
+  position: relative;
+}
+
+.tester-theme-toggle {
+  margin-left: auto;
 }
 
 .tester-tab-nav a {
