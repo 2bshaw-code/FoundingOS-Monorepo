@@ -44,6 +44,7 @@ export default async function DemoAliasPage({ params }: { params: Promise<{ demo
         images={images}
         steps={uplift.demoSteps}
         story={uplift.story}
+        setupHighlight={uplift.setupHighlight}
         icon={uplift.icon}
         sphereVariant={uplift.sphereVariant}
         brand={brand}

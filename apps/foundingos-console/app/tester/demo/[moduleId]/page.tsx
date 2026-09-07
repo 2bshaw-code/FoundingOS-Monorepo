@@ -164,6 +164,7 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
           images={demoImages}
           steps={demoSteps}
           story={uplift.story}
+          setupHighlight={uplift.setupHighlight}
           icon={uplift.icon}
           sphereVariant={uplift.sphereVariant}
           brand={demoBrand}

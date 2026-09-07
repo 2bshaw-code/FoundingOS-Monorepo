@@ -11,6 +11,7 @@ export type QuantumBrandUplift = {
   icon: string
   sphereVariant: QuantumSphereVariant
   story: string
+  setupHighlight: string
   demo: { images: string[] }
   demoImageRequirements: Array<{ src: string; alt: string; caption: string; requirement: string }>
   demoSteps: string[]
@@ -43,6 +44,7 @@ export const QUANTUM_BRAND_UPLIFTS: Record<BrandSlug, QuantumBrandUplift> = {
     icon: '◈',
     sphereVariant: 'core-orbit',
     story: 'FoundingOS is the unified command layer connecting every brand, console, demo, survey, entitlement, and AI workflow across the ecosystem.',
+    setupHighlight: 'Set up in minutes: connect your brands once, and every console, demo, and AI workflow is unified — no separate logins, no separate setup.',
     demo: { images: demoImages('foundingos') },
     demoImageRequirements: [
       { src: '/demo/brands/foundingos/step1.webp', alt: 'FoundingOS founder console with live navigation and brand intelligence header', caption: 'Founder console', requirement: 'Real screenshot of the live founder console — navigation, brand intelligence header, and hero moment.' },
@@ -60,6 +62,7 @@ export const QUANTUM_BRAND_UPLIFTS: Record<BrandSlug, QuantumBrandUplift> = {
     icon: '◉',
     sphereVariant: 'retail-grid',
     story: 'FoundRetail helps retailers manage inventory, pricing, promotions, and customer engagement with clarity and automation.',
+    setupHighlight: 'Set up in minutes: connect your product catalogue once, and FoundRetail tracks stock, prices, and promotions automatically — no spreadsheets, no manual re-entry.',
     demo: { images: demoImages('retail') },
     demoImageRequirements: [
       { src: '/demo/brands/retail/step1.webp', alt: 'FoundRetail console showing Commerce Pulse header and live KPIs', caption: 'Commerce Pulse console', requirement: 'Real screenshot of the live FoundRetail console header and KPI row.' },
@@ -78,6 +81,7 @@ export const QUANTUM_BRAND_UPLIFTS: Record<BrandSlug, QuantumBrandUplift> = {
     icon: '◆',
     sphereVariant: 'trace-pulse',
     story: 'FoundMeat supports butchers, meat suppliers, and food distributors with traceability, batch management, and compliance workflows.',
+    setupHighlight: 'Set up in minutes: log your first batch, and FoundMeat handles traceability and compliance reporting automatically from then on — no paperwork chasing.',
     demo: { images: demoImages('meat') },
     demoImageRequirements: [
       { src: '/demo/brands/meat/step1.webp', alt: 'FoundMeat console showing Supply Chain Heat header and live KPIs', caption: 'Supply Chain Heat console', requirement: 'Real screenshot of the live FoundMeat console header and KPI row.' },
@@ -96,6 +100,7 @@ export const QUANTUM_BRAND_UPLIFTS: Record<BrandSlug, QuantumBrandUplift> = {
     icon: '✦',
     sphereVariant: 'discovery-flare',
     story: 'FoundThat powers marketplaces and listing platforms with product discovery, listing management, and buyer engagement tools.',
+    setupHighlight: 'Set up in minutes: publish your first listing, and FoundThat surfaces it to buyers and tracks engagement automatically — no separate marketplace tools needed.',
     demo: { images: demoImages('foundthat') },
     demoImageRequirements: [
       { src: '/demo/brands/foundthat/step1.webp', alt: 'FoundThat console showing live header and KPIs', caption: 'FoundThat console', requirement: 'Real screenshot of the live FoundThat console header and KPI row.' },
@@ -114,6 +119,7 @@ export const QUANTUM_BRAND_UPLIFTS: Record<BrandSlug, QuantumBrandUplift> = {
     icon: '⬢',
     sphereVariant: 'talent-helix',
     story: 'FoundTalent helps recruiters and HR teams manage candidates, interviews, and hiring pipelines with intelligence and automation.',
+    setupHighlight: 'Set up in minutes: add your first candidate, and FoundTalent manages the whole pipeline from application to interview — no spreadsheets, no missed follow-ups.',
     demo: { images: demoImages('talent') },
     demoImageRequirements: [
       { src: '/demo/brands/talent/step1.webp', alt: 'FoundTalent console showing Recruitment Velocity header and live KPIs', caption: 'Recruitment Velocity console', requirement: 'Real screenshot of the live FoundTalent console header and KPI row.' },
@@ -132,6 +138,7 @@ export const QUANTUM_BRAND_UPLIFTS: Record<BrandSlug, QuantumBrandUplift> = {
     icon: '∞',
     sphereVariant: 'crypto-ring',
     story: 'FoundCrypto provides traders and crypto businesses with portfolio tracking, transaction history, and market insights.',
+    setupHighlight: 'Set up in minutes: connect your wallet or exchange, and FoundCrypto tracks your portfolio and compliance automatically — no manual reconciliation.',
     demo: { images: demoImages('crypto') },
     demoImageRequirements: [
       { src: '/demo/brands/crypto/step1.webp', alt: 'FoundCrypto console showing live header and KPIs', caption: 'FoundCrypto console', requirement: 'Real screenshot of the live FoundCrypto console header and KPI row.' },
@@ -150,6 +157,7 @@ export const QUANTUM_BRAND_UPLIFTS: Record<BrandSlug, QuantumBrandUplift> = {
     icon: '£',
     sphereVariant: 'finance-ledger',
     story: 'FoundFinance helps businesses manage invoices, payments, cashflow, and financial reporting with clarity and automation.',
+    setupHighlight: 'Set up in minutes: connect your invoices once, and FoundFinance tracks payments and cashflow automatically — no manual reconciliation, no missed due dates.',
     demo: { images: demoImages('finance') },
     demoImageRequirements: [
       { src: '/demo/brands/finance/step1.webp', alt: 'FoundFinance console showing Cashflow Stability header and live KPIs', caption: 'Cashflow Stability console', requirement: 'Real screenshot of the live FoundFinance console header and KPI row.' },
@@ -168,6 +176,7 @@ export const QUANTUM_BRAND_UPLIFTS: Record<BrandSlug, QuantumBrandUplift> = {
     icon: '✚',
     sphereVariant: 'health-wave',
     story: 'FoundHealth supports clinics and health providers with patient records, appointment scheduling, and care workflows.',
+    setupHighlight: 'Set up in minutes: add your first patient record, and FoundHealth manages scheduling and care workflows automatically — no separate booking system needed.',
     demo: { images: demoImages('health') },
     demoImageRequirements: [
       { src: '/demo/brands/health/step1.webp', alt: 'FoundHealth console showing Patient Flow Pulse header and live KPIs', caption: 'Patient Flow Pulse console', requirement: 'Real screenshot of the live FoundHealth console header and KPI row.' },
@@ -186,6 +195,7 @@ export const QUANTUM_BRAND_UPLIFTS: Record<BrandSlug, QuantumBrandUplift> = {
     icon: '▲',
     sphereVariant: 'logistics-route',
     story: 'FoundLogistics helps logistics teams manage shipments, tracking, delivery routes, and fleet performance.',
+    setupHighlight: 'Set up in minutes: add your first shipment, and FoundLogistics tracks routes and fleet performance automatically — no manual dispatch sheets.',
     demo: { images: demoImages('logistics') },
     demoImageRequirements: [
       { src: '/demo/brands/logistics/step1.webp', alt: 'FoundLogistics console showing Fleet Momentum header and live KPIs', caption: 'Fleet Momentum console', requirement: 'Real screenshot of the live FoundLogistics console header and KPI row.' },

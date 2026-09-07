@@ -23,11 +23,13 @@ export function QuantumDemoSteps({
   imageCount,
   activeIndex = 0,
   onSelect,
+  setupHighlight,
 }: {
   steps: string[]
   imageCount: number
   activeIndex?: number
   onSelect?: (index: number) => void
+  setupHighlight?: string
 }) {
   const withImage = steps.slice(0, imageCount)
   const trailing = steps.slice(imageCount)
@@ -69,6 +71,12 @@ export function QuantumDemoSteps({
             detail: step,
           }))}
         />
+      ) : null}
+      {setupHighlight ? (
+        <div className="q-demo-setup-highlight" data-narration={setupHighlight}>
+          <span className="q-demo-setup-highlight-badge">⚡ How easy this is</span>
+          <p>{setupHighlight}</p>
+        </div>
       ) : null}
     </div>
   )

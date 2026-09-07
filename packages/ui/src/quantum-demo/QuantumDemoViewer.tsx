@@ -16,6 +16,7 @@ export function QuantumDemoViewer({
   images,
   steps,
   story,
+  setupHighlight,
   icon,
   sphereVariant = 'core-orbit',
   brand = brands.foundingos,
@@ -25,6 +26,7 @@ export function QuantumDemoViewer({
   images: QuantumDemoImage[]
   steps: string[]
   story?: string
+  setupHighlight?: string
   icon?: string
   sphereVariant?: string
   brand?: BrandDefinition
@@ -35,7 +37,12 @@ export function QuantumDemoViewer({
   return (
     <QuantumCard className={`q-demo-viewer q-demo-sphere-${sphereVariant}`} brand={brand}>
       <QuantumSectionHeader label={title} action={icon ? <span className="q-demo-icon">{icon}</span> : null} />
-      {story ? <div className="q-demo-story">{story}</div> : null}
+      {story ? (
+        <div className="q-demo-story" data-narration={story}>
+          <span className="q-demo-story-eyebrow">Why this matters</span>
+          <p>{story}</p>
+        </div>
+      ) : null}
       <div className="q-demo-viewer-grid">
         <QuantumDemoImageCarousel images={images} steps={steps} onStepChange={setActiveStep} />
         <div className="q-demo-instructions">
@@ -44,6 +51,7 @@ export function QuantumDemoViewer({
             imageCount={images.length}
             activeIndex={activeStep}
             onSelect={setActiveStep}
+            setupHighlight={setupHighlight}
           />
           {onCompleteDemo ? (
             <form action={onCompleteDemo}>

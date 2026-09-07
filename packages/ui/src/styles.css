@@ -561,14 +561,55 @@
 }
 
 .q-demo-story {
-  background: color-mix(in srgb, var(--q-accent) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--q-accent) 34%, transparent);
-  border-radius: 12px;
+  background: color-mix(in srgb, var(--q-accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--q-accent) 40%, transparent);
+  border-radius: 14px;
   color: var(--q-neutral-0);
-  font-size: 0.95rem;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.q-demo-story-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.q-demo-story p {
+  font-size: 1.05rem;
   font-weight: 650;
   line-height: 1.55;
+  margin: 0;
+}
+
+.q-demo-setup-highlight {
+  background: color-mix(in srgb, #22c55e 16%, transparent);
+  border: 1px solid color-mix(in srgb, #22c55e 40%, transparent);
+  border-radius: 12px;
+  color: var(--q-neutral-0);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   padding: 12px 16px;
+}
+
+.q-demo-setup-highlight-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.q-demo-setup-highlight p {
+  font-size: 0.92rem;
+  font-weight: 550;
+  line-height: 1.5;
+  margin: 0;
 }
 
 .q-demo-viewer-grid {
