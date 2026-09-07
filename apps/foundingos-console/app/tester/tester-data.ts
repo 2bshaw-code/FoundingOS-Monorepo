@@ -1098,12 +1098,11 @@ export const SWITCHER_CODE_SCRIPT = `
 // - "Narrator: ON/OFF" (#narrator-enabled-toggle, unchanged from before) — shows/hides the
 //   narrator text panels and narrate buttons entirely.
 // - "Audio: ON/OFF" ([data-audio-toggle], always visible, never hidden by the Narrator
-//   toggle) — a master permission gate for actually speaking anything aloud. OFF (the
-//   default) means every narrate-button click is a silent no-op; ON enables them. This is
-//   the only thing that ever triggers audio without a direct click: 15 seconds after a
-//   narrator surface loads, if — and only if — Audio is already ON, it speaks the page's
-//   first narrator line once. If Audio is OFF (the default), nothing plays automatically,
-//   ever.
+//   toggle) — a master permission gate for actually speaking anything aloud. Defaults ON
+//   (see below); OFF means every narrate-button click is a silent no-op. This is the only
+//   thing that ever triggers audio without a direct click: 2.5 seconds after a narrator
+//   surface loads, if — and only if — Audio is already ON, it speaks the page's first
+//   narrator line once. If Audio is OFF, nothing plays automatically, ever.
 export const NARRATION_PLAYER_SCRIPT = `
 (function () {
   // Best-available free voice — the browser's default speechSynthesis voice is often the

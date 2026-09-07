@@ -834,6 +834,33 @@
   padding: 0;
 }
 
+.q-demo-steps-chips > li {
+  align-items: stretch;
+  display: flex;
+  gap: 6px;
+}
+
+.q-demo-steps-chips > li > .q-demo-step-chip {
+  flex: 1;
+}
+
+.q-demo-step-narrate-btn {
+  background: transparent;
+  border: 1px solid var(--q-border);
+  border-radius: 10px;
+  color: var(--q-neutral-0);
+  cursor: pointer;
+  flex: none;
+  font-size: 0.9rem;
+  padding: 0 10px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.q-demo-step-narrate-btn:hover {
+  background: color-mix(in srgb, var(--q-accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--q-accent) 45%, transparent);
+}
+
 .q-demo-step-chip {
   align-items: flex-start;
   background: transparent;
