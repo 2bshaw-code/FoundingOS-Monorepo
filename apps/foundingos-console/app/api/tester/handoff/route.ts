@@ -15,8 +15,19 @@ import { brands } from '@foundingos/config'
 // requested console. Accepts either a tester or an admin token — the founder's own
 // FoundingOS app most often carries an admin session (e.g. opening SuperDashboard), while the
 // per-brand apps carry a tester session.
+// Some brand consoleUrls resolve to a relative "/" in production when their NEXT_PUBLIC_*_URL
+// env var isn't set (see the CROSS_APP_URL_KEYS safety net in packages/config/src/index.ts) —
+// `new URL()` throws on those, so they're filtered out here rather than crashing the build.
 const ALLOWED_REDIRECT_ORIGINS = new Set(
-  Object.values(brands).map((brand) => new URL(brand.consoleUrl).origin)
+  Object.values(brands)
+    .map((brand) => {
+      try {
+        return new URL(brand.consoleUrl).origin
+      } catch {
+        return null
+      }
+    })
+    .filter((origin): origin is string => origin !== null)
 )
 
 const FALLBACK_URL = 'https://www.foundingos.com/?handoff=invalid'
