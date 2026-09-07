@@ -34,7 +34,7 @@ const demoBaseUrl = 'https://console.foundingos.com'
 
 function image(brandSlug: string, step: number, alt: string, caption: string, requirement: string) {
   return {
-    uri: `${demoBaseUrl}/demo/brands/${brandSlug}/step${step}.png`,
+    uri: `${demoBaseUrl}/demo/brands/${brandSlug}/step${step}.webp`,
     alt,
     caption,
     requirement,
@@ -42,7 +42,7 @@ function image(brandSlug: string, step: number, alt: string, caption: string, re
 }
 
 function demoImages(brandSlug: string, count = 4) {
-  return Array.from({ length: count }, (_, index) => `/demo/brands/${brandSlug}/step${index + 1}.png`)
+  return Array.from({ length: count }, (_, index) => `/demo/brands/${brandSlug}/step${index + 1}.webp`)
 }
 
 function demoRoute(id: string) {

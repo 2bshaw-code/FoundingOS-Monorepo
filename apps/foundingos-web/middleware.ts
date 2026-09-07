@@ -68,8 +68,20 @@ const SURVEY_URL = 'https://console.foundingos.com/tester/survey'
 // bounced every signed-out visitor straight back to the login screen on every click.
 const PUBLIC_PATHS = new Set(['/legal', '/contact', '/home', '/about', '/pricing', '/demos'])
 
+// Real static asset directories under public/ that the public marketing pages above load
+// images from (demo screenshots, brand step-by-step screenshots, etc.) — the matcher below
+// already skips Next's own _next/static and _next/image, but not these app-level public/
+// asset paths, so a signed-out visitor's <img> requests were silently redirected to '/'
+// (returning the login page's HTML instead of image bytes) even on an otherwise-public
+// page like /demos. Any path under one of these prefixes is always public, same reasoning
+// as PUBLIC_PATHS above — it's just static media, never gated content.
+const PUBLIC_ASSET_PREFIXES = ['/demo/', '/icons/', '/assets/']
+
 export async function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname === '/' || PUBLIC_PATHS.has(request.nextUrl.pathname)) return NextResponse.next()
+  const { pathname } = request.nextUrl
+  if (pathname === '/' || PUBLIC_PATHS.has(pathname) || PUBLIC_ASSET_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+    return NextResponse.next()
+  }
 
   const adminToken = request.cookies.get(ADMIN_COOKIE)?.value
   const adminId = adminToken ? await verifyToken('admin', adminToken) : null
