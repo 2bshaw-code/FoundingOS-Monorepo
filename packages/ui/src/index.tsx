@@ -474,6 +474,37 @@ export function FounderLauncher({ page = 'home' }: { page?: 'home' | 'about' | '
             <a className="btn btn-primary btn-premium" href={`${brands.foundingos.consoleUrl}/tester/dashboard`}>Open tester console</a>
           </article>
         </section>
+        <section id="connect-whatsapp" className="module-grid">
+          <article className="card-premium" style={{ gridColumn: '1 / -1' }}>
+            <h2 className="header-premium">What we need to run your WhatsApp</h2>
+            <p>FoundAI runs on your own WhatsApp Business number — nothing is shared or shared between businesses. Here's exactly what we ask for to connect it, and why.</p>
+          </article>
+          <article className="card-premium quantum-card">
+            <span className="quantum-corner-marker">1</span>
+            <h3>Your WhatsApp Business number</h3>
+            <p>A phone number dedicated to your business (it can be a new number or one you already use on WhatsApp Business). This is the number your customers message and FoundAI replies from.</p>
+          </article>
+          <article className="card-premium quantum-card">
+            <span className="quantum-corner-marker">2</span>
+            <h3>Meta Business verification</h3>
+            <p>A verified Meta Business Account (via Meta Business Manager) proving you're a real, legitimate business — this is Meta's own requirement for any business sending WhatsApp messages at scale, not something FoundingOS adds.</p>
+          </article>
+          <article className="card-premium quantum-card">
+            <span className="quantum-corner-marker">3</span>
+            <h3>Connect it in FoundingOS</h3>
+            <p>Paste in your WhatsApp Business Account ID and access token from Meta (we walk you through exactly where to find these), and FoundingOS securely links your number to your console — no code required.</p>
+          </article>
+          <article className="card-premium quantum-card">
+            <span className="quantum-corner-marker">4</span>
+            <h3>Approve your message templates</h3>
+            <p>WhatsApp requires pre-approved templates for the first message in a conversation (e.g. order confirmations, payment reminders). We provide ready-made templates for every brand — you just review and submit them for Meta's approval, which usually takes minutes to hours.</p>
+          </article>
+          <article className="card-premium quantum-card">
+            <span className="quantum-corner-marker">5</span>
+            <h3>Go live</h3>
+            <p>Once connected, FoundAI reads incoming WhatsApp messages, understands what's being asked (an order, a payment, a stock check), and responds or takes action automatically — with a human always able to step in.</p>
+          </article>
+        </section>
         <WebTutorialSystem />
         <footer className="site-footer">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center', marginBottom: 16, fontSize: 13 }}>
