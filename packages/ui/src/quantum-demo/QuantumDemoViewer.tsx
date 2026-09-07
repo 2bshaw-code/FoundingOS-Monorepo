@@ -2,6 +2,9 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
+'use client'
+
+import { useState } from 'react'
 import type { BrandDefinition } from '@foundingos/config'
 import { brands } from '@foundingos/config'
 import { QuantumButtonPrimary, QuantumCard, QuantumSectionHeader } from '../quantum'
@@ -27,14 +30,21 @@ export function QuantumDemoViewer({
   brand?: BrandDefinition
   onCompleteDemo?: () => void | Promise<void>
 }) {
+  const [activeStep, setActiveStep] = useState(0)
+
   return (
     <QuantumCard className={`q-demo-viewer q-demo-sphere-${sphereVariant}`} brand={brand}>
       <QuantumSectionHeader label={title} action={icon ? <span className="q-demo-icon">{icon}</span> : null} />
       {story ? <div className="q-demo-story">{story}</div> : null}
       <div className="q-demo-viewer-grid">
-        <QuantumDemoImageCarousel images={images} />
+        <QuantumDemoImageCarousel images={images} steps={steps} onStepChange={setActiveStep} />
         <div className="q-demo-instructions">
-          <QuantumDemoSteps steps={steps} />
+          <QuantumDemoSteps
+            steps={steps}
+            imageCount={images.length}
+            activeIndex={activeStep}
+            onSelect={setActiveStep}
+          />
           {onCompleteDemo ? (
             <form action={onCompleteDemo}>
               <QuantumButtonPrimary type="submit" className="q-button-large">Continue to Survey</QuantumButtonPrimary>

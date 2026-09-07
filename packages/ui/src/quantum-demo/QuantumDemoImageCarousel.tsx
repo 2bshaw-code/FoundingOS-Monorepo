@@ -13,7 +13,18 @@ export type QuantumDemoImage = {
   caption?: string
 }
 
-export function QuantumDemoImageCarousel({ images }: { images: QuantumDemoImage[] }) {
+// The step text for the currently active screenshot, overlaid directly on the image
+// itself (rather than in a separate list beside/below it) so testers see exactly what
+// to look for without splitting attention between two panels. `stepIndex` starts at 1.
+export function QuantumDemoImageCarousel({
+  images,
+  steps,
+  onStepChange,
+}: {
+  images: QuantumDemoImage[]
+  steps?: string[]
+  onStepChange?: (index: number) => void
+}) {
   const [index, setIndex] = useState(0)
   const trackRef = useRef<HTMLDivElement | null>(null)
   const active = images[index]
@@ -22,8 +33,11 @@ export function QuantumDemoImageCarousel({ images }: { images: QuantumDemoImage[
   function moveTo(next: number) {
     const bounded = Math.max(0, Math.min(images.length - 1, next))
     setIndex(bounded)
+    onStepChange?.(bounded)
     trackRef.current?.children[bounded]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
   }
+
+  const activeStep = steps?.[index]
 
   return (
     <div className="q-demo-carousel">
@@ -32,11 +46,21 @@ export function QuantumDemoImageCarousel({ images }: { images: QuantumDemoImage[
         className="q-demo-image-track"
         aria-label="Demo screenshots"
         ref={trackRef}
-        onScroll={(event) => setIndex(Math.round(event.currentTarget.scrollLeft / Math.max(1, event.currentTarget.clientWidth)))}
+        onScroll={(event) => {
+          const next = Math.round(event.currentTarget.scrollLeft / Math.max(1, event.currentTarget.clientWidth))
+          setIndex(next)
+          onStepChange?.(next)
+        }}
       >
         {images.map((image, imageIndex) => (
           <figure className="q-demo-image-frame" data-active={String(imageIndex === index)} key={image.src}>
             <img src={image.src} alt={image.alt} loading={imageIndex === 0 ? 'eager' : 'lazy'} />
+            {steps?.[imageIndex] ? (
+              <div className="q-demo-image-step-overlay">
+                <span className="q-demo-image-step-badge">Step {imageIndex + 1}</span>
+                <p>{steps[imageIndex]}</p>
+              </div>
+            ) : null}
             {image.caption ? <figcaption>{image.caption}</figcaption> : null}
           </figure>
         ))}

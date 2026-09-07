@@ -53,17 +53,20 @@ const SURVEY_URL = 'https://console.foundingos.com/tester/survey'
 
 // "/" itself is the real Quantum login page — never gate it (that would be a redirect
 // loop), checked explicitly inside the function body rather than via a matcher trick, for
-// reliability. Every other route in this app (the real Homepage at /home, /about,
-// /pricing, plus the dormant /landing /survey /tester-login /onboarding demo pages) goes
+// reliability. The real public marketing pages (/home, /about, /pricing, /demos) are
+// listed in PUBLIC_PATHS below. Every other route in this app (the dormant /landing
+// /survey /tester-login /onboarding demo pages, plus any real API routes) still goes
 // through the same real role check as every other app on the shared session domain.
 //
-// /legal and /contact are the one deliberate exception: real Terms/Privacy/Cookie
-// information and real support info have to be reachable by anyone — regulators,
-// prospective users deciding whether to sign up, testers who forgot their access code —
-// without first requiring a login. Gating legal/support pages behind a session would be a
-// genuine, real problem (and is a standard carve-out on every gated site), not just an
-// inconsistency with this specific tester program.
-const PUBLIC_PATHS = new Set(['/legal', '/contact'])
+// /legal, /contact, and every real public marketing page (/home, /about, /pricing,
+// /demos — the exact same set the catch-all route itself treats as public, see
+// app/[...slug]/page.tsx's `pages` Set) are the deliberate exceptions: real Terms/Privacy
+// info, support info, and the marketing site itself all have to be reachable by anyone —
+// regulators, prospective users deciding whether to sign up, testers who forgot their
+// access code, or anyone just browsing brand demos before signing in — without first
+// requiring a login. Gating these pages behind a session was a real bug: it silently
+// bounced every signed-out visitor straight back to the login screen on every click.
+const PUBLIC_PATHS = new Set(['/legal', '/contact', '/home', '/about', '/pricing', '/demos'])
 
 export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname === '/' || PUBLIC_PATHS.has(request.nextUrl.pathname)) return NextResponse.next()
