@@ -8,6 +8,7 @@ import './theme.css'
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode, CSSProperties } from 'react'
 import { cookies } from 'next/headers'
+import Link from 'next/link'
 import { Sidebar } from '@foundingos/ui/sidebar'
 import { FoundAI } from '@foundingos/ui/found-ai'
 import { Topbar } from '@foundingos/ui/topbar'
@@ -65,6 +66,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <html lang="en">
         <body className="min-h-screen bg-black tester-shell" style={tintStyle}>
           <QuantumBackground brand={tinted}>
+            <nav className="tester-tab-nav" aria-label="Tester navigation">
+              <Link href="/tester/dashboard">Dashboard</Link>
+              <Link href="/tester/demos">Demos &amp; Tutorials</Link>
+              <Link href="/tester/survey">Survey</Link>
+            </nav>
             <main className="tester-shell-content">{children}</main>
           </QuantumBackground>
           {/* Real testers/survey-takers/investors previously had NO AI helper at all —

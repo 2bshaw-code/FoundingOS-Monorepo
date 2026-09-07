@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../session'
 import { getTester } from '../store.server'
-import { categorizeCredential, getFreeRoamHref, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, NARRATION_PLAYER_SCRIPT, BRAND_ROW_NARRATOR_LINE, MODULE_OPTIONS, adminTesterId, exploreTesterId } from '../tester-data'
+import { categorizeCredential, getFreeRoamHref, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, NARRATION_PLAYER_SCRIPT, BRAND_ROW_NARRATOR_LINE } from '../tester-data'
 import { buildQuantumDemoCtaLabel } from '@foundingos/config/quantum-defined-engine'
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
@@ -48,23 +48,6 @@ export default async function TesterDashboardPage() {
   const category = isAdminSession ? 'admin' : categorizeCredential(realTesterId!)
   const switcherOptions = buildSwitcherOptions(category)
 
-  // "Investor Briefing" is its own module — a real, dedicated page/flow (/investor), not a
-  // /tester/demo/[moduleId] route — so it's shown as its own card, not in the generic grid.
-  const gridModules = MODULE_OPTIONS.filter((option) => option.moduleId !== 'investor-overview')
-  // Progress is only ever READ here (getTester, never getOrCreate) — browsing this grid must
-  // never itself create a row for a module nobody has actually opened yet. Admin's own primary
-  // module progress lives under its per-module admin-<moduleId> id; a real tester's own primary
-  // assigned module uses their real record directly (no separate lookup needed, already have
-  // it); every other module (for anyone) checks its own namespaced explore record, created only
-  // once that module's demo page is actually visited.
-  const progress = await Promise.all(
-    gridModules.map((option) => {
-      if (isAdminSession) return getTester(adminTesterId(option.moduleId))
-      if (tester!.moduleId === option.moduleId) return Promise.resolve(tester)
-      return getTester(exploreTesterId(realTesterId!, option.moduleId))
-    }),
-  )
-
   const primaryHref = !isAdminSession && tester
     ? (tester.status === 'registered'
       ? `/tester/demo/${tester.moduleId}`
@@ -97,33 +80,9 @@ export default async function TesterDashboardPage() {
       </header>
 
       <article className="module-card fo-card quantum-frame">
-        <div className="module-card-top"><span>◈</span><strong>All modules</strong></div>
-        <p>Run or replay any real module's demo, unlimited times — each one tracked under your own account.</p>
-        <div className="module-card-grid">
-          {gridModules.map((option, index) => {
-            const record = progress[index]
-            const isOwnPrimary = !isAdminSession && tester!.moduleId === option.moduleId
-            const label = !record || record.status === 'registered'
-              ? 'Not started'
-              : record.runs.length > 0
-                ? `${record.runs.length} survey ${record.runs.length === 1 ? 'run' : 'runs'} completed`
-                : 'Demo viewed'
-            return (
-              <article key={option.moduleId} className="module-card fo-card">
-                <div className="module-card-top"><span>▣</span><strong>{option.moduleLabel}</strong>{isOwnPrimary ? <small style={{ marginLeft: 'auto', opacity: 0.6 }}>your assigned module</small> : null}</div>
-                <p><small>{label}</small></p>
-                <Link className="btn btn-primary quantum-btn" href={`/tester/demo/${option.moduleId}`}>
-                  {record && record.runs.length > 0 ? 'Revisit demo' : 'Open demo'}
-                </Link>
-              </article>
-            )
-          })}
-          <article className="module-card fo-card">
-            <div className="module-card-top"><span>◇</span><strong>Investor Briefing</strong></div>
-            <p><small>Real briefing → demo → survey flow, same as an investor session.</small></p>
-            <Link className="btn btn-primary quantum-btn" href="/investor">Open investor briefing</Link>
-          </article>
-        </div>
+        <div className="module-card-top"><span>◈</span><strong>Demos &amp; Tutorials</strong></div>
+        <p>Every real module's guided, step-by-step walkthrough — with real screenshots — now lives on its own tab.</p>
+        <Link className="btn btn-primary quantum-btn" href="/tester/demos">Open Demos &amp; Tutorials</Link>
       </article>
 
       <article className="module-card fo-card quantum-frame" data-narration={SWITCHER_PANEL_NARRATOR_LINE}>

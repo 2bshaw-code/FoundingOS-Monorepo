@@ -36,9 +36,22 @@ export function QuantumDemoImageCarousel({ images }: { images: QuantumDemoImage[
       >
         {images.map((image, imageIndex) => (
           <figure className="q-demo-image-frame" data-active={String(imageIndex === index)} key={image.src}>
-            <img src={image.src} alt={image.alt} />
+            <img src={image.src} alt={image.alt} loading={imageIndex === 0 ? 'eager' : 'lazy'} />
             {image.caption ? <figcaption>{image.caption}</figcaption> : null}
           </figure>
+        ))}
+      </div>
+      <div className="q-demo-carousel-dots" role="tablist" aria-label="Jump to screenshot">
+        {images.map((image, imageIndex) => (
+          <button
+            key={image.src}
+            type="button"
+            role="tab"
+            aria-selected={imageIndex === index}
+            aria-label={`Screenshot ${imageIndex + 1} of ${images.length}`}
+            className={imageIndex === index ? 'q-demo-carousel-dot is-active' : 'q-demo-carousel-dot'}
+            onClick={() => moveTo(imageIndex)}
+          />
         ))}
       </div>
       <div className="q-demo-carousel-controls">
