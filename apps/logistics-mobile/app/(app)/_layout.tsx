@@ -27,6 +27,14 @@ export default function AppTabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="deliveries"
+        options={{
+          title: 'Deliveries',
+          headerTitle: 'Deliveries',
+          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 18 }}>🚚</Text>,
+        }}
+      />
+      <Tabs.Screen
         name="activity"
         options={{
           title: 'Activity',

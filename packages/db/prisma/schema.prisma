@@ -398,3 +398,186 @@ model AccountingInvoice {
   @@index([brandSlug])
   @@map("accounting_invoices")
 }
+
+// ---------------------------------------------------------------------------
+// Distribution suite — FoundLogistics runs as a real internal carrier (think
+// Royal Mail): it owns depots, vehicles and drivers, and other product-selling
+// brands (FoundRetail, FoundMeat, FoundHealth) book shipments into it exactly
+// like a business booking a courier. One real source of truth shared by every
+// console + mobile app in the suite — no per-brand duplicate tables.
+// ---------------------------------------------------------------------------
+
+enum TransportType {
+  standard
+  fragile
+  chilled
+  frozen
+  bulk
+}
+
+enum ShipmentStatus {
+  requested
+  quoted
+  booked
+  packed
+  collected
+  in_transit
+  out_for_delivery
+  delivered
+  failed_delivery
+  cancelled
+}
+
+// A booking made by a product-selling brand (retail/meat/health/foundthat/...) into the
+// FoundLogistics carrier network. brandSlug identifies who booked it; everything from here
+// on (route, driver, POD) belongs to FoundLogistics's own operational tables.
+model Shipment {
+  id                String         @id @default(cuid())
+  brandSlug         String
+  reference         String
+  transportType      TransportType  @default(standard)
+  status            ShipmentStatus @default(requested)
+  originAddress     String
+  destinationName   String
+  destinationAddress String
+  destinationLat    Float?
+  destinationLng    Float?
+  weightKg          Float          @default(0)
+  declaredValue     Float          @default(0)
+  currency          String         @default("GBP")
+  carrierQuoteId    String?
+  carrierQuote      CarrierQuote?  @relation(fields: [carrierQuoteId], references: [id])
+  routeStops        RouteStop[]
+  proofOfDelivery   ProofOfDelivery?
+  requestedAt       DateTime       @default(now())
+  bookedAt          DateTime?
+  eta               DateTime?
+  updatedAt         DateTime       @updatedAt
+
+  @@index([brandSlug])
+  @@index([status])
+  @@map("shipments")
+}
+
+// One row per transport-option evaluated by the AI rate/efficiency engine at booking time
+// (cost, speed, reliability score, and the composite recommendation score) — kept so a booking
+// decision can be explained/audited, not just the final chosen option.
+model CarrierQuote {
+  id              String     @id @default(cuid())
+  transportType   TransportType
+  optionName      String
+  estimatedCost   Float
+  estimatedHours  Float
+  reliabilityScore Float
+  efficiencyScore Float
+  recommended     Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+  shipments       Shipment[]
+
+  @@map("carrier_quotes")
+}
+
+// FoundLogistics's own depots — the real start point for every route.
+model Depot {
+  id        String   @id @default(cuid())
+  name      String
+  lat       Float
+  lng       Float
+  vehicles  Vehicle[]
+  routes    DeliveryRoute[]
+  createdAt DateTime @default(now())
+
+  @@map("depots")
+}
+
+model Driver {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  vehicles  Vehicle[]
+  routes    DeliveryRoute[]
+  createdAt DateTime @default(now())
+
+  @@map("drivers")
+}
+
+enum VehicleType {
+  van
+  refrigerated_van
+  hgv
+  bike
+}
+
+model Vehicle {
+  id           String        @id @default(cuid())
+  registration String        @unique
+  type         VehicleType   @default(van)
+  depotId      String
+  depot        Depot         @relation(fields: [depotId], references: [id])
+  driverId     String?
+  driver       Driver?       @relation(fields: [driverId], references: [id])
+  capacityKg   Float         @default(0)
+  routes       DeliveryRoute[]
+  createdAt    DateTime      @default(now())
+
+  @@map("vehicles")
+}
+
+enum RouteStatus {
+  planned
+  in_progress
+  completed
+}
+
+// A driver's real run for the day: an ordered sequence of RouteStop rows, each pointing at one
+// Shipment. currentLat/currentLng is the live position surfaced on the real map (mobile +
+// console) — updated by the driver's mobile app as they move, or by the demo GPS simulator.
+model DeliveryRoute {
+  id           String      @id @default(cuid())
+  depotId      String
+  depot        Depot       @relation(fields: [depotId], references: [id])
+  driverId     String?
+  driver       Driver?     @relation(fields: [driverId], references: [id])
+  vehicleId    String?
+  vehicle      Vehicle?    @relation(fields: [vehicleId], references: [id])
+  status       RouteStatus @default(planned)
+  currentLat   Float?
+  currentLng   Float?
+  stops        RouteStop[]
+  plannedDate  DateTime    @default(now())
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@map("delivery_routes")
+}
+
+model RouteStop {
+  id          String        @id @default(cuid())
+  routeId     String
+  route       DeliveryRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  shipmentId  String        @unique
+  shipment    Shipment      @relation(fields: [shipmentId], references: [id])
+  sequence    Int
+  arrivedAt   DateTime?
+  departedAt  DateTime?
+
+  @@index([routeId])
+  @@map("route_stops")
+}
+
+// Real proof of delivery captured on completion — signature/photo are stored as data URLs or
+// object storage URLs (whichever the client provides); this table is the one source of truth
+// for "was it delivered, when, where, and who signed for it" across every console/mobile view.
+model ProofOfDelivery {
+  id             String   @id @default(cuid())
+  shipmentId     String   @unique
+  shipment       Shipment @relation(fields: [shipmentId], references: [id])
+  recipientName  String
+  signatureUrl   String?
+  photoUrl       String?
+  lat            Float?
+  lng            Float?
+  deliveredAt    DateTime @default(now())
+
+  @@map("proof_of_deliveries")
+}

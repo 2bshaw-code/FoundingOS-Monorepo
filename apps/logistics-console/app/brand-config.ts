@@ -734,6 +734,12 @@ export const brandConfig: BrandConsoleConfig = {
       "section": "Core"
     },
         {
+      "label": "Distribution",
+      "href": "/modules/distribution",
+      "icon": "🚚",
+      "section": "Modules"
+    },
+        {
       "label": "Fleet",
       "href": "/modules/fleet",
       "icon": "▣",

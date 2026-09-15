@@ -758,6 +758,12 @@ export const brandConfig: BrandConsoleConfig = {
       "section": "Modules"
     },
     {
+      "label": "Distribution",
+      "href": "/modules/distribution",
+      "icon": "🚚",
+      "section": "Modules"
+    },
+    {
       "label": "Billing",
       "href": "/modules/billing",
       "icon": "▣",

@@ -67,6 +67,10 @@ export async function middleware(request: NextRequest) {
   // verified from the header instead of a cookie.
   if (pathname.startsWith('/api/console/')) return NextResponse.next()
 
+  // Public, unauthenticated order tracking (see app/api/track/route.ts) — a customer
+  // tracking their own delivery reference has no console login at all.
+  if (pathname === '/api/track') return NextResponse.next()
+
 
   // Self-contained synthetic data generators (this brand's own /api/scrape/refresh,
   // /api/feeds/update, /api/dashboard/refresh) must be reachable with NO session at all —

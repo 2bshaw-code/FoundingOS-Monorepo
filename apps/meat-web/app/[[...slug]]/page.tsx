@@ -12,6 +12,7 @@ import { PackageModal } from '@foundingos/ui/package-modal'
 import { RotatingMessageFeed } from '@foundingos/ui/rotating-message-feed'
 import { CORE_MODULES } from '@foundingos/config/modules'
 import { PremiumSocialLinks, QuantumSphereLogo } from '@foundingos/ui'
+import { OrderTrackingWidget } from '@foundingos/ui/order-tracking-widget'
 
 const features = [
   { title: 'Operational clarity', description: 'Keep every workflow, message, and update connected across the teams and channels your business uses.', icon: '◉' },
@@ -131,6 +132,14 @@ export default function Page() {
             </article>
           ))}
         </div>
+      </section>
+
+      <section id="track-order" style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px 24px' }}>
+        <div style={{ display: 'grid', gap: 10, marginBottom: 24 }}>
+          <h2 style={{ margin: 0, fontSize: 'clamp(28px, 3.5vw, 40px)', lineHeight: 1.08 }}>Track your delivery</h2>
+          <p style={{ margin: 0, lineHeight: 1.7, color: '#bfd8ee' }}>Every order ships with FoundLogistics, our internal carrier network — track it live below.</p>
+        </div>
+        <OrderTrackingWidget consoleUrl={brands.meat.consoleUrl} accent="#00FF66" />
       </section>
 
       <section id="core-modules" style={{ maxWidth: 1200, margin: '0 auto', padding: '52px 20px 24px' }}>

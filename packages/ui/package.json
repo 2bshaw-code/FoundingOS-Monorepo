@@ -15,6 +15,10 @@
     "./modules/sales": "./src/modules/SalesModule.tsx",
     "./modules/crypto-wallet-views": "./src/modules/CryptoWalletViews.tsx",
     "./modules/retail-operations-views": "./src/modules/retail-operations-views.tsx",
+    "./live-map": "./src/live-map.tsx",
+    "./order-tracking-widget": "./src/order-tracking-widget.tsx",
+    "./modules/DistributionModule": "./src/modules/DistributionModule.tsx",
+    "./modules/BrandDistributionModule": "./src/modules/BrandDistributionModule.tsx",
     "./superdash/SuperDashTile": "./src/superdash/SuperDashTile.tsx",
     "./superdash/SuperDashQuantumTiles": "./src/superdash/SuperDashQuantumTiles.tsx",
     "./superdash/SuperDashChat": "./src/superdash/SuperDashChat.tsx",
@@ -85,8 +89,10 @@
   "dependencies": {
     "@foundingos/config": "*",
     "clsx": "^2.1.1",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.468.0",
     "odometer": "^0.4.8",
+    "react-leaflet": "^4.2.1",
     "xlsx": "^0.18.5"
   },
   "peerDependencies": {
@@ -95,6 +101,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.22",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "typescript": "^5.7.2"
