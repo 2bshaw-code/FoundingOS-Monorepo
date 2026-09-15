@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "FoundFinance",
+    "slug": "finance-mobile",
+    "scheme": "finance",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#05060a",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.foundingos.finance",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.foundingos.finance",
+      "adaptiveIcon": {
+        "backgroundColor": "#05060a",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow FoundingOS to access your photos to scan them with AI.",
+          "cameraPermission": "Allow FoundingOS to use your camera to scan items with AI."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow FoundingOS to use your location to show the community leaderboard near you."
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "bcf4f85d-3280-46a9-9595-eaaf1964ff41"
+      }
+    },
+    "owner": "foundingos"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "FoundingOS Quantum Mobile",
+    "slug": "foundingos-mobile",
+    "scheme": "foundingos",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#05060a"
+    },
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#05060a",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.foundingos.quantum",
+      "infoPlist": {
+        "NSCameraUsageDescription": "FoundingOS Quantum uses the camera to scan shelves, receipts, product labels, and workflow media for AI-assisted actions.",
+        "NSMicrophoneUsageDescription": "FoundingOS Quantum uses the microphone to capture voice commands for AI-assisted workflows.",
+        "NSPhotoLibraryUsageDescription": "FoundingOS Quantum uses your photo library to select receipts, product photos, videos, and workflow media for AI-assisted actions.",
+        "NSPhotoLibraryAddUsageDescription": "FoundingOS Quantum may save generated receipts, workflow captures, and AI confirmation assets to your photo library when requested.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.foundingos.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#05060a",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-image-picker",
+      "expo-sqlite"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a39ee1f5-5e2a-4e64-b462-b08f79ef63d5"
+      }
+    },
+    "owner": "foundingos"
+  }
+}

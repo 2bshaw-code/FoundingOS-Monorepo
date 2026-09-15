@@ -1,0 +1,398 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["wros"]
+}
+
+model AuthUser {
+  id           String          @id @default(uuid())
+  email        String          @unique
+  passwordHash String
+  role         String
+  tenantId     String?
+  permissions  Json?
+  active       Boolean         @default(true)
+  sessions     AuthSession[]
+  resets       PasswordReset[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@schema("wros")
+}
+
+model AuthSession {
+  id                String    @id @default(uuid())
+  userId            String
+  user              AuthUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash  String
+  refreshTokenId    String
+  deviceFingerprint String
+  ipPrefix          String?
+  expiresAt         DateTime
+  rotatedAt         DateTime  @default(now())
+  revokedAt         DateTime?
+  createdAt         DateTime  @default(now())
+
+  @@index([userId])
+  @@schema("wros")
+}
+
+model PasswordReset {
+  id        String    @id @default(uuid())
+  userId    String
+  user      AuthUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@schema("wros")
+}
+
+model Merchant {
+  id        String    @id @default(cuid())
+  name      String
+  package   String
+  createdAt DateTime  @default(now())
+  consoles  Console[]
+
+  @@schema("wros")
+}
+
+model Console {
+  id         String   @id @default(cuid())
+  name       String
+  merchantId String
+  merchant   Merchant @relation(fields: [merchantId], references: [id])
+
+  @@schema("wros")
+}
+
+model Lead {
+  id          String    @id @default(cuid())
+  tenantId    String
+  source      String
+  sourceRef   String?   @unique
+  sourceUrl   String?
+  companyName String
+  contactName String?
+  email       String?
+  phone       String?
+  itemTitle   String?
+  stage       String    @default("new")
+  valuePence  Int       @default(0)
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId, stage])
+  @@schema("wros")
+}
+
+model Customer {
+  id          String            @id @default(cuid())
+  tenantId    String
+  companyName String
+  contactName String?
+  email       String?
+  phone       String?
+  source      String?
+  leads       Lead[]
+  orders      SalesOrder[]
+  messages    CustomerMessage[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([tenantId])
+  @@schema("wros")
+}
+
+model SalesOrder {
+  id              String    @id @default(cuid())
+  tenantId        String
+  customerId      String?
+  customer        Customer? @relation(fields: [customerId], references: [id])
+  reference       String    @unique
+  status          String    @default("open")
+  totalPence      Int       @default(0)
+  paymentStatus   String    @default("unpaid")
+  paymentMethod   String?
+  deliveryStatus  String    @default("unassigned")
+  deliveryAddress String?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([tenantId, status])
+  @@schema("wros")
+}
+
+model CustomerMessage {
+  id         String    @id @default(cuid())
+  tenantId   String
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  channel    String    @default("whatsapp")
+  direction  String
+  body       String
+  createdAt  DateTime  @default(now())
+
+  @@index([tenantId, createdAt])
+  @@schema("wros")
+}
+
+model InventoryItem {
+  id             String    @id @default(cuid())
+  tenantId       String
+  name           String
+  sku            String
+  category       String
+  supplierName   String?
+  supplierEmail  String?
+  pricePence     Int       @default(0)
+  stock          Int       @default(0)
+  lowStockLevel  Int       @default(5)
+  variants       Json?
+  active         Boolean   @default(true)
+  availability   String    @default("available")
+  approvalStatus String    @default("approved")
+  lastChangedBy  String?
+  approvedBy     String?
+  approvedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([tenantId, sku])
+  @@index([tenantId, category])
+  @@schema("wros")
+}
+
+model MerchantChange {
+  id          String    @id @default(cuid())
+  tenantId    String
+  itemId      String?
+  submittedBy String
+  action      String
+  proposed    Json
+  status      String    @default("pending")
+  reviewedBy  String?
+  reviewNote  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId, status, createdAt])
+  @@schema("wros")
+}
+
+model MerchantActivity {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String
+  action    String
+  entity    String
+  entityId  String?
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([userId, createdAt])
+  @@schema("wros")
+}
+
+model Invoice {
+  id            String    @id @default(cuid())
+  tenantId      String
+  customerId    String?
+  number        String    @unique
+  status        String    @default("draft")
+  subtotalPence Int       @default(0)
+  taxPence      Int       @default(0)
+  totalPence    Int       @default(0)
+  dueAt         DateTime?
+  paidAt        DateTime?
+  sentAt        DateTime?
+  items         Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([tenantId, status])
+  @@schema("wros")
+}
+
+model MarketingCampaign {
+  id           String    @id @default(cuid())
+  tenantId     String
+  name         String
+  objective    String
+  audience     String
+  platforms    Json
+  status       String    @default("draft")
+  scheduledAt  DateTime?
+  impressions  Int       @default(0)
+  engagements  Int       @default(0)
+  conversions  Int       @default(0)
+  revenuePence Int       @default(0)
+  idea         String?
+  caption      String?
+  hashtags     String?
+  adCopy       String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([tenantId, status])
+  @@schema("wros")
+}
+
+model SocialPost {
+  id          String    @id @default(cuid())
+  tenantId    String
+  campaignId  String?
+  platforms   Json
+  content     String
+  mediaUrl    String?
+  mediaType   String?
+  status      String    @default("draft")
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  autoPost    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId, status, scheduledAt])
+  @@schema("wros")
+}
+
+model MediaGeneration {
+  id        String   @id @default(cuid())
+  tenantId  String
+  format    String
+  brief     String
+  output    String
+  context   Json?
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@schema("wros")
+}
+
+model DeliveryOperator {
+  id            String   @id @default(cuid())
+  tenantId      String
+  name          String
+  phone         String
+  role          String   @default("rider")
+  status        String   @default("available")
+  phoneVerified Boolean  @default(false)
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tenantId, phone])
+  @@index([tenantId, status])
+  @@schema("wros")
+}
+
+model DeliveryVehicle {
+  id             String    @id @default(cuid())
+  tenantId       String
+  registration   String
+  label          String
+  vehicleType    String    @default("van")
+  capacityKg     Int       @default(0)
+  status         String    @default("available")
+  currentLat     Float?
+  currentLng     Float?
+  lastLocationAt DateTime?
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([tenantId, registration])
+  @@index([tenantId, status])
+  @@schema("wros")
+}
+
+model DeliveryZone {
+  id                    String   @id @default(cuid())
+  tenantId              String
+  name                  String
+  postcodePrefixes      Json
+  feePence              Int      @default(0)
+  estimatedMinutes      Int      @default(0)
+  feeMode               String   @default("zone")
+  cashOnDeliveryAllowed Boolean  @default(false)
+  active                Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([tenantId, name])
+  @@index([tenantId, active])
+  @@schema("wros")
+}
+
+model DeliveryAssignment {
+  id               String    @id @default(cuid())
+  tenantId         String
+  orderId          String
+  operatorId       String?
+  vehicleId        String?
+  zoneId           String?
+  status           String    @default("assigned")
+  feePence         Int       @default(0)
+  routeDistanceKm  Float     @default(0)
+  estimatedMinutes Int       @default(0)
+  originLat        Float?
+  originLng        Float?
+  destinationLat   Float?
+  destinationLng   Float?
+  timeline         Json
+  assignedAt       DateTime  @default(now())
+  completedAt      DateTime?
+  updatedAt        DateTime  @updatedAt
+
+  @@unique([tenantId, orderId])
+  @@index([tenantId, status])
+  @@schema("wros")
+}
+
+model DeliveryNotification {
+  id           String    @id @default(cuid())
+  tenantId     String
+  assignmentId String?
+  channel      String    @default("whatsapp")
+  recipient    String
+  message      String
+  status       String    @default("queued")
+  sentAt       DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([tenantId, createdAt])
+  @@schema("wros")
+}
+
+model LocationProfile {
+  id                String   @id @default(cuid())
+  tenantId          String   @unique
+  label             String   @default("Primary location")
+  latitude          Float?
+  longitude         Float?
+  locality          String?
+  countryCode       String?
+  timezone          String?
+  source            String   @default("manual")
+  gpsEnabled        Boolean  @default(true)
+  ipFallbackEnabled Boolean  @default(true)
+  updatedAt         DateTime @updatedAt
+  createdAt         DateTime @default(now())
+
+  @@schema("wros")
+}

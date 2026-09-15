@@ -1,0 +1,23 @@
+{
+  "name": "@foundingos/config",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./suites": "./src/suites.ts",
+    "./commercial": "./src/commercial.ts",
+    "./runtime-mode": "./src/runtime-mode.ts",
+    "./demo-providers": "./src/demo-providers.ts",
+    "./suite-flags": "./src/suite-flags.ts",
+    "./brand-intelligence": "./src/brand-intelligence.ts",
+    "./brand-ai-engine": "./src/brand-ai-engine.ts",
+    "./brandSignalFeed": "./src/brandSignalFeed.ts",
+    "./quantum-defined-engine": "./src/quantum/quantum-defined-engine.ts",
+    "./quantum-client": "./src/quantum/quantum-client.ts",
+    "./quantum-enrichment": "./src/quantum/quantum-enrichment.ts",
+    "./quantum-orchestration-layer": "./src/quantum/quantum-orchestration-layer.ts",
+    "./tailwind": "./tailwind.config.ts",
+    "./tsconfig": "./tsconfig.base.json"
+  }
+}

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Recruitment, interviews, HR teams, workforce analytics, applicants">
+  <defs><linearGradient id="bg" x1="0" x2="1" y1="0" y1="1"><stop offset="0%" stop-color="#120a07"/><stop offset="100%" stop-color="#2c140b"/></linearGradient></defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect x="95" y="115" width="690" height="660" rx="38" fill="#1a110b" stroke="#fb923c" stroke-opacity=".2"/>
+  <rect x="825" y="115" width="680" height="310" rx="38" fill="#18110d" stroke="#fdba74" stroke-opacity=".18"/>
+  <rect x="825" y="455" width="680" height="320" rx="38" fill="#120d09" stroke="#fb923c" stroke-opacity=".15"/>
+  <rect x="145" y="175" width="250" height="250" rx="30" fill="#2a170c"/>
+  <rect x="425" y="175" width="310" height="250" rx="30" fill="#22140a"/>
+  <rect x="145" y="455" width="590" height="250" rx="30" fill="#1a1009"/>
+  <circle cx="255" cy="305" r="64" fill="#fb923c" fill-opacity=".22"/>
+  <circle cx="560" cy="305" r="64" fill="#fdba74" fill-opacity=".16"/>
+  <path d="M195 560h420M195 615h310M195 670h360" stroke="#fed7aa" stroke-width="12" stroke-linecap="round"/>
+  <rect x="890" y="190" width="240" height="115" rx="24" fill="#2c1b0c"/>
+  <rect x="1160" y="190" width="240" height="115" rx="24" fill="#3a210d"/>
+  <rect x="890" y="340" width="510" height="60" rx="20" fill="#24160b"/>
+  <rect x="885" y="505" width="220" height="190" rx="28" fill="#2a170c"/>
+  <rect x="1135" y="505" width="220" height="190" rx="28" fill="#211208"/>
+  <rect x="1385" y="505" width="80" height="190" rx="28" fill="#361d0d"/>
+  <text x="155" y="240" fill="#fed7aa" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="700">Recruitment, interviews, HR teams, applicants</text>
+</svg>

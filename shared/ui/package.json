@@ -1,0 +1,25 @@
+{
+  "name": "@founder-os/ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "peerDependencies": {
+    "react": "^18.3.1"
+  },
+  "exports": {
+    ".": "./src/index.tsx",
+    "./AuthLayout": "./src/AuthLayout.tsx",
+    "./ErrorBoundary": "./src/ErrorBoundary.tsx",
+    "./Fallback": "./src/Fallback.tsx",
+    "./PageContainer": "./src/PageContainer.tsx",
+    "./ProtectedLayout": "./src/ProtectedLayout.tsx",
+    "./logo": "./src/logo.tsx",
+    "./components/BrandLogo": "./components/BrandLogo.tsx",
+    "./components/BrandCard": "./components/BrandCard.tsx",
+    "./messaging": "./src/messaging.ts",
+    "./theme": "./src/theme.ts",
+    "./styles.css": "./src/styles.css",
+    "./theme.css": "./src/theme.css",
+    "./layout.css": "./src/layout.css"
+  }
+}

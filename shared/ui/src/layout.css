@@ -1,0 +1,47 @@
+/* 
+  © 2024–2026 FoundingOS. All rights reserved.
+  Unauthorized copying, distribution, or modification is strictly prohibited.
+*/
+.auth-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--auth-space-4, 1.5rem);
+  padding: clamp(1rem, 4vw, 2.5rem);
+  box-sizing: border-box;
+  background: var(--auth-background, #f7f9fc);
+  color: var(--auth-secondary, #003366);
+}
+
+.auth-layout__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--auth-space-2, 0.75rem);
+  text-align: center;
+}
+
+.protected-layout {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.page-container {
+  width: min(100%, 28rem);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--auth-space-3, 1rem);
+  margin: 0 auto;
+}
+
+.founder-os-logo {
+  width: 3rem;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}

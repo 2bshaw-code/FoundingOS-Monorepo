@@ -1,0 +1,22 @@
+{
+  "name": "@founder-os/founder-os-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "main": "main.cjs",
+  "scripts": {
+    "dev": "electron . --dev",
+    "build": "node --check main.cjs",
+    "package": "npm run build --workspace @founder-os/founder-os-frontend && electron-builder"
+  },
+  "devDependencies": {
+    "electron": "43.4.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.foundingos.foundingos",
+    "productName": "FoundingOS",
+    "files": ["main.cjs"],
+    "extraResources": [{ "from": "../frontend/dist", "to": "frontend" }],
+    "directories": { "output": "dist" }
+  }
+}

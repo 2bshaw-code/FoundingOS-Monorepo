@@ -1,0 +1,27 @@
+{
+  "name": "@foundingos/foundingos-web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "demo:build": "DEMO_BUILD_DIR=.build-clean node ../../scripts/with-demo-env.mjs next build",
+    "demo:start": "node ../../scripts/with-demo-env.mjs next start -p 3000",
+    "start": "next start -p 3000",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@foundingos/ui": "*",
+    "next": "^14.2.23",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "typescript": "^5.7.2"
+  }
+}

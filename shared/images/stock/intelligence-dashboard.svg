@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Servers, data centres, cybersecurity, analytics, and IT operations">
+  <defs><linearGradient id="bg" x1="0" x2="1" y1="0" y1="1"><stop offset="0%" stop-color="#070b18"/><stop offset="100%" stop-color="#0c1730"/></linearGradient></defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect x="90" y="115" width="700" height="660" rx="38" fill="#0c1327" stroke="#facc15" stroke-opacity=".18"/>
+  <rect x="830" y="115" width="680" height="660" rx="38" fill="#0b1020" stroke="#60a5fa" stroke-opacity=".18"/>
+  <g fill="#111827">
+    <rect x="145" y="175" width="590" height="100" rx="18"/><rect x="145" y="295" width="590" height="100" rx="18"/><rect x="145" y="415" width="590" height="100" rx="18"/><rect x="145" y="535" width="590" height="100" rx="18"/>
+  </g>
+  <g fill="#172554">
+    <rect x="185" y="205" width="90" height="18" rx="9"/><rect x="185" y="325" width="160" height="18" rx="9"/><rect x="185" y="445" width="120" height="18" rx="9"/><rect x="185" y="565" width="150" height="18" rx="9"/>
+  </g>
+  <circle cx="580" cy="225" r="26" fill="#22c55e" fill-opacity=".45"/><circle cx="610" cy="225" r="26" fill="#facc15" fill-opacity=".45"/><circle cx="640" cy="225" r="26" fill="#60a5fa" fill-opacity=".45"/>
+  <rect x="900" y="175" width="530" height="230" rx="30" fill="#101c33"/>
+  <rect x="900" y="435" width="530" height="300" rx="30" fill="#0f172a"/>
+  <path d="M960 610l85-110 70 60 95-145 110 90" stroke="#38bdf8" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="1185" cy="295" r="90" fill="#22d3ee" fill-opacity=".16"/>
+  <path d="M1185 240l50 25v50l-50 25-50-25v-50l50-25Z" fill="#e0f2fe" fill-opacity=".28"/>
+  <path d="M1185 260l28 14v28l-28 14-28-14v-28l28-14Z" fill="#38bdf8" fill-opacity=".6"/>
+  <text x="940" y="245" fill="#dbeafe" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="700">Servers, cybersecurity, analytics, IT operations</text>
+</svg>

@@ -1,0 +1,20 @@
+{
+  "name": "FoundLogistics Mobile",
+  "slug": "foundlogistics-mobile",
+  "scheme": "foundlogistics",
+  "icon": "./assets/logos/logistics.png",
+  "splash": {
+    "image": "./assets/logos/logistics.png",
+    "resizeMode": "contain",
+    "backgroundColor": "#05060a"
+  },
+  "ios": {
+    "bundleIdentifier": "com.foundingos.foundlogistics"
+  },
+  "android": {
+    "package": "com.foundingos.foundlogistics"
+  },
+  "extra": {
+    "brand": "logistics"
+  }
+}

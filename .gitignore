@@ -1,0 +1,16 @@
+node_modules/
+.next/
+*.tsbuildinfo
+dist/
+.env
+.env.local
+.env.*
+!.env.demo
+!production.example.env
+!.env.example
+.env.demo.local
+*.log
+.DS_Store
+coverage/
+build-clean/
+apps/*/.build-clean

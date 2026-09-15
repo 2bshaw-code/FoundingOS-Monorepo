@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "brands": [
+    "CoreOperations",
+    "CoreOperations",
+    "CoreIntelligence",
+    "CoreWorkforce",
+    "CoreOperations",
+    "FoundingOS"
+  ],
+  "applications": [
+    "apps/retail-web",
+    "apps/meat-web",
+    "apps/it-web",
+    "apps/talent-web",
+    "apps/crypto-web",
+    "apps/foundingos-web",
+    "apps/retail-console",
+    "apps/meat-console",
+    "apps/it-console",
+    "apps/talent-console",
+    "apps/crypto-console",
+    "apps/foundingos-console"
+  ],
+  "sharedServices": [
+    "packages/auth",
+    "packages/config",
+    "packages/db",
+    "packages/ui",
+    "founder-os",
+    "core_operations",
+    "foundmeat",
+    "core_intelligence",
+    "core_workforce",
+    "foundcrypto",
+    "foundingos/FoundingOs"
+  ],
+  "requiredCapabilities": [
+    "Quantum",
+    "CRM",
+    "Billing",
+    "Deliveries",
+    "Advanced Marketing Suite"
+  ],
+  "routingConfigs": [
+    "package.json",
+    "turbo.json",
+    ".env.example.next"
+  ],
+  "environmentHandling": {
+    "plaintextEnvAllowed": false,
+    "keychainService": "FoundingOS Ecosystem Backup",
+    "encryption": "AES-256-CBC with PBKDF2"
+  },
+  "database": {
+    "backupMethod": "pg_dump",
+    "schema": "packages/db/prisma/schema.prisma",
+    "migrations": "packages/db/prisma/migrations"
+  }
+}

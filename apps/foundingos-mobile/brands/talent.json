@@ -1,0 +1,20 @@
+{
+  "name": "FoundTalent Mobile",
+  "slug": "foundtalent-mobile",
+  "scheme": "foundtalent",
+  "icon": "./assets/logos/talent.png",
+  "splash": {
+    "image": "./assets/logos/talent.png",
+    "resizeMode": "contain",
+    "backgroundColor": "#05060a"
+  },
+  "ios": {
+    "bundleIdentifier": "com.foundingos.foundtalent"
+  },
+  "android": {
+    "package": "com.foundingos.foundtalent"
+  },
+  "extra": {
+    "brand": "talent"
+  }
+}

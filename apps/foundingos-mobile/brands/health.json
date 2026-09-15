@@ -1,0 +1,20 @@
+{
+  "name": "FoundHealth Mobile",
+  "slug": "foundhealth-mobile",
+  "scheme": "foundhealth",
+  "icon": "./assets/logos/health.png",
+  "splash": {
+    "image": "./assets/logos/health.png",
+    "resizeMode": "contain",
+    "backgroundColor": "#05060a"
+  },
+  "ios": {
+    "bundleIdentifier": "com.foundingos.foundhealth"
+  },
+  "android": {
+    "package": "com.foundingos.foundhealth"
+  },
+  "extra": {
+    "brand": "health"
+  }
+}
