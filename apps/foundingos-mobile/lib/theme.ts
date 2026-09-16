@@ -11,10 +11,7 @@ const PAGE_THEME_CACHE: Record<string, QuantumPageTheme> = Object.freeze(
     Object.entries({
       foundingos: getShellSafeTheme('foundingos'),
       retail: getShellSafeTheme('retail'),
-      crypto: getShellSafeTheme('crypto'),
-      meat: getShellSafeTheme('meat'),
       talent: getShellSafeTheme('talent'),
-      foundthat: getShellSafeTheme('foundthat'),
       finance: getShellSafeTheme('finance'),
       health: getShellSafeTheme('health'),
       logistics: getShellSafeTheme('logistics'),

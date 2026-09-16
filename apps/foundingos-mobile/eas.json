@@ -32,28 +32,10 @@
         "BRAND": "retail"
       }
     },
-    "foundmeat": {
-      "extends": "production",
-      "env": {
-        "BRAND": "meat"
-      }
-    },
     "foundtalent": {
       "extends": "production",
       "env": {
         "BRAND": "talent"
-      }
-    },
-    "foundthat": {
-      "extends": "production",
-      "env": {
-        "BRAND": "foundthat"
-      }
-    },
-    "foundcrypto": {
-      "extends": "production",
-      "env": {
-        "BRAND": "crypto"
       }
     },
     "foundfinance": {
@@ -82,10 +64,7 @@
       }
     },
     "foundretail": {},
-    "foundmeat": {},
     "foundtalent": {},
-    "foundthat": {},
-    "foundcrypto": {},
     "foundfinance": {},
     "foundhealth": {},
     "foundlogistics": {}

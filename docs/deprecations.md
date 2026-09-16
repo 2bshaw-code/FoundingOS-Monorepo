@@ -12,7 +12,7 @@ for the current suite model these deprecations were folded into.
 |---|---|---|
 | **FoundMeat** | Fully removed | No app root, backend, frontend, or mobile app remains in `apps/`. The `meat` entry in `packages/config/src/index.ts`'s legacy brand registry is retained only so old lookups by `BrandSlug` don't throw, and is explicitly labelled `FoundMeat (deprecated)` — it must not be surfaced in navigation, marketing pages, or mobile apps. Listed in `packages/config/src/suites.ts`'s `deprecatedBrands`. |
 | **FoundCrypto** | Fully removed | Same treatment as FoundMeat: no live app, legacy registry entry labelled `FoundCrypto (deprecated)`, listed in `deprecatedBrands`. |
-| **FoundThat scraping** | Removed | Scraping-based data collection for the CRM/intelligence surface (formerly FoundThat) has been disabled. `SCRAPING_DISABLED=true` is set in both `.env.demo` and `production.example.env` and is treated as a hard kill switch, not a suggestion — no code path should perform third-party scraping regardless of environment. |
+| **FoundThat scraping** | Fully removed | Scraping-based data collection for the CRM/intelligence surface (formerly FoundThat) has been disabled (`SCRAPING_DISABLED=true` in both `.env.demo` and `production.example.env`, treated as a hard kill switch). `apps/foundthat-mobile` has also been deleted, along with all references to it in `apps/foundingos-mobile` (brand registry, theming, workflows, EAS build profiles) and `packages/ui/src/mobile.ts`. |
 
 ## Superseded (not removed, but no longer primary)
 

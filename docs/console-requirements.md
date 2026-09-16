@@ -295,8 +295,10 @@ renaming, and parity — not building from zero.
   multi-console app is a larger, separate architectural decision — flagging
   for explicit confirmation before attempting, since it would affect
   existing store listings.
-- `apps/foundthat-mobile` should be deprecated per the FoundThat scraping
-  removal already in progress elsewhere in this repo.
+- `apps/foundthat-mobile` has been removed (per the FoundThat scraping
+  deprecation) along with all references to it in
+  `apps/foundingos-mobile` (brand registry, theming, workflows, EAS build
+  profiles) and `packages/ui/src/mobile.ts`.
 
 ### Recommended next build order (highest leverage first)
 

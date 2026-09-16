@@ -41,12 +41,9 @@ back-end contracts:
 | `apps/foundingos-mobile` | All three (overview) | Suite overview, global settings, AI console |
 | `apps/foundretail-mobile` | Core.Operations | POS, Inventory, Orders |
 | `apps/foundtalent-mobile` | Core.Workforce | Hiring, Shifts, Compliance |
-| `apps/foundthat-mobile` | Core.Intelligence | CRM Deals, Pipelines, Contacts |
-| `apps/foundfinance-mobile` | Core.Operations | Invoices, Expenses, Reconciliation |
-| `apps/foundhealth-mobile` | Core.Operations | Wellbeing, Safety, Compliance |
-| `apps/foundlogistics-mobile` | Core.Operations | Fleet, Routes, Deliveries |
 | `apps/foundmeat-mobile` | *(deprecated — removed)* | FoundMeat has been fully removed from the active product; do not restore |
 | `apps/foundcrypto-mobile` | *(deprecated — removed)* | FoundCrypto has been fully removed from the active product; do not restore |
+| `apps/foundthat-mobile` | *(deprecated — removed)* | FoundThat scraping has been fully removed from the active product; do not restore |
 
 ## Deprecated brands
 

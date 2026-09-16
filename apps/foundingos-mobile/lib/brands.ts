@@ -56,7 +56,6 @@ export const BRANDS: Brand[] = [
   },
   { id: 'retail', slug: 'retail', ...MOBILE_APP_CONFIGS.retail, logo: require('../assets/logos/retail.png'), tagline: 'Retail operations, connected.' },
   { id: 'talent', slug: 'talent', ...MOBILE_APP_CONFIGS.talent, logo: require('../assets/logos/talent.png'), tagline: 'Hiring intelligence, made human.' },
-  { id: 'foundthat', slug: 'foundthat', ...MOBILE_APP_CONFIGS.foundthat, logo: require('../assets/logos/foundthat.png'), tagline: 'Discovery intelligence, on demand.' },
   { id: 'finance', slug: 'finance', ...MOBILE_APP_CONFIGS.finance, logo: require('../assets/logos/finance.png'), tagline: 'Cashflow clarity, every day.' },
   { id: 'health', slug: 'health', ...MOBILE_APP_CONFIGS.health, logo: require('../assets/logos/health.png'), tagline: 'Care operations, coordinated.' },
   { id: 'logistics', slug: 'logistics', ...MOBILE_APP_CONFIGS.logistics, logo: require('../assets/logos/logistics.png'), tagline: 'Fleet and freight, in flow.' },

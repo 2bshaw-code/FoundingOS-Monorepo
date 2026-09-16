@@ -67,15 +67,6 @@ const BOLT_ON_CATALOG: BoltOn[] = [
     allowedTiers: ['growth', 'enterprise'],
   },
   {
-    id: 'productDiscovery',
-    brandSlug: 'foundthat',
-    name: 'Visual Product Discovery',
-    icon: '◎',
-    description: 'Product imagery maps to catalog matches, pricing context, and lead capture.',
-    endpoint: '/api/ai/inventory-intake',
-    allowedTiers: ['starter', 'growth', 'enterprise'],
-  },
-  {
     id: 'cvScanner',
     brandSlug: 'talent',
     name: 'Candidate Matcher',
