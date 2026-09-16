@@ -131,6 +131,53 @@ export const updateDeliveryAssignment = async (id: string, tenantId: string | un
 }
 export const updateDeliveryNotification = (id: string, tenantId: string | undefined, status: string) => prisma.deliveryNotification.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { status, ...(status === 'sent' ? { sentAt: new Date() } : {}) } })
 
+// Spec-named Logistics Console models (Shipment, DeliveryTask, Route, Driver, Vehicle, LocationHistory).
+// These are additive alongside the legacy DeliveryAssignment/Operator/Vehicle/Zone models above and
+// back the Route Planner, Driver Dashboard, and Live Tracking Map screens.
+export const listShipments = (tenantId: string) => prisma.shipment.findMany({ where: { tenantId }, orderBy: { createdAt: 'desc' } })
+export const createShipment = async (tenantId: string, input: Record<string, unknown>) => {
+  const shipment = await prisma.shipment.create({ data: { tenantId, orderId: text(input.orderId), driverId: text(input.driverId) || undefined, routeId: text(input.routeId) || undefined, status: text(input.status) || 'pending' } })
+  await emitOsEvent(OS_EVENTS.SHIPMENT_CREATED, { shipmentId: shipment.id, organisationId: tenantId })
+  return shipment
+}
+export const updateShipment = (id: string, tenantId: string | undefined, input: Record<string, unknown>) => prisma.shipment.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { ...(input.driverId !== undefined ? { driverId: text(input.driverId) || null } : {}), ...(input.routeId !== undefined ? { routeId: text(input.routeId) || null } : {}), ...(input.status !== undefined ? { status: text(input.status) } : {}) } })
+
+export const listDeliveryTasks = (tenantId: string, shipmentId?: string) => prisma.deliveryTask.findMany({ where: { tenantId, ...(shipmentId ? { shipmentId } : {}) }, orderBy: { createdAt: 'desc' } })
+export const createDeliveryTask = (tenantId: string, input: Record<string, unknown>) => prisma.deliveryTask.create({ data: { tenantId, shipmentId: text(input.shipmentId), driverId: text(input.driverId) || undefined, status: text(input.status) || 'pending', eta: input.eta ? new Date(text(input.eta)) : undefined } })
+export const updateDeliveryTask = async (id: string, tenantId: string | undefined, input: Record<string, unknown>) => {
+  const status = text(input.status)
+  const task = await prisma.deliveryTask.update({
+    where: { id, ...(tenantId ? { tenantId } : {}) },
+    data: {
+      ...(input.driverId !== undefined ? { driverId: text(input.driverId) || null } : {}),
+      ...(status ? { status } : {}),
+      ...(input.eta !== undefined ? { eta: input.eta ? new Date(text(input.eta)) : null } : {}),
+      ...(status === 'in_progress' ? { startedAt: new Date() } : {}),
+      ...(status === 'completed' ? { completedAt: new Date() } : {}),
+    },
+  })
+  if (status === 'completed') await emitOsEvent(OS_EVENTS.DELIVERY_COMPLETED, { deliveryTaskId: task.id, organisationId: task.tenantId })
+  return task
+}
+
+export const createRoute = (tenantId: string, input: Record<string, unknown>) => prisma.route.create({ data: { tenantId, waypoints: json(Array.isArray(input.waypoints) ? input.waypoints : []), distanceKm: input.distanceKm !== undefined ? number(input.distanceKm) : undefined, durationMin: input.durationMin !== undefined ? Math.round(number(input.durationMin)) : undefined } })
+export const listRoutes = (tenantId: string) => prisma.route.findMany({ where: { tenantId }, orderBy: { createdAt: 'desc' } })
+
+export const listDrivers = (tenantId: string) => prisma.driver.findMany({ where: { tenantId } })
+export const createDriver = (tenantId: string, input: Record<string, unknown>) => prisma.driver.create({ data: { tenantId, userId: text(input.userId), vehicleId: text(input.vehicleId) || undefined } })
+export const updateDriver = (id: string, tenantId: string | undefined, input: Record<string, unknown>) => prisma.driver.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { ...(input.vehicleId !== undefined ? { vehicleId: text(input.vehicleId) || null } : {}) } })
+
+export const listVehicles = (tenantId: string) => prisma.vehicle.findMany({ where: { tenantId } })
+export const createVehicle = (tenantId: string, input: Record<string, unknown>) => prisma.vehicle.create({ data: { tenantId, name: text(input.name), plateNumber: text(input.plateNumber).toUpperCase() } })
+
+export const recordLocation = (tenantId: string, input: Record<string, unknown>) => prisma.locationHistory.create({ data: { tenantId, driverId: text(input.driverId), lat: coordinate(input.lat) ?? 0, lng: coordinate(input.lng) ?? 0 } })
+export const latestLocationsByDriver = async (tenantId: string) => {
+  const rows = await prisma.locationHistory.findMany({ where: { tenantId }, orderBy: { timestamp: 'desc' }, take: 500 })
+  const byDriver = new Map<string, typeof rows[number]>()
+  for (const row of rows) if (!byDriver.has(row.driverId)) byDriver.set(row.driverId, row)
+  return Array.from(byDriver.values())
+}
+
 export const saveLocationProfile = (tenantId: string, input: Record<string, unknown>) => prisma.locationProfile.upsert({ where: { tenantId }, create: { tenantId, label: text(input.label) || 'Primary location', latitude: coordinate(input.latitude), longitude: coordinate(input.longitude), locality: text(input.locality) || undefined, countryCode: text(input.countryCode) || undefined, timezone: text(input.timezone) || undefined, source: text(input.source) || 'manual', gpsEnabled: input.gpsEnabled !== false, ipFallbackEnabled: input.ipFallbackEnabled !== false }, update: { ...(input.label !== undefined ? { label: text(input.label) } : {}), ...(input.latitude !== undefined ? { latitude: coordinate(input.latitude), longitude: coordinate(input.longitude) } : {}), ...(input.locality !== undefined ? { locality: text(input.locality) || null } : {}), ...(input.countryCode !== undefined ? { countryCode: text(input.countryCode) || null } : {}), ...(input.timezone !== undefined ? { timezone: text(input.timezone) || null } : {}), ...(input.source !== undefined ? { source: text(input.source) } : {}), ...(input.gpsEnabled !== undefined ? { gpsEnabled: Boolean(input.gpsEnabled) } : {}), ...(input.ipFallbackEnabled !== undefined ? { ipFallbackEnabled: Boolean(input.ipFallbackEnabled) } : {}) } })
 
 export const detectLocation = async (input: Record<string, unknown>, ipAddress?: string) => {

@@ -8,7 +8,7 @@ import { createModuleAccessMiddleware } from '@founder-os/auth'
 import { requireMerchantAccess, requireOwnerAccess } from './auth.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
-import { assignDelivery, createCampaign, createDeliveryOperator, createDeliveryVehicle, createDeliveryZone, createInventoryItem, createInvoice, createOrder, createSocialPost, deleteInventoryItem, detectLocation, generateMedia, operationsSummary, saveLocationProfile, searchInventory, sendInvoice, updateCampaign, updateDeliveryAssignment, updateDeliveryNotification, updateDeliveryOperator, updateDeliveryVehicle, updateDeliveryZone, updateInventoryItem, updateInvoice, updateOrder, updateSocialPost, weatherAt } from './operations.js'
+import { assignDelivery, createCampaign, createDeliveryOperator, createDeliveryTask, createDeliveryVehicle, createDeliveryZone, createDriver, createInventoryItem, createInvoice, createOrder, createRoute, createShipment, createSocialPost, createVehicle, deleteInventoryItem, detectLocation, generateMedia, latestLocationsByDriver, listDeliveryTasks, listDrivers, listRoutes, listShipments, listVehicles, operationsSummary, recordLocation, saveLocationProfile, searchInventory, sendInvoice, updateCampaign, updateDeliveryAssignment, updateDeliveryNotification, updateDeliveryOperator, updateDeliveryTask, updateDeliveryVehicle, updateDeliveryZone, updateDriver, updateInventoryItem, updateInvoice, updateOrder, updateShipment, updateSocialPost, weatherAt } from './operations.js'
 import { addMerchantStaff, merchantWorkspace, ownerMerchantSummary, removeMerchantStaff, resetMerchantPassword, reviewMerchantChange, submitMerchantChange, updateMerchantStaff } from './merchant.js'
 import { createPayment, createPaymentMethod, dsoSummary, generateCashFlowPrediction, listCashFlowPredictions, listMobileMoneyTransactions, listPaymentMethods, listPayments, listRevenueRecognition, reconcileMobileMoneyPayment, recognizeRevenue } from './finance.js'
 
@@ -207,6 +207,54 @@ apiRouter.patch('/delivery/notifications/:id', requireOwnerAccess, requireTenant
 apiRouter.post('/delivery/notifications/:id/send', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { const tenantId = readTenant(req, res); const notification = await (await import('./auth.js')).prisma.deliveryNotification.findFirstOrThrow({ where: { id: String(req.params.id), ...(tenantId ? { tenantId } : {}) } }); if (notification.channel === 'whatsapp') await sendWhatsAppText(notification.recipient, notification.message); res.json({ success: true, data: await updateDeliveryNotification(notification.id, tenantId, 'sent') }) } catch (error) { next(error) }
 })
+
+// Logistics Console spec models: Shipments, DeliveryTasks, Routes, Drivers, Vehicles, LocationHistory.
+apiRouter.get('/logistics/shipments', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = readTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.json({ success: true, data: await listShipments(tenantId) }) } catch (error) { next(error) }
+})
+apiRouter.post('/logistics/shipments', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.status(201).json({ success: true, data: await createShipment(tenantId, req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.patch('/logistics/shipments/:id', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await updateShipment(String(req.params.id), readTenant(req, res), req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.get('/logistics/tasks', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = readTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.json({ success: true, data: await listDeliveryTasks(tenantId, req.query.shipmentId ? String(req.query.shipmentId) : undefined) }) } catch (error) { next(error) }
+})
+apiRouter.post('/logistics/tasks', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.status(201).json({ success: true, data: await createDeliveryTask(tenantId, req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.patch('/logistics/tasks/:id', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await updateDeliveryTask(String(req.params.id), readTenant(req, res), req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.get('/logistics/routes', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = readTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.json({ success: true, data: await listRoutes(tenantId) }) } catch (error) { next(error) }
+})
+apiRouter.post('/logistics/routes', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.status(201).json({ success: true, data: await createRoute(tenantId, req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.get('/logistics/drivers', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = readTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.json({ success: true, data: await listDrivers(tenantId) }) } catch (error) { next(error) }
+})
+apiRouter.post('/logistics/drivers', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.status(201).json({ success: true, data: await createDriver(tenantId, req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.patch('/logistics/drivers/:id', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await updateDriver(String(req.params.id), readTenant(req, res), req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.get('/logistics/vehicles', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = readTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.json({ success: true, data: await listVehicles(tenantId) }) } catch (error) { next(error) }
+})
+apiRouter.post('/logistics/vehicles', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.status(201).json({ success: true, data: await createVehicle(tenantId, req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.post('/logistics/locations', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.status(201).json({ success: true, data: await recordLocation(tenantId, req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.get('/logistics/locations/latest', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = readTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.json({ success: true, data: await latestLocationsByDriver(tenantId) }) } catch (error) { next(error) }
+})
+
 apiRouter.post('/location/detect', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { res.json({ success: true, data: await detectLocation(req.body || {}, req.ip) }) } catch (error) { next(error) }
 })
