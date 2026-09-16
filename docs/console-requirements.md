@@ -177,21 +177,39 @@ renaming, and parity — not building from zero.
 - **Backend**: `core-operations/backend` (Express + Prisma). Real models:
   `Merchant`, `Customer`, `SalesOrder`, `CustomerMessage`, `InventoryItem`,
   `Invoice`, `MarketingCampaign`, `SocialPost`, `MediaGeneration`, plus
-  delivery models shared with Logistics. Real endpoints in
-  [`core-operations/backend/src/routes.ts`](/Users/bobbyshaw/Founding%20OS%20Local/founder-os-group/core-operations/backend/src/routes.ts):
-  `/console/products`, `/console/orders`, `/console/customers`,
-  `/console/reports`, `/customers`, `/leads`, WhatsApp webhook
-  (`/whatsapp/webhook`), `/merchant/workspace`.
+  delivery models shared with Logistics. Spec-named models `Product`,
+  `Variant`, `InventoryMovement`, and `Order` have also been added
+  (additive, alongside the legacy `InventoryItem`/`SalesOrder` models, same
+  pattern as the Logistics spec models) with their own CRUD and REST routes:
+  `/retail/products`, `/retail/variants`, `/retail/inventory-movements`,
+  `/retail/orders` in
+  [`core-operations/backend/src/routes.ts`](/Users/bobbyshaw/Founding%20OS%20Local/founder-os-group/core-operations/backend/src/routes.ts),
+  alongside the legacy `/console/products`, `/console/orders`,
+  `/console/customers`, `/console/reports`, `/customers`, `/leads`,
+  WhatsApp webhook (`/whatsapp/webhook`), `/merchant/workspace`. Creating a
+  `Product`/`Order` emits the shared `ORDER_CONFIRMED`/`SHIPMENT_CREATED`/
+  `INVOICE_GENERATED` events on the same event backbone as the legacy path.
 - **Mobile**: `apps/foundretail-mobile` — `home.tsx`, `inventory.tsx`,
   `new-sale.tsx`, `activity.tsx`, `ai-actions.tsx`, WhatsApp
   onboarding (`about/whatsapp.tsx`), barcode scanner
   (`about/scanner.tsx`). Polls live data via
-  `lib/retail-poll.ts` → `GROWTH_CONSOLE_URL` (`retail-console.foundingos.com`).
-- **Naming gap**: spec calls for `Product`/`Order`; current schema uses
-  `InventoryItem`/`SalesOrder`. Recommend renaming for spec alignment
-  rather than rebuilding.
-- **Missing vs. spec**: `Variant` and `InventoryMovement` as distinct
-  models; explicit low-inventory push notification wiring.
+  `lib/retail-poll.ts` → `GROWTH_CONSOLE_URL` (`retail-console.foundingos.com`)
+  for the local demo ledger, and now also `lib/core-api.ts` →
+  `core-operations-api.foundingos.com` for the real Product/Variant/Order
+  data, surfaced additively on `inventory.tsx`.
+- **Web**: `apps/core-operations-console/app/products/page.tsx` — new
+  Product Catalog screen, client-fetches `/retail/products` from the same
+  API.
+- **Naming**: legacy `InventoryItem`/`SalesOrder` models remain in place
+  (still used by the existing console/mobile demo flows); the new spec
+  models are additive rather than a rename, consistent with the approach
+  already taken for Logistics.
+- **Still open**: `InventoryMovement`/`Variant` are not yet consumed by
+  the legacy `InventoryItem` UI flows (Product Catalog, Order List/Detail,
+  Low Inventory Alerts, WhatsApp Order Intake, Fulfilment Trigger Panel
+  screens are only partially built out against the new models); AI
+  automations (predict low inventory, auto-suggest restock, fraud
+  detection) are not yet implemented against the spec models.
 
 ### Logistics Console
 

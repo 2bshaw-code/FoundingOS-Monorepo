@@ -8,10 +8,13 @@ import { router, useFocusEffect } from 'expo-router'
 import { BRAND } from '../../lib/brand'
 import { fetchRetailSnapshot, type RetailPollResponse } from '../../lib/retail-poll'
 import { buildRetailDashboard, getRetailLedger, restockDemoProduct, type RetailDashboard } from '../../lib/retail-ledger'
+import { fetchProducts, fetchOrders, type Product, type RetailOrder } from '../../lib/core-api'
 
 export default function InventoryScreen() {
   const [snapshot, setSnapshot] = useState<RetailPollResponse | null>(null)
   const [dashboard, setDashboard] = useState<RetailDashboard | null>(null)
+  const [coreProducts, setCoreProducts] = useState<Product[]>([])
+  const [coreOrders, setCoreOrders] = useState<RetailOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
@@ -21,7 +24,7 @@ export default function InventoryScreen() {
     if (isRefresh) setRefreshing(true)
     setError('')
     try {
-      const nextSnapshot = await fetchRetailSnapshot()
+      const [nextSnapshot, products, orders] = await Promise.all([fetchRetailSnapshot(), fetchProducts(), fetchOrders()])
       if (!nextSnapshot) {
         setError('Could not load inventory right now. Pull down to try again.')
         setDashboard(null)
@@ -30,11 +33,14 @@ export default function InventoryScreen() {
       const ledger = await getRetailLedger(nextSnapshot.products)
       setSnapshot(nextSnapshot)
       setDashboard(buildRetailDashboard(nextSnapshot, ledger))
+      setCoreProducts(products ?? [])
+      setCoreOrders(orders ?? [])
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
   }, [])
+
 
   useFocusEffect(
     useCallback(() => {
@@ -128,6 +134,37 @@ export default function InventoryScreen() {
               )
             })}
           </View>
+
+          {coreProducts.length > 0 ? (
+            <View style={styles.list}>
+              <Text style={styles.overline}>Core.Operations · live product catalogue</Text>
+              {coreProducts.slice(0, 10).map((product) => (
+                <View key={product.id} style={styles.rowCard}>
+                  <View style={styles.rowHeader}>
+                    <View style={styles.rowBody}>
+                      <Text style={styles.rowTitle}>{product.name}</Text>
+                      <Text style={styles.rowSubtitle}>{product.sku} · {product.category} · £{(product.pricePence / 100).toFixed(2)}</Text>
+                    </View>
+                  </View>
+                  {product.variants.length > 0 ? (
+                    <Text style={styles.rowMeta}>{product.variants.map((variant) => `${variant.label}: ${variant.stock}`).join(' · ')}</Text>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          ) : null}
+
+          {coreOrders.length > 0 ? (
+            <View style={styles.list}>
+              <Text style={styles.overline}>Core.Operations · recent orders</Text>
+              {coreOrders.slice(0, 10).map((order) => (
+                <View key={order.id} style={styles.rowCard}>
+                  <Text style={styles.rowTitle}>{order.reference} · £{(order.totalPence / 100).toFixed(2)}</Text>
+                  <Text style={styles.rowMeta}>{order.status} · payment {order.paymentStatus} · delivery {order.deliveryStatus}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
         </>
       ) : null}
     </ScrollView>

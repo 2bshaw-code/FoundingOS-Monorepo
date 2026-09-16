@@ -131,6 +131,47 @@ export const updateDeliveryAssignment = async (id: string, tenantId: string | un
 }
 export const updateDeliveryNotification = (id: string, tenantId: string | undefined, status: string) => prisma.deliveryNotification.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { status, ...(status === 'sent' ? { sentAt: new Date() } : {}) } })
 
+// Spec-named Retail Console models (Product, Variant, InventoryMovement, Order).
+// Additive alongside the existing InventoryItem/SalesOrder models above; back the
+// Product Catalog, Inventory Dashboard, Order List/Detail, and Fulfilment Trigger
+// Panel screens.
+export const listProducts = (tenantId: string, query: Record<string, unknown> = {}) => prisma.product.findMany({
+  where: { tenantId, ...(text(query.search) ? { OR: [{ name: { contains: text(query.search), mode: 'insensitive' } }, { sku: { contains: text(query.search), mode: 'insensitive' } }] } : {}), ...(text(query.category) ? { category: text(query.category) } : {}) },
+  include: { variants: true },
+  orderBy: { updatedAt: 'desc' },
+})
+export const createProduct = (tenantId: string, input: Record<string, unknown>) => prisma.product.create({ data: { tenantId, name: text(input.name), sku: text(input.sku), category: text(input.category) || 'General', description: text(input.description) || undefined, pricePence: number(input.pricePence), active: input.active !== undefined ? Boolean(input.active) : true } })
+export const updateProduct = (id: string, tenantId: string | undefined, input: Record<string, unknown>) => prisma.product.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { ...(input.name !== undefined ? { name: text(input.name) } : {}), ...(input.category !== undefined ? { category: text(input.category) } : {}), ...(input.description !== undefined ? { description: text(input.description) || null } : {}), ...(input.pricePence !== undefined ? { pricePence: number(input.pricePence) } : {}), ...(input.active !== undefined ? { active: Boolean(input.active) } : {}) } })
+export const deleteProduct = (id: string, tenantId?: string) => prisma.product.delete({ where: { id, ...(tenantId ? { tenantId } : {}) } })
+
+export const createVariant = (tenantId: string, input: Record<string, unknown>) => prisma.variant.create({ data: { tenantId, productId: text(input.productId), sku: text(input.sku), label: text(input.label), pricePence: number(input.pricePence), stock: number(input.stock), attributes: json(input.attributes || {}) } })
+export const updateVariant = async (id: string, tenantId: string | undefined, input: Record<string, unknown>) => {
+  const variant = await prisma.variant.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { ...(input.label !== undefined ? { label: text(input.label) } : {}), ...(input.pricePence !== undefined ? { pricePence: number(input.pricePence) } : {}), ...(input.stock !== undefined ? { stock: number(input.stock) } : {}), ...(input.attributes !== undefined ? { attributes: json(input.attributes) } : {}) } })
+  if (input.stock !== undefined) await emitOsEvent(OS_EVENTS.INVENTORY_LOW, { inventoryItemId: variant.id, organisationId: variant.tenantId, quantityRemaining: variant.stock })
+  return variant
+}
+
+export const listInventoryMovements = (tenantId: string, productId?: string) => prisma.inventoryMovement.findMany({ where: { tenantId, ...(productId ? { productId } : {}) }, orderBy: { createdAt: 'desc' }, take: 200 })
+export const createInventoryMovement = async (tenantId: string, input: Record<string, unknown>) => {
+  const direction = text(input.direction) === 'out' ? 'out' : 'in'
+  const movement = await prisma.inventoryMovement.create({ data: { tenantId, productId: text(input.productId) || undefined, variantId: text(input.variantId) || undefined, warehouseId: text(input.warehouseId) || undefined, quantity: number(input.quantity), direction, reason: text(input.reason) || 'adjustment' } })
+  if (movement.variantId) {
+    const variant = await prisma.variant.update({ where: { id: movement.variantId }, data: { stock: { [direction === 'in' ? 'increment' : 'decrement']: movement.quantity } } })
+    if (variant.stock <= 5) await emitOsEvent(OS_EVENTS.INVENTORY_LOW, { inventoryItemId: variant.id, organisationId: tenantId, quantityRemaining: variant.stock })
+  }
+  return movement
+}
+
+export const listSpecOrders = (tenantId: string) => prisma.order.findMany({ where: { tenantId }, orderBy: { createdAt: 'desc' } })
+export const createSpecOrder = async (tenantId: string, input: Record<string, unknown>) => {
+  const order = await prisma.order.create({ data: { tenantId, customerId: text(input.customerId) || undefined, reference: text(input.reference) || `ORD-${Date.now()}`, status: text(input.status) || 'open', totalPence: number(input.totalPence), paymentStatus: text(input.paymentStatus) || 'unpaid', deliveryStatus: text(input.deliveryStatus) || 'unassigned', source: text(input.source) || 'web', items: json(input.items || []) } })
+  await emitOsEvent(OS_EVENTS.ORDER_CONFIRMED, { orderId: order.id, organisationId: tenantId })
+  if (input.autoInvoice) await emitOsEvent(OS_EVENTS.INVOICE_GENERATED, { invoiceId: order.id, organisationId: tenantId })
+  if (input.autoFulfil) await emitOsEvent(OS_EVENTS.SHIPMENT_CREATED, { shipmentId: order.id, organisationId: tenantId })
+  return order
+}
+export const updateSpecOrder = (id: string, tenantId: string | undefined, input: Record<string, unknown>) => prisma.order.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { ...(input.status !== undefined ? { status: text(input.status) } : {}), ...(input.paymentStatus !== undefined ? { paymentStatus: text(input.paymentStatus) } : {}), ...(input.deliveryStatus !== undefined ? { deliveryStatus: text(input.deliveryStatus) } : {}) } })
+
 // Spec-named Logistics Console models (Shipment, DeliveryTask, Route, Driver, Vehicle, LocationHistory).
 // These are additive alongside the legacy DeliveryAssignment/Operator/Vehicle/Zone models above and
 // back the Route Planner, Driver Dashboard, and Live Tracking Map screens.

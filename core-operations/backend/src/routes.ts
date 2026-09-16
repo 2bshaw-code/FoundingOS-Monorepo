@@ -8,7 +8,7 @@ import { createModuleAccessMiddleware } from '@founder-os/auth'
 import { requireMerchantAccess, requireOwnerAccess } from './auth.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
-import { assignDelivery, createCampaign, createDeliveryOperator, createDeliveryTask, createDeliveryVehicle, createDeliveryZone, createDriver, createInventoryItem, createInvoice, createOrder, createRoute, createShipment, createSocialPost, createVehicle, deleteInventoryItem, detectLocation, generateMedia, latestLocationsByDriver, listDeliveryTasks, listDrivers, listRoutes, listShipments, listVehicles, operationsSummary, recordLocation, saveLocationProfile, searchInventory, sendInvoice, updateCampaign, updateDeliveryAssignment, updateDeliveryNotification, updateDeliveryOperator, updateDeliveryTask, updateDeliveryVehicle, updateDeliveryZone, updateDriver, updateInventoryItem, updateInvoice, updateOrder, updateShipment, updateSocialPost, weatherAt } from './operations.js'
+import { assignDelivery, createCampaign, createDeliveryOperator, createDeliveryTask, createDeliveryVehicle, createDeliveryZone, createDriver, createInventoryItem, createInventoryMovement, createInvoice, createOrder, createProduct, createRoute, createShipment, createSocialPost, createSpecOrder, createVariant, createVehicle, deleteInventoryItem, deleteProduct, detectLocation, generateMedia, latestLocationsByDriver, listDeliveryTasks, listDrivers, listInventoryMovements, listProducts, listRoutes, listShipments, listSpecOrders, listVehicles, operationsSummary, recordLocation, saveLocationProfile, searchInventory, sendInvoice, updateCampaign, updateDeliveryAssignment, updateDeliveryNotification, updateDeliveryOperator, updateDeliveryTask, updateDeliveryVehicle, updateDeliveryZone, updateDriver, updateInventoryItem, updateInvoice, updateOrder, updateProduct, updateShipment, updateSocialPost, updateSpecOrder, updateVariant, weatherAt } from './operations.js'
 import { addMerchantStaff, merchantWorkspace, ownerMerchantSummary, removeMerchantStaff, resetMerchantPassword, reviewMerchantChange, submitMerchantChange, updateMerchantStaff } from './merchant.js'
 import { createPayment, createPaymentMethod, dsoSummary, generateCashFlowPrediction, listCashFlowPredictions, listMobileMoneyTransactions, listPaymentMethods, listPayments, listRevenueRecognition, reconcileMobileMoneyPayment, recognizeRevenue } from './finance.js'
 
@@ -253,6 +253,41 @@ apiRouter.post('/logistics/locations', requireOwnerAccess, requireTenant, requir
 })
 apiRouter.get('/logistics/locations/latest', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { const tenantId = readTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.json({ success: true, data: await latestLocationsByDriver(tenantId) }) } catch (error) { next(error) }
+})
+
+// Retail Console spec models: Products, Variants, InventoryMovements, Orders.
+apiRouter.get('/retail/products', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = readTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.json({ success: true, data: await listProducts(tenantId, req.query as Record<string, unknown>) }) } catch (error) { next(error) }
+})
+apiRouter.post('/retail/products', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.status(201).json({ success: true, data: await createProduct(tenantId, req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.patch('/retail/products/:id', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await updateProduct(String(req.params.id), readTenant(req, res), req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.delete('/retail/products/:id', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { await deleteProduct(String(req.params.id), readTenant(req, res)); res.json({ success: true }) } catch (error) { next(error) }
+})
+apiRouter.post('/retail/variants', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.status(201).json({ success: true, data: await createVariant(tenantId, req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.patch('/retail/variants/:id', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await updateVariant(String(req.params.id), readTenant(req, res), req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.get('/retail/inventory-movements', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = readTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.json({ success: true, data: await listInventoryMovements(tenantId, req.query.productId ? String(req.query.productId) : undefined) }) } catch (error) { next(error) }
+})
+apiRouter.post('/retail/inventory-movements', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.status(201).json({ success: true, data: await createInventoryMovement(tenantId, req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.get('/retail/orders', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = readTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.json({ success: true, data: await listSpecOrders(tenantId) }) } catch (error) { next(error) }
+})
+apiRouter.post('/retail/orders', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.status(201).json({ success: true, data: await createSpecOrder(tenantId, req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.patch('/retail/orders/:id', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await updateSpecOrder(String(req.params.id), readTenant(req, res), req.body || {}) }) } catch (error) { next(error) }
 })
 
 apiRouter.post('/location/detect', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {

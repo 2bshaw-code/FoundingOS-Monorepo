@@ -530,6 +530,59 @@ exports.Prisma.LocationHistoryScalarFieldEnum = {
   timestamp: 'timestamp'
 };
 
+exports.Prisma.ProductScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  name: 'name',
+  sku: 'sku',
+  category: 'category',
+  description: 'description',
+  pricePence: 'pricePence',
+  active: 'active',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.VariantScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  productId: 'productId',
+  sku: 'sku',
+  label: 'label',
+  pricePence: 'pricePence',
+  stock: 'stock',
+  attributes: 'attributes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.InventoryMovementScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  productId: 'productId',
+  variantId: 'variantId',
+  warehouseId: 'warehouseId',
+  quantity: 'quantity',
+  direction: 'direction',
+  reason: 'reason',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.OrderScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  customerId: 'customerId',
+  reference: 'reference',
+  status: 'status',
+  totalPence: 'totalPence',
+  paymentStatus: 'paymentStatus',
+  deliveryStatus: 'deliveryStatus',
+  source: 'source',
+  items: 'items',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.LocationProfileScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -610,6 +663,10 @@ exports.Prisma.ModelName = {
   Driver: 'Driver',
   Vehicle: 'Vehicle',
   LocationHistory: 'LocationHistory',
+  Product: 'Product',
+  Variant: 'Variant',
+  InventoryMovement: 'InventoryMovement',
+  Order: 'Order',
   LocationProfile: 'LocationProfile'
 };
 

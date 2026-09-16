@@ -547,6 +547,78 @@ model LocationHistory {
   @@schema("wros")
 }
 
+// Spec-named Retail Console models (Product, Variant, InventoryMovement, Order).
+// Additive alongside the existing InventoryItem/SalesOrder models above, following
+// the same convention used for the Logistics Console spec models (Shipment etc.).
+model Product {
+  id          String    @id @default(cuid())
+  tenantId    String
+  name        String
+  sku         String
+  category    String    @default("General")
+  description String?
+  pricePence  Int       @default(0)
+  active      Boolean   @default(true)
+  variants    Variant[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([tenantId, sku])
+  @@index([tenantId, category])
+  @@schema("wros")
+}
+
+model Variant {
+  id         String   @id @default(cuid())
+  tenantId   String
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  sku        String
+  label      String
+  pricePence Int      @default(0)
+  stock      Int      @default(0)
+  attributes Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([tenantId, sku])
+  @@index([tenantId, productId])
+  @@schema("wros")
+}
+
+model InventoryMovement {
+  id          String   @id @default(cuid())
+  tenantId    String
+  productId   String?
+  variantId   String?
+  warehouseId String?
+  quantity    Int
+  direction   String
+  reason      String   @default("adjustment")
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, productId, createdAt])
+  @@schema("wros")
+}
+
+model Order {
+  id             String   @id @default(cuid())
+  tenantId       String
+  customerId     String?
+  reference      String   @unique
+  status         String   @default("open")
+  totalPence     Int      @default(0)
+  paymentStatus  String   @default("unpaid")
+  deliveryStatus String   @default("unassigned")
+  source         String   @default("web")
+  items          Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId, status])
+  @@schema("wros")
+}
+
 model LocationProfile {
   id                String   @id @default(cuid())
   tenantId          String   @unique
