@@ -15,6 +15,8 @@ export type Variant = { id: string; productId: string; sku: string; label: strin
 export type Product = { id: string; name: string; sku: string; category: string; description?: string; pricePence: number; active: boolean; variants: Variant[] }
 export type InventoryMovement = { id: string; productId?: string; variantId?: string; warehouseId?: string; quantity: number; direction: 'in' | 'out'; reason: string; createdAt: string }
 export type RetailOrder = { id: string; customerId?: string; reference: string; status: string; totalPence: number; paymentStatus: string; deliveryStatus: string; source: string; createdAt: string }
+export type LowInventoryPrediction = { productId: string; variantId: string; label: string; stock: number; dailyRunRate: number; daysUntilStockout: number | null; suggestedRestockQuantity: number }
+export type FraudFlag = { orderId: string; reference: string; reason: string; severity: 'low' | 'medium' | 'high' }
 
 async function coreApiFetch<T>(path: string, init: RequestInit = {}): Promise<T | null> {
   if (IS_DEMO_MODE) return null
@@ -43,3 +45,6 @@ export const createOrder = (input: Record<string, unknown>) =>
 
 export const updateOrderStatus = (id: string, status: string) =>
   coreApiFetch<RetailOrder>(`/retail/orders/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) })
+
+export const fetchLowInventoryPredictions = () => coreApiFetch<LowInventoryPrediction[]>('/retail/ai/predict-low-inventory')
+export const fetchFraudFlags = () => coreApiFetch<FraudFlag[]>('/retail/ai/fraud-flags')

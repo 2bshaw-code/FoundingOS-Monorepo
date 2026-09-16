@@ -8,6 +8,7 @@ import { router, useFocusEffect } from 'expo-router'
 import { BRAND } from '../../lib/brand'
 import { fetchRetailSnapshot, type RetailPollResponse } from '../../lib/retail-poll'
 import { buildRetailDashboard, getRetailLedger, recordDemoSale, type RetailDashboard } from '../../lib/retail-ledger'
+import { createOrder } from '../../lib/core-api'
 
 export default function NewSaleScreen() {
   const [snapshot, setSnapshot] = useState<RetailPollResponse | null>(null)
@@ -79,6 +80,14 @@ export default function NewSaleScreen() {
     setCart({})
     setDashboard(buildRetailDashboard(snapshot, result.state))
     setFeedback({ type: 'success', text: `✓ Demo sale noted — £${result.sale.totalGbp.toFixed(2)} recorded on this device.` })
+    // Best-effort sync to the real Core.Operations Order API. Offline-first: the
+    // local ledger above is the source of truth for this screen, so a failed or
+    // slow network call here never blocks or reverts the sale that was just recorded.
+    createOrder({
+      totalPence: Math.round(result.sale.totalGbp * 100),
+      source: 'mobile',
+      items: Object.entries(cart).map(([productId, quantity]) => ({ productId, quantity })),
+    }).catch(() => {})
   }
 
   if (loading) {

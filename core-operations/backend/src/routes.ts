@@ -8,7 +8,7 @@ import { createModuleAccessMiddleware } from '@founder-os/auth'
 import { requireMerchantAccess, requireOwnerAccess } from './auth.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
-import { assignDelivery, createCampaign, createDeliveryOperator, createDeliveryTask, createDeliveryVehicle, createDeliveryZone, createDriver, createInventoryItem, createInventoryMovement, createInvoice, createOrder, createProduct, createRoute, createShipment, createSocialPost, createSpecOrder, createVariant, createVehicle, deleteInventoryItem, deleteProduct, detectLocation, generateMedia, latestLocationsByDriver, listDeliveryTasks, listDrivers, listInventoryMovements, listProducts, listRoutes, listShipments, listSpecOrders, listVehicles, operationsSummary, recordLocation, saveLocationProfile, searchInventory, sendInvoice, updateCampaign, updateDeliveryAssignment, updateDeliveryNotification, updateDeliveryOperator, updateDeliveryTask, updateDeliveryVehicle, updateDeliveryZone, updateDriver, updateInventoryItem, updateInvoice, updateOrder, updateProduct, updateShipment, updateSocialPost, updateSpecOrder, updateVariant, weatherAt } from './operations.js'
+import { assignDelivery, createCampaign, createDeliveryOperator, createDeliveryTask, createDeliveryVehicle, createDeliveryZone, createDriver, createInventoryItem, createInventoryMovement, createInvoice, createOrder, createProduct, createRoute, createShipment, createSocialPost, createSpecOrder, createVariant, createVehicle, deleteInventoryItem, deleteProduct, detectLocation, fraudDetectionSimple, generateMedia, latestLocationsByDriver, listDeliveryTasks, listDrivers, listInventoryMovements, listProducts, listRoutes, listShipments, listSpecOrders, listVehicles, operationsSummary, predictLowInventory, recordLocation, saveLocationProfile, searchInventory, sendInvoice, updateCampaign, updateDeliveryAssignment, updateDeliveryNotification, updateDeliveryOperator, updateDeliveryTask, updateDeliveryVehicle, updateDeliveryZone, updateDriver, updateInventoryItem, updateInvoice, updateOrder, updateProduct, updateShipment, updateSocialPost, updateSpecOrder, updateVariant, weatherAt } from './operations.js'
 import { addMerchantStaff, merchantWorkspace, ownerMerchantSummary, removeMerchantStaff, resetMerchantPassword, reviewMerchantChange, submitMerchantChange, updateMerchantStaff } from './merchant.js'
 import { createPayment, createPaymentMethod, dsoSummary, generateCashFlowPrediction, listCashFlowPredictions, listMobileMoneyTransactions, listPaymentMethods, listPayments, listRevenueRecognition, reconcileMobileMoneyPayment, recognizeRevenue } from './finance.js'
 
@@ -288,6 +288,12 @@ apiRouter.post('/retail/orders', requireOwnerAccess, requireTenant, requireCoreO
 })
 apiRouter.patch('/retail/orders/:id', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { res.json({ success: true, data: await updateSpecOrder(String(req.params.id), readTenant(req, res), req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.get('/retail/ai/predict-low-inventory', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = readTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.json({ success: true, data: await predictLowInventory(tenantId) }) } catch (error) { next(error) }
+})
+apiRouter.get('/retail/ai/fraud-flags', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = readTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.json({ success: true, data: await fraudDetectionSimple(tenantId) }) } catch (error) { next(error) }
 })
 
 apiRouter.post('/location/detect', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {

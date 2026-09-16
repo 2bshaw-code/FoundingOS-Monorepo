@@ -106,6 +106,17 @@ export default function InventoryScreen() {
                 <Text style={[styles.secondaryButtonText, { color: BRAND.accent }]}>New Sale</Text>
               </Pressable>
             </View>
+            <View style={styles.ctaActions}>
+              <Pressable style={[styles.secondaryButton, { borderColor: BRAND.accent }]} onPress={() => router.push('/orders')}>
+                <Text style={[styles.secondaryButtonText, { color: BRAND.accent }]}>Orders</Text>
+              </Pressable>
+              <Pressable style={[styles.secondaryButton, { borderColor: BRAND.accent }]} onPress={() => router.push('/low-inventory-alerts')}>
+                <Text style={[styles.secondaryButtonText, { color: BRAND.accent }]}>Low Stock Alerts</Text>
+              </Pressable>
+              <Pressable style={[styles.secondaryButton, { borderColor: BRAND.accent }]} onPress={() => router.push('/whatsapp-intake')}>
+                <Text style={[styles.secondaryButtonText, { color: BRAND.accent }]}>WhatsApp Intake</Text>
+              </Pressable>
+            </View>
           </View>
 
           <View style={styles.list}>

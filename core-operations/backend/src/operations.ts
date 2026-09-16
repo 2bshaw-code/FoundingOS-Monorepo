@@ -239,3 +239,48 @@ export const weatherAt = async (latitude: number, longitude: number, timezone = 
   const data = await response.json() as { current?: Record<string, number | string>; current_units?: Record<string, string>; timezone?: string }
   return { latitude, longitude, timezone: data.timezone || timezone, temperature: data.current?.temperature_2m, apparentTemperature: data.current?.apparent_temperature, weatherCode: data.current?.weather_code, windSpeed: data.current?.wind_speed_10m, units: data.current_units || {}, observedAt: data.current?.time || new Date().toISOString() }
 }
+
+// Retail AI automations. These are deliberately simple, explainable heuristics (not opaque
+// ML calls) so they run fast, work offline-first on mobile once cached, and are auditable —
+// consistent with "AI that actually does the work, not just suggests it."
+export const predictLowInventory = async (tenantId: string) => {
+  const [products, movements] = await Promise.all([
+    prisma.product.findMany({ where: { tenantId, active: true }, include: { variants: true } }),
+    prisma.inventoryMovement.findMany({ where: { tenantId, createdAt: { gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) } } }),
+  ])
+  const outByVariant = new Map<string, number>()
+  for (const movement of movements) {
+    if (movement.direction !== 'out' || !movement.variantId) continue
+    outByVariant.set(movement.variantId, (outByVariant.get(movement.variantId) || 0) + movement.quantity)
+  }
+  const predictions: Array<{ productId: string; variantId: string; label: string; stock: number; dailyRunRate: number; daysUntilStockout: number | null; suggestedRestockQuantity: number }> = []
+  for (const product of products) {
+    for (const variant of product.variants) {
+      const soldLast14Days = outByVariant.get(variant.id) || 0
+      const dailyRunRate = Math.round((soldLast14Days / 14) * 100) / 100
+      const daysUntilStockout = dailyRunRate > 0 ? Math.floor(variant.stock / dailyRunRate) : null
+      if (daysUntilStockout !== null && daysUntilStockout <= 7) {
+        predictions.push({ productId: product.id, variantId: variant.id, label: `${product.name} — ${variant.label}`, stock: variant.stock, dailyRunRate, daysUntilStockout, suggestedRestockQuantity: Math.max(Math.ceil(dailyRunRate * 30) - variant.stock, 0) })
+      }
+    }
+  }
+  return predictions.sort((a, b) => (a.daysUntilStockout ?? 0) - (b.daysUntilStockout ?? 0))
+}
+
+export const fraudDetectionSimple = async (tenantId: string) => {
+  const orders = await prisma.order.findMany({ where: { tenantId, createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } }, orderBy: { createdAt: 'desc' } })
+  const flags: Array<{ orderId: string; reference: string; reason: string; severity: 'low' | 'medium' | 'high' }> = []
+  const byCustomer = new Map<string, typeof orders>()
+  for (const order of orders) {
+    if (!order.customerId) continue
+    const list = byCustomer.get(order.customerId) || []
+    list.push(order)
+    byCustomer.set(order.customerId, list)
+  }
+  for (const order of orders) {
+    if (order.totalPence >= 500_000) flags.push({ orderId: order.id, reference: order.reference, reason: `Unusually large order value (£${(order.totalPence / 100).toFixed(2)})`, severity: 'high' })
+    if (order.customerId && (byCustomer.get(order.customerId)?.length || 0) >= 5) flags.push({ orderId: order.id, reference: order.reference, reason: 'More than 5 orders from the same customer in 24 hours', severity: 'medium' })
+    if (order.paymentStatus === 'unpaid' && order.deliveryStatus === 'delivered') flags.push({ orderId: order.id, reference: order.reference, reason: 'Order marked delivered while still unpaid', severity: 'high' })
+  }
+  return flags
+}

@@ -38,6 +38,9 @@ export default function AppTabsLayout() {
         <Tabs.Screen name="ai-actions" options={{ title: 'AI Actions', headerTitle: 'AI Actions' }} />
         <Tabs.Screen name="settings" options={{ title: 'Settings', headerTitle: 'Settings' }} />
         <Tabs.Screen name="new-sale" options={{ href: null, headerTitle: 'New Sale' }} />
+        <Tabs.Screen name="orders" options={{ href: null, headerTitle: 'Orders' }} />
+        <Tabs.Screen name="low-inventory-alerts" options={{ href: null, headerTitle: 'Low Inventory Alerts' }} />
+        <Tabs.Screen name="whatsapp-intake" options={{ href: null, headerTitle: 'WhatsApp Intake' }} />
         <Tabs.Screen name="about" options={{ href: null, headerTitle: 'About' }} />
       </Tabs>
       <FloatingAISphere />
