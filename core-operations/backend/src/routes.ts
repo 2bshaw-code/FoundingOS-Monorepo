@@ -10,7 +10,7 @@ import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadin
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
 import { assignDelivery, createCampaign, createDeliveryOperator, createDeliveryTask, createDeliveryVehicle, createDeliveryZone, createDriver, createInventoryItem, createInventoryMovement, createInvoice, createOrder, createProduct, createRoute, createShipment, createSocialPost, createSpecOrder, createVariant, createVehicle, deleteInventoryItem, deleteProduct, detectLocation, fraudDetectionSimple, generateMedia, latestLocationsByDriver, listDeliveryTasks, listDrivers, listInventoryMovements, listProducts, listRoutes, listShipments, listSpecOrders, listVehicles, operationsSummary, predictLowInventory, recordLocation, saveLocationProfile, searchInventory, sendInvoice, updateCampaign, updateDeliveryAssignment, updateDeliveryNotification, updateDeliveryOperator, updateDeliveryTask, updateDeliveryVehicle, updateDeliveryZone, updateDriver, updateInventoryItem, updateInvoice, updateOrder, updateProduct, updateShipment, updateSocialPost, updateSpecOrder, updateVariant, weatherAt } from './operations.js'
 import { addMerchantStaff, merchantWorkspace, ownerMerchantSummary, removeMerchantStaff, resetMerchantPassword, reviewMerchantChange, submitMerchantChange, updateMerchantStaff } from './merchant.js'
-import { createPayment, createPaymentMethod, dsoSummary, generateCashFlowPrediction, listCashFlowPredictions, listMobileMoneyTransactions, listPaymentMethods, listPayments, listRevenueRecognition, reconcileMobileMoneyPayment, recognizeRevenue } from './finance.js'
+import { createPayment, createPaymentMethod, dsoSummary, generateCashFlowPrediction, listCashFlowPredictions, listInvoices, listMobileMoneyTransactions, listPaymentMethods, listPayments, listRevenueRecognition, reconcileMobileMoneyPayment, recognizeRevenue, recordPartialPayment, refundPayment } from './finance.js'
 
 const requireTenant: RequestHandler = (_req, res, next) => {
   if (res.locals.auth?.role === 'founder_master') return next()
@@ -119,6 +119,9 @@ apiRouter.patch('/orders/:id', requireOwnerAccess, requireTenant, requireCoreOpe
 apiRouter.post('/invoices', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.status(201).json({ success: true, data: await createInvoice(tenantId, req.body || {}) }) } catch (error) { next(error) }
 })
+apiRouter.get('/invoices', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await listInvoices(readTenant(req, res), req.query.status ? String(req.query.status) : undefined) }) } catch (error) { next(error) }
+})
 apiRouter.patch('/invoices/:id', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { res.json({ success: true, data: await updateInvoice(String(req.params.id), readTenant(req, res), req.body || {}) }) } catch (error) { next(error) }
 })
@@ -142,6 +145,12 @@ apiRouter.post('/finance/payments', requireOwnerAccess, requireTenant, requireCo
 })
 apiRouter.post('/finance/payments/:id/reconcile-mobile-money', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.json({ success: true, data: await reconcileMobileMoneyPayment(tenantId, String(req.params.id), req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.post('/finance/payments/:id/refund', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await refundPayment(readTenant(req, res), String(req.params.id), req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.post('/invoices/:id/partial-payment', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.status(201).json({ success: true, data: await recordPartialPayment(tenantId, String(req.params.id), Number(req.body?.amountPence || 0)) }) } catch (error) { next(error) }
 })
 apiRouter.get('/finance/mobile-money-transactions', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { res.json({ success: true, data: await listMobileMoneyTransactions(readTenant(req, res)) }) } catch (error) { next(error) }

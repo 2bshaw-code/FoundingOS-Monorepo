@@ -39,6 +39,9 @@ export default function AppTabsLayout() {
         <Tabs.Screen name="activity" options={{ title: 'Activity', headerTitle: 'Live Activity' }} />
         <Tabs.Screen name="ai-actions" options={{ title: 'AI Actions', headerTitle: 'AI Actions' }} />
         <Tabs.Screen name="settings" options={{ title: 'Settings', headerTitle: 'Settings' }} />
+        <Tabs.Screen name="patients" options={{ href: null, headerTitle: 'Patients' }} />
+        <Tabs.Screen name="record-viewer" options={{ href: null, headerTitle: 'Record Viewer' }} />
+        <Tabs.Screen name="medical-billing" options={{ href: null, headerTitle: 'Medical Billing' }} />
         <Tabs.Screen name="about" options={{ href: null, headerTitle: 'About' }} />
       </Tabs>
       <FloatingAISphere />

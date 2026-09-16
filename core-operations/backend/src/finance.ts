@@ -110,3 +110,36 @@ export const generateCashFlowPrediction = async (tenantId: string, period: strin
 
 export const listCashFlowPredictions = (tenantId?: string) =>
   prisma.cashFlowPrediction.findMany({ where: tenantId ? { tenantId } : {}, orderBy: { generatedAt: 'desc' }, take: 24 })
+
+// Full invoice list for the Finance Console — separate from operationsSummary's
+// bundled invoices array, since the Finance screens need a dedicated, filterable
+// endpoint (by status) rather than the whole tenant snapshot.
+export const listInvoices = (tenantId?: string, status?: string) =>
+  prisma.invoice.findMany({ where: { ...(tenantId ? { tenantId } : {}), ...(status ? { status } : {}) }, orderBy: { createdAt: 'desc' }, take: 200 })
+
+// Partial payment support: records a payment against an invoice for less than
+// its full outstanding balance, marking the invoice "partially_paid" until the
+// full balance is covered.
+export const recordPartialPayment = async (tenantId: string, invoiceId: string, amountPence: number) => {
+  const invoice = await prisma.invoice.findFirstOrThrow({ where: { id: invoiceId, ...(tenantId ? { tenantId } : {}) } })
+  const payment = await prisma.payment.create({ data: { tenantId, invoiceId, amountPence, status: 'succeeded' } })
+  const priorPayments = await prisma.payment.findMany({ where: { invoiceId, status: 'succeeded' } })
+  const totalPaidPence = priorPayments.reduce((sum, current) => sum + current.amountPence, 0)
+  const status = totalPaidPence >= invoice.totalPence ? 'paid' : 'partially_paid'
+  await prisma.invoice.update({ where: { id: invoiceId }, data: { status } })
+  if (status === 'paid') emitOsEvent(OS_EVENTS.PAYMENT_RECEIVED, { paymentId: payment.id, organisationId: tenantId, method: 'card' })
+  return payment
+}
+
+// Refunds an existing succeeded payment — creates an offsetting negative
+// Payment record (amountPence stored as a negative delta) so the ledger keeps
+// a full audit trail rather than mutating/deleting the original payment.
+export const refundPayment = async (tenantId: string, paymentId: string, input: Record<string, unknown>) => {
+  const original = await prisma.payment.findFirstOrThrow({ where: { id: paymentId, ...(tenantId ? { tenantId } : {}) } })
+  const refundAmountPence = number(input.amountPence) || original.amountPence
+  const refund = await prisma.payment.create({
+    data: { tenantId, invoiceId: original.invoiceId, paymentMethodId: original.paymentMethodId, amountPence: -Math.abs(refundAmountPence), status: 'refunded' },
+  })
+  if (original.invoiceId) await prisma.invoice.update({ where: { id: original.invoiceId }, data: { status: 'refunded' } })
+  return refund
+}

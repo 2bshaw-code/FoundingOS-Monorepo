@@ -3,7 +3,8 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { useCallback, useEffect, useState } from 'react'
-import { ScrollView, View, Text, StyleSheet, ActivityIndicator, RefreshControl, Dimensions } from 'react-native'
+import { ScrollView, View, Text, Pressable, StyleSheet, ActivityIndicator, RefreshControl, Dimensions } from 'react-native'
+import { router } from 'expo-router'
 import { fetchCashflow, type CashflowResponse } from '../../lib/cashflow'
 import { getScannedApprovals, type ScannedApproval } from '../../lib/approvals'
 import { fetchDsoSummary, fetchMobileMoneyTransactions, type DsoSummary, type MobileMoneyTransaction } from '../../lib/core-api'
@@ -84,6 +85,14 @@ export default function CashflowScreen() {
     >
       <Text style={styles.intro}>Demo-mode cash flow for {BRAND.name} — deterministic, reseeds every few minutes.</Text>
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Pressable style={[styles.navButton, { borderColor: BRAND.accent }]} onPress={() => router.push('/invoices')}>
+          <Text style={[styles.navButtonText, { color: BRAND.accent }]}>Invoices</Text>
+        </Pressable>
+        <Pressable style={[styles.navButton, { borderColor: BRAND.accent }]} onPress={() => router.push('/mobile-money-reconcile')}>
+          <Text style={[styles.navButtonText, { color: BRAND.accent }]}>Reconcile mobile money</Text>
+        </Pressable>
+      </View>
 
       {data ? (
         <>
@@ -150,6 +159,8 @@ export default function CashflowScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0F2942' },
+  navButton: { borderWidth: 1, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 },
+  navButtonText: { fontSize: 12, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0F2942' },
   intro: { color: '#b9c2cf', fontSize: 13 },
   error: { color: '#ff5470', fontSize: 13 },

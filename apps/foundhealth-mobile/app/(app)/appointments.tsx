@@ -4,6 +4,7 @@
 */
 import { useCallback, useEffect, useState } from 'react'
 import { ScrollView, View, Text, Pressable, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native'
+import { router } from 'expo-router'
 import { BRAND } from '../../lib/brand'
 import { fetchClinicFeed, type ScheduleItem, type StaffingRow } from '../../lib/clinic-feed'
 import { getHealthActions, recordScheduleAction, type ScheduleAction } from '../../lib/health-actions'
@@ -86,6 +87,14 @@ export default function AppointmentsScreen() {
       <Text style={styles.intro}>Clinic schedule — deliveries, outreach, maintenance and shifts. Confirm or request a reschedule below.</Text>
       {disclaimer ? <Text style={styles.disclaimer}>⚠ {disclaimer}</Text> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Pressable style={[styles.navButton, { borderColor: BRAND.accent }]} onPress={() => router.push('/patients')}>
+          <Text style={[styles.navButtonText, { color: BRAND.accent }]}>Patients</Text>
+        </Pressable>
+        <Pressable style={[styles.navButton, { borderColor: BRAND.accent }]} onPress={() => router.push('/medical-billing')}>
+          <Text style={[styles.navButtonText, { color: BRAND.accent }]}>Medical Billing</Text>
+        </Pressable>
+      </View>
 
       {staffing.length ? (
         <View style={[styles.card, { borderColor: BRAND.accent }]}>
@@ -139,6 +148,8 @@ export default function AppointmentsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0F2942' },
+  navButton: { borderWidth: 1, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 },
+  navButtonText: { fontSize: 12, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0F2942' },
   intro: { color: '#b9c2cf', fontSize: 13, marginBottom: 2 },
   disclaimer: { color: '#FFDD00', fontSize: 11, marginBottom: 4 },

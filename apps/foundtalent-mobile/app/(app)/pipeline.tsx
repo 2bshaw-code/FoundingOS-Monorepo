@@ -99,6 +99,9 @@ export default function PipelineScreen() {
         <Text style={styles.heroTitle}>Pipeline</Text>
         <Text style={styles.heroSubtitle}>{board.filter((c) => !c.rejected).length} active candidates across {STAGES.length} stages.</Text>
       </View>
+      <Pressable style={[styles.navButton, { borderColor: BRAND.accent }]} onPress={() => router.push('/worker-directory')}>
+        <Text style={[styles.navButtonText, { color: BRAND.accent }]}>Worker Directory</Text>
+      </Pressable>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -163,6 +166,8 @@ export default function PipelineScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0F2942' },
+  navButton: { borderWidth: 1, borderRadius: 999, paddingVertical: 8, alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: 14 },
+  navButtonText: { fontSize: 12, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0F2942' },
   hero: { marginBottom: 4 },
   heroTitle: { color: '#ffffff', fontSize: 22, fontWeight: '800' },

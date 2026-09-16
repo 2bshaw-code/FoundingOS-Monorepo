@@ -31,6 +31,11 @@ async function coreApiFetch<T>(path: string, init: RequestInit = {}): Promise<T 
   }
 }
 
+export type Invoice = { id: string; number: string; status: string; totalPence: number; dueAt?: string | null; createdAt: string }
+
+export const fetchInvoices = (status?: string) => coreApiFetch<Invoice[]>(`/invoices${status ? `?status=${status}` : ''}`)
+export const sendInvoice = (id: string) => coreApiFetch<Invoice>(`/invoices/${id}/send`, { method: 'POST' })
+
 export const fetchPaymentMethods = () => coreApiFetch<PaymentMethod[]>('/finance/payment-methods')
 export const fetchPayments = () => coreApiFetch<Payment[]>('/finance/payments')
 export const fetchMobileMoneyTransactions = () => coreApiFetch<MobileMoneyTransaction[]>('/finance/mobile-money-transactions')
