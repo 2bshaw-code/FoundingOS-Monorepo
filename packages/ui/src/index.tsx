@@ -433,32 +433,121 @@ export function MarketingPage({ brand, page = 'home' }: { brand: BrandDefinition
   return <BrandMarketingPage brand={brand} page={page} />
 }
 
-export function FounderLauncher() {
-  const bobActions = ['Open Retail dashboard', 'Check Meat compliance', 'Review IT alerts', 'Find Talent candidates', 'Show Crypto wallet balance']
+const founderSuites = [
+  {
+    key: 'core_operations',
+    name: 'Core.Operations',
+    tagline: 'Retail operations, connected.',
+    description: 'Customers, orders, inventory, billing, and delivery — messaging-first commerce workflows for founder-run businesses.',
+    modules: ['Customers', 'Inventory', 'Orders', 'Billing', 'Delivery'],
+    accent: '#00C853',
+  },
+  {
+    key: 'core_workforce',
+    name: 'Core.Workforce',
+    tagline: 'Hiring intelligence, made human.',
+    description: 'Applicants, recruiters, jobs, and workforce intelligence for modern founder-led teams.',
+    modules: ['Applicants', 'Recruiters', 'Jobs', 'Workforce Intel'],
+    accent: '#FFB300',
+  },
+  {
+    key: 'core_intelligence',
+    name: 'Core.Intelligence',
+    tagline: 'Decisions, backed by your own data.',
+    description: 'Founder and owner KPIs, funnels, and reporting built entirely from first-party operational data.',
+    modules: ['KPI Dashboards', 'Funnels', 'Reports'],
+    accent: '#2962FF',
+  },
+] as const
+
+export function FounderLauncher({ page = 'home' }: { page?: string } = {}) {
   const packagePlans = founderPackages
+  const consoleHref = `${consoleDashboardUrl(brands.foundingos)}/console`
+
+  if (page === 'about') {
+    return (
+      <main className="site-shell founder-shell" style={{ '--accent': '#4A90E2' } as React.CSSProperties}>
+        <nav>
+          <Link href="/">FoundingOS</Link>
+          <div className="site-nav-links">
+            <Link href="/about">About</Link>
+            <Link href="/pricing">Pricing</Link>
+            <Link href="/contact">Contact</Link>
+            {isInternalHref(consoleHref) ? <Link href={consoleHref}>Console</Link> : <a href={consoleHref}>Console</a>}
+            <ThemeToggle />
+          </div>
+        </nav>
+        <section className="hero">
+          <div className="hero-copy">
+            <p className="eyebrow">About FoundingOS</p>
+            <h1>One system of record for founder-run businesses.</h1>
+            <p>
+              FoundingOS replaces a stack of disconnected tools with a single platform. Instead of stitching
+              together point tools per department, operators run the whole business — customers, people, and
+              decisions — from one place.
+            </p>
+          </div>
+        </section>
+        <section id="suites" className="module-grid">
+          {founderSuites.map((suite) => (
+            <article key={suite.key} className="card-premium">
+              <p className="eyebrow">{suite.tagline}</p>
+              <h2>{suite.name}</h2>
+              <p>{suite.description}</p>
+            </article>
+          ))}
+        </section>
+        <footer className="site-footer">
+          <PremiumSocialLinks accent="#4A90E2" mode="full" label="Social & messaging" />
+        </footer>
+      </main>
+    )
+  }
 
   return (
     <main className="site-shell founder-shell" style={{ '--accent': '#4A90E2' } as React.CSSProperties}>
       <nav>
         <Link href="/">FoundingOS</Link>
         <div className="site-nav-links">
-          <a href={`${brands.foundingos.consoleUrl}/console`}>Console</a>
+          <Link href="/about">About</Link>
+          <Link href="/pricing">Pricing</Link>
+          <Link href="/contact">Contact</Link>
+          {isInternalHref(consoleHref) ? <Link href={consoleHref}>Console</Link> : <a href={consoleHref}>Console</a>}
           <ThemeToggle />
         </div>
       </nav>
       <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">FoundingOS</p>
-          <h1>One ecosystem. Every brand connected.</h1>
-          <p>Launch brand websites, govern subscriptions, and manage the shared SaaS platform from a single command layer.</p>
+          <h1>The operating system for founder-run businesses.</h1>
+          <p>
+            One core platform with three suites — Core.Operations, Core.Workforce, and Core.Intelligence — that
+            replaces a stack of disconnected tools with a single system of record for customers, people, and decisions.
+          </p>
+          <div className="hero-actions">
+            <a href="#pricing" className="btn btn-primary btn-premium">See pricing</a>
+            {isInternalHref(consoleHref) ? <Link href={consoleHref} className="btn btn-secondary">Chat with IntelligenceAI</Link> : <a href={consoleHref} className="btn btn-secondary">Chat with IntelligenceAI</a>}
+          </div>
         </div>
         <div className="hero-visual" aria-label="FoundingOS overview">
           <div className="hero-panel card-premium glow-premium" style={{ background: brandGradient(brands.foundingos) }}>
-            <span>Platform hub</span>
+            <span>One platform, three suites</span>
             <strong>FoundingOS</strong>
-            <ul>{brandList.filter((brand) => brand.slug !== 'foundingos').map((brand) => <li key={brand.slug}>{brand.name}</li>)}</ul>
+            <ul>{founderSuites.map((suite) => <li key={suite.key}>{suite.name}</li>)}</ul>
           </div>
         </div>
+      </section>
+      <section id="suites" className="module-grid">
+        {founderSuites.map((suite) => (
+          <article key={suite.key} className="card-premium">
+            <p className="eyebrow">{suite.tagline}</p>
+            <h2>{suite.name}</h2>
+            <p>{suite.description}</p>
+            <ul>
+              {suite.modules.map((module) => <li key={module}>{module}</li>)}
+            </ul>
+          </article>
+        ))}
       </section>
       <section id="pricing" className="module-grid">
         {packagePlans.map((plan) => (
@@ -486,32 +575,14 @@ export function FounderLauncher() {
         <div className="founder-bob-avatar">B</div>
         <div className="founder-bob-copy">
           <p className="eyebrow">IntelligenceAI</p>
-          <h2>Meet IntelligenceAI.</h2>
-          <p>IntelligenceAI — The Best Onboarding Bot in the World.</p>
-          <p>IntelligenceAI wasn’t created to be another chatbot. It wasn’t designed to be a gimmick, a feature, or a support tool. IntelligenceAI was created to solve the single biggest problem in business software: people hate onboarding, people hate learning new systems, and people hate complicated dashboards.</p>
-          <p>FoundingOS fixes that by giving every user — from retail staff to meat suppliers, recruiters, IT teams, crypto traders, and founders — one universal guide who knows exactly what they need.</p>
-          <p>IntelligenceAI is simple, huge-capable, friendly, approachable, human-first, and a co-founder rather than a tool. It handles onboarding, setup, training, workflows, tasks, and questions instantly.</p>
-          <p>IntelligenceAI is the assistant that makes FoundingOS usable by SMEs, large companies, suppliers, retail staff, job seekers, recruiters, IT teams, crypto traders, and founders. It is the best onboarding assistant in the world, and it is the heart of the entire FoundingOS ecosystem.</p>
+          <h2>Meet IntelligenceAI, your onboarding co-founder.</h2>
+          <p>IntelligenceAI sets up your workspace, trains your team, and answers questions instantly — so switching to FoundingOS takes minutes, not weeks.</p>
           <div className="hero-actions">
-            {isInternalHref(`${consoleDashboardUrl(brands.foundingos)}/console`)
-              ? <Link className="btn btn-primary btn-premium" href={`${consoleDashboardUrl(brands.foundingos)}/console`}>Meet IntelligenceAI</Link>
-              : <a className="btn btn-primary btn-premium" href={`${consoleDashboardUrl(brands.foundingos)}/console`}>Meet IntelligenceAI</a>}
+            {isInternalHref(consoleHref)
+              ? <Link className="btn btn-primary btn-premium" href={consoleHref}>Meet IntelligenceAI</Link>
+              : <a className="btn btn-primary btn-premium" href={consoleHref}>Meet IntelligenceAI</a>}
           </div>
         </div>
-        <div className="founder-bob-actions">
-          {bobActions.map((action) => <button key={action} type="button" className="bob-chip">{action}</button>)}
-        </div>
-      </section>
-      <section className="module-grid">
-        {brandList.filter((brand) => brand.slug !== 'foundingos').map((brand) => (
-          <article key={brand.slug} className="card-premium">
-            <h2>{brand.name}</h2>
-            <p>{brand.summary}</p>
-            {isInternalHref(brand.webUrl)
-              ? <Link className="btn btn-primary btn-premium" style={{ backgroundColor: brand.brandColors.primary, borderColor: brand.brandColors.accent }} href={brand.webUrl}>Open Website</Link>
-              : <a className="btn btn-primary btn-premium" style={{ backgroundColor: brand.brandColors.primary, borderColor: brand.brandColors.accent }} href={brand.webUrl}>Open Website</a>}
-          </article>
-        ))}
       </section>
       <section id="contact" className="module-grid">
         <article className="card-premium">
