@@ -469,13 +469,13 @@ const flagshipWorkflow = {
   name: 'Fulfilment-to-Cash',
   tagline: 'The Order-to-Revenue OS — Retail, Logistics, and Finance, fully automated.',
   steps: [
-    { console: 'Retail', detail: 'Order placed or inventory drops below threshold — fulfilment triggers automatically.' },
-    { console: 'Logistics', detail: 'AI suggests optimal routing, creates the delivery task, and updates real-time tracking.' },
-    { console: 'Finance', detail: 'Invoice auto-generates on delivery, payment reconciles, and revenue reporting updates instantly.' },
+    { console: 'Retail', detail: 'Order comes in over WhatsApp or the console; inventory drop triggers fulfilment automatically.' },
+    { console: 'Logistics', detail: 'AI suggests optimal routing, creates the delivery task, and sends WhatsApp delivery updates in real time.' },
+    { console: 'Finance', detail: 'Invoice auto-generates on delivery, payment reconciles via Mobile Money or card, and revenue reporting updates instantly.' },
   ],
 }
 
-const replacedTools = ['your CRM', 'your scheduling tools', 'your inventory system', 'your HR platform', 'your finance tools', 'your workflow automations', 'your analytics dashboards', 'your mobile apps', 'your operational backend']
+const replacedTools = ['WhatsApp threads', 'Excel spreadsheets', 'your CRM', 'your scheduling tools', 'your inventory system', 'your HR platform', 'your finance tools', 'your workflow automations', 'your analytics dashboards', 'your operational backend']
 
 const businessImpact = [
   '50–70% reduction in manual work',
@@ -513,10 +513,11 @@ export function FounderLauncher({ page = 'home' }: { page?: string } = {}) {
         <section className="hero">
           <div className="hero-copy">
             <p className="eyebrow">About FoundingOS</p>
-            <h1>The automation layer that connects your business.</h1>
+            <h1>The operating system for high-growth markets.</h1>
             <p>
-              The OS Suite connects operations, logistics, finance, health, and workforce into one unified system —
-              three layers, one login, one data model, one AI, with agents already running cross-sector workflows.
+              Most businesses in Africa, India, and Southeast Asia still run on WhatsApp, Excel, and 8–12
+              disconnected tools. The OS Suite replaces all of them with one unified system — three layers,
+              WhatsApp-first, mobile-money-native, built for how these markets actually operate.
             </p>
           </div>
         </section>
@@ -542,10 +543,11 @@ export function FounderLauncher({ page = 'home' }: { page?: string } = {}) {
       <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">THE OS SUITE</p>
-          <h1>The automation layer that connects your business.</h1>
+          <h1>The operating system for high-growth markets in Africa, India &amp; Southeast Asia.</h1>
           <p>
-            The OS Suite connects operations, logistics, finance, health, and workforce into one unified system —
-            three layers, one login, one data model, one AI, with agents already running cross-sector workflows.
+            Most businesses in emerging markets still run on WhatsApp, Excel, and 8–12 disconnected tools. The OS
+            Suite replaces all of them with one system built for how these markets actually operate —
+            WhatsApp-first, mobile-money-native, and mobile from day one.
           </p>
           <div className="hero-actions">
             <a href="#pricing" className="btn btn-primary btn-premium">See pricing</a>
@@ -569,6 +571,19 @@ export function FounderLauncher({ page = 'home' }: { page?: string } = {}) {
             <p>{layer.description}</p>
           </article>
         ))}
+      </section>
+
+      <section id="whatsapp-mobile-money" className="module-grid">
+        <article className="card-premium">
+          <p className="eyebrow">Built in, not bolted on</p>
+          <h2>WhatsApp-first</h2>
+          <p>Order intake, customer messaging, delivery updates, and payment confirmation all happen over WhatsApp — the primary interface, not a notification add-on.</p>
+        </article>
+        <article className="card-premium">
+          <p className="eyebrow">Built in, not bolted on</p>
+          <h2>Mobile-money-native</h2>
+          <p>M-Pesa, MTN MoMo, Paystack, Flutterwave, and UPI are first-class payment and reconciliation rails across every console, alongside cards and bank transfer.</p>
+        </article>
       </section>
 
       <section id="consoles" className="module-grid">
