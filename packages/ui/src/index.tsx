@@ -435,24 +435,24 @@ export function MarketingPage({ brand, page = 'home' }: { brand: BrandDefinition
 
 const osLayers = [
   {
-    key: 'quantumos',
-    name: 'QuantumOS',
+    key: 'core_operations',
+    name: 'Core Operations',
     tagline: 'The Experience Layer — this is where you work.',
-    description: 'Clean, fast, sector-specific consoles for Retail, Talent, Finance, Health, Logistics, Discovery, and Operations. Every console is simple, clear, and instantly usable — no training required.',
+    description: 'Sector consoles for Retail, Talent, Finance, Health, and Logistics. Every console is simple, clear, and instantly usable — no training required.',
     accent: '#4A90E2',
   },
   {
-    key: 'intelligenceos',
-    name: 'IntelligenceOS',
+    key: 'core_intelligence',
+    name: 'Core Intelligence',
     tagline: 'The AI Layer — this is the brain of your business.',
-    description: 'Automates workflows, routes tasks, predicts issues, connects data, and gives real-time insights. AI that actually does the work — not just "suggests" it.',
+    description: 'Automations, insights, predictions, routing, and decision support — AI agents that operate across consoles with real context, not just dashboards that suggest.',
     accent: '#2962FF',
   },
   {
-    key: 'systemos',
-    name: 'SystemOS',
+    key: 'core_workforce',
+    name: 'Core Workforce',
     tagline: 'The Backbone Layer — the foundation everything runs on.',
-    description: 'Identity, permissions, billing, multi-tenant architecture, data unification, and infrastructure. This is what makes the whole OS Suite enterprise-ready.',
+    description: 'Identity, permissions, roles, billing, infrastructure, multi-tenant architecture, audit, and security. This is what makes the whole OS Suite enterprise-ready.',
     accent: '#00A896',
   },
 ] as const
@@ -463,9 +463,17 @@ const sectorConsoles = [
   { key: 'finance', name: 'Finance Console', description: 'Track payments, invoices, cashflow, subscriptions, and financial health.' },
   { key: 'health', name: 'Health Console', description: 'Manage appointments, records, workflows, compliance, and patient operations.' },
   { key: 'logistics', name: 'Logistics Console', description: 'Run deliveries, routing, fleet management, tracking, and operational flow.' },
-  { key: 'discovery', name: 'Discovery Console', description: 'Find services, connect with businesses, explore local offerings.' },
-  { key: 'operator', name: 'Operator Console', description: 'Your master control panel for running the entire OS Suite.' },
 ] as const
+
+const flagshipWorkflow = {
+  name: 'Fulfilment-to-Cash',
+  tagline: 'The Order-to-Revenue OS — Retail, Logistics, and Finance, fully automated.',
+  steps: [
+    { console: 'Retail', detail: 'Order placed or inventory drops below threshold — fulfilment triggers automatically.' },
+    { console: 'Logistics', detail: 'AI suggests optimal routing, creates the delivery task, and updates real-time tracking.' },
+    { console: 'Finance', detail: 'Invoice auto-generates on delivery, payment reconciles, and revenue reporting updates instantly.' },
+  ],
+}
 
 const replacedTools = ['your CRM', 'your scheduling tools', 'your inventory system', 'your HR platform', 'your finance tools', 'your workflow automations', 'your analytics dashboards', 'your mobile apps', 'your operational backend']
 
@@ -505,11 +513,10 @@ export function FounderLauncher({ page = 'home' }: { page?: string } = {}) {
         <section className="hero">
           <div className="hero-copy">
             <p className="eyebrow">About FoundingOS</p>
-            <h1>The unified operating system for modern businesses.</h1>
+            <h1>The automation layer that connects your business.</h1>
             <p>
-              You get one powerful system made of three layers — QuantumOS, IntelligenceOS, and SystemOS — working
-              together to run your entire business from one place. No more scattered tools, no more disconnected
-              apps, no more chaos. One login. One console. One operating system.
+              The OS Suite connects operations, logistics, finance, health, and workforce into one unified system —
+              three layers, one login, one data model, one AI, with agents already running cross-sector workflows.
             </p>
           </div>
         </section>
@@ -535,11 +542,10 @@ export function FounderLauncher({ page = 'home' }: { page?: string } = {}) {
       <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">THE OS SUITE</p>
-          <h1>The unified operating system for modern businesses.</h1>
+          <h1>The automation layer that connects your business.</h1>
           <p>
-            You get one powerful system made of three layers — QuantumOS, IntelligenceOS, and SystemOS — working
-            together to run your entire business from one place. No more scattered tools, no more disconnected
-            apps, no more chaos. One login. One console. One operating system.
+            The OS Suite connects operations, logistics, finance, health, and workforce into one unified system —
+            three layers, one login, one data model, one AI, with agents already running cross-sector workflows.
           </p>
           <div className="hero-actions">
             <a href="#pricing" className="btn btn-primary btn-premium">See pricing</a>
@@ -572,6 +578,18 @@ export function FounderLauncher({ page = 'home' }: { page?: string } = {}) {
             <p>{console.description}</p>
           </article>
         ))}
+      </section>
+
+      <section id="workflow" className="founder-bob-intro">
+        <div className="founder-bob-copy">
+          <p className="eyebrow">Flagship workflow</p>
+          <h2>{flagshipWorkflow.name} — {flagshipWorkflow.tagline}</h2>
+          <ol className="workflow-steps">
+            {flagshipWorkflow.steps.map((step) => (
+              <li key={step.console}><strong>{step.console}:</strong> {step.detail}</li>
+            ))}
+          </ol>
+        </div>
       </section>
 
       <section className="founder-bob-intro">
