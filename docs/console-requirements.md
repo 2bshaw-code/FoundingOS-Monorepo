@@ -248,34 +248,40 @@ renaming, and parity — not building from zero.
   event to `core-operations/backend`'s Finance module is the next step,
   blocked on event backbone wiring below.
 
-### Health Console — not yet built (largest remaining gap)
+### Health Console — ✅ backend built
 
-- **Backend**: no dedicated Health backend exists yet;
-  `core-intelligence/backend` has `Product`/`MarketplaceMerchant` only
-  (unrelated marketplace models, not Patient/Appointment/Record).
+- **Backend**: new dedicated service
+  [`core-health/backend`](/Users/bobbyshaw/Founding%20OS%20Local/founder-os-group/core-health/backend)
+  following the `core-operations`/`core-workforce` pattern — own
+  `prisma/schema.prisma` (`Patient`, `Appointment`, `Record`, `Treatment`,
+  `MedicalInvoice`, `ComplianceFlag`), own auth (`src/auth.ts`), full CRUD
+  routes (`src/routes.ts`), predict-no-shows and flag-compliance-issues
+  heuristics in `src/health.ts`, and a payroll/billing→Finance sync stub.
+  Mounted on port 4004 at `/api/v1/health`.
 - **Mobile**: `apps/foundhealth-mobile` — `home.tsx`, `appointments.tsx`,
-  `vitals.tsx`, `timeline.tsx`, `activity.tsx`, `ai-actions.tsx`, backed by
-  `lib/clinic-feed.ts` and `lib/health-actions.ts` (currently local/demo
-  data, not yet backed by a real Prisma schema).
-- **Missing vs. spec**: entire backend — `Patient`, `Appointment`,
-  `Record`, `Treatment`, `MedicalInvoice` models and API routes. This
-  needs a decision on where it lives (new `core-health/backend` service,
-  following the `core-operations`/`core-workforce` pattern, vs. folding
-  into an existing backend) before implementation — flagging for
-  confirmation rather than guessing given HIPAA/compliance implications
-  called out elsewhere in this spec.
+  `vitals.tsx`, `timeline.tsx`, `activity.tsx`, `ai-actions.tsx` — still
+  reads its existing local/demo feed; wiring to the new backend endpoints
+  is tracked in the build order below.
+- **Still open**: mobile app wiring to the new endpoints; billing→Finance
+  sync is currently a local status flip, not a real cross-service call.
 
 ### Cross-cutting items
 
-- **Event backbone**: did not exist prior to this change; added as
-  `packages/config/src/events.ts` with the six named events so web and
-  mobile share one source of truth. Existing per-console backends do not
-  yet emit/consume these named events — currently each console polls its
-  own REST endpoint rather than reacting to a shared event bus. Wiring
-  this in is the highest-leverage remaining architecture change, since it
-  unlocks real cross-console automation (e.g. Logistics reacting to
-  Retail's `order.confirmed`, or Talent's payroll sync reacting to
-  Finance's `payment.received`).
+- **Event backbone**: `packages/config/src/events.ts` defines the six
+  named events (`order.confirmed`, `inventory.low`, `shipment.created`,
+  `delivery.completed`, `invoice.generated`, `payment.received`) plus a
+  lightweight in-process `emitOsEvent`/`onOsEvent` pub-sub (swappable for
+  a real broker later). **Now wired** into `core-operations/backend`:
+  `createOrder` emits `order.confirmed`, `createInventoryItem`/
+  `updateInventoryItem` emit `inventory.low` when stock drops to/below
+  the low-stock threshold, `assignDelivery` emits `shipment.created`,
+  `updateDeliveryAssignment` emits `delivery.completed` on `delivered`
+  status, `createInvoice` emits `invoice.generated`, `updateInvoice`
+  (status→`paid`) and `reconcileMobileMoneyPayment` both emit
+  `payment.received`. `core-workforce/backend` and `core-health/backend`
+  depend on `@foundingos/config` but do not yet have named events to
+  emit for payroll/billing sync — that remains the next step once
+  cross-service payroll/billing events are added to `OS_EVENTS`.
 - **Shared data model** (`packages/db/prisma/schema.prisma`) holds only
   cross-cutting concerns (`Brand`, `User`, `Module`, `Subscription`,
   `ActivityLog`, `Account`, `Session`) — this is correct as-is; it is not
@@ -299,15 +305,12 @@ renaming, and parity — not building from zero.
 2. ~~**Finance Console models**~~ — done: `PaymentMethod`,
    `MobileMoneyTransaction`, `RevenueRecognition`, `CashFlowPrediction`
    added.
-3. **Health Console backend** — largest remaining gap; needs a decision
-   on service location, then `Patient`/`Appointment`/`Record`/`Treatment`/
-   `MedicalInvoice` models + routes, following the established pattern.
-4. **Event backbone wiring** — have each backend emit `OS_EVENTS` on
-   relevant mutations (order created, delivery completed, invoice paid,
-   payroll synced, etc.) so Core Intelligence automations can react
-   across consoles, and so Talent's payroll→Finance sync and Health's
-   billing→Finance sync become real integrations instead of local status
-   flips.
+3. ~~**Health Console backend**~~ — done: new `core-health/backend`
+   service with real Prisma models and routes.
+4. ~~**Event backbone wiring**~~ — done for `core-operations/backend`
+   (Retail/Logistics/Finance mutations now emit `OS_EVENTS`). Extending
+   named events to cover payroll (`core-workforce`) and billing
+   (`core-health`) sync-to-Finance is the remaining piece.
 5. **Naming alignment** — rename `SalesOrder`→`Order`,
    `DeliveryAssignment`→`DeliveryTask`, `DeliveryOperator`→`Driver` (or
    accept current names and update this spec instead — cheaper option).
@@ -315,5 +318,6 @@ renaming, and parity — not building from zero.
    capture, live tracking map.
 7. **Mobile wiring** — point `foundfinance-mobile`'s `lib/cashflow.ts` at
    the new `/finance/*` endpoints; add Worker/Timesheet/Payroll screens to
-   `foundtalent-mobile` to match the new backend capability.
+   `foundtalent-mobile` to match the new backend capability; wire
+   `foundhealth-mobile` to the new `core-health/backend` endpoints.
 

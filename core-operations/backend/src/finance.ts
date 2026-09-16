@@ -5,6 +5,7 @@
 // Finance Console persistence layer — PaymentMethod, Payment,
 // MobileMoneyTransaction, RevenueRecognition, CashFlowPrediction.
 // See docs/console-requirements.md (Finance Console section).
+import { emitOsEvent, OS_EVENTS } from '@foundingos/config/events'
 import { prisma } from './auth.js'
 import { Prisma } from './generated/prisma/index.js'
 
@@ -62,6 +63,7 @@ export const reconcileMobileMoneyPayment = async (tenantId: string, paymentId: s
   if (payment.invoiceId) {
     await prisma.invoice.update({ where: { id: payment.invoiceId, tenantId }, data: { status: 'paid', paidAt: new Date() } })
   }
+  await emitOsEvent(OS_EVENTS.PAYMENT_RECEIVED, { paymentId: payment.id, organisationId: tenantId, method: 'mobile_money' })
   return { payment, transaction }
 }
 

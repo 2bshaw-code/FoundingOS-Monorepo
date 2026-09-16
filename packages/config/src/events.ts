@@ -32,3 +32,29 @@ export type OsEvent<TName extends OsEventName = OsEventName> = {
   payload: OsEventPayloadMap[TName]
   emittedAt: string
 }
+
+// Minimal in-process event backbone. Each backend service currently runs
+// as its own process, so this is a structured, swappable seam rather
+// than a real message broker — call `emitOsEvent` at each mutation point
+// (order confirmed, delivery completed, invoice generated, etc.) and
+// register `onOsEvent` listeners for Core Intelligence automations.
+// Swap the implementation for a real broker (e.g. Redis pub/sub, SQS,
+// Kafka) without changing call sites once cross-process delivery is
+// needed.
+type OsEventListener<TName extends OsEventName> = (event: OsEvent<TName>) => void | Promise<void>
+
+const listeners = new Map<OsEventName, Set<OsEventListener<OsEventName>>>()
+
+export const onOsEvent = <TName extends OsEventName>(name: TName, listener: OsEventListener<TName>) => {
+  if (!listeners.has(name)) listeners.set(name, new Set())
+  listeners.get(name)!.add(listener as OsEventListener<OsEventName>)
+  return () => listeners.get(name)?.delete(listener as OsEventListener<OsEventName>)
+}
+
+export const emitOsEvent = async <TName extends OsEventName>(name: TName, payload: OsEventPayloadMap[TName]) => {
+  const event: OsEvent<TName> = { name, payload, emittedAt: new Date().toISOString() }
+  const handlers = listeners.get(name)
+  if (!handlers || handlers.size === 0) return event
+  await Promise.all(Array.from(handlers).map((handler) => handler(event as OsEvent<OsEventName>)))
+  return event
+}

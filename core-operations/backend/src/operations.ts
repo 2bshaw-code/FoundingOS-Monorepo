@@ -3,6 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { answerBob } from '@founder-os/bob'
+import { emitOsEvent, OS_EVENTS } from '@foundingos/config/events'
 import { prisma } from './auth.js'
 import { Prisma } from './generated/prisma/index.js'
 
@@ -37,15 +38,36 @@ export const searchInventory = (tenantId: string | undefined, query: Record<stri
   orderBy: { updatedAt: 'desc' },
 })
 
-export const createInventoryItem = (tenantId: string, input: Record<string, unknown>) => prisma.inventoryItem.create({ data: { tenantId, name: text(input.name), sku: text(input.sku), category: text(input.category) || 'General', supplierName: text(input.supplierName) || undefined, supplierEmail: text(input.supplierEmail) || undefined, pricePence: number(input.pricePence), stock: number(input.stock), lowStockLevel: number(input.lowStockLevel || 5), variants: json(input.variants || []) } })
-export const updateInventoryItem = (id: string, tenantId: string | undefined, input: Record<string, unknown>) => prisma.inventoryItem.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { ...(input.name !== undefined ? { name: text(input.name) } : {}), ...(input.category !== undefined ? { category: text(input.category) } : {}), ...(input.supplierName !== undefined ? { supplierName: text(input.supplierName) || null } : {}), ...(input.supplierEmail !== undefined ? { supplierEmail: text(input.supplierEmail) || null } : {}), ...(input.pricePence !== undefined ? { pricePence: number(input.pricePence) } : {}), ...(input.stock !== undefined ? { stock: number(input.stock) } : {}), ...(input.lowStockLevel !== undefined ? { lowStockLevel: number(input.lowStockLevel) } : {}), ...(input.variants !== undefined ? { variants: json(input.variants) } : {}) } })
+export const createInventoryItem = async (tenantId: string, input: Record<string, unknown>) => {
+  const item = await prisma.inventoryItem.create({ data: { tenantId, name: text(input.name), sku: text(input.sku), category: text(input.category) || 'General', supplierName: text(input.supplierName) || undefined, supplierEmail: text(input.supplierEmail) || undefined, pricePence: number(input.pricePence), stock: number(input.stock), lowStockLevel: number(input.lowStockLevel || 5), variants: json(input.variants || []) } })
+  if (item.stock <= item.lowStockLevel) await emitOsEvent(OS_EVENTS.INVENTORY_LOW, { inventoryItemId: item.id, organisationId: tenantId, quantityRemaining: item.stock })
+  return item
+}
+export const updateInventoryItem = async (id: string, tenantId: string | undefined, input: Record<string, unknown>) => {
+  const item = await prisma.inventoryItem.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { ...(input.name !== undefined ? { name: text(input.name) } : {}), ...(input.category !== undefined ? { category: text(input.category) } : {}), ...(input.supplierName !== undefined ? { supplierName: text(input.supplierName) || null } : {}), ...(input.supplierEmail !== undefined ? { supplierEmail: text(input.supplierEmail) || null } : {}), ...(input.pricePence !== undefined ? { pricePence: number(input.pricePence) } : {}), ...(input.stock !== undefined ? { stock: number(input.stock) } : {}), ...(input.lowStockLevel !== undefined ? { lowStockLevel: number(input.lowStockLevel) } : {}), ...(input.variants !== undefined ? { variants: json(input.variants) } : {}) } })
+  if (item.stock <= item.lowStockLevel) await emitOsEvent(OS_EVENTS.INVENTORY_LOW, { inventoryItemId: item.id, organisationId: item.tenantId, quantityRemaining: item.stock })
+  return item
+}
 export const deleteInventoryItem = (id: string, tenantId?: string) => prisma.inventoryItem.delete({ where: { id, ...(tenantId ? { tenantId } : {}) } })
 
-export const createOrder = (tenantId: string, input: Record<string, unknown>) => prisma.salesOrder.create({ data: { tenantId, customerId: text(input.customerId) || undefined, reference: text(input.reference) || `ORD-${Date.now()}`, status: text(input.status) || 'open', totalPence: number(input.totalPence), paymentStatus: text(input.paymentStatus) || 'unpaid', paymentMethod: text(input.paymentMethod) || undefined, deliveryStatus: text(input.deliveryStatus) || 'unassigned', deliveryAddress: text(input.deliveryAddress) || undefined, notes: text(input.notes) || undefined } })
+export const createOrder = async (tenantId: string, input: Record<string, unknown>) => {
+  const order = await prisma.salesOrder.create({ data: { tenantId, customerId: text(input.customerId) || undefined, reference: text(input.reference) || `ORD-${Date.now()}`, status: text(input.status) || 'open', totalPence: number(input.totalPence), paymentStatus: text(input.paymentStatus) || 'unpaid', paymentMethod: text(input.paymentMethod) || undefined, deliveryStatus: text(input.deliveryStatus) || 'unassigned', deliveryAddress: text(input.deliveryAddress) || undefined, notes: text(input.notes) || undefined } })
+  await emitOsEvent(OS_EVENTS.ORDER_CONFIRMED, { orderId: order.id, organisationId: tenantId })
+  return order
+}
 export const updateOrder = (id: string, tenantId: string | undefined, input: Record<string, unknown>) => prisma.salesOrder.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { ...(input.status !== undefined ? { status: text(input.status) } : {}), ...(input.paymentStatus !== undefined ? { paymentStatus: text(input.paymentStatus) } : {}), ...(input.paymentMethod !== undefined ? { paymentMethod: text(input.paymentMethod) } : {}), ...(input.deliveryStatus !== undefined ? { deliveryStatus: text(input.deliveryStatus) } : {}), ...(input.deliveryAddress !== undefined ? { deliveryAddress: text(input.deliveryAddress) } : {}), ...(input.notes !== undefined ? { notes: text(input.notes) } : {}) } })
 
-export const createInvoice = (tenantId: string, input: Record<string, unknown>) => { const subtotalPence = number(input.subtotalPence); const taxPence = number(input.taxPence); return prisma.invoice.create({ data: { tenantId, customerId: text(input.customerId) || undefined, number: text(input.number) || `INV-${Date.now()}`, status: text(input.status) || 'draft', subtotalPence, taxPence, totalPence: subtotalPence + taxPence, dueAt: date(input.dueAt), items: json(input.items || []) } }) }
-export const updateInvoice = (id: string, tenantId: string | undefined, input: Record<string, unknown>) => prisma.invoice.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { ...(input.status !== undefined ? { status: text(input.status), ...(text(input.status) === 'paid' ? { paidAt: new Date() } : {}) } : {}), ...(input.dueAt !== undefined ? { dueAt: date(input.dueAt) } : {}), ...(input.items !== undefined ? { items: json(input.items) } : {}) } })
+export const createInvoice = async (tenantId: string, input: Record<string, unknown>) => {
+  const subtotalPence = number(input.subtotalPence); const taxPence = number(input.taxPence)
+  const invoice = await prisma.invoice.create({ data: { tenantId, customerId: text(input.customerId) || undefined, number: text(input.number) || `INV-${Date.now()}`, status: text(input.status) || 'draft', subtotalPence, taxPence, totalPence: subtotalPence + taxPence, dueAt: date(input.dueAt), items: json(input.items || []) } })
+  await emitOsEvent(OS_EVENTS.INVOICE_GENERATED, { invoiceId: invoice.id, organisationId: tenantId })
+  return invoice
+}
+export const updateInvoice = async (id: string, tenantId: string | undefined, input: Record<string, unknown>) => {
+  const invoice = await prisma.invoice.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { ...(input.status !== undefined ? { status: text(input.status), ...(text(input.status) === 'paid' ? { paidAt: new Date() } : {}) } : {}), ...(input.dueAt !== undefined ? { dueAt: date(input.dueAt) } : {}), ...(input.items !== undefined ? { items: json(input.items) } : {}) } })
+  if (text(input.status) === 'paid') await emitOsEvent(OS_EVENTS.PAYMENT_RECEIVED, { paymentId: invoice.id, organisationId: invoice.tenantId, method: 'card' })
+  return invoice
+}
 export const sendInvoice = (id: string, tenantId?: string) => prisma.invoice.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { status: 'sent', sentAt: new Date() } })
 
 const generateCampaignCopy = (name: string, objective: string, audience: string) => ({ idea: `${name}: a focused ${objective.toLowerCase()} campaign for ${audience}.`, caption: `${name} is here. Discover what is useful, relevant, and ready for you.`, hashtags: '#LocalBusiness #CustomerFirst #FoundingOS', adCopy: `Turn interest into action with ${name}. Built for ${audience}, focused on ${objective.toLowerCase()}.` })
@@ -95,6 +117,7 @@ export const assignDelivery = async (tenantId: string, input: Record<string, unk
   const event = { status: 'assigned', detail: `Delivery assigned via ${route.source}`, at: new Date().toISOString() }
   const assignment = await prisma.deliveryAssignment.upsert({ where: { tenantId_orderId: { tenantId, orderId: text(input.orderId) } }, create: { tenantId, orderId: text(input.orderId), operatorId: text(input.operatorId) || undefined, vehicleId: text(input.vehicleId) || undefined, zoneId: text(input.zoneId) || undefined, feePence, routeDistanceKm, estimatedMinutes, originLat, originLng, destinationLat, destinationLng, timeline: json([event]) }, update: { operatorId: text(input.operatorId) || null, vehicleId: text(input.vehicleId) || null, zoneId: text(input.zoneId) || null, status: 'assigned', feePence, routeDistanceKm, estimatedMinutes, originLat, originLng, destinationLat, destinationLng, timeline: json([event]), completedAt: null } })
   if (text(input.recipient)) await prisma.deliveryNotification.create({ data: { tenantId, assignmentId: assignment.id, recipient: text(input.recipient), message: text(input.message) || `Delivery ${assignment.orderId} has been assigned.`, channel: text(input.channel) || 'whatsapp' } })
+  await emitOsEvent(OS_EVENTS.SHIPMENT_CREATED, { shipmentId: assignment.id, organisationId: tenantId })
   return assignment
 }
 export const updateDeliveryAssignment = async (id: string, tenantId: string | undefined, input: Record<string, unknown>) => {
@@ -103,6 +126,7 @@ export const updateDeliveryAssignment = async (id: string, tenantId: string | un
   const timeline = Array.isArray(assignment.timeline) ? assignment.timeline : []
   const updated = await prisma.deliveryAssignment.update({ where: { id }, data: { status, timeline: json([...timeline, { status, detail: text(input.detail) || `Delivery marked ${status}`, at: new Date().toISOString() }]), ...(['delivered', 'failed', 'cancelled'].includes(status) ? { completedAt: new Date() } : {}) } })
   if (text(input.recipient)) await prisma.deliveryNotification.create({ data: { tenantId: updated.tenantId, assignmentId: updated.id, recipient: text(input.recipient), message: text(input.message) || `Delivery update: ${status.replace(/_/g, ' ')}.`, channel: text(input.channel) || 'whatsapp', status: 'queued' } })
+  if (status === 'delivered') await emitOsEvent(OS_EVENTS.DELIVERY_COMPLETED, { deliveryTaskId: updated.id, organisationId: updated.tenantId })
   return updated
 }
 export const updateDeliveryNotification = (id: string, tenantId: string | undefined, status: string) => prisma.deliveryNotification.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { status, ...(status === 'sent' ? { sentAt: new Date() } : {}) } })

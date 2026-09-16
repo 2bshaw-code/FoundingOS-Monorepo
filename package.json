@@ -6,6 +6,7 @@
     "core-operations/*",
     "core-workforce/*",
     "core-intelligence/*",
+    "core-health/*",
     "!core-operations/frontend",
     "!core-workforce/frontend",
     "!core-intelligence/frontend",

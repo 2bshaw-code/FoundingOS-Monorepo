@@ -470,6 +470,66 @@ exports.Prisma.DeliveryNotificationScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.ShipmentScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  orderId: 'orderId',
+  driverId: 'driverId',
+  routeId: 'routeId',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.DeliveryTaskScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  shipmentId: 'shipmentId',
+  driverId: 'driverId',
+  status: 'status',
+  eta: 'eta',
+  startedAt: 'startedAt',
+  completedAt: 'completedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.RouteScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  waypoints: 'waypoints',
+  distanceKm: 'distanceKm',
+  durationMin: 'durationMin',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.DriverScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  userId: 'userId',
+  vehicleId: 'vehicleId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.VehicleScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  name: 'name',
+  plateNumber: 'plateNumber',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.LocationHistoryScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  driverId: 'driverId',
+  lat: 'lat',
+  lng: 'lng',
+  timestamp: 'timestamp'
+};
+
 exports.Prisma.LocationProfileScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -544,6 +604,12 @@ exports.Prisma.ModelName = {
   DeliveryZone: 'DeliveryZone',
   DeliveryAssignment: 'DeliveryAssignment',
   DeliveryNotification: 'DeliveryNotification',
+  Shipment: 'Shipment',
+  DeliveryTask: 'DeliveryTask',
+  Route: 'Route',
+  Driver: 'Driver',
+  Vehicle: 'Vehicle',
+  LocationHistory: 'LocationHistory',
   LocationProfile: 'LocationProfile'
 };
 

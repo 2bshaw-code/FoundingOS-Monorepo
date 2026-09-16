@@ -1,0 +1,151 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["wros"]
+}
+
+model AuthUser {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  role         String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@schema("wros")
+}
+
+model AuthSession {
+  id           String   @id @default(uuid())
+  userId       String
+  refreshToken String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@schema("wros")
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@schema("wros")
+}
+
+model Patient {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  dateOfBirth DateTime?
+  phone       String?
+  email       String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  appointments Appointment[]
+  records      Record[]
+  invoices     MedicalInvoice[]
+
+  @@index([tenantId, name])
+  @@schema("wros")
+}
+
+model Appointment {
+  id         String    @id @default(cuid())
+  tenantId   String
+  patientId  String
+  clinician  String?
+  reason     String?
+  scheduledAt DateTime
+  status     String    @default("scheduled") // scheduled | confirmed | completed | no_show | cancelled
+  reminderSentAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id])
+  treatments Treatment[]
+
+  @@index([tenantId, scheduledAt])
+  @@index([tenantId, status])
+  @@schema("wros")
+}
+
+model Record {
+  id         String   @id @default(cuid())
+  tenantId   String
+  patientId  String
+  type       String   @default("note") // note | lab_result | prescription | vitals
+  content    Json
+  recordedBy String?
+  createdAt  DateTime @default(now())
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([tenantId, patientId, type])
+  @@schema("wros")
+}
+
+model Treatment {
+  id            String   @id @default(cuid())
+  tenantId      String
+  appointmentId String
+  description   String
+  status        String   @default("planned") // planned | in_progress | completed
+  costPence     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+
+  @@index([tenantId, status])
+  @@schema("wros")
+}
+
+model MedicalInvoice {
+  id            String    @id @default(cuid())
+  tenantId      String
+  patientId     String
+  number        String    @unique
+  status        String    @default("draft") // draft | sent | paid | overdue
+  subtotalPence Int       @default(0)
+  taxPence      Int       @default(0)
+  totalPence    Int       @default(0)
+  dueAt         DateTime?
+  paidAt        DateTime?
+  sentAt        DateTime?
+  items         Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  @@index([tenantId, status])
+  @@schema("wros")
+}
+
+model ComplianceFlag {
+  id         String   @id @default(cuid())
+  tenantId   String
+  entityType String   // appointment | record | invoice
+  entityId   String
+  reason     String
+  severity   String   @default("low") // low | medium | high
+  resolvedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, entityType, severity])
+  @@schema("wros")
+}

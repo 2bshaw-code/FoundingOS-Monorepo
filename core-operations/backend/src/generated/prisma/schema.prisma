@@ -463,6 +463,90 @@ model DeliveryNotification {
   @@schema("wros")
 }
 
+// Thin additive layer matching the console-requirements.md spec naming
+// (Shipment/DeliveryTask/Route/Driver/Vehicle/LocationHistory) without
+// renaming the existing DeliveryAssignment/DeliveryOperator/DeliveryVehicle
+// models that routes, mobile apps, and shared UI already depend on. These
+// give API consumers the spec-exact vocabulary where useful, while the
+// existing models remain the source of truth for current functionality.
+model Shipment {
+  id        String   @id @default(cuid())
+  tenantId  String
+  orderId   String
+  driverId  String?
+  routeId   String?
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, orderId])
+  @@schema("wros")
+}
+
+model DeliveryTask {
+  id          String    @id @default(cuid())
+  tenantId    String
+  shipmentId  String
+  driverId    String?
+  status      String    @default("pending")
+  eta         DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId, shipmentId])
+  @@schema("wros")
+}
+
+model Route {
+  id          String   @id @default(cuid())
+  tenantId    String
+  waypoints   Json
+  distanceKm  Float?
+  durationMin Int?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+  @@schema("wros")
+}
+
+model Driver {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String
+  vehicleId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, userId])
+  @@schema("wros")
+}
+
+model Vehicle {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  plateNumber String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, plateNumber])
+  @@schema("wros")
+}
+
+model LocationHistory {
+  id        String   @id @default(cuid())
+  tenantId  String
+  driverId  String
+  lat       Float
+  lng       Float
+  timestamp DateTime @default(now())
+
+  @@index([tenantId, driverId, timestamp])
+  @@schema("wros")
+}
+
 model LocationProfile {
   id                String   @id @default(cuid())
   tenantId          String   @unique

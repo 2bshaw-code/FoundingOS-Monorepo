@@ -5,7 +5,7 @@
 import { Router } from 'express'
 
 export interface IntelligenceAIContext {
-  app: 'founding-os' | 'founder-os' | 'core_operations' | 'core_intelligence' | 'core_workforce'
+  app: 'founding-os' | 'founder-os' | 'core_operations' | 'core_intelligence' | 'core_workforce' | 'core_health'
   role?: string
   tenantId?: string
 }
