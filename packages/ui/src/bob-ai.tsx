@@ -25,16 +25,14 @@ function routeLabel(pathname: string) {
 
 function foundAITheme(brand: IntelligenceAIBrand) {
   switch (brand.name) {
-    case 'CoreOperations':
+    case 'Core.Operations':
       return { accent: '#00E676', glow: 'rgba(0,230,118,0.35)' }
-    case 'CoreOperations':
-      return { accent: '#E53935', glow: 'rgba(229,57,53,0.35)' }
-    case 'CoreIntelligence':
+    case 'Core.Intelligence':
       return { accent: '#FFD600', glow: 'rgba(255,214,0,0.35)' }
-    case 'CoreWorkforce':
+    case 'Core.Workforce':
       return { accent: '#FFB300', glow: 'rgba(255,179,0,0.35)' }
-    case 'CoreOperations':
-      return { accent: '#9C27B0', glow: 'rgba(156,39,176,0.35)' }
+    case 'Core.Health':
+      return { accent: '#3AA6A0', glow: 'rgba(58,166,160,0.35)' }
     default:
       return { accent: brand.accent, glow: 'rgba(74,144,226,0.35)' }
   }
@@ -48,16 +46,15 @@ function suggestedPrompts(brand: IntelligenceAIBrand, context: string) {
     `Summarise the current situation.`,
   ]
 
-  if (brand.name === 'CoreOperations') return ['Add new product', 'Show low stock items', 'Create customer', 'Review suppliers']
-  if (brand.name === 'CoreOperations') return ['Add new batch', 'Check compliance status', 'Review logistics', 'Record QA']
-  if (brand.name === 'CoreIntelligence') return ['Show system alerts', 'Summarise data pipeline health', 'Create a ticket', 'Audit assets']
-  if (brand.name === 'CoreWorkforce') return ['Add new job', 'Find top candidates', 'Schedule interview', 'Review pipeline']
-  if (brand.name === 'CoreOperations') return ['Show wallet balance', 'Create new trigger', 'Review signals', 'Check risk']
+  if (brand.name === 'Core.Operations') return ['Add new product', 'Show low stock items', 'Create customer', 'Review suppliers']
+  if (brand.name === 'Core.Intelligence') return ['Show system alerts', 'Summarise data pipeline health', 'Create a ticket', 'Audit assets']
+  if (brand.name === 'Core.Workforce') return ['Add new job', 'Find top candidates', 'Schedule interview', 'Review pipeline']
+  if (brand.name === 'Core.Health') return ['Book appointment', 'Check no-show risk', 'Create medical invoice', 'Review compliance flags']
   return base
 }
 
 function smartActions(brand: IntelligenceAIBrand, context: string) {
-  if (brand.name === 'CoreOperations') {
+  if (brand.name === 'Core.Operations') {
     return [
       { label: 'Add new product', answer: 'I can help you add a new product with a clean title, category, price, stock level, and supplier link.' },
       { label: 'Show low stock items', answer: 'I’ve highlighted the low-stock retail items that need attention before the next replenishment window.' },
@@ -66,16 +63,7 @@ function smartActions(brand: IntelligenceAIBrand, context: string) {
     ]
   }
 
-  if (brand.name === 'CoreOperations') {
-    return [
-      { label: 'Add new batch', answer: 'I can create a new batch record with supplier, cut, QA status, and delivery context.' },
-      { label: 'Check compliance status', answer: 'Compliance is within range overall, and I’ve highlighted the batches that need the next QA review.' },
-      { label: 'Review logistics', answer: 'I’ve organised the logistics partners by urgency so dispatch can focus on the tightest route first.' },
-      { label: 'Record QA', answer: 'I can capture the QA result, owner, and next action in one clean update.' },
-    ]
-  }
-
-  if (brand.name === 'CoreIntelligence') {
+  if (brand.name === 'Core.Intelligence') {
     return [
       { label: 'Show system alerts', answer: 'I’ve pulled the active system alerts and grouped the ones that need immediate attention.' },
       { label: 'Summarise data pipeline health', answer: 'The data pipeline is mostly healthy, with one job that deserves a closer look before the next run.' },
@@ -84,7 +72,7 @@ function smartActions(brand: IntelligenceAIBrand, context: string) {
     ]
   }
 
-  if (brand.name === 'CoreWorkforce') {
+  if (brand.name === 'Core.Workforce') {
     return [
       { label: 'Add new job', answer: 'I can create a new job with role, hiring manager, stage, and next action in one pass.' },
       { label: 'Find top candidates', answer: 'I’ve sorted the candidate pool by fit and urgency so your strongest matches are first.' },
@@ -93,12 +81,12 @@ function smartActions(brand: IntelligenceAIBrand, context: string) {
     ]
   }
 
-  if (brand.name === 'CoreOperations') {
+  if (brand.name === 'Core.Health') {
     return [
-      { label: 'Show wallet balance', answer: 'I’ve summarised the current wallet balance and highlighted the positions that need a closer look.' },
-      { label: 'Create new trigger', answer: 'I can help you build a new trigger with signal, threshold, and execution context.' },
-      { label: 'Review signals', answer: 'I’ve sorted the strongest market signals and flagged the ones that are most actionable.' },
-      { label: 'Check risk', answer: 'The current risk profile is within limits, but one volatile pair should be watched closely.' },
+      { label: 'Book appointment', answer: 'I can schedule a new appointment and flag the patients most at risk of a no-show.' },
+      { label: 'Check no-show risk', answer: 'I’ve reviewed the upcoming schedule and highlighted the appointments with elevated no-show risk.' },
+      { label: 'Create medical invoice', answer: 'I can prepare a medical invoice for this visit and send it straight to the patient.' },
+      { label: 'Review compliance flags', answer: 'I’ve reviewed compliance flags and highlighted the ones that need attention first.' },
     ]
   }
 

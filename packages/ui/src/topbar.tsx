@@ -27,16 +27,14 @@ function applySidebarPreference(collapsed: boolean) {
 
 function consoleTitle(name?: string) {
   switch (name) {
-    case 'CoreOperations':
-      return 'Retail Manager Console'
-    case 'CoreOperations':
-      return 'Meat Operations Console'
-    case 'CoreIntelligence':
-      return 'IT Command Console'
-    case 'CoreWorkforce':
-      return 'Talent Command Console'
-    case 'CoreOperations':
-      return 'Crypto Command Console'
+    case 'Core.Operations':
+      return 'Core.Operations Console'
+    case 'Core.Intelligence':
+      return 'Core.Intelligence Console'
+    case 'Core.Workforce':
+      return 'Core.Workforce Console'
+    case 'Core.Health':
+      return 'Core.Health Console'
     default:
       return `${name ?? 'Workspace'} Console`
   }

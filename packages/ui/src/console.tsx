@@ -217,16 +217,14 @@ function MetricOdometer({ value }: { value: string }) {
 
 function consoleTitle(config: BrandConsoleConfig) {
   switch (config.name) {
-    case 'CoreOperations':
-      return 'Retail Manager Console'
-    case 'CoreOperations':
-      return 'Meat Operations Console'
-    case 'CoreIntelligence':
-      return 'IT Command Console'
-    case 'CoreWorkforce':
-      return 'Talent Command Console'
-    case 'CoreOperations':
-      return 'Crypto Command Console'
+    case 'Core.Operations':
+      return 'Core.Operations Console'
+    case 'Core.Intelligence':
+      return 'Core.Intelligence Console'
+    case 'Core.Workforce':
+      return 'Core.Workforce Console'
+    case 'Core.Health':
+      return 'Core.Health Console'
     default:
       return `${config.name} Console`
   }
@@ -476,7 +474,7 @@ function consoleModules(config: BrandConsoleConfig) {
     summary: module.description,
   }))
 
-  if (config.name === 'CoreOperations' && !base.some((module) => module.href === '/modules/products')) {
+  if (config.name === 'Core.Operations' && !base.some((module) => module.href === '/modules/products')) {
     base.push({ label: 'Products', href: '/modules/products', icon: '◍', summary: 'Product management and stock control' })
   }
 
@@ -485,16 +483,14 @@ function consoleModules(config: BrandConsoleConfig) {
 
 function bobLabel(config: BrandConsoleConfig) {
   switch (config.name) {
-    case 'CoreOperations':
-      return 'Retail Manager Console'
-    case 'CoreOperations':
-      return 'Meat Operations Console'
-    case 'CoreIntelligence':
-      return 'IT Command Console'
-    case 'CoreWorkforce':
-      return 'Talent Command Console'
-    case 'CoreOperations':
-      return 'Crypto Command Console'
+    case 'Core.Operations':
+      return 'Core.Operations Console'
+    case 'Core.Intelligence':
+      return 'Core.Intelligence Console'
+    case 'Core.Workforce':
+      return 'Core.Workforce Console'
+    case 'Core.Health':
+      return 'Core.Health Console'
     default:
       return `${config.name} Console`
   }
@@ -694,7 +690,7 @@ function extensionGroups(config: BrandConsoleConfig) {
   ]
 
   const byBrand: Record<string, Array<{ key: string; title: string; fields: DataField[]; rows: DataRow[] }>> = {
-    CoreOperations: [
+    'Core.Operations': [
       {
         key: 'customers',
         title: 'Customers',
@@ -744,7 +740,7 @@ function extensionGroups(config: BrandConsoleConfig) {
         ]),
       },
     ],
-    CoreIntelligence: [
+    'Core.Intelligence': [
       {
         key: 'clients',
         title: 'Clients',
@@ -794,7 +790,7 @@ function extensionGroups(config: BrandConsoleConfig) {
         ]),
       },
     ],
-    CoreWorkforce: [
+    'Core.Workforce': [
       {
         key: 'candidates',
         title: 'Candidates',
@@ -1019,7 +1015,7 @@ export function CRMBoard({ config }: { config: BrandConsoleConfig }) {
         </article>
         <article className="module-card card-premium module-card-static">
           <strong>Brand extensions</strong>
-          <p>{config.name === 'CoreOperations' ? 'Customers, suppliers, and stores.' : config.name === 'CoreOperations' ? 'Farms, processors, logistics partners, and products.' : config.name === 'CoreIntelligence' ? 'Clients, systems, and integrations.' : config.name === 'CoreWorkforce' ? 'Candidates, employers, jobs, and intelligence.' : 'Wallets, exchanges, triggers, and portfolio intelligence.'}</p>
+          <p>{config.name === 'Core.Operations' ? 'Customers, suppliers, and stores.' : config.name === 'Core.Intelligence' ? 'Clients, systems, and integrations.' : config.name === 'Core.Workforce' ? 'Candidates, employers, jobs, and intelligence.' : config.name === 'Core.Health' ? 'Patients, appointments, and clinical records.' : 'Records, workflows, and operational intelligence.'}</p>
         </article>
       </div>
 
@@ -1150,18 +1146,18 @@ const packageCatalog: Record<string, BrandPackage[]> = {
     { slug: 'intelligenceos', name: 'IntelligenceOS', price: '£99/mo', description: 'Sharper analytics and automated context for teams that need more signal and less manual review.', features: ['Live analytics', 'Decision snapshots', 'Context-aware alerts', 'Shared task queues'], benefits: ['Track what matters', 'Reduce follow-up work', 'Keep teams aligned'], audience: 'Best for leadership teams focused on insight and reporting.' },
     { slug: 'systemos', name: 'SystemOS', price: '£59/mo', description: 'A practical control stack for setup, structure, and team access across the core platform.', features: ['Workspace setup', 'Access governance', 'Brand scaffolding', 'Workflow templates'], benefits: ['Launch quickly', 'Keep permissions tidy', 'Create a stable base'], audience: 'Best for new rollouts and lean system administration.' },
   ],
-  CoreOperations: [
+  'Core.Operations': [
     { slug: 'standard', name: 'Standard', price: '£49/mo', description: 'A focused retail package for smaller stores that need stock, sales, and customer visibility.', features: ['POS workflows', 'Stock monitoring', 'Customer records', 'Supplier alerts'], benefits: ['Stay organised', 'Reduce stockouts', 'Serve faster'], audience: 'Best for single-location teams.' },
     { slug: 'pro', name: 'Pro', price: '£89/mo', description: 'Expanded retail control with stronger reporting, order handling, and team collaboration.', features: ['Multi-store reporting', 'Advanced orders', 'Team handoffs', 'Forecast snapshots'], benefits: ['Scale across stores', 'See performance trends', 'Coordinate the team'], audience: 'Best for growing retail operators.' },
     { slug: 'enterprise', name: 'Enterprise', price: '£149/mo', description: 'High-volume retail operations with governance, automation, and deep operational insight.', features: ['Governance controls', 'Automation rules', 'Audit views', 'Regional analytics'], benefits: ['Run larger operations', 'Keep control tight', 'Improve decision speed'], audience: 'Best for multi-site retail organisations.' },
     { slug: 'owneros', name: 'OwnerOS', price: '£199/mo', description: 'The all-in command package for owners who want a premium control room for the full business.', features: ['Executive dashboard', 'Portfolio alerts', 'AI assistance', 'Priority support'], benefits: ['Lead from one view', 'React quickly', 'Keep the business aligned'], audience: 'Best for owners and directors.' },
   ],
-  CoreIntelligence: [
+  'Core.Intelligence': [
     { slug: 'supportos', name: 'SupportOS', price: '£69/mo', description: 'Service desk operations with ticket triage, alerts, and fast response paths.', features: ['Ticket queues', 'SLA reminders', 'Alert routing', 'Response templates'], benefits: ['Resolve issues faster', 'Keep service visible', 'Simplify handoffs'], audience: 'Best for support teams.' },
     { slug: 'networkos', name: 'NetworkOS', price: '£119/mo', description: 'Infrastructure and uptime tooling for teams running networks, services, and monitoring.', features: ['Uptime metrics', 'System alerts', 'Event tracking', 'Health checks'], benefits: ['Stay ahead of outages', 'See system health', 'React with clarity'], audience: 'Best for operations and infrastructure teams.' },
     { slug: 'enterpriseos', name: 'EnterpriseOS', price: '£169/mo', description: 'A premium IT command layer for larger organisations with more sites, data, and control needs.', features: ['Enterprise dashboards', 'Governance settings', 'Audit logs', 'Automation rules'], benefits: ['Scale with confidence', 'Keep standards high', 'Centralise oversight'], audience: 'Best for enterprise IT teams.' },
   ],
-  CoreWorkforce: [
+  'Core.Workforce': [
     { slug: 'recruiteros', name: 'RecruiterOS', price: '£79/mo', description: 'Recruiter workflow tooling for candidate pipelines, interviews, and fast follow-up.', features: ['Candidate pipeline', 'Interview scheduling', 'Email templates', 'Hiring dashboards'], benefits: ['Move candidates faster', 'Keep hiring organised', 'Reduce admin'], audience: 'Best for in-house recruiters.' },
     { slug: 'agencyos', name: 'AgencyOS', price: '£129/mo', description: 'Agency delivery tooling for multi-client recruiting and placement management.', features: ['Client pipelines', 'Role tracking', 'Placement reporting', 'Team coordination'], benefits: ['Manage multiple clients', 'Track delivery clearly', 'Improve placement speed'], audience: 'Best for recruitment agencies.' },
     { slug: 'hrproos', name: 'HRProOS', price: '£169/mo', description: 'HR-focused operations for larger teams with onboarding, compliance, and people data.', features: ['Onboarding flows', 'People records', 'Policy tasks', 'Workforce reporting'], benefits: ['Support HR at scale', 'Keep records tidy', 'Improve team readiness'], audience: 'Best for HR teams and people ops.' },
