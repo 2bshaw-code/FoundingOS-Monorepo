@@ -10,6 +10,7 @@
     "./runtime-mode": "./src/runtime-mode.ts",
     "./demo-providers": "./src/demo-providers.ts",
     "./suite-flags": "./src/suite-flags.ts",
+    "./events": "./src/events.ts",
     "./brand-intelligence": "./src/brand-intelligence.ts",
     "./brand-ai-engine": "./src/brand-ai-engine.ts",
     "./brandSignalFeed": "./src/brandSignalFeed.ts",
