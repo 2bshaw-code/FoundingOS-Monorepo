@@ -163,31 +163,157 @@ alerts.
 
 ---
 
-## Implementation gap analysis (current repo state)
+## Implementation gap analysis (current repo state, corrected)
 
-This section tracks the delta between this spec and what exists today, so
-work can be scoped incrementally rather than attempted in one pass.
+**Correction**: an earlier pass of this document under-reported existing
+work by checking only the newer `packages/db/prisma/schema.prisma` shared
+package. In fact, real backend services with their own Prisma schemas, API
+routes, and working mobile screens already exist per console. Most of this
+spec is already substantially built; the remaining work is consolidation,
+renaming, and parity — not building from zero.
 
-- **Shared data model** (`packages/db/prisma/schema.prisma`) currently only
-  defines `Brand`, `User`, `Module`, `Subscription`, `ActivityLog`,
-  `Account`, `Session`, `VerificationToken`. None of the vertical objects
-  above (Product, Order, Shipment, Invoice, Worker, Patient, etc.) exist
-  yet in the shared schema — this is the largest gap and the prerequisite
-  for everything else in this spec. Recommend scoping as its own
-  migration-reviewed change, one console at a time, rather than one large
-  schema rewrite.
+### Retail Console
+
+- **Backend**: `core-operations/backend` (Express + Prisma). Real models:
+  `Merchant`, `Customer`, `SalesOrder`, `CustomerMessage`, `InventoryItem`,
+  `Invoice`, `MarketingCampaign`, `SocialPost`, `MediaGeneration`, plus
+  delivery models shared with Logistics. Real endpoints in
+  [`core-operations/backend/src/routes.ts`](/Users/bobbyshaw/Founding%20OS%20Local/founder-os-group/core-operations/backend/src/routes.ts):
+  `/console/products`, `/console/orders`, `/console/customers`,
+  `/console/reports`, `/customers`, `/leads`, WhatsApp webhook
+  (`/whatsapp/webhook`), `/merchant/workspace`.
+- **Mobile**: `apps/foundretail-mobile` — `home.tsx`, `inventory.tsx`,
+  `new-sale.tsx`, `activity.tsx`, `ai-actions.tsx`, WhatsApp
+  onboarding (`about/whatsapp.tsx`), barcode scanner
+  (`about/scanner.tsx`). Polls live data via
+  `lib/retail-poll.ts` → `GROWTH_CONSOLE_URL` (`retail-console.foundingos.com`).
+- **Naming gap**: spec calls for `Product`/`Order`; current schema uses
+  `InventoryItem`/`SalesOrder`. Recommend renaming for spec alignment
+  rather than rebuilding.
+- **Missing vs. spec**: `Variant` and `InventoryMovement` as distinct
+  models; explicit low-inventory push notification wiring.
+
+### Logistics Console
+
+- **Backend**: shares `core-operations/backend` schema — `DeliveryOperator`
+  (≈ Driver), `DeliveryVehicle` (≈ Vehicle), `DeliveryZone` (≈ Route),
+  `DeliveryAssignment` (≈ DeliveryTask), `DeliveryNotification`,
+  `LocationProfile`. Endpoints: `assignDelivery`, `updateDeliveryAssignment`,
+  `updateDeliveryOperator`/`Vehicle`/`Zone`, `detectLocation`, `weatherAt`.
+- **Mobile**: `apps/foundlogistics-mobile` — `home.tsx`, `fleet.tsx`,
+  `deliveries.tsx`, `activity.tsx`, `ai-actions.tsx`, route optimizer
+  (`lib/route-optimizer.ts`), live polling (`lib/logistics-poll.ts`).
+- **Naming gap**: `DeliveryAssignment`/`DeliveryOperator` vs. spec's
+  `DeliveryTask`/`Driver` — rename, don't rebuild.
+- **Missing vs. spec**: `Shipment` as its own object distinct from
+  `DeliveryAssignment`; photo-proof-of-delivery capture; live tracking map
+  screen (currently `fleet.tsx`/`deliveries.tsx` list views, not a map).
+
+### Finance Console — ✅ models added
+
+- **Backend**: `Invoice` (existing) plus newly added `PaymentMethod`,
+  `Payment`, `MobileMoneyTransaction`, `RevenueRecognition`,
+  `CashFlowPrediction` in
+  [`core-operations/backend/prisma/schema.prisma`](/Users/bobbyshaw/Founding%20OS%20Local/founder-os-group/core-operations/backend/prisma/schema.prisma),
+  with persistence functions in
+  [`core-operations/backend/src/finance.ts`](/Users/bobbyshaw/Founding%20OS%20Local/founder-os-group/core-operations/backend/src/finance.ts)
+  and routes under `/finance/payment-methods`, `/finance/payments`,
+  `/finance/payments/:id/reconcile-mobile-money`,
+  `/finance/mobile-money-transactions`, `/finance/revenue-recognition`,
+  `/finance/dso`, `/finance/cash-flow-predictions`.
+- **Mobile**: `apps/foundfinance-mobile` — `home.tsx`, `cashflow.tsx`,
+  `approvals.tsx`, `activity.tsx`, `ai-actions.tsx`, with
+  `lib/cashflow.ts` polling `GROWTH_CONSOLE_URL/api/finance/cashflow`.
+- **Still open**: mobile screens still poll the older computed
+  `/api/finance/cashflow` feed rather than the new `/finance/*` endpoints
+  — wiring the mobile app to the new endpoints is a follow-up.
+
+### Talent Console — ✅ backend built
+
+- **Backend**: `core-workforce/backend` previously had **no `.prisma`
+  file** and served in-memory demo data. Added
+  [`core-workforce/backend/prisma/schema.prisma`](/Users/bobbyshaw/Founding%20OS%20Local/founder-os-group/core-workforce/backend/prisma/schema.prisma)
+  with real `Job`, `Applicant`, `Worker`, `Timesheet`, `PayrollRun`
+  models, persistence in
+  [`core-workforce/backend/src/talent.ts`](/Users/bobbyshaw/Founding%20OS%20Local/founder-os-group/core-workforce/backend/src/talent.ts),
+  and routes for `/jobs`, `/candidates`, `/candidates/:id/stage`,
+  `/workers`, `/timesheets`, `/timesheets/:id/approve`, `/payroll`,
+  `/payroll/:id/sync-to-finance`.
+- **Mobile**: `apps/foundtalent-mobile` — `home.tsx`, `pipeline.tsx`,
+  `job-match.tsx`, `candidate/[candidateId].tsx`, `activity.tsx`,
+  `ai-actions.tsx` — UI was already further along than the backend; now
+  backend has caught up with real persistence.
+- **Still open**: payroll→Finance sync currently just marks the
+  `PayrollRun` as `synced` locally; a real cross-service call or shared
+  event to `core-operations/backend`'s Finance module is the next step,
+  blocked on event backbone wiring below.
+
+### Health Console — not yet built (largest remaining gap)
+
+- **Backend**: no dedicated Health backend exists yet;
+  `core-intelligence/backend` has `Product`/`MarketplaceMerchant` only
+  (unrelated marketplace models, not Patient/Appointment/Record).
+- **Mobile**: `apps/foundhealth-mobile` — `home.tsx`, `appointments.tsx`,
+  `vitals.tsx`, `timeline.tsx`, `activity.tsx`, `ai-actions.tsx`, backed by
+  `lib/clinic-feed.ts` and `lib/health-actions.ts` (currently local/demo
+  data, not yet backed by a real Prisma schema).
+- **Missing vs. spec**: entire backend — `Patient`, `Appointment`,
+  `Record`, `Treatment`, `MedicalInvoice` models and API routes. This
+  needs a decision on where it lives (new `core-health/backend` service,
+  following the `core-operations`/`core-workforce` pattern, vs. folding
+  into an existing backend) before implementation — flagging for
+  confirmation rather than guessing given HIPAA/compliance implications
+  called out elsewhere in this spec.
+
+### Cross-cutting items
+
 - **Event backbone**: did not exist prior to this change; added as
-  `packages/config/src/events.ts` with the six named events above so both
-  web and mobile can import a single source of truth.
-- **Mobile apps**: per-console Expo apps already exist
-  (`apps/foundretail-mobile`, `apps/foundlogistics-mobile`,
-  `apps/foundfinance-mobile`, `apps/foundtalent-mobile`,
-  `apps/foundhealth-mobile`) — a reasonable starting structural match to
-  "one module per console," though they are not yet organized as modules
-  inside a single shared app root with Org Switcher/Console
-  Selector/Offline Cache as this spec describes. `foundthat-mobile` should
-  be deprecated per the FoundThat scraping removal already in progress
-  elsewhere in this repo.
-- **AI automations, offline sync, WhatsApp/mobile-money integration
-  layers**: not yet implemented; blocked on the data model above existing
-  first.
+  `packages/config/src/events.ts` with the six named events so web and
+  mobile share one source of truth. Existing per-console backends do not
+  yet emit/consume these named events — currently each console polls its
+  own REST endpoint rather than reacting to a shared event bus. Wiring
+  this in is the highest-leverage remaining architecture change, since it
+  unlocks real cross-console automation (e.g. Logistics reacting to
+  Retail's `order.confirmed`, or Talent's payroll sync reacting to
+  Finance's `payment.received`).
+- **Shared data model** (`packages/db/prisma/schema.prisma`) holds only
+  cross-cutting concerns (`Brand`, `User`, `Module`, `Subscription`,
+  `ActivityLog`, `Account`, `Session`) — this is correct as-is; it is not
+  meant to hold vertical objects, which correctly live in each console's
+  own backend schema.
+- **Mobile app root structure**: each mobile app is currently its own
+  standalone Expo app (own `_layout.tsx`, `login.tsx`), not yet organized
+  as modules inside one shared app root with Org Switcher/Console
+  Selector as this spec describes. Given five separately-shipping App
+  Store apps already exist and are in TestFlight, consolidating into one
+  multi-console app is a larger, separate architectural decision — flagging
+  for explicit confirmation before attempting, since it would affect
+  existing store listings.
+- `apps/foundthat-mobile` should be deprecated per the FoundThat scraping
+  removal already in progress elsewhere in this repo.
+
+### Recommended next build order (highest leverage first)
+
+1. ~~**Talent Console backend**~~ — done: real Prisma models replace the
+   in-memory demo data.
+2. ~~**Finance Console models**~~ — done: `PaymentMethod`,
+   `MobileMoneyTransaction`, `RevenueRecognition`, `CashFlowPrediction`
+   added.
+3. **Health Console backend** — largest remaining gap; needs a decision
+   on service location, then `Patient`/`Appointment`/`Record`/`Treatment`/
+   `MedicalInvoice` models + routes, following the established pattern.
+4. **Event backbone wiring** — have each backend emit `OS_EVENTS` on
+   relevant mutations (order created, delivery completed, invoice paid,
+   payroll synced, etc.) so Core Intelligence automations can react
+   across consoles, and so Talent's payroll→Finance sync and Health's
+   billing→Finance sync become real integrations instead of local status
+   flips.
+5. **Naming alignment** — rename `SalesOrder`→`Order`,
+   `DeliveryAssignment`→`DeliveryTask`, `DeliveryOperator`→`Driver` (or
+   accept current names and update this spec instead — cheaper option).
+6. **Retail/Logistics polish** — add `Variant`, `Shipment`, photo-proof
+   capture, live tracking map.
+7. **Mobile wiring** — point `foundfinance-mobile`'s `lib/cashflow.ts` at
+   the new `/finance/*` endpoints; add Worker/Timesheet/Payroll screens to
+   `foundtalent-mobile` to match the new backend capability.
+

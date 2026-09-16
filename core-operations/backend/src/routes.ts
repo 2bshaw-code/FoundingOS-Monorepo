@@ -10,6 +10,7 @@ import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadin
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
 import { assignDelivery, createCampaign, createDeliveryOperator, createDeliveryVehicle, createDeliveryZone, createInventoryItem, createInvoice, createOrder, createSocialPost, deleteInventoryItem, detectLocation, generateMedia, operationsSummary, saveLocationProfile, searchInventory, sendInvoice, updateCampaign, updateDeliveryAssignment, updateDeliveryNotification, updateDeliveryOperator, updateDeliveryVehicle, updateDeliveryZone, updateInventoryItem, updateInvoice, updateOrder, updateSocialPost, weatherAt } from './operations.js'
 import { addMerchantStaff, merchantWorkspace, ownerMerchantSummary, removeMerchantStaff, resetMerchantPassword, reviewMerchantChange, submitMerchantChange, updateMerchantStaff } from './merchant.js'
+import { createPayment, createPaymentMethod, dsoSummary, generateCashFlowPrediction, listCashFlowPredictions, listMobileMoneyTransactions, listPaymentMethods, listPayments, listRevenueRecognition, reconcileMobileMoneyPayment, recognizeRevenue } from './finance.js'
 
 const requireTenant: RequestHandler = (_req, res, next) => {
   if (res.locals.auth?.role === 'founder_master') return next()
@@ -127,6 +128,40 @@ apiRouter.post('/invoices/:id/send', requireOwnerAccess, requireTenant, requireC
 apiRouter.get('/invoices/:id/download', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { const tenantId = readTenant(req, res); const invoice = await (await import('./auth.js')).prisma.invoice.findFirstOrThrow({ where: { id: String(req.params.id), ...(tenantId ? { tenantId } : {}) } }); res.json({ success: true, data: { filename: `${invoice.number}.txt`, content: `Invoice ${invoice.number}\nStatus: ${invoice.status}\nTotal: GBP ${(invoice.totalPence / 100).toFixed(2)}\n` } }) } catch (error) { next(error) }
 })
+apiRouter.get('/finance/payment-methods', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await listPaymentMethods(readTenant(req, res), req.query.customerId ? String(req.query.customerId) : undefined) }) } catch (error) { next(error) }
+})
+apiRouter.post('/finance/payment-methods', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.status(201).json({ success: true, data: await createPaymentMethod(tenantId, req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.get('/finance/payments', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await listPayments(readTenant(req, res)) }) } catch (error) { next(error) }
+})
+apiRouter.post('/finance/payments', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.status(201).json({ success: true, data: await createPayment(tenantId, req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.post('/finance/payments/:id/reconcile-mobile-money', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.json({ success: true, data: await reconcileMobileMoneyPayment(tenantId, String(req.params.id), req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.get('/finance/mobile-money-transactions', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await listMobileMoneyTransactions(readTenant(req, res)) }) } catch (error) { next(error) }
+})
+apiRouter.get('/finance/revenue-recognition', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await listRevenueRecognition(readTenant(req, res), req.query.period ? String(req.query.period) : undefined) }) } catch (error) { next(error) }
+})
+apiRouter.post('/finance/revenue-recognition', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.status(201).json({ success: true, data: await recognizeRevenue(tenantId, req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.get('/finance/dso', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await dsoSummary(readTenant(req, res)) }) } catch (error) { next(error) }
+})
+apiRouter.get('/finance/cash-flow-predictions', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await listCashFlowPredictions(readTenant(req, res)) }) } catch (error) { next(error) }
+})
+apiRouter.post('/finance/cash-flow-predictions', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.status(201).json({ success: true, data: await generateCashFlowPrediction(tenantId, String(req.body?.period || new Date().toISOString().slice(0, 7))) }) } catch (error) { next(error) }
+})
+
 apiRouter.post('/marketing/campaigns', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); res.status(201).json({ success: true, data: await createCampaign(tenantId, req.body || {}) }) } catch (error) { next(error) }
 })

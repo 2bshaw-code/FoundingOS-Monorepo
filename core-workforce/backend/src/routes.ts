@@ -5,30 +5,10 @@
 import { Router } from 'express'
 import { createBobRouter } from '@founder-os/bob'
 import { createAuthenticatedServiceProxy } from '@founder-os/auth'
+import { approveTimesheet, createApplicant, createJob, createWorker, listApplicants, listJobs, listPayrollRuns, listTimesheets, listWorkers, submitTimesheet, syncPayrollToFinance, talentAnalytics, triggerPayrollRun, updateApplicantStage } from './talent.js'
 
 const founderApi = `${process.env.FOUNDER_API_URL || 'http://127.0.0.1:4000/api/v1'}`.replace(/\/+$/, '')
-type Job = { id: string; title: string; employer: string; region: string; source: string; salaryRange: string; skills: string[]; updatedAt: string }
-type Candidate = { id: string; name: string; role: string; score: number; stage: 'screening' | 'shortlisted' | 'interview' | 'offer'; location: string; notes: string }
-
-const jobs: Job[] = [
-  { id: 'job-1', title: 'Retail Operations Lead', employer: 'Northside Grocers', region: 'North West', source: 'Career page', salaryRange: '£42k-£52k', skills: ['operations', 'whatsapp', 'reporting'], updatedAt: '2026-08-20T09:30:00Z' },
-  { id: 'job-2', title: 'Customer Success Recruiter', employer: 'ShiftWorks', region: 'London', source: 'Job board', salaryRange: '£36k-£44k', skills: ['screening', 'stakeholder management', 'crm'], updatedAt: '2026-08-20T10:10:00Z' },
-  { id: 'job-3', title: 'Regional Talent Partner', employer: 'CoreWorkforce', region: 'Scotland', source: 'Career page', salaryRange: '£55k-£68k', skills: ['hiring', 'analytics', 'salary benchmarking'], updatedAt: '2026-08-20T11:05:00Z' },
-]
-
-const candidates: Candidate[] = [
-  { id: 'cand-1', name: 'Ava Thompson', role: 'Retail Operations Lead', score: 94, stage: 'interview', location: 'Manchester', notes: 'Strong ops background and WhatsApp-first communication.' },
-  { id: 'cand-2', name: 'Ben Clarke', role: 'Customer Success Recruiter', score: 88, stage: 'shortlisted', location: 'London', notes: 'Good pipeline ownership and structured follow-up.' },
-  { id: 'cand-3', name: 'Priya Shah', role: 'Regional Talent Partner', score: 97, stage: 'offer', location: 'Glasgow', notes: 'Excellent hiring analytics and regional market knowledge.' },
-]
-
-const analytics = {
-  rolesTracked: jobs.length,
-  applicantsScored: candidates.length * 12,
-  interviewsScheduled: 14,
-  averageScore: 93,
-  conversionRate: 0.38,
-}
+const tenantOf = (req: { header(name: string): string | undefined }) => req.header('x-tenant-id') || undefined
 
 const intelligence = {
   region: 'UK and Ireland',
@@ -102,15 +82,79 @@ apiRouter.use('/auth', createAuthenticatedServiceProxy(`${founderApi}/talent/aut
 apiRouter.use('/applications', createAuthenticatedServiceProxy(`${founderApi}/applications`))
 apiRouter.use('/bob', createBobRouter('core_workforce'))
 apiRouter.get('/status', (_req, res) => res.json({ app: 'core_workforce', status: 'operational' }))
-apiRouter.get('/dashboard', (_req, res) => res.json({ success: true, data: { jobs, candidates, analytics, intelligence, refreshedAt: new Date().toISOString() } }))
-apiRouter.get('/jobs', (_req, res) => res.json({ success: true, data: jobs }))
-apiRouter.get('/candidates', (_req, res) => res.json({ success: true, data: candidates }))
-apiRouter.get('/analytics', (_req, res) => res.json({ success: true, data: analytics }))
+apiRouter.get('/dashboard', async (req, res, next) => {
+  try {
+    const tenantId = tenantOf(req)
+    const [jobs, applicants, analytics] = await Promise.all([listJobs(tenantId), listApplicants(tenantId), talentAnalytics(tenantId)])
+    res.json({ success: true, data: { jobs, candidates: applicants, analytics, intelligence, refreshedAt: new Date().toISOString() } })
+  } catch (error) { next(error) }
+})
+apiRouter.get('/jobs', async (req, res, next) => { try { res.json({ success: true, data: await listJobs(tenantOf(req)) }) } catch (error) { next(error) } })
+apiRouter.post('/jobs', async (req, res, next) => {
+  try {
+    const tenantId = tenantOf(req) || String(req.body?.tenantId || '')
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.status(201).json({ success: true, data: await createJob(tenantId, req.body || {}) })
+  } catch (error) { next(error) }
+})
+apiRouter.get('/candidates', async (req, res, next) => { try { res.json({ success: true, data: await listApplicants(tenantOf(req)) }) } catch (error) { next(error) } })
+apiRouter.post('/candidates', async (req, res, next) => {
+  try {
+    const tenantId = tenantOf(req) || String(req.body?.tenantId || '')
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.status(201).json({ success: true, data: await createApplicant(tenantId, req.body || {}) })
+  } catch (error) { next(error) }
+})
+apiRouter.patch('/candidates/:id/stage', async (req, res, next) => {
+  try { res.json({ success: true, data: await updateApplicantStage(req.params.id, tenantOf(req), String(req.body?.stage || 'screening')) }) } catch (error) { next(error) }
+})
+apiRouter.get('/workers', async (req, res, next) => { try { res.json({ success: true, data: await listWorkers(tenantOf(req)) }) } catch (error) { next(error) } })
+apiRouter.post('/workers', async (req, res, next) => {
+  try {
+    const tenantId = tenantOf(req) || String(req.body?.tenantId || '')
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.status(201).json({ success: true, data: await createWorker(tenantId, req.body || {}) })
+  } catch (error) { next(error) }
+})
+apiRouter.get('/timesheets', async (req, res, next) => { try { res.json({ success: true, data: await listTimesheets(tenantOf(req)) }) } catch (error) { next(error) } })
+apiRouter.post('/timesheets', async (req, res, next) => {
+  try {
+    const tenantId = tenantOf(req) || String(req.body?.tenantId || '')
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.status(201).json({ success: true, data: await submitTimesheet(tenantId, req.body || {}) })
+  } catch (error) { next(error) }
+})
+apiRouter.post('/timesheets/:id/approve', async (req, res, next) => {
+  try { res.json({ success: true, data: await approveTimesheet(req.params.id, tenantOf(req)) }) } catch (error) { next(error) }
+})
+apiRouter.get('/payroll', async (req, res, next) => { try { res.json({ success: true, data: await listPayrollRuns(tenantOf(req)) }) } catch (error) { next(error) } })
+apiRouter.post('/payroll', async (req, res, next) => {
+  try {
+    const tenantId = tenantOf(req) || String(req.body?.tenantId || '')
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.status(201).json({ success: true, data: await triggerPayrollRun(tenantId, req.body || {}) })
+  } catch (error) { next(error) }
+})
+apiRouter.post('/payroll/:id/sync-to-finance', async (req, res, next) => {
+  try { res.json({ success: true, data: await syncPayrollToFinance(req.params.id, tenantOf(req)) }) } catch (error) { next(error) }
+})
+apiRouter.get('/analytics', async (req, res, next) => { try { res.json({ success: true, data: await talentAnalytics(tenantOf(req)) }) } catch (error) { next(error) } })
 apiRouter.get('/intelligence', (_req, res) => res.json({ success: true, data: intelligence }))
 apiRouter.get('/globalisation', (_req, res) => res.json({ success: true, data: globalisation }))
 apiRouter.get('/compliance', (_req, res) => res.json({ success: true, data: compliance }))
-apiRouter.get('/owner', (_req, res) => res.json({ success: true, data: { jobs, analytics, intelligence, workflow } }))
-apiRouter.get('/console/:merchantId', (req, res) => res.json({ success: true, data: { merchantId: req.params.merchantId, candidates, workflow } }))
+apiRouter.get('/owner', async (req, res, next) => {
+  try {
+    const tenantId = tenantOf(req)
+    const [jobs, analytics] = await Promise.all([listJobs(tenantId), talentAnalytics(tenantId)])
+    res.json({ success: true, data: { jobs, analytics, intelligence, workflow } })
+  } catch (error) { next(error) }
+})
+apiRouter.get('/console/:merchantId', async (req, res, next) => {
+  try {
+    const candidates = await listApplicants(tenantOf(req))
+    res.json({ success: true, data: { merchantId: req.params.merchantId, candidates, workflow } })
+  } catch (error) { next(error) }
+})
 apiRouter.post('/whatsapp/messages', (req, res) => {
   const text = String(req.body?.text || req.body?.message || '').trim()
   const messageType = detectType(req.body)

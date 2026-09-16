@@ -224,7 +224,91 @@ model Invoice {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  payments Payment[]
+
   @@index([tenantId, status])
+  @@schema("wros")
+}
+
+model PaymentMethod {
+  id         String   @id @default(cuid())
+  tenantId   String
+  customerId String?
+  type       String // card | mobile_money | bank_transfer
+  provider   String? // m_pesa | mtn_momo | paystack | flutterwave | upi | stripe
+  label      String?
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  payments Payment[]
+
+  @@index([tenantId, customerId])
+  @@schema("wros")
+}
+
+model Payment {
+  id              String    @id @default(cuid())
+  tenantId        String
+  invoiceId       String?
+  paymentMethodId String?
+  amountPence     Int       @default(0)
+  status          String    @default("pending")
+  reconciledAt    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  invoice                Invoice?                @relation(fields: [invoiceId], references: [id])
+  paymentMethod          PaymentMethod?          @relation(fields: [paymentMethodId], references: [id])
+  mobileMoneyTransaction MobileMoneyTransaction?
+
+  @@index([tenantId, status])
+  @@schema("wros")
+}
+
+model MobileMoneyTransaction {
+  id           String    @id @default(cuid())
+  tenantId     String
+  paymentId    String?   @unique
+  provider     String // m_pesa | mtn_momo | paystack | flutterwave | upi
+  reference    String
+  msisdn       String?
+  amountPence  Int       @default(0)
+  status       String    @default("pending")
+  rawPayload   Json?
+  reconciledAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  payment Payment? @relation(fields: [paymentId], references: [id])
+
+  @@index([tenantId, provider, status])
+  @@schema("wros")
+}
+
+model RevenueRecognition {
+  id              String   @id @default(cuid())
+  tenantId        String
+  invoiceId       String?
+  recognizedPence Int      @default(0)
+  recognizedAt    DateTime @default(now())
+  period          String // e.g. "2026-09"
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId, period])
+  @@schema("wros")
+}
+
+model CashFlowPrediction {
+  id                    String   @id @default(cuid())
+  tenantId              String
+  period                String // e.g. "2026-09"
+  predictedInflowPence  Int      @default(0)
+  predictedOutflowPence Int      @default(0)
+  confidence            Float    @default(0)
+  generatedAt           DateTime @default(now())
+
+  @@index([tenantId, period])
   @@schema("wros")
 }
 

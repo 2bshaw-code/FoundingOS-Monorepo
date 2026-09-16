@@ -288,6 +288,65 @@ exports.Prisma.InvoiceScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.PaymentMethodScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  customerId: 'customerId',
+  type: 'type',
+  provider: 'provider',
+  label: 'label',
+  isDefault: 'isDefault',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.PaymentScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  invoiceId: 'invoiceId',
+  paymentMethodId: 'paymentMethodId',
+  amountPence: 'amountPence',
+  status: 'status',
+  reconciledAt: 'reconciledAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.MobileMoneyTransactionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  paymentId: 'paymentId',
+  provider: 'provider',
+  reference: 'reference',
+  msisdn: 'msisdn',
+  amountPence: 'amountPence',
+  status: 'status',
+  rawPayload: 'rawPayload',
+  reconciledAt: 'reconciledAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.RevenueRecognitionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  invoiceId: 'invoiceId',
+  recognizedPence: 'recognizedPence',
+  recognizedAt: 'recognizedAt',
+  period: 'period',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.CashFlowPredictionScalarFieldEnum = {
+  id: 'id',
+  tenantId: 'tenantId',
+  period: 'period',
+  predictedInflowPence: 'predictedInflowPence',
+  predictedOutflowPence: 'predictedOutflowPence',
+  confidence: 'confidence',
+  generatedAt: 'generatedAt'
+};
+
 exports.Prisma.MarketingCampaignScalarFieldEnum = {
   id: 'id',
   tenantId: 'tenantId',
@@ -472,6 +531,11 @@ exports.Prisma.ModelName = {
   MerchantChange: 'MerchantChange',
   MerchantActivity: 'MerchantActivity',
   Invoice: 'Invoice',
+  PaymentMethod: 'PaymentMethod',
+  Payment: 'Payment',
+  MobileMoneyTransaction: 'MobileMoneyTransaction',
+  RevenueRecognition: 'RevenueRecognition',
+  CashFlowPrediction: 'CashFlowPrediction',
   MarketingCampaign: 'MarketingCampaign',
   SocialPost: 'SocialPost',
   MediaGeneration: 'MediaGeneration',

@@ -1,0 +1,99 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["wros"]
+}
+
+model Job {
+  id          String   @id @default(cuid())
+  tenantId    String
+  title       String
+  employer    String
+  region      String
+  source      String   @default("Career page")
+  salaryRange String
+  skills      Json
+  status      String   @default("open")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  applicants Applicant[]
+
+  @@index([tenantId, status])
+  @@schema("wros")
+}
+
+model Applicant {
+  id        String   @id @default(cuid())
+  tenantId  String
+  jobId     String
+  name      String
+  role      String
+  score     Int      @default(0)
+  stage     String   @default("screening")
+  location  String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  job Job @relation(fields: [jobId], references: [id])
+
+  @@index([tenantId, stage])
+  @@schema("wros")
+}
+
+model Worker {
+  id             String   @id @default(cuid())
+  tenantId       String
+  name           String
+  role           String
+  region         String?
+  employmentType String   @default("full_time")
+  status         String   @default("active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  timesheets Timesheet[]
+
+  @@index([tenantId, status])
+  @@schema("wros")
+}
+
+model Timesheet {
+  id          String    @id @default(cuid())
+  tenantId    String
+  workerId    String
+  periodStart DateTime
+  periodEnd   DateTime
+  hours       Float     @default(0)
+  status      String    @default("pending")
+  approvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  worker Worker @relation(fields: [workerId], references: [id])
+
+  @@index([tenantId, status])
+  @@schema("wros")
+}
+
+model PayrollRun {
+  id                String    @id @default(cuid())
+  tenantId          String
+  periodStart       DateTime
+  periodEnd         DateTime
+  status            String    @default("draft")
+  totalPence        Int       @default(0)
+  syncedToFinanceAt DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([tenantId, status])
+  @@schema("wros")
+}
