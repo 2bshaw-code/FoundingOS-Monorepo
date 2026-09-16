@@ -7,47 +7,60 @@
 
 ## The statement
 
-> **FoundingOS is the operating system for founder-run businesses — one core
-> platform, three suites (Core.Operations, Core.Workforce, Core.Intelligence),
-> that replaces a stack of disconnected tools with a single system of record
-> for customers, people, and decisions.**
+> **FoundingOS is the unified operating system for modern businesses — one OS
+> Suite made of three layers (QuantumOS, IntelligenceOS, SystemOS) plus
+> sector-specific consoles, that replaces a stack of disconnected tools with
+> one login, one console, and one operating system.**
 
 ## Supporting lines (approved, use as-is)
 
-- **One-liner:** "FoundingOS is the operating system for founder-run businesses."
-- **Elevator (2 sentences):** "FoundingOS is the operating system for founder-run
-  businesses — one core platform with three suites for operations, workforce,
-  and intelligence. Instead of stitching together point tools per department,
-  operators run the business from a single system of record."
-- **Category claim:** "The founder operating system category" (not "a CRM", not
+- **One-liner:** "FoundingOS is the unified operating system for modern businesses."
+- **Elevator (2 sentences):** "FoundingOS is one powerful system made of three
+  layers — QuantumOS, IntelligenceOS, and SystemOS — working together to run
+  your entire business from one place. No more scattered tools, no more
+  disconnected apps, no more chaos."
+- **Category claim:** "The OS Suite category" (not "a CRM", not "a dashboard").
 
-## What FoundingOS is (in scope)
+## The three layers (in scope)
 
-- A single multi-tenant platform (**FoundingOS Core**) with three product
-  suites, sold modularly or bundled:
-  - **Core.Operations** — customers, orders, inventory, billing, delivery,
-    messaging-first commerce workflows (successor to CoreOperations).
-  - **Core.Workforce** — applicants, recruiters, jobs, workforce intelligence
-    (successor to CoreWorkforce).
-  - **Core.Intelligence** — founder/owner analytics, KPIs, funnels, reporting,
-    and decision support built on first-party operational data (successor to
-- One brand, one console shell, one auth system, one shared schema.
+- **QuantumOS — the Experience Layer.** This is where you work. Clean, fast,
+  sector-specific consoles for Retail, Talent, Finance, Health, Logistics,
+  Discovery, and Operations. Every console is simple, clear, and instantly
+  usable — no training required.
+- **IntelligenceOS — the AI Layer.** The brain of the business. Automates
+  workflows, routes tasks, predicts issues, connects data, and gives
+  real-time insights. AI that does the work, not just suggests it.
+- **SystemOS — the Backbone Layer.** The foundation everything runs on:
+  identity, permissions, billing, multi-tenant architecture, data
+  unification, and infrastructure. Makes the OS Suite stable, secure, and
+  enterprise-ready.
+
+## Sector consoles (in scope)
+
+Retail, Talent, Finance, Health, Logistics, Discovery, and Operator
+(master control panel) — each a console within QuantumOS, not a separate
+brand, product, or database. One login, one console shell, one auth system,
+one shared schema underneath all of them.
 
 ## What FoundingOS is not (out of scope / deprecated)
 
-- **Not** a meat/food-trade vertical product (**CoreOperations** — deprecated, see
-  ).
-- **Not** a crypto trading/signals product (**CoreOperations** — deprecated).
-  first-party data only, and lives inside Core.Intelligence if kept at all).
+- **Not** a meat/food-trade vertical product (deprecated — see
+  [deprecations.md](./deprecations.md)).
+- **Not** a crypto trading/signals product (deprecated — see
+  [deprecations.md](./deprecations.md)).
 - **Not** nine separate brands, nine separate consoles, or nine separate
-  databases. There is one brand: **FoundingOS**.
+  databases. There is one brand: **FoundingOS**, one OS Suite, with sector
+  consoles inside it.
 
 ## Positioning anchors for buyers
 
-- **Founder-run businesses** — owner-operators and small teams, not
-  enterprise IT departments.
-- **Consolidation, not another point tool** — the pitch is "replace 5 tools
-  with 1 system," not "add one more app."
-- **Modular by suite, not by legacy brand** — buyers license
-  Core.Operations, Core.Workforce, and/or Core.Intelligence independently;
-  see [pricing.md](./pricing.md).
+- **Replace, not add** — the pitch is "replace your CRM, scheduling tools,
+  inventory system, HR platform, finance tools, workflow automations,
+  analytics dashboards, mobile apps, and operational backend with one OS
+  Suite," not "add one more app."
+- **Modular by layer, not by legacy brand** — buyers license QuantumOS,
+  IntelligenceOS, and/or SystemOS, and choose the sector consoles relevant to
+  their business; see [pricing.md](./pricing.md).
+- **Business impact, quantified** — 50–70% reduction in manual work, 30–60%
+  faster operations, unified data across the whole business, one login
+  instead of ten disconnected tools.

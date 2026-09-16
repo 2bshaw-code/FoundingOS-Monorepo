@@ -433,67 +433,92 @@ export function MarketingPage({ brand, page = 'home' }: { brand: BrandDefinition
   return <BrandMarketingPage brand={brand} page={page} />
 }
 
-const founderSuites = [
+const osLayers = [
   {
-    key: 'core_operations',
-    name: 'Core.Operations',
-    tagline: 'Retail operations, connected.',
-    description: 'Customers, orders, inventory, billing, and delivery — messaging-first commerce workflows for founder-run businesses.',
-    modules: ['Customers', 'Inventory', 'Orders', 'Billing', 'Delivery'],
-    accent: '#00C853',
+    key: 'quantumos',
+    name: 'QuantumOS',
+    tagline: 'The Experience Layer — this is where you work.',
+    description: 'Clean, fast, sector-specific consoles for Retail, Talent, Finance, Health, Logistics, Discovery, and Operations. Every console is simple, clear, and instantly usable — no training required.',
+    accent: '#4A90E2',
   },
   {
-    key: 'core_workforce',
-    name: 'Core.Workforce',
-    tagline: 'Hiring intelligence, made human.',
-    description: 'Applicants, recruiters, jobs, and workforce intelligence for modern founder-led teams.',
-    modules: ['Applicants', 'Recruiters', 'Jobs', 'Workforce Intel'],
-    accent: '#FFB300',
-  },
-  {
-    key: 'core_intelligence',
-    name: 'Core.Intelligence',
-    tagline: 'Decisions, backed by your own data.',
-    description: 'Founder and owner KPIs, funnels, and reporting built entirely from first-party operational data.',
-    modules: ['KPI Dashboards', 'Funnels', 'Reports'],
+    key: 'intelligenceos',
+    name: 'IntelligenceOS',
+    tagline: 'The AI Layer — this is the brain of your business.',
+    description: 'Automates workflows, routes tasks, predicts issues, connects data, and gives real-time insights. AI that actually does the work — not just "suggests" it.',
     accent: '#2962FF',
   },
+  {
+    key: 'systemos',
+    name: 'SystemOS',
+    tagline: 'The Backbone Layer — the foundation everything runs on.',
+    description: 'Identity, permissions, billing, multi-tenant architecture, data unification, and infrastructure. This is what makes the whole OS Suite enterprise-ready.',
+    accent: '#00A896',
+  },
 ] as const
+
+const sectorConsoles = [
+  { key: 'retail', name: 'Retail Console', description: 'Manage products, customers, orders, inventory, and operations from one place.' },
+  { key: 'talent', name: 'Talent Console', description: 'Handle hiring, onboarding, scheduling, compliance, and workforce management.' },
+  { key: 'finance', name: 'Finance Console', description: 'Track payments, invoices, cashflow, subscriptions, and financial health.' },
+  { key: 'health', name: 'Health Console', description: 'Manage appointments, records, workflows, compliance, and patient operations.' },
+  { key: 'logistics', name: 'Logistics Console', description: 'Run deliveries, routing, fleet management, tracking, and operational flow.' },
+  { key: 'discovery', name: 'Discovery Console', description: 'Find services, connect with businesses, explore local offerings.' },
+  { key: 'operator', name: 'Operator Console', description: 'Your master control panel for running the entire OS Suite.' },
+] as const
+
+const replacedTools = ['your CRM', 'your scheduling tools', 'your inventory system', 'your HR platform', 'your finance tools', 'your workflow automations', 'your analytics dashboards', 'your mobile apps', 'your operational backend']
+
+const businessImpact = [
+  '50–70% reduction in manual work',
+  '30–60% faster operations',
+  'unified data across your entire business',
+  'AI-powered automation that removes repetitive tasks',
+  'one login for your entire team',
+  'one system instead of 10 disconnected tools',
+  'instant clarity across every part of your business',
+  'mobile access for every console',
+  'enterprise-grade stability and security',
+]
 
 export function FounderLauncher({ page = 'home' }: { page?: string } = {}) {
   const packagePlans = founderPackages
   const consoleHref = `${consoleDashboardUrl(brands.foundingos)}/console`
 
+  const nav = (
+    <nav>
+      <Link href="/">FoundingOS</Link>
+      <div className="site-nav-links">
+        <Link href="/about">About</Link>
+        <Link href="/pricing">Pricing</Link>
+        <Link href="/contact">Contact</Link>
+        {isInternalHref(consoleHref) ? <Link href={consoleHref}>Console</Link> : <a href={consoleHref}>Console</a>}
+        <ThemeToggle />
+      </div>
+    </nav>
+  )
+
   if (page === 'about') {
     return (
       <main className="site-shell founder-shell" style={{ '--accent': '#4A90E2' } as React.CSSProperties}>
-        <nav>
-          <Link href="/">FoundingOS</Link>
-          <div className="site-nav-links">
-            <Link href="/about">About</Link>
-            <Link href="/pricing">Pricing</Link>
-            <Link href="/contact">Contact</Link>
-            {isInternalHref(consoleHref) ? <Link href={consoleHref}>Console</Link> : <a href={consoleHref}>Console</a>}
-            <ThemeToggle />
-          </div>
-        </nav>
+        {nav}
         <section className="hero">
           <div className="hero-copy">
             <p className="eyebrow">About FoundingOS</p>
-            <h1>One system of record for founder-run businesses.</h1>
+            <h1>The unified operating system for modern businesses.</h1>
             <p>
-              FoundingOS replaces a stack of disconnected tools with a single platform. Instead of stitching
-              together point tools per department, operators run the whole business — customers, people, and
-              decisions — from one place.
+              You get one powerful system made of three layers — QuantumOS, IntelligenceOS, and SystemOS — working
+              together to run your entire business from one place. No more scattered tools, no more disconnected
+              apps, no more chaos. One login. One console. One operating system.
             </p>
           </div>
         </section>
-        <section id="suites" className="module-grid">
-          {founderSuites.map((suite) => (
-            <article key={suite.key} className="card-premium">
-              <p className="eyebrow">{suite.tagline}</p>
-              <h2>{suite.name}</h2>
-              <p>{suite.description}</p>
+        <section id="layers" className="module-grid">
+          {osLayers.map((layer) => (
+            <article key={layer.key} className="card-premium">
+              <p className="eyebrow">{layer.tagline}</p>
+              <h2>{layer.name}</h2>
+              <p>{layer.description}</p>
             </article>
           ))}
         </section>
@@ -506,23 +531,15 @@ export function FounderLauncher({ page = 'home' }: { page?: string } = {}) {
 
   return (
     <main className="site-shell founder-shell" style={{ '--accent': '#4A90E2' } as React.CSSProperties}>
-      <nav>
-        <Link href="/">FoundingOS</Link>
-        <div className="site-nav-links">
-          <Link href="/about">About</Link>
-          <Link href="/pricing">Pricing</Link>
-          <Link href="/contact">Contact</Link>
-          {isInternalHref(consoleHref) ? <Link href={consoleHref}>Console</Link> : <a href={consoleHref}>Console</a>}
-          <ThemeToggle />
-        </div>
-      </nav>
+      {nav}
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">FoundingOS</p>
-          <h1>The operating system for founder-run businesses.</h1>
+          <p className="eyebrow">THE OS SUITE</p>
+          <h1>The unified operating system for modern businesses.</h1>
           <p>
-            One core platform with three suites — Core.Operations, Core.Workforce, and Core.Intelligence — that
-            replaces a stack of disconnected tools with a single system of record for customers, people, and decisions.
+            You get one powerful system made of three layers — QuantumOS, IntelligenceOS, and SystemOS — working
+            together to run your entire business from one place. No more scattered tools, no more disconnected
+            apps, no more chaos. One login. One console. One operating system.
           </p>
           <div className="hero-actions">
             <a href="#pricing" className="btn btn-primary btn-premium">See pricing</a>
@@ -531,24 +548,40 @@ export function FounderLauncher({ page = 'home' }: { page?: string } = {}) {
         </div>
         <div className="hero-visual" aria-label="FoundingOS overview">
           <div className="hero-panel card-premium glow-premium" style={{ background: brandGradient(brands.foundingos) }}>
-            <span>One platform, three suites</span>
+            <span>One OS Suite, three layers</span>
             <strong>FoundingOS</strong>
-            <ul>{founderSuites.map((suite) => <li key={suite.key}>{suite.name}</li>)}</ul>
+            <ul>{osLayers.map((layer) => <li key={layer.key}>{layer.name}</li>)}</ul>
           </div>
         </div>
       </section>
-      <section id="suites" className="module-grid">
-        {founderSuites.map((suite) => (
-          <article key={suite.key} className="card-premium">
-            <p className="eyebrow">{suite.tagline}</p>
-            <h2>{suite.name}</h2>
-            <p>{suite.description}</p>
-            <ul>
-              {suite.modules.map((module) => <li key={module}>{module}</li>)}
-            </ul>
+
+      <section id="layers" className="module-grid">
+        {osLayers.map((layer) => (
+          <article key={layer.key} className="card-premium">
+            <p className="eyebrow">{layer.tagline}</p>
+            <h2>{layer.name}</h2>
+            <p>{layer.description}</p>
           </article>
         ))}
       </section>
+
+      <section id="consoles" className="module-grid">
+        {sectorConsoles.map((console) => (
+          <article key={console.key} className="card-premium">
+            <h2>{console.name}</h2>
+            <p>{console.description}</p>
+          </article>
+        ))}
+      </section>
+
+      <section className="founder-bob-intro">
+        <div className="founder-bob-copy">
+          <p className="eyebrow">What you are buying</p>
+          <h2>A complete operating system for your business — not a single app.</h2>
+          <p>You are buying the system that replaces {replacedTools.join(', ')} — all replaced by one OS Suite.</p>
+        </div>
+      </section>
+
       <section id="pricing" className="module-grid">
         {packagePlans.map((plan) => (
           <article key={plan.slug} className="card-premium">
@@ -562,6 +595,16 @@ export function FounderLauncher({ page = 'home' }: { page?: string } = {}) {
           </article>
         ))}
       </section>
+
+      <section className="module-grid">
+        <article className="card-premium">
+          <h2 className="header-premium">Business impact</h2>
+          <ul>
+            {businessImpact.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </article>
+      </section>
+
       <section id="signup" className="module-grid">
         <article className="card-premium">
           <h2 className="header-premium">Sign up your team</h2>
