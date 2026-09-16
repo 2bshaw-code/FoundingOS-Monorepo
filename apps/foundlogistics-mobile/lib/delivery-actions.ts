@@ -4,6 +4,7 @@
 */
 import { getJSON, setJSON } from './local-store'
 import { postBespokeAction, getBespokeActions } from './bespoke-actions'
+import { updateDeliveryTaskStatus } from './logistics-api'
 import type { Delivery, DeliveryStatus } from './logistics-poll'
 
 // Real write-back: "mark delivered" / "report delay" persist to the real Postgres
@@ -45,6 +46,10 @@ export async function recordDeliveryAction(
   // there's no separate retry queue yet, but the write is attempted on every subsequent call to
   // getOverrides()-driven refreshes since the app re-syncs on each screen focus.
   await postBespokeAction({ moduleId: `delivery:${deliveryId}`, action: status === 'delivered' ? 'Mark delivered' : 'Report delay', note, payload: { deliveryId, status } })
+  // Best-effort side-write to the new Core.Operations Logistics spec API, so a real
+  // DeliveryTask record reflects this status if one exists for this delivery ID —
+  // fire-and-forget, never blocks the UI or the existing bespoke-action write above.
+  updateDeliveryTaskStatus(deliveryId, status === 'delivered' ? 'completed' : 'delayed').catch(() => {})
   return state
 }
 
