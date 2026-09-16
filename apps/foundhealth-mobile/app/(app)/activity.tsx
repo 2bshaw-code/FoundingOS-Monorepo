@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ScrollView, View, Text, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native'
 import { fetchOwnBrandMetric, type BrandMetric } from '../../lib/api'
+import { fetchPredictedNoShows, fetchComplianceFlags, type Appointment, type ComplianceFlag } from '../../lib/core-api'
 import { BRAND } from '../../lib/brand'
 
 // Real, live module screen — the same engagement data (totalEngagement, anomalyScore,
@@ -12,6 +13,8 @@ import { BRAND } from '../../lib/brand'
 // fetched from the real /api/superdash/brand-metrics endpoint on every pull-to-refresh.
 export default function ActivityScreen() {
   const [metric, setMetric] = useState<BrandMetric | null>(null)
+  const [predictedNoShows, setPredictedNoShows] = useState<Appointment[]>([])
+  const [complianceFlags, setComplianceFlags] = useState<ComplianceFlag[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
@@ -20,8 +23,10 @@ export default function ActivityScreen() {
     if (isRefresh) setRefreshing(true)
     setError('')
     try {
-      const row = await fetchOwnBrandMetric()
+      const [row, noShows, flags] = await Promise.all([fetchOwnBrandMetric(), fetchPredictedNoShows(), fetchComplianceFlags()])
       setMetric(row)
+      setPredictedNoShows(noShows ?? [])
+      setComplianceFlags(flags ?? [])
     } catch {
       setError('Could not load live activity. Pull down to try again.')
     } finally {
@@ -65,6 +70,24 @@ export default function ActivityScreen() {
               .join(' · ')}
           </Text>
           <Text style={styles.cardTime}>Updated {new Date(metric.lastUpdated).toLocaleString('en-GB')}</Text>
+        </View>
+      ) : null}
+
+      {predictedNoShows.length > 0 ? (
+        <View style={[styles.card, { borderColor: BRAND.accent }]}>
+          <Text style={styles.cardTitle}>Predicted no-shows — Core.Health</Text>
+          {predictedNoShows.slice(0, 5).map((appointment) => (
+            <Text key={appointment.id} style={styles.cardMeta}>{new Date(appointment.scheduledAt).toLocaleString('en-GB')} · {appointment.reason ?? 'Appointment'}</Text>
+          ))}
+        </View>
+      ) : null}
+
+      {complianceFlags.length > 0 ? (
+        <View style={[styles.card, { borderColor: BRAND.accent }]}>
+          <Text style={styles.cardTitle}>Compliance flags</Text>
+          {complianceFlags.slice(0, 5).map((flag) => (
+            <Text key={flag.id} style={styles.cardMeta}>[{flag.severity}] {flag.kind}: {flag.detail}</Text>
+          ))}
         </View>
       ) : null}
     </ScrollView>

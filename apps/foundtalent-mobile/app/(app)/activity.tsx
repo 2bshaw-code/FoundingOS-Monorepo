@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ScrollView, View, Text, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native'
 import { fetchOwnBrandMetric, type BrandMetric } from '../../lib/api'
+import { fetchWorkers, fetchPayrollRuns, type Worker, type PayrollRun } from '../../lib/core-api'
 import { BRAND } from '../../lib/brand'
 
 // Real, live module screen — the same engagement data (totalEngagement, anomalyScore,
@@ -12,6 +13,8 @@ import { BRAND } from '../../lib/brand'
 // fetched from the real /api/superdash/brand-metrics endpoint on every pull-to-refresh.
 export default function ActivityScreen() {
   const [metric, setMetric] = useState<BrandMetric | null>(null)
+  const [workers, setWorkers] = useState<Worker[]>([])
+  const [payrollRuns, setPayrollRuns] = useState<PayrollRun[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
@@ -20,8 +23,10 @@ export default function ActivityScreen() {
     if (isRefresh) setRefreshing(true)
     setError('')
     try {
-      const row = await fetchOwnBrandMetric()
+      const [row, workerRows, payrollRows] = await Promise.all([fetchOwnBrandMetric(), fetchWorkers(), fetchPayrollRuns()])
       setMetric(row)
+      setWorkers(workerRows ?? [])
+      setPayrollRuns(payrollRows ?? [])
     } catch {
       setError('Could not load live activity. Pull down to try again.')
     } finally {
@@ -65,6 +70,27 @@ export default function ActivityScreen() {
               .join(' · ')}
           </Text>
           <Text style={styles.cardTime}>Updated {new Date(metric.lastUpdated).toLocaleString('en-GB')}</Text>
+        </View>
+      ) : null}
+
+      {workers.length > 0 ? (
+        <View style={[styles.card, { borderColor: BRAND.accent }]}>
+          <Text style={styles.cardTitle}>Worker directory — Core.Workforce</Text>
+          {workers.slice(0, 5).map((worker) => (
+            <Text key={worker.id} style={styles.cardMeta}>{worker.name} · {worker.role}{worker.region ? ` · ${worker.region}` : ''}</Text>
+          ))}
+        </View>
+      ) : null}
+
+      {payrollRuns.length > 0 ? (
+        <View style={[styles.card, { borderColor: BRAND.accent }]}>
+          <Text style={styles.cardTitle}>Payroll runs</Text>
+          {payrollRuns.slice(0, 5).map((run) => (
+            <View key={run.id} style={styles.cardHeader}>
+              <Text style={styles.cardMeta}>{new Date(run.periodStart).toLocaleDateString('en-GB')} – {new Date(run.periodEnd).toLocaleDateString('en-GB')}</Text>
+              <Text style={styles.cardMeta}>${(run.totalPence / 100).toLocaleString('en-US', { maximumFractionDigits: 0 })} · {run.status}</Text>
+            </View>
+          ))}
         </View>
       ) : null}
     </ScrollView>

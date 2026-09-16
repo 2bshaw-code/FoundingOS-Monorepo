@@ -5,6 +5,7 @@
 // Health Console persistence layer — Patient, Appointment, Record,
 // Treatment, MedicalInvoice. See docs/console-requirements.md (Health
 // Console section).
+import { emitOsEvent, OS_EVENTS } from '@foundingos/config/events'
 import { prisma } from './auth.js'
 import { Prisma } from './generated/prisma/index.js'
 
@@ -123,11 +124,15 @@ export const createMedicalInvoice = (tenantId: string, input: Record<string, unk
 export const sendMedicalInvoice = (id: string, tenantId?: string) =>
   prisma.medicalInvoice.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { status: 'sent', sentAt: new Date() } })
 
-// Sync billing → Finance: marks the medical invoice paid locally. Real
-// cross-service settlement with core-operations/backend's Finance module
-// is blocked on event backbone wiring (packages/config/src/events.ts).
-export const syncMedicalBillingToFinance = (id: string, tenantId?: string) =>
-  prisma.medicalInvoice.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { status: 'paid', paidAt: new Date() } })
+// Sync billing → Finance: marks the medical invoice paid locally and
+// emits `billing.synced` so a real cross-service settlement with
+// core-operations/backend's Finance module can be built on top without
+// this backend needing a direct dependency on it.
+export const syncMedicalBillingToFinance = async (id: string, tenantId?: string) => {
+  const invoice = await prisma.medicalInvoice.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { status: 'paid', paidAt: new Date() } })
+  await emitOsEvent(OS_EVENTS.BILLING_SYNCED, { invoiceId: invoice.id, organisationId: invoice.tenantId, totalPence: invoice.totalPence })
+  return invoice
+}
 
 export const listMedicalInvoices = (tenantId?: string) =>
   prisma.medicalInvoice.findMany({ where: tenantId ? { tenantId } : {}, orderBy: { createdAt: 'desc' }, take: 200 })

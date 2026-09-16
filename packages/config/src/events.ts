@@ -14,6 +14,8 @@ export const OS_EVENTS = {
   DELIVERY_COMPLETED: 'delivery.completed',
   INVOICE_GENERATED: 'invoice.generated',
   PAYMENT_RECEIVED: 'payment.received',
+  PAYROLL_SYNCED: 'payroll.synced',
+  BILLING_SYNCED: 'billing.synced',
 } as const
 
 export type OsEventName = (typeof OS_EVENTS)[keyof typeof OS_EVENTS]
@@ -25,6 +27,8 @@ export type OsEventPayloadMap = {
   [OS_EVENTS.DELIVERY_COMPLETED]: { deliveryTaskId: string; organisationId: string }
   [OS_EVENTS.INVOICE_GENERATED]: { invoiceId: string; organisationId: string }
   [OS_EVENTS.PAYMENT_RECEIVED]: { paymentId: string; organisationId: string; method: 'card' | 'mobile_money' | 'bank_transfer' }
+  [OS_EVENTS.PAYROLL_SYNCED]: { payrollRunId: string; organisationId: string; totalPence: number }
+  [OS_EVENTS.BILLING_SYNCED]: { invoiceId: string; organisationId: string; totalPence: number }
 }
 
 export type OsEvent<TName extends OsEventName = OsEventName> = {

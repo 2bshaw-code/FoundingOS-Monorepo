@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { ScrollView, View, Text, StyleSheet, ActivityIndicator, RefreshControl, Dimensions } from 'react-native'
 import { fetchCashflow, type CashflowResponse } from '../../lib/cashflow'
 import { getScannedApprovals, type ScannedApproval } from '../../lib/approvals'
+import { fetchDsoSummary, fetchMobileMoneyTransactions, type DsoSummary, type MobileMoneyTransaction } from '../../lib/core-api'
 import { BRAND } from '../../lib/brand'
 import { DualTrendChart, BarBreakdown } from '../../components/FinanceCharts'
 
@@ -20,6 +21,8 @@ const CHART_WIDTH = Math.min(Dimensions.get('window').width - 64, 360)
 export default function CashflowScreen() {
   const [data, setData] = useState<CashflowResponse | null>(null)
   const [scanned, setScanned] = useState<ScannedApproval[]>([])
+  const [dso, setDso] = useState<DsoSummary | null>(null)
+  const [mobileMoney, setMobileMoney] = useState<MobileMoneyTransaction[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
@@ -28,13 +31,20 @@ export default function CashflowScreen() {
     if (isRefresh) setRefreshing(true)
     setError('')
     try {
-      const [feed, localScans] = await Promise.all([fetchCashflow(), getScannedApprovals()])
+      const [feed, localScans, dsoSummary, mmTransactions] = await Promise.all([
+        fetchCashflow(),
+        getScannedApprovals(),
+        fetchDsoSummary(),
+        fetchMobileMoneyTransactions(),
+      ])
       if (!feed) {
         setError('Could not load cash flow data. Pull down to try again.')
       } else {
         setData(feed)
       }
       setScanned(localScans)
+      setDso(dsoSummary)
+      setMobileMoney(mmTransactions ?? [])
     } catch {
       setError('Could not load cash flow data. Pull down to try again.')
     } finally {
@@ -113,6 +123,26 @@ export default function CashflowScreen() {
             </View>
           </View>
         </>
+      ) : null}
+
+      {dso ? (
+        <View style={[styles.card, { borderColor: BRAND.accent }]}>
+          <Text style={styles.cardTitle}>DSO — Core.Operations Finance</Text>
+          <Text style={styles.cardMeta}>Average days sales outstanding: {dso.averageDaysSalesOutstanding.toFixed(1)}</Text>
+          <Text style={styles.cardMeta}>{dso.outstandingInvoiceCount} invoices outstanding · ${(dso.totalOutstandingPence / 100).toLocaleString('en-US', { maximumFractionDigits: 0 })}</Text>
+        </View>
+      ) : null}
+
+      {mobileMoney.length > 0 ? (
+        <View style={[styles.card, { borderColor: BRAND.accent }]}>
+          <Text style={styles.cardTitle}>Mobile money reconciliations</Text>
+          {mobileMoney.slice(0, 5).map((tx) => (
+            <View key={tx.id} style={styles.spendRow}>
+              <Text style={styles.spendLabel}>{tx.provider} · {tx.reference}</Text>
+              <Text style={styles.spendValue}>${(tx.amountPence / 100).toLocaleString('en-US', { maximumFractionDigits: 0 })}</Text>
+            </View>
+          ))}
+        </View>
       ) : null}
     </ScrollView>
   )

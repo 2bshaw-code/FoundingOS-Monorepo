@@ -308,16 +308,29 @@ renaming, and parity — not building from zero.
 3. ~~**Health Console backend**~~ — done: new `core-health/backend`
    service with real Prisma models and routes.
 4. ~~**Event backbone wiring**~~ — done for `core-operations/backend`
-   (Retail/Logistics/Finance mutations now emit `OS_EVENTS`). Extending
-   named events to cover payroll (`core-workforce`) and billing
-   (`core-health`) sync-to-Finance is the remaining piece.
+   (Retail/Logistics/Finance mutations now emit `OS_EVENTS`), and for
+   `core-workforce/backend` (`payroll.synced`) and `core-health/backend`
+   (`billing.synced`). Two new named events (`OS_EVENTS.PAYROLL_SYNCED`,
+   `OS_EVENTS.BILLING_SYNCED`) were added to
+   `packages/config/src/events.ts` to cover these.
 5. **Naming alignment** — rename `SalesOrder`→`Order`,
    `DeliveryAssignment`→`DeliveryTask`, `DeliveryOperator`→`Driver` (or
    accept current names and update this spec instead — cheaper option).
-6. **Retail/Logistics polish** — add `Variant`, `Shipment`, photo-proof
-   capture, live tracking map.
-7. **Mobile wiring** — point `foundfinance-mobile`'s `lib/cashflow.ts` at
-   the new `/finance/*` endpoints; add Worker/Timesheet/Payroll screens to
-   `foundtalent-mobile` to match the new backend capability; wire
-   `foundhealth-mobile` to the new `core-health/backend` endpoints.
+   Note: spec-exact `Shipment`/`DeliveryTask`/`Route`/`Driver`/`Vehicle`/
+   `LocationHistory` models now exist in
+   `core-operations/backend/prisma/schema.prisma` as an additive layer,
+   without renaming the originals — no routes wired to them yet.
+6. **Retail/Logistics polish** — add `Variant`, photo-proof capture, live
+   tracking map (the new `Shipment`/`Route`/`Vehicle`/`LocationHistory`
+   models exist but have no routes yet).
+7. ~~**Mobile wiring**~~ — done: `foundfinance-mobile`'s `cashflow.tsx`
+   now also surfaces DSO and mobile-money reconciliations from
+   `core-operations/backend`'s Finance API; `foundtalent-mobile`'s
+   `activity.tsx` surfaces Worker directory + Payroll runs from
+   `core-workforce/backend`; `foundhealth-mobile`'s `activity.tsx`
+   surfaces predicted no-shows + compliance flags from
+   `core-health/backend`. Each app gained a `lib/core-api.ts` module with
+   the new backend's base URL and typed fetchers, additive alongside the
+   existing legacy demo feeds (`lib/cashflow.ts`, `lib/talent-pipeline.ts`,
+   `lib/clinic-feed.ts`), which remain in place unchanged.
 

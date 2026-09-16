@@ -5,6 +5,7 @@
 // Talent Console persistence layer — Job/Applicant/Worker/Timesheet/PayrollRun,
 // replacing the previous in-memory demo data with real Prisma-backed models.
 // See docs/console-requirements.md (Talent Console section).
+import { emitOsEvent, OS_EVENTS } from '@foundingos/config/events'
 import { prisma } from './prisma.js'
 
 const jsonSkills = (skills: unknown) => (Array.isArray(skills) ? skills.filter((s): s is string => typeof s === 'string') : [])
@@ -89,12 +90,15 @@ export const triggerPayrollRun = (tenantId: string, input: Record<string, unknow
     },
   })
 
-// Sync payroll → Finance: marks the run synced. Core Operations/Finance
-// backend integration (cross-service call or shared event) is the next
-// step once the event backbone (packages/config/src/events.ts) is wired
-// into these backends.
-export const syncPayrollToFinance = (id: string, tenantId: string | undefined) =>
-  prisma.payrollRun.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { status: 'synced', syncedToFinanceAt: new Date() } })
+// Sync payroll → Finance: marks the run synced and emits `payroll.synced`
+// so a real cross-service Finance integration (or Core Intelligence
+// automation) can react without this backend needing to know about
+// core-operations/backend directly.
+export const syncPayrollToFinance = async (id: string, tenantId: string | undefined) => {
+  const run = await prisma.payrollRun.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { status: 'synced', syncedToFinanceAt: new Date() } })
+  await emitOsEvent(OS_EVENTS.PAYROLL_SYNCED, { payrollRunId: run.id, organisationId: run.tenantId, totalPence: run.totalPence })
+  return run
+}
 
 export const talentAnalytics = async (tenantId?: string) => {
   const where = tenantId ? { tenantId } : {}
