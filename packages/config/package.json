@@ -11,6 +11,7 @@
     "./demo-providers": "./src/demo-providers.ts",
     "./suite-flags": "./src/suite-flags.ts",
     "./events": "./src/events.ts",
+    "./event-display-map": "./src/event-display-map.ts",
     "./brand-intelligence": "./src/brand-intelligence.ts",
     "./brand-ai-engine": "./src/brand-ai-engine.ts",
     "./brandSignalFeed": "./src/brandSignalFeed.ts",

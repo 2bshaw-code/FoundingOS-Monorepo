@@ -131,6 +131,9 @@ export default function HomeScreen() {
           </View>
 
           <Text style={styles.modulesLabel}>Modules</Text>
+          <Pressable style={[styles.eventFeedLink, { borderColor: BRAND.accent }]} onPress={() => router.push('/event-feed')}>
+            <Text style={[styles.eventFeedLinkText, { color: BRAND.accent }]}>Live activity feed ›</Text>
+          </Pressable>
           <View style={styles.moduleGrid}>
             {config.modules.map((module) => {
               // Fail-open: if entitlements couldn't load, or this module isn't in the tier
@@ -186,6 +189,8 @@ const styles = StyleSheet.create({
   metricLabel: { color: '#b9c2cf', fontSize: 11, fontWeight: '600' },
   metricValue: { color: '#ffffff', fontSize: 18, fontWeight: '800', marginTop: 2 },
   modulesLabel: { color: '#7c8797', fontSize: 12, fontWeight: '700', marginTop: 10, textTransform: 'uppercase', letterSpacing: 0.6 },
+  eventFeedLink: { borderWidth: 1, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12, alignSelf: 'flex-start' },
+  eventFeedLinkText: { fontSize: 12, fontWeight: '700' },
   moduleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   moduleChip: { borderWidth: 1, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 16, backgroundColor: 'rgba(255,255,255,0.03)' },
   moduleChipLocked: { backgroundColor: 'rgba(255,255,255,0.015)' },

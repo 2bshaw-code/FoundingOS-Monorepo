@@ -1834,3 +1834,82 @@ body[data-sidebar-collapsed='true'] .nav-card {
 .brand-spotlight-card {
   border-left: 3px solid var(--brand-color, var(--accent));
 }
+/* Shared cross-suite Event Feed (Phase 7B) */
+.event-feed-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.event-feed-filter {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.event-feed-filter.active {
+  background: var(--accent, #4a90e2);
+  border-color: var(--accent, #4a90e2);
+  color: #0b0c10;
+}
+
+.event-feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.event-feed-item {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  padding: 2px 12px;
+}
+
+.event-feed-item-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
+}
+
+.event-feed-icon {
+  font-size: 16px;
+}
+
+.event-feed-title {
+  flex: 1;
+  font-weight: 600;
+}
+
+.event-feed-source {
+  text-transform: capitalize;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.event-feed-timestamp {
+  font-size: 12px;
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+.event-feed-payload {
+  margin: 0 0 12px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  font-size: 12px;
+  overflow-x: auto;
+}

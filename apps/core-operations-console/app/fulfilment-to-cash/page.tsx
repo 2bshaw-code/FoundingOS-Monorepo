@@ -14,8 +14,9 @@
 
 import { useEffect, useState } from 'react'
 import { ModuleHeader } from '@foundingos/ui/console'
+import { EventFeed } from '@foundingos/ui/event-feed'
 import { brandConfig } from '../brand-config'
-import { fetchOrders, type RetailOrder } from '../lib/retail-api'
+import { fetchOrders, CORE_API_BASE, type RetailOrder } from '../lib/retail-api'
 import { fetchShipments, fetchDeliveryTasks, type Shipment, type DeliveryTask } from '../lib/logistics-api'
 import { fetchInvoices, fetchDsoSummary, type Invoice, type DsoSummary } from '../lib/finance-api'
 
@@ -129,6 +130,9 @@ export default function FulfilmentToCashPage() {
           </div>
         ))}
       </div>
+
+      <h2 style={{ fontSize: 16, marginTop: 24, marginBottom: 8 }}>Recent activity</h2>
+      <EventFeed apiBase={CORE_API_BASE} sourceFilter={['retail', 'logistics', 'finance']} compact />
     </div>
   )
 }

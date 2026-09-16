@@ -599,6 +599,14 @@ exports.Prisma.LocationProfileScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.EventScalarFieldEnum = {
+  id: 'id',
+  type: 'type',
+  source: 'source',
+  payload: 'payload',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -667,7 +675,8 @@ exports.Prisma.ModelName = {
   Variant: 'Variant',
   InventoryMovement: 'InventoryMovement',
   Order: 'Order',
-  LocationProfile: 'LocationProfile'
+  LocationProfile: 'LocationProfile',
+  Event: 'Event'
 };
 
 /**

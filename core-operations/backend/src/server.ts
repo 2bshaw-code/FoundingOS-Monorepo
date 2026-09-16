@@ -8,6 +8,7 @@ import type { Request } from 'express'
 import { createCorsOptions, createRateLimit, malformedJsonHandler, requestContext, securityHeaders, structuredErrorHandler } from '@founder-os/auth'
 import { authRouter } from './auth.js'
 import { apiRouter } from './routes.js'
+import { bridgeOsEventsToEventFeed } from './events.js'
 
 const app = express()
 const port = Number(process.env.PORT || 4001)
@@ -27,4 +28,5 @@ app.use('/api/v1', createRateLimit({ max: 240 }))
 app.use('/api/v1/auth', authRouter)
 app.use('/api/v1/ops', apiRouter)
 app.use(structuredErrorHandler)
+bridgeOsEventsToEventFeed()
 app.listen(port, () => console.log(`Core.Operations API listening on ${port}`))

@@ -19,12 +19,14 @@
     "./brand-micro-dashboard": "./src/brand-micro-dashboard.tsx",
     "./quantum-intelligence-section": "./src/quantum-intelligence-section.tsx",
     "./mobile": "./src/mobile.ts",
-    "./mobile-runtime-mode": "./src/mobile-runtime-mode.ts"
+    "./mobile-runtime-mode": "./src/mobile-runtime-mode.ts",
+    "./event-feed": "./src/event-feed/EventFeed.tsx"
   },
   "dependencies": {
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
-    "odometer": "^0.4.8"
+    "odometer": "^0.4.8",
+    "@foundingos/config": "*"
   },
   "peerDependencies": {
     "next": "^14.2.23",

@@ -636,3 +636,21 @@ model LocationProfile {
 
   @@schema("wros")
 }
+
+// Normalized cross-suite Event Feed store (Phase 7B). Every backend
+// (Retail/Logistics/Finance live here in core-operations; Talent and
+// Health publish over HTTP from their own services) writes here via
+// POST /events/publish so every console/mobile app can read one
+// unified, time-sorted activity stream regardless of which backend
+// produced the event.
+model Event {
+  id        String   @id @default(cuid())
+  type      String
+  source    String
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([source])
+  @@schema("wros")
+}

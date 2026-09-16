@@ -11,6 +11,7 @@ import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, l
 import { assignDelivery, createCampaign, createDeliveryOperator, createDeliveryTask, createDeliveryVehicle, createDeliveryZone, createDriver, createInventoryItem, createInventoryMovement, createInvoice, createOrder, createProduct, createRoute, createShipment, createSocialPost, createSpecOrder, createVariant, createVehicle, deleteInventoryItem, deleteProduct, detectLocation, fraudDetectionSimple, generateMedia, latestLocationsByDriver, listDeliveryTasks, listDrivers, listInventoryMovements, listProducts, listRoutes, listShipments, listSpecOrders, listVehicles, operationsSummary, predictLowInventory, recordLocation, saveLocationProfile, searchInventory, sendInvoice, updateCampaign, updateDeliveryAssignment, updateDeliveryNotification, updateDeliveryOperator, updateDeliveryTask, updateDeliveryVehicle, updateDeliveryZone, updateDriver, updateInventoryItem, updateInvoice, updateOrder, updateProduct, updateShipment, updateSocialPost, updateSpecOrder, updateVariant, weatherAt } from './operations.js'
 import { addMerchantStaff, merchantWorkspace, ownerMerchantSummary, removeMerchantStaff, resetMerchantPassword, reviewMerchantChange, submitMerchantChange, updateMerchantStaff } from './merchant.js'
 import { createPayment, createPaymentMethod, dsoSummary, generateCashFlowPrediction, listCashFlowPredictions, listInvoices, listMobileMoneyTransactions, listPaymentMethods, listPayments, listRevenueRecognition, reconcileMobileMoneyPayment, recognizeRevenue, recordPartialPayment, refundPayment } from './finance.js'
+import { listEvents, publishAndBroadcastEvent, registerEventStreamClient } from './events.js'
 
 const requireTenant: RequestHandler = (_req, res, next) => {
   if (res.locals.auth?.role === 'founder_master') return next()
@@ -318,4 +319,28 @@ apiRouter.get('/owner/staff', requireOwnerAccess, requireTenant, requireCoreOper
 apiRouter.get('/owner/settings', requireOwnerAccess, requireTenant, requireCoreOperationsModule, (_req, res) => res.json({ settings: {} }))
 apiRouter.post('/media', requireMerchantAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { const tenantId = writeTenant(req, res); if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' }); const [pipeline, operations] = await Promise.all([pipelineSummary(tenantId), operationsSummary(tenantId)]); res.status(201).json({ success: true, data: await generateMedia(tenantId, req.body || {}, { sales: pipeline.metrics, customers: pipeline.customers.slice(0, 20), products: operations.inventory.slice(0, 20), campaigns: operations.campaigns.slice(0, 10), system: { generatedAt: new Date().toISOString() } }) }) } catch (error) { next(error) }
+})
+
+// Shared cross-suite Event Feed (Phase 7B) — every backend (Retail/
+// Logistics/Finance here, Talent/Health over HTTP from their own
+// services) publishes here so any console/mobile app can read one
+// unified, time-sorted activity stream. Accessible to any authenticated
+// merchant user — events are not tenant-scoped the same way core
+// records are, since they aggregate across suites for demo/ops
+// visibility.
+apiRouter.post('/events/publish', requireMerchantAccess, async (req, res, next) => {
+  try { res.status(201).json({ success: true, data: await publishAndBroadcastEvent(req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.get('/events', requireMerchantAccess, async (req, res, next) => {
+  try {
+    const limit = req.query.limit ? Number(req.query.limit) : undefined
+    const source = req.query.source ? String(req.query.source) : undefined
+    res.json({ success: true, data: await listEvents(limit, source) })
+  } catch (error) { next(error) }
+})
+apiRouter.get('/events/stream', requireMerchantAccess, (req, res) => {
+  res.set({ 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' })
+  res.flushHeaders?.()
+  const unregister = registerEventStreamClient(res)
+  req.on('close', unregister)
 })

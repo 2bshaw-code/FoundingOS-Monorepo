@@ -7,6 +7,7 @@
 // See docs/console-requirements.md (Talent Console section).
 import { emitOsEvent, OS_EVENTS } from '@foundingos/config/events'
 import { prisma } from './prisma.js'
+import { publishFeedEvent } from './event-feed.js'
 
 const jsonSkills = (skills: unknown) => (Array.isArray(skills) ? skills.filter((s): s is string => typeof s === 'string') : [])
 
@@ -74,14 +75,17 @@ export const submitTimesheet = (tenantId: string, input: Record<string, unknown>
     },
   })
 
-export const approveTimesheet = (id: string, tenantId: string | undefined) =>
-  prisma.timesheet.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { status: 'approved', approvedAt: new Date() } })
+export const approveTimesheet = async (id: string, tenantId: string | undefined) => {
+  const timesheet = await prisma.timesheet.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { status: 'approved', approvedAt: new Date() } })
+  publishFeedEvent('timesheet.approved', { timesheetId: timesheet.id, organisationId: timesheet.tenantId, hours: timesheet.hours })
+  return timesheet
+}
 
 export const listPayrollRuns = (tenantId?: string) =>
   prisma.payrollRun.findMany({ where: tenantId ? { tenantId } : {}, orderBy: { createdAt: 'desc' }, take: 50 })
 
-export const triggerPayrollRun = (tenantId: string, input: Record<string, unknown>) =>
-  prisma.payrollRun.create({
+export const triggerPayrollRun = async (tenantId: string, input: Record<string, unknown>) => {
+  const run = await prisma.payrollRun.create({
     data: {
       tenantId,
       periodStart: new Date(String(input.periodStart)),
@@ -89,6 +93,9 @@ export const triggerPayrollRun = (tenantId: string, input: Record<string, unknow
       totalPence: Number(input.totalPence || 0),
     },
   })
+  publishFeedEvent('payroll.run', { payrollRunId: run.id, organisationId: run.tenantId, totalPence: run.totalPence })
+  return run
+}
 
 // Sync payroll → Finance: marks the run synced and emits `payroll.synced`
 // so a real cross-service Finance integration (or Core Intelligence

@@ -8,6 +8,7 @@
 import { emitOsEvent, OS_EVENTS } from '@foundingos/config/events'
 import { prisma } from './auth.js'
 import { Prisma } from './generated/prisma/index.js'
+import { publishFeedEvent } from './event-feed.js'
 
 const text = (value: unknown) => String(value || '').trim()
 const number = (value: unknown) => Math.max(0, Number(value || 0))
@@ -46,8 +47,8 @@ export const updatePatient = (id: string, tenantId: string | undefined, input: R
 export const listAppointments = (tenantId?: string) =>
   prisma.appointment.findMany({ where: tenantId ? { tenantId } : {}, orderBy: { scheduledAt: 'asc' }, take: 200 })
 
-export const createAppointment = (tenantId: string, input: Record<string, unknown>) =>
-  prisma.appointment.create({
+export const createAppointment = async (tenantId: string, input: Record<string, unknown>) => {
+  const appointment = await prisma.appointment.create({
     data: {
       tenantId,
       patientId: text(input.patientId),
@@ -56,6 +57,9 @@ export const createAppointment = (tenantId: string, input: Record<string, unknow
       scheduledAt: date(input.scheduledAt) || new Date(),
     },
   })
+  publishFeedEvent('appointment.created', { appointmentId: appointment.id, organisationId: appointment.tenantId, scheduledAt: appointment.scheduledAt })
+  return appointment
+}
 
 export const updateAppointmentStatus = (id: string, tenantId: string | undefined, status: string) =>
   prisma.appointment.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { status } })
@@ -104,10 +108,10 @@ export const createTreatment = (tenantId: string, input: Record<string, unknown>
 export const updateTreatmentStatus = (id: string, tenantId: string | undefined, status: string) =>
   prisma.treatment.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { status } })
 
-export const createMedicalInvoice = (tenantId: string, input: Record<string, unknown>) => {
+export const createMedicalInvoice = async (tenantId: string, input: Record<string, unknown>) => {
   const subtotalPence = number(input.subtotalPence)
   const taxPence = number(input.taxPence)
-  return prisma.medicalInvoice.create({
+  const invoice = await prisma.medicalInvoice.create({
     data: {
       tenantId,
       patientId: text(input.patientId),
@@ -119,6 +123,8 @@ export const createMedicalInvoice = (tenantId: string, input: Record<string, unk
       items: json(input.items || []),
     },
   })
+  publishFeedEvent('medical.billing.generated', { invoiceId: invoice.id, organisationId: invoice.tenantId, totalPence: invoice.totalPence })
+  return invoice
 }
 
 export const sendMedicalInvoice = (id: string, tenantId?: string) =>
