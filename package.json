@@ -26,6 +26,7 @@
     "apps/core-workforce-web",
     "apps/core-workforce-console",
     "apps/core-workforce-console-starter",
+    "apps/core-health-console",
     "apps/foundingos-mobile",
     "apps/foundretail-mobile",
     "apps/foundtalent-mobile",
