@@ -10,6 +10,7 @@ import type { CSSProperties } from 'react'
 import { DemoMessageBoard } from './demo-message-board'
 import { GetStartedChecklist } from './get-started-checklist'
 import { DataMigrationHub } from './data-migration-hub'
+import { RetailOperationsWorkspace } from './retail-operations-workspace'
 import { RealDealsPanel, RealBrandFinancePanel, RealInvoicesPanel } from './real-monetary-panels'
 import { resolveBrandSlugFromName } from './real-monetary'
 import { useAIAssistance, hasSeenOnboarding, markOnboardingSeen, AIAssistanceToggle } from './ai-assistance'
@@ -1491,6 +1492,10 @@ export function BrandModulePage({ config, moduleId }: { config: BrandConsoleConf
   const module = config.modules.find((item) => item.id === moduleId) ?? { id: moduleId, label: `Module: ${moduleId}`, description: 'This module is active.', metrics: [], actions: ['Review activity', 'Configure module'] }
   const accentStyle = consoleStyle(config)
   const brandSlug = resolveBrandSlugFromName(config.name)
+
+  if (config.name === 'Core.Operations' && (module.id === 'orders' || module.id === 'inventory')) {
+    return <RetailOperationsWorkspace moduleId={module.id} />
+  }
 
   if (module.id === 'products') {
     const productFields: DataField[] = [
