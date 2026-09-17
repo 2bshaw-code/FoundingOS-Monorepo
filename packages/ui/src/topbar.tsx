@@ -5,14 +5,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
 import type { BrandConsoleConfig } from './console'
 import { ThemeToggle } from './theme'
 
 function ActualTopbar({ config }: { config?: BrandConsoleConfig }) {
   const theme = { '--accent': config?.colors.accent ?? '#4A90E2' } as React.CSSProperties
-  const [collapsed, setCollapsed] = useState(false)
-  const toggleLabel = useMemo(() => (collapsed ? 'Open sidebar' : 'Close sidebar'), [collapsed])
+  const suiteName = config?.name ?? 'FoundingOS'
 
   return (
     <header className="topbar" style={theme}>
@@ -20,18 +18,18 @@ function ActualTopbar({ config }: { config?: BrandConsoleConfig }) {
         <span className="brand-logo small">{config?.logo ?? 'FO'}</span>
         <div>
           <strong>FoundingOS</strong>
-          <span>Operating system</span>
+          <span>{suiteName}</span>
         </div>
       </div>
       <div className="topbar-nav">
-        <button type="button" className="sidebar-toggle" onClick={() => setCollapsed((value) => !value)} aria-label={toggleLabel}>
-          ☰
-        </button>
-        <Link className="topbar-chip" href="/console">Console</Link>
+        <Link className="topbar-chip" href="/dashboard">Overview</Link>
         <Link className="topbar-chip" href="/dashboard">Event Feed</Link>
-        <Link className="topbar-chip" href="/fulfilment-to-cash">Fulfilment</Link>
+        {suiteName === 'Core.Operations' && <Link className="topbar-chip" href="/fulfilment-to-cash">Fulfilment</Link>}
+        {suiteName === 'Core.Operations' && <Link className="topbar-chip" href="/marketing">Marketing</Link>}
+        <Link className="topbar-chip" href="/intelligence">Intelligence</Link>
       </div>
       <div className="topbar-actions">
+        <span className="environment-badge"><i /> Demo environment</span>
         <ThemeToggle />
       </div>
     </header>

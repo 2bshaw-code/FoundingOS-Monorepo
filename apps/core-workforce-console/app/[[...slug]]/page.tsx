@@ -2,8 +2,9 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { ConsoleDashboard, ModulePage, SettingsPage } from '@foundingos/ui'
+import { BrandDashboard, BrandModulePage, BrandSettingsPage } from '@foundingos/ui/console'
 import { brands } from '@foundingos/config'
+import { brandConfig } from '../brand-config'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
@@ -29,11 +30,11 @@ export function generateMetadata({ params }: { params: { slug?: string[] } }): M
 export default async function Page({ params }: { params: Promise<{ slug?: string[] }> }) {
   const { slug = [] } = await params
 
-  if (slug.length === 0) return <ConsoleDashboard brand={brands.talent} />
-  if (slug[0] === 'dashboard') return <ConsoleDashboard brand={brands.talent} />
-  if (slug[0] === 'settings') return <SettingsPage brand={brands.talent} />
-  if (slug[0] === 'modules' && slug[1]) return <ModulePage brand={brands.talent} moduleId={slug[1]} />
-  if (slug[0] && routeAliases[slug[0]]) return <ModulePage brand={brands.talent} moduleId={routeAliases[slug[0]]} />
+  if (slug.length === 0) return <BrandDashboard config={brandConfig} />
+  if (slug[0] === 'dashboard') return <BrandDashboard config={brandConfig} />
+  if (slug[0] === 'settings') return <BrandSettingsPage config={brandConfig} />
+  if (slug[0] === 'modules' && slug[1]) return <BrandModulePage config={brandConfig} moduleId={slug[1]} />
+  if (slug[0] && routeAliases[slug[0]]) return <BrandModulePage config={brandConfig} moduleId={routeAliases[slug[0]]} />
 
   notFound()
 }
