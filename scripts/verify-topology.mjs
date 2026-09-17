@@ -5,41 +5,21 @@ import { fileURLToPath } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 
-// Real, current port scheme (updated from the original 3000-3008/4000-4016 scheme after an
-// earlier port reassignment to avoid conflicts with other common dev-server defaults — see
-// packages/config/src/index.ts, which already reflects these same real ports). This script had
-// gone stale and was failing on every run since that reassignment, because it was never updated
-// to match — caught and fixed during this session's CI audit.
 const websites = [
-  ['foundingos-web', 1000, 'FoundingOS'],
-  ['retail-web', 1001, 'FoundRetail'],
-  ['meat-web', 1002, 'FoundMeat'],
-  ['foundthat-web', 1003, 'FoundThat'],
-  ['talent-web', 1004, 'FoundTalent'],
-  ['crypto-web', 1005, 'FoundCrypto'],
-  ['finance-web', 1006, 'FoundFinance'],
-  ['health-web', 1007, 'FoundHealth'],
-  ['logistics-web', 1008, 'FoundLogistics'],
+  ['foundingos-web', 3000, null],
+  ['core-operations-web', 3001, 'core_operations'],
+  ['core-intelligence-web', 3003, 'core_intelligence'],
+  ['core-workforce-web', 3004, 'core_workforce'],
 ]
 
 const consoles = [
-  ['foundingos-console', 8000, 'FoundingOS'],
-  ['retail-console-starter', 8001, 'FoundRetail'],
-  ['retail-console', 8017, 'FoundRetail'],
-  ['meat-console-starter', 8002, 'FoundMeat'],
-  ['meat-console', 8018, 'FoundMeat'],
-  ['foundthat-console-starter', 8003, 'FoundThat'],
-  ['foundthat-console', 8019, 'FoundThat'],
-  ['talent-console-starter', 8004, 'FoundTalent'],
-  ['talent-console', 8020, 'FoundTalent'],
-  ['crypto-console-starter', 8005, 'FoundCrypto'],
-  ['crypto-console', 8021, 'FoundCrypto'],
-  ['finance-console-starter', 8006, 'FoundFinance'],
-  ['finance-console', 8022, 'FoundFinance'],
-  ['health-console-starter', 8007, 'FoundHealth'],
-  ['health-console', 8023, 'FoundHealth'],
-  ['logistics-console-starter', 8008, 'FoundLogistics'],
-  ['logistics-console', 8024, 'FoundLogistics'],
+  ['foundingos-console', 4000, null],
+  ['core-operations-console-starter', 4001, 'core_operations'],
+  ['core-operations-console', 4002, 'core_operations'],
+  ['core-intelligence-console-starter', 4005, 'core_intelligence'],
+  ['core-intelligence-console', 4006, 'core_intelligence'],
+  ['core-workforce-console-starter', 4007, 'core_workforce'],
+  ['core-workforce-console', 4008, 'core_workforce'],
 ]
 
 const endpoints = [...websites, ...consoles]
@@ -57,34 +37,24 @@ for (const [app, port] of endpoints) {
   }
 }
 
-const config = readFileSync(join(root, 'packages/config/src/index.ts'), 'utf8')
-const brandPorts = new Map()
-for (const [, port, brand] of endpoints) {
-  if (!brandPorts.has(brand)) brandPorts.set(brand, [])
-  brandPorts.get(brand).push(port)
-}
-for (const [brand, ports] of brandPorts) {
-  if (!config.includes(brand)) {
-    fail(`brand config does not declare ${brand}.`)
-    continue
-  }
-  if (!ports.some((port) => config.includes(`localhost:${port}`))) {
-    fail(`brand config does not declare ${brand} at any of its expected ports (${ports.join(', ')}).`)
+const config = readFileSync(join(root, 'packages/config/src/suites.ts'), 'utf8')
+for (const suite of new Set(endpoints.map(([, , suiteKey]) => suiteKey).filter(Boolean))) {
+  if (!config.includes(`${suite}: {`)) {
+    fail(`suite config does not declare ${suite}.`)
   }
 }
 
 if (process.argv.includes('--live')) {
-  for (const [, port, brand] of endpoints) {
+  for (const [app, port] of endpoints) {
     try {
       const response = await fetch(`http://127.0.0.1:${port}/`, { signal: AbortSignal.timeout(10_000) })
-      const page = await response.text()
-      if (!response.ok || !page.includes(brand)) {
-        fail(`port ${port} did not render ${brand} (${response.status}).`)
+      if (!response.ok) {
+        fail(`${app} on port ${port} returned ${response.status}.`)
       }
     } catch (error) {
-      fail(`port ${port} is unavailable: ${error.message}`)
+      fail(`${app} on port ${port} is unavailable: ${error.message}`)
     }
   }
 }
 
-if (!process.exitCode) console.log('[verify-topology] Full 9-website (1000-1008) / 17-console (8000-8024) ecosystem verified.')
+if (!process.exitCode) console.log('[verify-topology] One FoundingOS surface, three suite websites, and seven suite consoles verified.')

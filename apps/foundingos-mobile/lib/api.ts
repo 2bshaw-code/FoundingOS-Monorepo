@@ -1,8 +1,9 @@
-/* 
+/*
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import * as SecureStore from 'expo-secure-store'
+import { IS_DEMO_MODE } from '@foundingos/ui/mobile-runtime-mode'
 
 // Real API client — talks to the real, live foundingos-console backend (the same one every
 // web brand console and the main website use). No mock data, no fabricated endpoints, no
@@ -22,6 +23,7 @@ export type LoginResult =
 // is extracted from it once at login and stored — everything after this is header-based, not
 // cookie-based.
 export async function login(email: string, password: string): Promise<LoginResult> {
+  if (IS_DEMO_MODE) return { ok: true, category: 'demo' }
   const response = await fetch(`${API_BASE}/api/tester/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -52,6 +54,7 @@ export async function logout(): Promise<void> {
 // Every authenticated call in the app goes through this — attaches the real Bearer token,
 // and surfaces a clear error if the session is missing/expired rather than failing silently.
 export async function authedFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  if (IS_DEMO_MODE) return new Response(JSON.stringify({ mode: 'demo', ok: true }), { status: 200 })
   const token = await getToken()
   const headers = new Headers(init.headers)
   if (token) headers.set('Authorization', `Bearer ${token}`)
@@ -69,6 +72,7 @@ export type BrandMetric = {
 }
 
 export async function fetchBrandMetrics(): Promise<BrandMetric[]> {
+  if (IS_DEMO_MODE) return []
   const response = await fetch(`${API_BASE}/api/superdash/brand-metrics`)
   if (!response.ok) return []
   const data = await response.json().catch(() => ({ brands: [] }))

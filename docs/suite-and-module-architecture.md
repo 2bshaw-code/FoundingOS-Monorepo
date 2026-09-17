@@ -29,24 +29,31 @@ Suites can also be disabled at the deployment level independent of tenant
 licensing, via `FOUNDINGOS_ENABLE_<SUITE>=false` environment variables
 (`isSuiteDeployable()`).
 
-## Consumer apps per suite
+## Primary mobile application
 
-Each of the original nine per-brand consoles has been mapped onto the shared
-suite/module model. The nine mobile app roots under `apps/` mirror this
-mapping 1:1 so mobile and web share the same navigation, modules, and
-back-end contracts:
+`apps/foundingos-mobile` is the only target customer application. It uses the
+existing SuperDashboard mobile shell as its foundation: responsive cards,
+offline outbox, command bar, workspace switcher, AI summaries, and shared
+navigation are retained. The old cross-brand data model is not.
 
-| App root | Suite(s) surfaced | Notes |
-|---|---|---|
-| `apps/foundingos-mobile` | All three (overview) | Suite overview, global settings, AI console |
-| `apps/foundretail-mobile` | Core.Operations | POS, Inventory, Orders |
-| `apps/foundtalent-mobile` | Core.Workforce | Hiring, Shifts, Compliance |
-| `apps/foundthat-mobile` | Core.Intelligence | CRM Deals, Pipelines, Contacts |
-| `apps/foundfinance-mobile` | Core.Operations | Invoices, Expenses, Reconciliation |
-| `apps/foundhealth-mobile` | Core.Operations | Wellbeing, Safety, Compliance |
-| `apps/foundlogistics-mobile` | Core.Operations | Fleet, Routes, Deliveries |
-| `apps/foundmeat-mobile` | *(deprecated — removed)* | FoundMeat has been fully removed from the active product; do not restore |
-| `apps/foundcrypto-mobile` | *(deprecated — removed)* | FoundCrypto has been fully removed from the active product; do not restore |
+After authentication, the shell operates in one tenant context and renders
+only the suites and workspaces enabled for the user's plan and role:
+
+| Primary app surface | Suite |
+|---|---|
+| Retail, Logistics, Finance, Marketing | Core.Operations |
+| Talent, Health | Core.Workforce |
+| FoundingOS Home, Event Feed, recommendations, risks | Core.Intelligence |
+
+The historical vertical mobile roots under `apps/` are transitional
+implementation references only. They are not separately marketed products
+and must not gain new customer-facing features. Functionality needed from
+them should move into `apps/foundingos-mobile` behind the shared tenant,
+licence, role, and feature-flag boundaries.
+
+SuperDashboard's cross-tenant administrative view remains isolated to
+FounderOS-owned control surfaces. Reusing its visual shell must never expose
+platform-wide tenant data or administrative actions in a customer session.
 
 ## Deprecated brands
 

@@ -1,4 +1,4 @@
-/* 
+/*
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
@@ -49,7 +49,7 @@ export default function BrandDetailScreen() {
       style={{ backgroundColor: brand.accent }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={brand.accent} />}
     >
-      <QuantumBackButton label="‹ Brands" />
+      <QuantumBackButton label="‹ Workspaces" />
       <QuantumCard accent={brand.accent}>
         <View style={styles.brandHero}>
           {logoUnavailable ? (
@@ -62,7 +62,7 @@ export default function BrandDetailScreen() {
             <Image source={brand.logo} resizeMode="contain" style={styles.logo} onError={() => setLogoUnavailable(true)} />
           )}
           <View style={styles.brandCopy}>
-            <QuantumText variant="overline" color={brand.accent}>Brand shell</QuantumText>
+            <QuantumText variant="overline" color={brand.accent}>FoundingOS workspace</QuantumText>
             <QuantumText variant="h1">{brand.name}</QuantumText>
             <QuantumText color="#D8D8D8">{brand.tagline}</QuantumText>
           </View>

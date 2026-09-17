@@ -1,4 +1,4 @@
-/* 
+/*
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
@@ -52,35 +52,17 @@ export const BRAND_SKINS: Record<string, QuantumTheme> = {
     glow: 'rgba(0, 166, 81, 0.18)',
     glowColor: 'rgba(0, 166, 81, 0.18)',
   },
-  crypto: {
-    ...FOUNDINGOS_SHELL_THEME,
-    accent: '#9D00FF',
-    glow: 'rgba(153, 51, 255, 0.15)',
-    glowColor: 'rgba(153, 51, 255, 0.15)',
-  },
-  meat: {
-    ...FOUNDINGOS_SHELL_THEME,
-    accent: '#FF3B3B',
-    glow: 'rgba(255, 0, 51, 0.15)',
-    glowColor: 'rgba(255, 0, 51, 0.15)',
-  },
   talent: {
     ...FOUNDINGOS_SHELL_THEME,
     accent: '#FF7A00',
     glow: 'rgba(255, 136, 0, 0.15)',
     glowColor: 'rgba(255, 136, 0, 0.15)',
   },
-  foundthat: {
+  marketing: {
     ...FOUNDINGOS_SHELL_THEME,
-    accent: '#FFD300',
-    glow: 'rgba(255, 221, 0, 0.15)',
-    glowColor: 'rgba(255, 221, 0, 0.15)',
-  },
-  foundit: {
-    ...FOUNDINGOS_SHELL_THEME,
-    accent: '#FFD300',
-    glow: 'rgba(255, 221, 0, 0.15)',
-    glowColor: 'rgba(255, 221, 0, 0.15)',
+    accent: '#EC4899',
+    glow: 'rgba(236, 72, 153, 0.15)',
+    glowColor: 'rgba(236, 72, 153, 0.15)',
   },
   finance: {
     ...FOUNDINGOS_SHELL_THEME,
@@ -139,18 +121,18 @@ interface QuantumState {
   activeConsoleModule: string | null
   role: UserRole
   tier: UserTier
-  
+
   // Africa-ready / Performance mode
   lowEndMode: boolean
-  
+
   // UI state
   commandBarOpen: boolean
   quantumWheelOpen: boolean
   isOnline: boolean
-  
+
   // Outbox sync count
   pendingSyncCount: number
-  
+
   // Actions
   setActiveBrand: (slug: string) => void
   setActiveConsoleModule: (moduleName: string | null) => void
@@ -162,7 +144,7 @@ interface QuantumState {
   setQuantumWheelOpen: (open: boolean) => void
   setIsOnline: (online: boolean) => void
   setPendingSyncCount: (count: number) => void
-  
+
   // Computed getters
   getActiveBrand: () => Brand | undefined
   getActiveTheme: () => QuantumTheme

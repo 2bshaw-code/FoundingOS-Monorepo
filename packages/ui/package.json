@@ -62,6 +62,8 @@
     "./quantum-brand-uplift": "./src/quantum-brand-uplift.tsx",
     "./globalisation": "./src/globalisation.tsx",
     "./workflow-walkthrough": "./src/workflow-walkthrough.tsx",
+    "./workspace-preview": "./src/workspace-preview.tsx",
+    "./messaging-demo": "./src/messaging-demo.tsx",
     "./styles.css": "./src/styles.css",
     "./footer": "./src/FoundingOSFooter.tsx",
     "./brand-micro-dashboard": "./src/brand-micro-dashboard.tsx",

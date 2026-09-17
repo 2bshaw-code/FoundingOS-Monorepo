@@ -1,4 +1,4 @@
-/* 
+/*
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   screenContent: {
     paddingHorizontal: quantumSpace.lg,
     paddingTop: quantumSpace.lg,
-    paddingBottom: 96,
+    paddingBottom: 180,
     gap: quantumSpace.md,
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },

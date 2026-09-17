@@ -1,4 +1,4 @@
-/* 
+/*
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
@@ -41,7 +41,7 @@ export const JOURNEY_STAGES: JourneyStage[] = [
     id: 'purchase',
     label: 'Purchase',
     icon: '◉',
-    description: 'Orders placed and payments confirmed across card, mobile money, and crypto.',
+    description: 'Orders placed and payments confirmed across card, mobile money, and bank transfer.',
     values: { Small: 21, Medium: 148, Large: 860 },
   },
   {

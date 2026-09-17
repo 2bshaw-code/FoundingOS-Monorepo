@@ -7,6 +7,8 @@ import { commercialAddOns, commercialPlans, marketingPlanFeatures } from '@found
 import { GlobalisationControls, GlobalisationProvider, LocalizedGbp } from './globalisation'
 import { ThemeToggle } from './theme'
 import { WorkflowWalkthrough } from './workflow-walkthrough'
+import { WorkspacePreview, type WorkspacePreviewProduct } from './workspace-preview'
+import { MessagingDemo } from './messaging-demo'
 
 type SuiteCard = {
   name: string
@@ -19,19 +21,8 @@ type FounderPage = 'home' | 'suites' | 'workspaces' | 'consoles' | 'marketing' |
 export type WorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'talent' | 'health'
 export type ConsoleSlug = WorkspaceSlug
 
-type WorkspaceProduct = {
+type WorkspaceProduct = WorkspacePreviewProduct & {
   slug: WorkspaceSlug
-  name: string
-  suite: string
-  audience: string
-  summary: string
-  outcome: string
-  modules: string[]
-  metrics: Array<{ label: string; value?: string; amountGbp?: number; change: string }>
-  workQueue: Array<{ task: string; detail: string; status: string }>
-  workflow: string[]
-  automation: string
-  insight: string
 }
 
 const suiteCards: SuiteCard[] = [
@@ -237,65 +228,6 @@ function PageIntro({ eyebrow, title, copy }: { eyebrow: string; title: string; c
         <p>{copy}</p>
       </div>
     </section>
-  )
-}
-
-function WorkspacePreview({ product }: { product: WorkspaceProduct }) {
-  return (
-    <>
-      <section className="console-product-intro">
-        <Link className="text-link" href="/workspaces">← All workspaces</Link>
-        <p className="eyebrow">{product.suite} · Interactive product preview</p>
-        <h1>{product.name}</h1>
-        <p className="console-audience">{product.audience}</p>
-        <p>{product.summary} {product.outcome}</p>
-        <div className="hero-actions">
-          <a className="btn btn-primary" href="#product-preview">Explore the workspace</a>
-          <Link className="btn btn-secondary" href="/contact">Request a guided demo</Link>
-        </div>
-      </section>
-
-      <section id="product-preview" className="product-preview" aria-label={`${product.name} sample workspace`}>
-        <aside className="preview-sidebar">
-          <div className="preview-brand"><span>F</span><strong>FoundingOS</strong></div>
-          <p>{product.name}</p>
-          <ul>{product.modules.map((module, index) => <li className={index === 0 ? 'active' : ''} key={module}>{module}</li>)}</ul>
-        </aside>
-        <div className="preview-workspace">
-          <header>
-            <div><p className="eyebrow">Live workspace</p><h2>Good morning, Operations</h2></div>
-            <span className="demo-badge">Sample data</span>
-          </header>
-          <div className="preview-metrics">
-            {product.metrics.map((metric) => (
-              <article key={metric.label}><p>{metric.label}</p><strong>{metric.amountGbp === undefined ? metric.value : <LocalizedGbp amount={metric.amountGbp} />}</strong><span>{metric.change}</span></article>
-            ))}
-          </div>
-          <div className="preview-panels">
-            <article>
-              <div className="panel-heading"><div><p className="eyebrow">Today</p><h3>Priority work queue</h3></div><span>{product.workQueue.length} items</span></div>
-              <div className="work-queue">
-                {product.workQueue.map((item) => (
-                  <div key={item.task}><span className={`status-dot status-${item.status.toLowerCase()}`} /><div><strong>{item.task}</strong><p>{item.detail}</p></div><small>{item.status}</small></div>
-                ))}
-              </div>
-            </article>
-            <article className="insight-card">
-              <p className="eyebrow">Core Intelligence</p>
-              <h3>Recommended next action</h3>
-              <p>{product.insight}</p>
-              <button type="button">Review recommendation</button>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section className="product-explainer">
-        <article><p className="eyebrow">What you buy</p><h2>A working operational workspace</h2><p>{product.summary}</p><ul>{product.modules.map((module) => <li key={module}>{module}</li>)}</ul></article>
-        <article><p className="eyebrow">Daily workflow</p><h2>One connected process</h2><ol>{product.workflow.map((step) => <li key={step}>{step}</li>)}</ol></article>
-        <article><p className="eyebrow">Automation included</p><h2>Less manual chasing</h2><p>{product.automation}</p><p>Events flow into the shared Event Feed and produce cross-suite alerts in Core Intelligence.</p></article>
-      </section>
-    </>
   )
 }
 
@@ -531,6 +463,8 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
           </article>
         </div>
       </section>
+
+      <MessagingDemo />
 
       <section className="module-grid">
         {suiteCards.map((suite) => (

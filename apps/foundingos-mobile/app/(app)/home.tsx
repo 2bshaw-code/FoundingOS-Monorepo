@@ -1,4 +1,4 @@
-/* 
+/*
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
@@ -9,7 +9,6 @@ import { useQuantumStore } from '../../lib/store'
 import { BRANDS } from '../../lib/brands'
 import { SuperDashAISummary } from '../../components/SuperDashAISummary'
 import { QuantumSphere } from '../../components/QuantumSphere'
-import { DemoList } from '../../components/DemoList'
 import { enqueueOutboxAction } from '../../lib/outbox-sync'
 import {
   QuantumButton,
@@ -47,7 +46,7 @@ export default function HomeScreen() {
   const pendingSyncCount = useQuantumStore((state) => state.pendingSyncCount)
   const lowEndMode = useQuantumStore((state) => state.lowEndMode)
   const theme = useActiveQuantumTheme()
-  const activeBrand = BRANDS.find((brand) => brand.slug === activeBrandSlug) ?? BRANDS[0]
+  const activeWorkspace = BRANDS.find((workspace) => workspace.slug === activeBrandSlug) ?? BRANDS[0]
 
   const [overview, setOverview] = useState<SuperDashOverview | null>(null)
   const [metrics, setMetrics] = useState<BrandMetric[]>([])
@@ -63,7 +62,7 @@ export default function HomeScreen() {
       setMetrics(metricsData)
     } catch (error) {
       setActionStatus('Live sync is unavailable. Showing cached Quantum shell.')
-      console.warn('Unable to load Quantum Superdash data', error)
+      console.warn('Unable to load FoundingOS overview data', error)
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -101,11 +100,11 @@ export default function HomeScreen() {
           <QuantumSphere size={52} accent={theme.accent} />
           <View style={styles.heroCopy}>
             <QuantumText variant="overline" color={theme.accent}>
-              {activeBrand?.name ?? 'FoundingOS'} shell
+              {activeWorkspace?.name ?? 'FoundingOS Home'}
             </QuantumText>
-            <QuantumText variant="h1">Quantum Superdash</QuantumText>
+            <QuantumText variant="h1">FoundingOS Home</QuantumText>
             <QuantumText color={theme.subtextColor}>
-              AI signals, offline operations, and WhatsApp actions for the active brand context.
+              WhatsApp actions, offline operations, shared events, and AI guidance for the active workspace.
             </QuantumText>
           </View>
         </View>
@@ -113,7 +112,7 @@ export default function HomeScreen() {
         <View style={styles.heroActions}>
           <QuantumButton onPress={() => setCommandBarOpen(true)}>Open command bar</QuantumButton>
           <QuantumButton tone="secondary" onPress={() => setQuantumWheelOpen(true)}>
-            Switch brand
+            Switch workspace
           </QuantumButton>
         </View>
 
@@ -147,8 +146,6 @@ export default function HomeScreen() {
           accent={theme.accent}
         />
       ) : null}
-
-      <DemoList />
 
       <QuantumSectionHeader label="Autonomous AI Layer" />
       <QuantumCard accent={theme.accent} style={styles.aalCard}>

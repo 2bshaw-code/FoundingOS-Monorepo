@@ -1,4 +1,4 @@
-/* 
+/*
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
@@ -11,13 +11,11 @@ const PAGE_THEME_CACHE: Record<string, QuantumPageTheme> = Object.freeze(
     Object.entries({
       foundingos: getShellSafeTheme('foundingos'),
       retail: getShellSafeTheme('retail'),
-      crypto: getShellSafeTheme('crypto'),
-      meat: getShellSafeTheme('meat'),
-      talent: getShellSafeTheme('talent'),
-      foundthat: getShellSafeTheme('foundthat'),
-      finance: getShellSafeTheme('finance'),
-      health: getShellSafeTheme('health'),
       logistics: getShellSafeTheme('logistics'),
+      finance: getShellSafeTheme('finance'),
+      marketing: getShellSafeTheme('marketing'),
+      talent: getShellSafeTheme('talent'),
+      health: getShellSafeTheme('health'),
     }).map(([brandSlug, theme]) => [
       brandSlug,
       Object.freeze({

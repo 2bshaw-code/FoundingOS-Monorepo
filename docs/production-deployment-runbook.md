@@ -42,6 +42,9 @@ Store these in the deployment secret manager, never in git:
 ```text
 DATABASE_URL
 DIRECT_URL
+AUTH_ACCESS_TOKEN_SECRET
+AUTH_REFRESH_TOKEN_SECRET
+PASSWORD_RESET_WEBHOOK_URL
 CLERK_SECRET_KEY
 CLERK_PUBLISHABLE_KEY
 STRIPE_SECRET_KEY
@@ -54,6 +57,10 @@ RESEND_FROM_ADDRESS
 TWILIO_ACCOUNT_SID
 TWILIO_AUTH_TOKEN
 TWILIO_FROM_NUMBER
+WHATSAPP_ACCESS_TOKEN
+WHATSAPP_PHONE_NUMBER_ID
+WHATSAPP_VERIFY_TOKEN
+WHATSAPP_APP_SECRET
 AWS_REGION
 AWS_S3_BUCKET
 AWS_ACCESS_KEY_ID
@@ -66,6 +73,7 @@ APPLE_TEAM_ID
 APPLE_KEY_ID
 APPLE_ISSUER_ID
 CORS_ORIGINS
+FOUNDINGOS_WEB_URL
 ```
 
 Also set (non-secret, but required for the correct runtime mode/behavior):
@@ -96,7 +104,8 @@ hand.
    backups, and alarms.
 2. Set production secrets and run `prisma generate` plus migrations for each
    backend from CI.
-3. Deploy API services and verify `/health` and dependency health checks.
+3. Deploy API services and verify `/health`, `/api/v1/ops/whatsapp/status`,
+   and tenant-scoped `/api/v1/ops/messaging/readiness`.
 4. Configure Cloudflare DNS and CDN routes for the unified web app and API.
 5. Configure Clerk production instance and allowed origins.
 6. Create Stripe products/prices, webhook endpoint, customer portal, and
@@ -104,8 +113,15 @@ hand.
 7. Configure Resend and Twilio sender identities and delivery webhooks.
 8. Configure Sentry projects, release source maps, alert routing, and on-call
    escalation.
-9. Run web/mobile smoke tests and obtain release approval.
-10. Run the seven EAS iOS builds and submit them from the authorized Apple team.
+9. Connect a staging WhatsApp Business phone-number ID to one staging tenant,
+   authorize test participants, and run the command matrix in
+   [release-scorecard.md](./release-scorecard.md).
+10. Verify that failed Meta delivery produces an Event Feed risk and that the
+    same workflow can be completed in the web workspace.
+11. Run web/mobile smoke tests and obtain release approval.
+12. Build and submit the single primary FoundingOS mobile application from the
+    authorized Apple team. Historical vertical apps are not independent
+    products and must not drive release packaging.
 
 ## Rollback
 

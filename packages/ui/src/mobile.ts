@@ -19,21 +19,22 @@ export const MOBILE_SUITE_NAVIGATION: Record<MobileSuite, MobileModule[]> = {
     { id: 'retail', label: 'Retail', suite: 'Operations' },
     { id: 'logistics', label: 'Logistics', suite: 'Operations' },
     { id: 'finance', label: 'Finance', suite: 'Operations' },
+    { id: 'marketing', label: 'Marketing', suite: 'Operations' },
   ],
   Workforce: [
     { id: 'talent', label: 'Talent', suite: 'Workforce' },
     { id: 'health', label: 'Health', suite: 'Workforce' },
   ],
   Intelligence: [
-    { id: 'superdashboard', label: 'SuperDashboard', suite: 'Intelligence' },
-    { id: 'mapping', label: 'Mapping', suite: 'Intelligence' },
-    { id: 'orchestration', label: 'Orchestration', suite: 'Intelligence' },
-    { id: 'itops', label: 'ITOps', suite: 'Intelligence' },
+    { id: 'home', label: 'FoundingOS Home', suite: 'Intelligence' },
+    { id: 'event-feed', label: 'Event Feed', suite: 'Intelligence' },
+    { id: 'recommendations', label: 'Recommendations', suite: 'Intelligence' },
+    { id: 'risks', label: 'Risks', suite: 'Intelligence' },
   ],
 }
 
 export const MOBILE_MODULES_BY_APP = {
-  foundingos: ['superdashboard', 'mapping', 'orchestration', 'itops'],
+  foundingos: ['retail', 'logistics', 'finance', 'marketing', 'talent', 'health'],
   retail: ['customers', 'inventory', 'orders', 'products'],
   talent: ['applicants', 'recruiters', 'jobs', 'workforce-intel'],
   foundthat: ['market-intel', 'lead-capture', 'data-quality', 'reports'],

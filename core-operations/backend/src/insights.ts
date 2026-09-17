@@ -59,6 +59,27 @@ export const generateInsightsForEvent = (event: FeedEvent): GeneratedInsight[] =
   if (event.type === 'medical.billing.generated') {
     insights.push({ type: 'suggestion', source: event.source, payload: json({ title: 'Billing reconciliation', detail: 'Reconcile medical billing with the finance ledger.', eventType: event.type, payload }) })
   }
+  if (event.type === 'messaging.message_received' && payload.intent === 'unknown') {
+    insights.push({ type: 'suggestion', source: event.source, payload: json({ title: 'Unrecognized WhatsApp request', detail: 'Review the conversation and decide whether this recurring request should become a supported command.', action: { label: 'Open messaging activity', href: '/modules/messaging' }, eventType: event.type, payload }) })
+  }
+  if (event.type === 'messaging.intent_create_order') {
+    insights.push({ type: 'prediction', source: event.source, payload: json({ title: 'WhatsApp order entered operations', detail: 'The new order should now progress through stock reservation, fulfilment, delivery, and invoicing.', action: { label: 'Review orders', href: '/modules/orders' }, eventType: event.type, payload }) })
+  }
+  if (event.type === 'messaging.intent_mark_delivered') {
+    insights.push({ type: 'suggestion', source: event.source, payload: json({ title: 'Delivery confirmed in WhatsApp', detail: 'Review the associated invoice and payment follow-up now that delivery is complete.', action: { label: 'Open fulfilment-to-cash', href: '/fulfilment-to-cash' }, eventType: event.type, payload }) })
+  }
+  if (event.type === 'messaging.intent_create_invoice') {
+    insights.push({ type: 'risk', source: event.source, payload: json({ title: 'WhatsApp invoice awaiting review', detail: 'Confirm the branded invoice details and due date before sending it to the customer.', action: { label: 'Review finance', href: '/modules/finance' }, eventType: event.type, payload }) })
+  }
+  if (event.type === 'messaging.intent_create_campaign') {
+    insights.push({ type: 'suggestion', source: event.source, payload: json({ title: 'WhatsApp campaign draft ready', detail: 'Review audience, inventory readiness, brand rules, and timing before launch.', action: { label: 'Review marketing', href: '/marketing' }, eventType: event.type, payload }) })
+  }
+  if (event.type === 'messaging.intent_failed') {
+    insights.push({ type: 'risk', source: event.source, payload: json({ title: 'Messaging action failed', detail: 'No silent mutation occurred. Review the command error and complete the workflow in the web workspace if needed.', action: { label: 'Open messaging activity', href: '/modules/messaging' }, eventType: event.type, payload }) })
+  }
+  if (event.type === 'messaging.delivery_failed') {
+    insights.push({ type: 'risk', source: event.source, payload: json({ title: 'WhatsApp confirmation failed', detail: 'The business action may have completed, but its chat confirmation was not delivered. Use the web workspace as the operational fallback and check Meta channel health.', action: { label: 'Check messaging health', href: '/modules/messaging' }, eventType: event.type, payload }) })
+  }
   return insights
 }
 

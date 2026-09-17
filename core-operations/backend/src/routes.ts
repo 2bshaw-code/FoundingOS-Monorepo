@@ -12,7 +12,7 @@ import { assignDelivery, createCampaign, createDeliveryOperator, createDeliveryV
 import { addMerchantStaff, merchantWorkspace, ownerMerchantSummary, removeMerchantStaff, resetMerchantPassword, reviewMerchantChange, submitMerchantChange, updateMerchantStaff } from './merchant.js'
 import { listEvents, publishEvent, registerEventStreamClient } from './event-feed.js'
 import { generateInsightsFromRecentEvents, listInsights, registerInsightStreamClient } from './insights.js'
-import { listMessagingConnections, listMessagingParticipants, processWhatsAppWebhook, saveMessagingConnection, saveMessagingParticipant } from './messaging-core.js'
+import { listMessagingConnections, listMessagingParticipants, messagingReadiness, processWhatsAppWebhook, saveMessagingConnection, saveMessagingParticipant } from './messaging-core.js'
 
 const requireTenant: RequestHandler = (_req, res, next) => {
   if (res.locals.auth?.role === 'founder_master') return next()
@@ -45,6 +45,15 @@ apiRouter.get('/messaging/connections', requireOwnerAccess, requireTenant, requi
     const tenantId = readTenant(req, res)
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
     res.json({ success: true, data: await listMessagingConnections(tenantId) })
+  } catch (error) {
+    next(error)
+  }
+})
+apiRouter.get('/messaging/readiness', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.json({ success: true, data: await messagingReadiness(tenantId) })
   } catch (error) {
     next(error)
   }

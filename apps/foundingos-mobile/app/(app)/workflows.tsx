@@ -1,4 +1,4 @@
-/* 
+/*
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
@@ -40,15 +40,6 @@ const BOLT_ON_CATALOG: BoltOn[] = [
     allowedTiers: ['starter', 'growth', 'enterprise'],
   },
   {
-    id: 'meatTraceability',
-    brandSlug: 'meat',
-    name: 'Traceability Scanner',
-    icon: '◇',
-    description: 'Label capture resolves batch history, cold-chain state, and supplier provenance.',
-    endpoint: '/boltons/meat-traceability',
-    allowedTiers: ['growth', 'enterprise'],
-  },
-  {
     id: 'financeExpense',
     brandSlug: 'finance',
     name: 'Expense Intake',
@@ -67,15 +58,6 @@ const BOLT_ON_CATALOG: BoltOn[] = [
     allowedTiers: ['growth', 'enterprise'],
   },
   {
-    id: 'productDiscovery',
-    brandSlug: 'foundthat',
-    name: 'Visual Product Discovery',
-    icon: '◎',
-    description: 'Product imagery maps to catalog matches, pricing context, and lead capture.',
-    endpoint: '/api/ai/inventory-intake',
-    allowedTiers: ['starter', 'growth', 'enterprise'],
-  },
-  {
     id: 'cvScanner',
     brandSlug: 'talent',
     name: 'Candidate Matcher',
@@ -85,13 +67,13 @@ const BOLT_ON_CATALOG: BoltOn[] = [
     allowedTiers: ['growth', 'enterprise'],
   },
   {
-    id: 'cryptoCompliance',
-    brandSlug: 'crypto',
-    name: 'Compliance Checker',
-    icon: '◈',
-    description: 'Wallet or transaction context maps to risk scoring and clearance suggestions.',
-    endpoint: '/api/ai/crypto-compliance',
-    allowedTiers: ['enterprise'],
+    id: 'campaignAssistant',
+    brandSlug: 'marketing',
+    name: 'Campaign Assistant',
+    icon: '◎',
+    description: 'Turn a goal into brand-checked campaign copy, audience suggestions, and a review-ready draft.',
+    endpoint: '/api/ai/marketing/director/suggest-campaigns',
+    allowedTiers: ['growth', 'enterprise'],
   },
   {
     id: 'healthRecordExtractor',
@@ -120,7 +102,7 @@ export default function WorkflowsScreen() {
   })
 
   const handleLaunchBoltOn = (boltOnId: string) => {
-    if (['shelfScanner', 'meatTraceability', 'financeExpense', 'productDiscovery'].includes(boltOnId)) {
+    if (['shelfScanner', 'financeExpense'].includes(boltOnId)) {
       setCaptureModalType('photo')
       return
     }

@@ -13,6 +13,7 @@ const json = (value: unknown): Prisma.InputJsonValue =>
   JSON.parse(JSON.stringify(value ?? {})) as Prisma.InputJsonValue
 
 const clean = (value: unknown) => String(value ?? '').trim()
+const webFallbackUrl = () => clean(process.env.FOUNDINGOS_WEB_URL) || 'https://foundingos.com/workspaces'
 
 const allowedIntents: Record<string, MessagingIntent['type'][]> = {
   founder: ['status', 'create_order', 'mark_delivered', 'create_invoice', 'create_campaign', 'help'],
@@ -43,13 +44,13 @@ async function executeIntent(tenantId: string, sender: string, intent: Messaging
   if (intent.type === 'help' || intent.type === 'unknown') {
     return intent.type === 'help'
       ? helpText
-      : `I could not safely identify that action.\n\n${helpText}`
+      : `I could not safely identify that action.\n\n${helpText}\n\nWeb fallback: ${webFallbackUrl()}`
   }
 
   if (intent.type === 'status') {
     const summary = await operationsSummary(tenantId)
     return [
-      'Today in FoundingOS',
+      'Current FoundingOS status',
       `${summary.metrics.orders} orders`,
       `${summary.metrics.activeDeliveries} active deliveries`,
       `${summary.metrics.unpaidInvoices} unpaid invoices`,
@@ -218,7 +219,7 @@ async function processInboundMessage(input: WhatsAppInbound) {
   })
   let reply: string
   if (!participant?.active) {
-    reply = 'This number is not authorized to run FoundingOS actions. Ask your account owner to add it in Messaging settings.'
+    reply = `This number is not authorized to run FoundingOS actions. Ask your account owner to add it in Messaging settings.\n\nWeb fallback: ${webFallbackUrl()}`
   } else {
     try {
       assertIntentAllowed(participant.role, intent.type)
@@ -230,7 +231,7 @@ async function processInboundMessage(input: WhatsAppInbound) {
         payload: { channel: 'whatsapp', conversationId: conversation.id, providerMessageId, participantId: participant.id },
       })
     } catch (error) {
-      reply = error instanceof Error ? `FoundingOS could not complete that action: ${error.message}` : 'FoundingOS could not complete that action.'
+      reply = `${error instanceof Error ? `FoundingOS could not complete that action: ${error.message}` : 'FoundingOS could not complete that action.'}\n\nNo unconfirmed action was taken. Continue in the web workspace: ${webFallbackUrl()}`
       await publishEvent({
         tenantId: connection.tenantId,
         type: 'messaging.intent_failed',
@@ -264,6 +265,30 @@ export async function processWhatsAppWebhook(payload: unknown) {
 
 export const listMessagingConnections = (tenantId: string) =>
   prisma.messagingChannelConnection.findMany({ where: { tenantId }, orderBy: { channel: 'asc' } })
+
+export const messagingReadiness = async (tenantId: string) => {
+  const since = new Date(Date.now() - 24 * 60 * 60_000)
+  const [connections, authorizedParticipants, failedDeliveries, unrecognizedMessages] = await Promise.all([
+    prisma.messagingChannelConnection.findMany({
+      where: { tenantId },
+      select: { channel: true, externalAccountId: true, displayName: true, active: true },
+      orderBy: { channel: 'asc' },
+    }),
+    prisma.messagingParticipant.count({ where: { tenantId, active: true } }),
+    prisma.messagingMessage.count({ where: { tenantId, direction: 'outbound', status: 'failed', createdAt: { gte: since } } }),
+    prisma.messagingMessage.count({ where: { tenantId, direction: 'inbound', intent: 'unknown', createdAt: { gte: since } } }),
+  ])
+  const activeConnections = connections.filter((connection) => connection.active)
+  return {
+    operational: activeConnections.length > 0 && authorizedParticipants > 0,
+    activeConnections,
+    authorizedParticipants,
+    failedDeliveriesLast24Hours: failedDeliveries,
+    unrecognizedMessagesLast24Hours: unrecognizedMessages,
+    webFallbackUrl: webFallbackUrl(),
+    dependencyRisk: 'WhatsApp availability, Meta policy, account quality, rate limits, and provider pricing remain external dependencies.',
+  }
+}
 
 export const saveMessagingConnection = (tenantId: string, channel: string, input: Record<string, unknown>) => {
   const externalAccountId = clean(input.externalAccountId)

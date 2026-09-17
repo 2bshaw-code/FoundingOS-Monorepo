@@ -24,9 +24,9 @@ export const authRouter = createAuthRouter({ service: authService, production: p
 export const requireMerchantAccess = createAccessMiddleware(authService, merchantRoles)
 export const requireOwnerAccess = createAccessMiddleware(authService, [roles.founderMaster, roles.retailManager])
 
-const ensureDefaultRetailUser = async () => {
-  const email = 'retail.manager@core_operations.io'
-  const passwordHash = await bcrypt.hash('Valid!Password2026', 12)
+const ensureDemoRetailUser = async () => {
+  const email = process.env.DEMO_RETAIL_EMAIL || 'retail.manager@demo.local'
+  const passwordHash = await bcrypt.hash(process.env.DEMO_RETAIL_PASSWORD || 'DemoOnly!2026', 12)
   await prisma.authUser.upsert({
     where: { email },
     create: { email, passwordHash, role: roles.retailManager, active: true },
@@ -34,9 +34,9 @@ const ensureDefaultRetailUser = async () => {
   })
 }
 
-const ensureDefaultFounderUser = async () => {
-  const email = 'bobby@founder.master'
-  const passwordHash = await bcrypt.hash('Valid!Password2026', 12)
+const ensureDemoFounderUser = async () => {
+  const email = process.env.DEMO_FOUNDER_EMAIL || 'founder@demo.local'
+  const passwordHash = await bcrypt.hash(process.env.DEMO_FOUNDER_PASSWORD || 'DemoOnly!2026', 12)
   await prisma.authUser.upsert({
     where: { email },
     create: { email, passwordHash, role: roles.founderMaster, active: true },
@@ -44,6 +44,8 @@ const ensureDefaultFounderUser = async () => {
   })
 }
 
-void Promise.all([ensureDefaultRetailUser(), ensureDefaultFounderUser()]).catch((error) => {
-  console.error('[auth] failed to seed retail demo user', error)
-})
+if (process.env.APP_MODE === 'demo') {
+  void Promise.all([ensureDemoRetailUser(), ensureDemoFounderUser()]).catch((error) => {
+    console.error('[auth] failed to seed Core Operations demo users', error)
+  })
+}

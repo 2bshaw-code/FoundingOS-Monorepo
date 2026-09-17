@@ -1,4 +1,4 @@
-/* 
+/*
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
@@ -19,7 +19,7 @@ export function CommandBarModal({ onOpenMultimodal }: { onOpenMultimodal?: (type
   const [query, setQuery] = useState('')
   const [statusMessage, setStatusMessage] = useState('')
 
-  const filteredBrands = useMemo(
+  const filteredWorkspaces = useMemo(
     () =>
       BRANDS.filter(
         (brand) =>
@@ -88,13 +88,13 @@ export function CommandBarModal({ onOpenMultimodal }: { onOpenMultimodal?: (type
           <View style={styles.header}>
             <View style={styles.headerCopy}>
               <QuantumText variant="overline">Command centre</QuantumText>
-              <QuantumText variant="h2">Quantum Command Bar</QuantumText>
+              <QuantumText variant="h2">FoundingOS Command Bar</QuantumText>
             </View>
             <QuantumButton tone="ghost" onPress={close} style={styles.closeButton}>Close</QuantumButton>
           </View>
 
           <QuantumTextInput
-            placeholder="Search modules, brands, actions, or ask AI..."
+            placeholder="Search workspaces, modules, actions, or ask AI..."
             value={query}
             onChangeText={setQuery}
             autoFocus
@@ -114,8 +114,8 @@ export function CommandBarModal({ onOpenMultimodal }: { onOpenMultimodal?: (type
               <QuantumListItem key={action.id} title={action.label} subtitle={action.subtitle} onPress={action.action} accent={quantumColors.neutral200} />
             ))}
 
-            <QuantumSectionHeader label="Brands & consoles" />
-            {filteredBrands.map((brand) => (
+            <QuantumSectionHeader label="Workspaces & modules" />
+            {filteredWorkspaces.map((brand) => (
               <QuantumListItem
                 key={brand.slug}
                 title={brand.name}

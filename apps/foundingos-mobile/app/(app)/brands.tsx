@@ -1,4 +1,4 @@
-/* 
+/*
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
@@ -18,17 +18,17 @@ export default function DashboardScreen() {
   return (
     <QuantumScreen>
       <QuantumHeader
-        eyebrow="FoundingOS base"
-        title="Brand control room"
-        description="Every brand keeps its own locked colour identity while sharing one Quantum operating shell."
+        eyebrow="One FoundingOS account"
+        title="Workspace directory"
+        description="Open the operational areas enabled for your role and plan without leaving the shared FoundingOS shell."
         accent={FOUNDINGOS_ACCENT}
       />
 
       <AIOnboardingCard
         accent={FOUNDINGOS_ACCENT}
-        brandKey="foundingos-brands"
+        brandKey="foundingos-workspaces"
         brandName="FoundingOS"
-        description="Tap a brand to inspect live activity, or open a module directly from its brand card."
+        description="Tap a workspace to inspect its activity, or open one of its included modules directly."
         actionLabel={BRANDS[0] ? `open ${BRANDS[0].name}` : undefined}
         onDoThisForMe={BRANDS[0] ? () => router.push(`/brand-detail/${BRANDS[0].slug}`) : undefined}
       />
@@ -56,7 +56,8 @@ export default function DashboardScreen() {
       ))}
 
       <QuantumButton tone="danger" onPress={handleLogout}>Log out</QuantumButton>
-      <QuantumText variant="caption" align="center">FoundingOS Base · #0A0A0A · white accents</QuantumText>
+      <QuantumButton tone="ghost" onPress={() => router.push('/about')}>About FoundingOS</QuantumButton>
+      <QuantumText variant="caption" align="center">One account · Role-based workspaces · Shared Event Feed</QuantumText>
     </QuantumScreen>
   )
 }

@@ -1,4 +1,4 @@
-/* 
+/*
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
@@ -46,9 +46,9 @@ export function QuantumWheelModal() {
       <View style={styles.overlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={() => setQuantumWheelOpen(false)} />
         <QuantumModalSurface style={styles.surface}>
-          <QuantumText variant="overline" color={theme.accent} align="center">Quantum wheel</QuantumText>
-          <QuantumText variant="h2" align="center">360° Brand Switcher</QuantumText>
-          <QuantumText variant="caption" align="center">Choose the active brand shell, console context, and accent skin.</QuantumText>
+          <QuantumText variant="overline" color={theme.accent} align="center">FoundingOS navigation</QuantumText>
+          <QuantumText variant="h2" align="center">Workspace Switcher</QuantumText>
+          <QuantumText variant="caption" align="center">Choose an enabled workspace while keeping the same account, permissions, and shared records.</QuantumText>
 
           <View style={styles.activeHub}>
             <QuantumCard accent={theme.accent} style={styles.activeBubble}>
@@ -100,7 +100,7 @@ export function QuantumWheelModal() {
             </QuantumCard>
           ) : null}
 
-          <QuantumButton onPress={() => setQuantumWheelOpen(false)}>Apply Console Skin</QuantumButton>
+          <QuantumButton onPress={() => setQuantumWheelOpen(false)}>Open workspace</QuantumButton>
         </QuantumModalSurface>
       </View>
     </Modal>

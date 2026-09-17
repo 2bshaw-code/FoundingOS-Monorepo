@@ -1,4 +1,4 @@
-/* 
+/*
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
@@ -49,10 +49,7 @@ export function MultimodalCaptureModal({
     let actionType = 'PHOTO_INVENTORY_INTAKE'
 
     if (type === 'photo') {
-      if (activeBrandSlug === 'meat') {
-        endpoint = '/api/boltons/meat-traceability'
-        actionType = 'MEAT_TRACEABILITY_SCAN'
-      } else if (activeBrandSlug === 'finance') {
+      if (activeBrandSlug === 'finance') {
         endpoint = '/api/boltons/finance-expense'
         actionType = 'RECEIPT_EXPENSE_SCAN'
       } else if (activeBrandSlug === 'retail') {

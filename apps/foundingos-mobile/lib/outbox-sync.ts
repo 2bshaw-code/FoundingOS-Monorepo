@@ -1,4 +1,4 @@
-/* 
+/*
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
@@ -146,7 +146,7 @@ export async function processOutboxSync(): Promise<{ synced: number; failed: num
         else if (item.actionType.includes('finance')) endpoint = '/api/ai/finance-approval'
         else if (item.actionType.includes('logistics')) endpoint = '/api/ai/logistics-routing'
         else if (item.actionType.includes('health')) endpoint = '/api/ai/health-records'
-        else if (item.actionType.includes('crypto')) endpoint = '/api/ai/crypto-compliance'
+        else if (item.actionType.includes('marketing')) endpoint = '/api/ai/marketing/director/suggest-campaigns'
 
         const res = await authedFetch(`https://console.foundingos.com${endpoint}`, {
           method: 'POST',

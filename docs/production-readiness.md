@@ -11,6 +11,11 @@ authorized operator.
   recovery, encryption, and tenant-scoped access checks.
 - Configure production auth, object storage, CDN, email, SMS, logging, metrics,
   alerting, and incident escalation.
+- Apply Brand Studio and Messaging Core migrations to staging first, after a
+  verified backup and restore check.
+- Connect a staging Meta WhatsApp Business account, map its phone-number ID to
+  one tenant, authorize test participants, and pass the command and fallback
+  matrix in [release-scorecard.md](./release-scorecard.md).
 - Connect billing checkout, invoices, tax handling, webhook signature
   verification, subscription state, and usage metering to
   `packages/config/src/commercial.ts`.
@@ -30,13 +35,27 @@ authorized operator.
 - Production secrets are injected by the deployment platform and never stored
   in the repository.
 - Health checks cover API, database, queue/orchestration, storage, email, and
-  SMS dependencies.
+  messaging dependencies.
+- Demo users are seeded only when `APP_MODE=demo`; production startup must not
+  create or reset predictable accounts.
+- Failed messaging actions and failed confirmations create shared Event Feed
+  events and Core Intelligence risks. Critical workflows remain available in
+  the web application.
 - Support incidents include severity, owner, timestamps, customer impact, and
   SLA status.
 
-## Current repository blockers
+## Current release blockers
 
-The repository currently has missing generated Prisma clients and unresolved
-workspace dependencies in the full typecheck. The root validation build also
-expects a missing shared brand asset. These must be resolved before claiming a
-production release.
+- Production and staging database targets, backup ownership, and restore
+  evidence have not been confirmed.
+- Brand Studio and Messaging Core migrations have not been applied.
+- A Meta WhatsApp Business account and phone-number ID have not been connected
+  to a staging tenant.
+- No real end-to-end command, rate-limit, policy, delivery-failure, or recovery
+  evidence exists yet.
+- Pilot customers and measurable activation/reliability outcomes have not been
+  established.
+
+The Core Operations backend, Core Operations console, and public website
+currently pass their targeted builds and typechecks. This is necessary but not
+sufficient for production approval.

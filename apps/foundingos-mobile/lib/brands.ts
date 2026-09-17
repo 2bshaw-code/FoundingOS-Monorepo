@@ -1,16 +1,12 @@
-/* 
+/*
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import type { ImageSourcePropType } from 'react-native'
-
 declare const require: (path: string) => ImageSourcePropType
 
-// Real brand data, kept in sync by hand with packages/config/src/index.ts — not imported
-// directly because that package reads process.env.NEXT_PUBLIC_* (a Next.js-only mechanism)
-// and isn't portable to Metro/React Native as-is. Names, accents, and taglines below are the
-// same real values used across every web console — update both places together if a brand's
-// details change.
+// Kept as BRANDS temporarily for route/store compatibility while the original multi-brand
+// mobile prototype is migrated. Customer-facing values represent FoundingOS workspaces.
 export type Brand = {
   id?: string
   slug: string
@@ -39,12 +35,12 @@ export const BRANDS: Brand[] = [
   {
     id: 'foundingos',
     slug: 'foundingos',
-    name: 'FoundingOS',
+    name: 'FoundingOS Home',
     default: true,
     logo: require('../assets/logos/foundingos.png'),
     accent: FOUNDINGOS_ACCENT,
-    tagline: 'One ecosystem. Every brand connected.',
-    modules: ['Superdash', 'Package Model D', 'AAL', 'Brand Registry'],
+    tagline: 'One account. Every enabled workspace connected.',
+    modules: ['Operations', 'Workforce', 'Intelligence', 'Event Feed', 'WhatsApp'],
     theme: {
       background: FOUNDINGOS_BASE,
       surface: FOUNDINGOS_SURFACE_GRADIENT,
@@ -53,13 +49,10 @@ export const BRANDS: Brand[] = [
       quantumLines: 'enabled',
     },
   },
-  { id: 'retail', slug: 'retail', name: 'FoundRetail', logo: require('../assets/logos/retail.png'), accent: '#00A651', tagline: 'Retail operations, connected.', modules: ['Customers', 'Inventory', 'Orders', 'Products'] },
-  { id: 'crypto', slug: 'crypto', name: 'FoundCrypto', logo: require('../assets/logos/crypto.png'), accent: '#9D00FF', tagline: 'Market intelligence, always on.', modules: ['Charts', 'Signals', 'Automation', 'Risk'] },
-  { id: 'meat', slug: 'meat', name: 'FoundMeat', logo: require('../assets/logos/meat.png'), accent: '#FF3B3B', tagline: 'Supply chain clarity, cut to order.', modules: ['Suppliers', 'Stock', 'Traceability', 'Orders'] },
-  { id: 'talent', slug: 'talent', name: 'FoundTalent', logo: require('../assets/logos/talent.png'), accent: '#FF7A00', tagline: 'Hiring intelligence, made human.', modules: ['Applicants', 'Recruiters', 'Jobs', 'Workforce Intel'] },
-  { id: 'foundthat', slug: 'foundthat', name: 'FoundThat', logo: require('../assets/logos/foundthat.png'), accent: '#FFD300', tagline: 'Discovery intelligence, on demand.', modules: ['Market Intel', 'Lead Capture', 'Data Quality', 'Reports'] },
-  { id: 'foundit', slug: 'foundit', name: 'FoundIt', logo: require('../assets/logos/foundit.png'), accent: '#FFD300', tagline: 'Local discovery, beautifully mapped.', modules: ['Discovery', 'Listings', 'Signals', 'Reports'] },
-  { id: 'finance', slug: 'finance', name: 'FoundFinance', logo: require('../assets/logos/finance.png'), accent: '#A8A8A8', tagline: 'Cashflow clarity, every day.', modules: ['Cashflow', 'Invoicing', 'Reconciliation', 'Reporting'] },
-  { id: 'health', slug: 'health', name: 'FoundHealth', logo: require('../assets/logos/health.png'), accent: '#4FC3F7', tagline: 'Care operations, coordinated.', modules: ['Patients', 'Scheduling', 'Records', 'Compliance'] },
-  { id: 'logistics', slug: 'logistics', name: 'FoundLogistics', logo: require('../assets/logos/logistics.png'), accent: '#DC143C', tagline: 'Fleet and freight, in flow.', modules: ['Fleet', 'Routes', 'Warehousing', 'Deliveries'] },
+  { id: 'retail', slug: 'retail', name: 'Retail Workspace', accent: '#00A651', logo: require('../assets/logos/retail.png'), tagline: 'Products, stock, customers, orders, and stores.', modules: ['POS', 'Inventory', 'Customers', 'Orders', 'Products', 'Stores'] },
+  { id: 'logistics', slug: 'logistics', name: 'Logistics Workspace', accent: '#DC143C', logo: require('../assets/logos/logistics.png'), tagline: 'Fleet, routes, dispatch, warehousing, and delivery.', modules: ['Fleet', 'Routes', 'Dispatch', 'Warehousing', 'Deliveries', 'Tracking'] },
+  { id: 'finance', slug: 'finance', name: 'Finance Workspace', accent: '#A8A8A8', logo: require('../assets/logos/finance.png'), tagline: 'Invoices, cashflow, reconciliation, and risk.', modules: ['Invoicing', 'Cashflow', 'Reconciliation', 'Payables', 'Receivables', 'Reporting'] },
+  { id: 'marketing', slug: 'marketing', name: 'Marketing Workspace', accent: '#EC4899', logo: require('../assets/logos/foundingos.png'), tagline: 'Campaigns, audiences, content, and revenue attribution.', modules: ['Campaigns', 'Audiences', 'Content', 'Scheduling', 'Analytics', 'Attribution'] },
+  { id: 'talent', slug: 'talent', name: 'Talent Workspace', accent: '#FF7A00', logo: require('../assets/logos/talent.png'), tagline: 'Candidates, jobs, pipelines, interviews, and offers.', modules: ['Candidates', 'Jobs', 'Pipelines', 'Interviews', 'Offers', 'Onboarding'] },
+  { id: 'health', slug: 'health', name: 'Health Workspace', accent: '#4FC3F7', logo: require('../assets/logos/health.png'), tagline: 'Patients, appointments, records, billing, and supplies.', modules: ['Patients', 'Appointments', 'Records', 'Treatments', 'Billing', 'Supplies'] },
 ]
