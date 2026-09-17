@@ -20,15 +20,15 @@ type Network =
   | 'sms'
 
 const targets: Record<Network, { label: string; href: string }> = {
-  instagram: { label: 'Instagram', href: 'https://instagram.com/foundretail' },
-  linkedin: { label: 'LinkedIn', href: 'https://linkedin.com/company/foundretail' },
-  tiktok: { label: 'TikTok', href: 'https://tiktok.com/@foundretail' },
-  x: { label: 'X', href: 'https://x.com/foundretail' },
-  facebook: { label: 'Facebook', href: 'https://facebook.com/foundretail' },
-  youtube: { label: 'YouTube', href: 'https://youtube.com/@foundretail' },
+  instagram: { label: 'Instagram', href: 'https://instagram.com/core_operations' },
+  linkedin: { label: 'LinkedIn', href: 'https://linkedin.com/company/core_operations' },
+  tiktok: { label: 'TikTok', href: 'https://tiktok.com/@core_operations' },
+  x: { label: 'X', href: 'https://x.com/core_operations' },
+  facebook: { label: 'Facebook', href: 'https://facebook.com/core_operations' },
+  youtube: { label: 'YouTube', href: 'https://youtube.com/@core_operations' },
   whatsapp: { label: 'WhatsApp', href: 'https://wa.me/00000000000' },
-  telegram: { label: 'Telegram', href: 'https://t.me/foundretail' },
-  messenger: { label: 'Messenger', href: 'https://m.me/foundretail' },
+  telegram: { label: 'Telegram', href: 'https://t.me/core_operations' },
+  messenger: { label: 'Messenger', href: 'https://m.me/core_operations' },
   imessage: { label: 'iMessage', href: 'sms:+00000000000' },
   sms: { label: 'SMS', href: 'sms:+00000000000' },
 }

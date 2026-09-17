@@ -118,7 +118,7 @@ test('Founder login, refresh, and logout stay anchored to FoundingOS from produc
     calls.push(url)
     return Response.json({ success: true, user: { id: 'founder-1', email: 'bobby@founder.master', role: 'founder_master' }, token: 'group-access', refreshToken: 'founder-refresh' })
   } })
-  const client = createAuthClient({ baseUrl: 'http://localhost:3220/api/v1', founderAuthUrl: 'http://localhost:3210/api/v1', storageKey: 'foundretail-test' })
+  const client = createAuthClient({ baseUrl: 'http://localhost:3220/api/v1', founderAuthUrl: 'http://localhost:3210/api/v1', storageKey: 'core_operations-test' })
   await client.login('bobby@founder.master', 'Valid!Password2026')
   await client.refresh()
   await client.logout()

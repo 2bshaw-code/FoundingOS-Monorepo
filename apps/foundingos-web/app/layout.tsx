@@ -8,7 +8,10 @@ import { brands } from '@foundingos/config'
 import { QuantumBackground } from '@foundingos/ui/quantum'
 import '@foundingos/ui/styles.css'
 
-export const metadata = { title: 'FoundingOS', description: 'Unified multi-brand SaaS launcher.' }
+export const metadata = {
+  title: 'FoundingOS | Your Business Operating System',
+  description: 'One connected operating system for Retail, Logistics, Finance, Talent, and Health workflows.',
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

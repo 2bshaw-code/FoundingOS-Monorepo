@@ -3,7 +3,32 @@
   "private": true,
   "version": "0.1.0",
   "workspaces": [
-    "apps/*",
+    "core-operations/*",
+    "core-workforce/*",
+    "core-intelligence/*",
+    "shared/auth",
+    "shared/bob",
+    "shared/brand-assets",
+    "shared/media",
+    "shared/ui",
+    "apps/foundingos-web",
+    "apps/foundingos-console",
+    "apps/core-intelligence-web",
+    "apps/core-intelligence-console",
+    "apps/core-intelligence-console-starter",
+    "apps/core-operations-web",
+    "apps/core-operations-console",
+    "apps/core-operations-console-starter",
+    "apps/core-workforce-web",
+    "apps/core-workforce-console",
+    "apps/core-workforce-console-starter",
+    "apps/foundingos-mobile",
+    "apps/foundretail-mobile",
+    "apps/foundtalent-mobile",
+    "apps/foundthat-mobile",
+    "apps/foundfinance-mobile",
+    "apps/foundhealth-mobile",
+    "apps/foundlogistics-mobile",
     "packages/config",
     "packages/ui",
     "packages/auth",
@@ -11,8 +36,8 @@
     "packages/billing"
   ],
   "scripts": {
-    "dev:next": "turbo dev --filter='./apps/*' --concurrency=12",
-    "dev:locked": "turbo run dev --filter=@foundingos/foundcrypto-console --filter=@foundingos/foundcrypto-console-starter --filter=@foundingos/foundcrypto-web --filter=@foundingos/foundfinance-console --filter=@foundingos/foundfinance-console-starter --filter=@foundingos/foundfinance-web --filter=@foundingos/foundhealth-console --filter=@foundingos/foundhealth-console-starter --filter=@foundingos/foundhealth-web --filter=@foundingos/foundingos-console --filter=@foundingos/foundingos-website --filter=@foundingos/foundlogistics-console --filter=@foundingos/foundlogistics-console-starter --filter=@foundingos/foundlogistics-web --filter=@foundingos/foundmeat-console --filter=@foundingos/foundmeat-console-starter --filter=@foundingos/foundmeat-web --filter=@foundingos/foundretail-console --filter=@foundingos/foundretail-console-starter --filter=@foundingos/foundretail-web --filter=@foundingos/foundtalent-console --filter=@foundingos/foundtalent-console-starter --filter=@foundingos/foundtalent-web --filter=@foundingos/foundthat-console --filter=@foundingos/foundthat-console-starter --filter=@foundingos/foundthat-web --concurrency=27",
+    "dev:next": "turbo dev --filter='./apps/*' --concurrency=19",
+    "dev:locked": "turbo dev --filter=@foundingos/foundingos-website --filter=@foundingos/foundingos-console --filter=@foundingos/core-intelligence-web --filter=@foundingos/core-intelligence-console --filter=@foundingos/core_intelligence-console-starter --filter=@foundingos/core_operations-web --filter=@foundingos/core_operations-console --filter=@foundingos/core_operations-console-starter --filter=@foundingos/core_workforce-web --filter=@foundingos/core_workforce-console --filter=@foundingos/core_workforce-console-starter --concurrency=15",
     "build:next": "turbo build --filter='./apps/*'",
     "lint:next": "turbo lint --filter='./apps/*'",
     "db:generate": "npm run db:generate --workspace @foundingos/db",
@@ -25,14 +50,20 @@
     "verify:backup-readiness": "node scripts/verify-backup-readiness.mjs",
     "verify:hydration-safety": "node scripts/verify-hydration-safety.mjs",
     "test:tester-system": "node --experimental-strip-types scripts/test-tester-system.mjs",
+    "demo:credentials": "node scripts/load-demo-credentials.mjs",
     "test": "npm test --workspace @foundingos/auth && npm run test:tester-system",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },
   "devDependencies": {
+    "tsx": "^4.23.13",
     "turbo": "^2.5.6"
   },
   "allowScripts": {
     "electron@43.4.0": true
+  },
+  "engines": {
+    "node": ">=20 <21",
+    "npm": ">=10"
   },
   "packageManager": "npm@11.19.0"
 }

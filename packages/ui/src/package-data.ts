@@ -10,31 +10,21 @@ const packageCatalog: Record<string, BrandPackageSummary[]> = {
     { slug: 'intelligenceos', name: 'IntelligenceOS' },
     { slug: 'systemos', name: 'SystemOS' },
   ],
-  FoundRetail: [
+  'Core.Operations': [
     { slug: 'standard', name: 'Standard' },
     { slug: 'pro', name: 'Pro' },
     { slug: 'enterprise', name: 'Enterprise' },
     { slug: 'owneros', name: 'OwnerOS' },
   ],
-  FoundMeat: [
-    { slug: 'butcheros', name: 'ButcherOS' },
-    { slug: 'factoryos', name: 'FactoryOS' },
-    { slug: 'distributionos', name: 'DistributionOS' },
-  ],
-  FoundThat: [
+  'Core.Intelligence': [
     { slug: 'supportos', name: 'SupportOS' },
     { slug: 'networkos', name: 'NetworkOS' },
     { slug: 'enterpriseos', name: 'EnterpriseOS' },
   ],
-  FoundTalent: [
+  'Core.Workforce': [
     { slug: 'recruiteros', name: 'RecruiterOS' },
     { slug: 'agencyos', name: 'AgencyOS' },
     { slug: 'hrproos', name: 'HRProOS' },
-  ],
-  FoundCrypto: [
-    { slug: 'traderos', name: 'TraderOS' },
-    { slug: 'investoros', name: 'InvestorOS' },
-    { slug: 'whaleos', name: 'WhaleOS' },
   ],
 }
 

@@ -88,7 +88,7 @@ const priorityOptions: TaskPriority[] = ['Low', 'Medium', 'High', 'Urgent']
 const taskStatusOptions: TaskStatus[] = ['Open', 'Working', 'Waiting', 'Done']
 
 const brandBlueprints: Record<string, CRMBlueprint> = {
-  FoundRetail: {
+  'Core.Operations': {
     entityLabel: 'Customer',
     formLabel: 'Add Customer',
     kind: 'customer',
@@ -105,41 +105,7 @@ const brandBlueprints: Record<string, CRMBlueprint> = {
       { title: 'Store accounts', description: 'Manage branch-level contacts and local account owners.', metric: 'Branch aware' },
     ],
   },
-  FoundMeat: {
-    entityLabel: 'Supplier',
-    formLabel: 'Add Supplier',
-    kind: 'supplier',
-    extraLabel: 'Compliance / supply chain field',
-    extraPlaceholder: 'Compliance ID, cold-chain status, cut group',
-    forms: [
-      { kind: 'supplier', label: 'Add Supplier' },
-      { kind: 'lead', label: 'Add Lead' },
-      { kind: 'customer', label: 'Add Customer' },
-    ],
-    modules: [
-      { title: 'Compliance contacts', description: 'Store audit contacts, certification dates, and sign-off trails.', metric: 'Audit ready' },
-      { title: 'Supplier chain', description: 'Coordinate suppliers, processors, and delivery partners.', metric: 'Chain synced' },
-      { title: 'Batch follow-up', description: 'Tie supplier records to batch QA and delivery events.', metric: 'Batch linked' },
-    ],
-  },
-  FoundCrypto: {
-    entityLabel: 'Investor',
-    formLabel: 'Add Investor',
-    kind: 'investor',
-    extraLabel: 'Wallet / portfolio field',
-    extraPlaceholder: 'Wallet address, risk band, portfolio size',
-    forms: [
-      { kind: 'investor', label: 'Add Investor' },
-      { kind: 'lead', label: 'Add Lead' },
-      { kind: 'customer', label: 'Add Customer' },
-    ],
-    modules: [
-      { title: 'Wallet clients', description: 'Maintain wallet owners, treasury contacts, and access history.', metric: 'Wallet ready' },
-      { title: 'Investor profiles', description: 'Track portfolio context, risk band, and onboarding state.', metric: 'Profile rich' },
-      { title: 'Execution links', description: 'Connect investor contact records to trading triggers.', metric: 'Signal linked' },
-    ],
-  },
-  FoundThat: {
+  'Core.Intelligence': {
     entityLabel: 'Ticket',
     formLabel: 'Add Ticket',
     kind: 'ticket',
@@ -156,7 +122,7 @@ const brandBlueprints: Record<string, CRMBlueprint> = {
       { title: 'Incident routing', description: 'Route issues into the right queues and response windows.', metric: 'Routed live' },
     ],
   },
-  FoundTalent: {
+  'Core.Workforce': {
     entityLabel: 'Client',
     formLabel: 'Add Client',
     kind: 'client',
@@ -396,15 +362,15 @@ export function CRMBoard({ config }: { config: BrandConsoleConfig }) {
 
   const automationRules = useMemo(() => {
     switch (config.name) {
-      case 'FoundRetail':
+      case 'CoreOperations':
         return ['Auto-create reorder task when a store account is marked In Progress.', 'Flag VIP customers when tags include priority or wholesale.', 'Route supplier notes to the operations owner.']
-      case 'FoundMeat':
+      case 'CoreOperations':
         return ['Create a compliance task for every supplier marked Qualified.', 'Link cold-chain notes to batch follow-up tasks.', 'Escalate audit-risk records automatically.']
-      case 'FoundCrypto':
+      case 'CoreOperations':
         return ['Create a risk review task when investor exposure exceeds threshold.', 'Push wallet updates into the activity timeline.', 'Tag high-priority portfolio records for analyst follow-up.']
-      case 'FoundThat':
+      case 'CoreIntelligence':
         return ['Open an incident task when a ticket moves to In Progress.', 'Link device-owner notes to each resolved ticket.', 'Escalate urgent alerts to the top of the queue.']
-      case 'FoundTalent':
+      case 'CoreWorkforce':
         return ['Create interview tasks for candidates marked Qualified.', 'Attach employer client notes to the active job pipeline.', 'Promote hot candidates into the priority filter.']
       default:
         return ['Create project tasks when a stakeholder is added.', 'Attach system notes to the active rollout timeline.', 'Escalate dependencies marked In Progress.']

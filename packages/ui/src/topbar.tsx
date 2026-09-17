@@ -4,103 +4,43 @@
 */
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
+import { useMemo, useState } from 'react'
 import type { BrandConsoleConfig } from './console'
-import { ThemeToggle, LiteModeToggle } from './theme'
-import { QuantumSphereLogo } from './QuantumSphereLogo'
-import { qColors } from './quantum'
-import { brandList } from '@foundingos/config'
+import { ThemeToggle } from './theme'
 
-const SIDEBAR_KEY = 'foundingos-sidebar-collapsed'
-
-function readSidebarPreference() {
-  if (typeof window === 'undefined') return false
-  const stored = window.localStorage.getItem(SIDEBAR_KEY)
-  if (stored === 'true') return true
-  if (stored === 'false') return false
-  return window.matchMedia('(max-width: 1120px)').matches
-}
-
-function applySidebarPreference(collapsed: boolean) {
-  if (typeof document === 'undefined') return
-  document.body.dataset.sidebarCollapsed = collapsed ? 'true' : 'false'
-  window.localStorage.setItem(SIDEBAR_KEY, String(collapsed))
-}
-
-function consoleTitle(name?: string, variant: 'console' | 'starter' = 'console') {
-  const brand = name ?? 'Workspace'
-  return variant === 'starter' ? `${brand} Console Starter` : `${brand} Console`
-}
-
-// "Home" pill: when a specific brand console is open it should go to THAT brand's own
-// marketing website, not the generic FoundingOS homepage — matched by brand name since
-// BrandConsoleConfig doesn't carry a slug/webUrl of its own.
-function brandHomeLink(name?: string) {
-  if (!name || name === 'FoundingOS') return { href: 'https://www.foundingos.com/home', label: 'FoundingOS Homepage' }
-  const match = brandList.find((brand) => brand.name === name || brand.marketingName === name)
-  return { href: match?.webUrl ?? 'https://www.foundingos.com/home', label: `${name} Home` }
-}
-
-function ActualTopbar({ config, variant = 'console' }: { config?: BrandConsoleConfig; variant?: 'console' | 'starter' }) {
-  const theme = { '--accent': config?.colors.accent ?? qColors.foundingos } as React.CSSProperties
-  const sphereAccent = config?.name && config.name !== 'FoundingOS' ? config.colors.accent : undefined
+function ActualTopbar({ config }: { config?: BrandConsoleConfig }) {
+  const theme = { '--accent': config?.colors.accent ?? '#4A90E2' } as React.CSSProperties
   const [collapsed, setCollapsed] = useState(false)
-  // Real fix for a genuine double-write/visible-flash bug (confirmed live via instrumented
-  // localStorage/MutationObserver logging): both effects below fire on the same initial mount
-  // commit. The mount-only effect reads the real stored preference and applies it correctly —
-  // but the effect below, reacting to `collapsed`, ALSO fires on that same first commit, before
-  // the mount effect's setCollapsed() has flushed a re-render, so it runs with the stale default
-  // (false) and immediately overwrites the correct value. React then re-renders from
-  // setCollapsed() and this effect fires again with the real value, correcting it — but not
-  // before a real, user-visible flash (sidebar briefly shows its default state, then snaps to the
-  // stored one) and a redundant conflicting localStorage write. Skipping this effect's own first
-  // invocation (the standard React idiom for this) removes the stale write entirely; every
-  // subsequent invocation — i.e. every real user click on the toggle — behaves exactly as before.
-  const skipNextApplyRef = useRef(true)
-
-  useEffect(() => {
-   const initial = readSidebarPreference()
-   setCollapsed(initial)
-   applySidebarPreference(initial)
-  }, [])
-
-  useEffect(() => {
-   if (skipNextApplyRef.current) { skipNextApplyRef.current = false; return }
-   applySidebarPreference(collapsed)
-  }, [collapsed])
-
   const toggleLabel = useMemo(() => (collapsed ? 'Open sidebar' : 'Close sidebar'), [collapsed])
-  const homeLink = brandHomeLink(config?.name)
 
   return (
     <header className="topbar" style={theme}>
-     <button type="button" className="sidebar-toggle" onClick={() => setCollapsed((value) => !value)} aria-label={toggleLabel}>
-       ☰
-     </button>
-     <div className="topbar-title">
-       <QuantumSphereLogo size={28} accent={sphereAccent} />
-       <div>
-         <strong>{consoleTitle(config?.name, variant)}</strong>
-         <span>{config?.name ?? 'Workspace'} command center</span>
-        <small className="topbar-tagline">FoundingOS — The Operating System for WhatsApp, Telegram, and global message-based businesses.</small>
-       </div>
-     </div>
-     <div className="topbar-nav" />
-     <div className="topbar-actions">
-       <a href={homeLink.href} className="q-button q-button-ghost topbar-pill-homepage">{homeLink.label}</a>
-       <form action="https://console.foundingos.com/api/tester/logout" method="POST" className="topbar-logout-form">
-         <button type="submit" className="q-button q-button-primary topbar-pill-danger">Log out</button>
-       </form>
-       <ThemeToggle />
-       <LiteModeToggle />
-     </div>
+      <div className="topbar-title">
+        <span className="brand-logo small">{config?.logo ?? 'FO'}</span>
+        <div>
+          <strong>FoundingOS</strong>
+          <span>Operating system</span>
+        </div>
+      </div>
+      <div className="topbar-nav">
+        <button type="button" className="sidebar-toggle" onClick={() => setCollapsed((value) => !value)} aria-label={toggleLabel}>
+          ☰
+        </button>
+        <Link className="topbar-chip" href="/console">Console</Link>
+        <Link className="topbar-chip" href="/dashboard">Event Feed</Link>
+        <Link className="topbar-chip" href="/fulfilment-to-cash">Fulfilment</Link>
+      </div>
+      <div className="topbar-actions">
+        <ThemeToggle />
+      </div>
     </header>
   )
 }
 
-export function Topbar({ config, variant = 'console' }: { config?: BrandConsoleConfig; variant?: 'console' | 'starter' }) {
+export function Topbar({ config }: { config?: BrandConsoleConfig }) {
   try {
-    return <ActualTopbar config={config} variant={variant} />
+    return <ActualTopbar config={config} />
   } catch {
     return <div className="p-4 text-red-500">Topbar failed to load</div>
   }

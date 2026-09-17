@@ -3,768 +3,606 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import Link from 'next/link'
-import { FoundAI } from './found-ai'
-import { PremiumSocialLinks } from './social-links'
-import { ThemeToggle, LiteModeToggle } from './theme'
-import { QuantumConsoleEntry } from './quantum-console-modal'
-import { QuantumSphereLogo } from './QuantumSphereLogo'
-import { CORE_MODULES } from '@foundingos/config/modules'
-// Real, env-var-driven brand config (webUrl/consoleUrl/etc. read from each deployed
-// app's NEXT_PUBLIC_*_URL vars, with the localhost-safety wrapper already applied).
-// This replaces a previously-local, fully-hardcoded duplicate of this same data that
-// never read any env var — every "Website"/"Console" link on this page was silently
-// pointing at localhost in every production deployment until this fix.
-import { brands, brandList, LOCKED_BRAND_COLORS, type BrandSlug, type BrandDefinition } from '@foundingos/config'
-import { DEMO_BRAND_CARDS, getQuantumBrandUplift, type QuantumDemoBrandCard } from '@foundingos/config/quantum-brand-uplift'
-import { QuantumBrandUpliftPanel } from './quantum-brand-uplift'
-import { WebBrandModulePanel, WebBrandWheel, WebTutorialSystem } from './quantum-web-mirror'
+import { commercialAddOns, commercialPlans, marketingPlanFeatures } from '@foundingos/config/commercial'
+import { GlobalisationControls, GlobalisationProvider, LocalizedGbp } from './globalisation'
+import { ThemeToggle } from './theme'
+import { WorkflowWalkthrough } from './workflow-walkthrough'
 
-type ComponentChildren = any
-const consoleDashboardUrl = (brand: BrandDefinition) => brand.consoleUrl.replace(/\/+$/, '')
-const isInternalHref = (href: string) => href.startsWith('/') || href.startsWith('#')
-const signupOptions = [
-  { label: 'Google account signup', href: '#google' },
-  { label: 'Apple account signup', href: '#apple' },
-  { label: 'Email signup', href: '#email' },
+type SuiteCard = {
+  name: string
+  summary: string
+  accent: string
+  href: string
+}
+
+type FounderPage = 'home' | 'suites' | 'workspaces' | 'consoles' | 'marketing' | 'intelligence' | 'pricing' | 'about' | 'contact'
+export type WorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'talent' | 'health'
+export type ConsoleSlug = WorkspaceSlug
+
+type WorkspaceProduct = {
+  slug: WorkspaceSlug
+  name: string
+  suite: string
+  audience: string
+  summary: string
+  outcome: string
+  modules: string[]
+  metrics: Array<{ label: string; value?: string; amountGbp?: number; change: string }>
+  workQueue: Array<{ task: string; detail: string; status: string }>
+  workflow: string[]
+  automation: string
+  insight: string
+}
+
+const suiteCards: SuiteCard[] = [
+  {
+    name: 'Core.Operations',
+    summary: 'Retail, Logistics, Finance, and fulfilment-to-cash orchestration in one operating layer.',
+    accent: '#4A90E2',
+    href: '/suites#operations',
+  },
+  {
+    name: 'Core.Workforce',
+    summary: 'Talent, hiring, payroll, scheduling, and workforce operations across the organisation.',
+    accent: '#F59E0B',
+    href: '/suites#workforce',
+  },
+  {
+    name: 'Core.Intelligence',
+    summary: 'AI signals, event anomaly detection, forecasting, and predictive recommendations.',
+    accent: '#7C3AED',
+    href: '/intelligence',
+  },
+]
+
+const workspaceProducts: WorkspaceProduct[] = [
+  {
+    slug: 'retail',
+    name: 'Retail Workspace',
+    suite: 'Core Operations',
+    audience: 'For retailers, distributors, and multi-location operators',
+    summary: 'Run products, inventory, orders, customers, and store activity from one workspace.',
+    outcome: 'Know what is selling, what needs restocking, and which orders need action before revenue is lost.',
+    modules: ['POS', 'Inventory', 'Suppliers', 'Sales', 'Customers', 'Orders', 'Products', 'Stores', 'Promotions', 'Inventory alerts'],
+    metrics: [
+      { label: 'Sales today', amountGbp: 18420, change: '+12.4%' },
+      { label: 'Open orders', value: '148', change: '23 priority' },
+      { label: 'Stock alerts', value: '12', change: '4 urgent' },
+    ],
+    workQueue: [
+      { task: 'Approve replenishment', detail: '12 fast-moving products below safety stock', status: 'Action' },
+      { task: 'Resolve delayed orders', detail: '8 orders have missed the packing SLA', status: 'Risk' },
+      { task: 'Review promotion', detail: 'Weekend bundle is outperforming forecast', status: 'Insight' },
+    ],
+    workflow: ['Order received', 'Stock reserved', 'Pick and pack', 'Dispatch', 'Payment reconciled'],
+    automation: 'Low-stock rules prepare replenishment recommendations using sales velocity and lead time.',
+    insight: 'Demand for the 5 kg staple bundle is forecast to exceed available stock within four days.',
+  },
+  {
+    slug: 'logistics',
+    name: 'Logistics Workspace',
+    suite: 'Core Operations',
+    audience: 'For delivery networks, fleet teams, and fulfilment operators',
+    summary: 'Coordinate shipments, routes, drivers, delivery exceptions, and proof of delivery.',
+    outcome: 'See every delivery in motion and intervene before delays become customer or cash-flow problems.',
+    modules: ['Fleet', 'Routes', 'Warehousing', 'Deliveries', 'Dispatch', 'Tracking', 'Maintenance', 'Fuel', 'Compliance', 'Route planner'],
+    metrics: [
+      { label: 'Active shipments', value: '286', change: '41 due today' },
+      { label: 'On-time rate', value: '94.8%', change: '+2.1%' },
+      { label: 'Exceptions', value: '9', change: '3 urgent' },
+    ],
+    workQueue: [
+      { task: 'Reroute delayed vehicle', detail: 'Traffic delay threatens 6 delivery windows', status: 'Action' },
+      { task: 'Verify proof of delivery', detail: '4 completed stops need recipient confirmation', status: 'Review' },
+      { task: 'Consolidate route', detail: 'Two low-load routes can be combined tomorrow', status: 'Insight' },
+    ],
+    workflow: ['Order ready', 'Route assigned', 'Driver dispatched', 'Proof captured', 'Invoice released'],
+    automation: 'Exception rules flag late stops and recommend reassignment based on location and capacity.',
+    insight: 'Combining tomorrow’s East routes could reduce distance by 18% without affecting delivery windows.',
+  },
+  {
+    slug: 'finance',
+    name: 'Finance Workspace',
+    suite: 'Core Operations',
+    audience: 'For finance teams managing cash, invoices, suppliers, and reconciliation',
+    summary: 'Control receivables, payables, collections, cash position, and mobile money reconciliation.',
+    outcome: 'Connect operational delivery to invoices and payments so cash leakage and overdue balances are visible.',
+    modules: ['Invoicing', 'Cashflow', 'Reconciliation', 'Reporting', 'Payables', 'Receivables', 'Forecasting', 'Risk', 'Compliance', 'Portfolio alerts'],
+    metrics: [
+      { label: 'Cash collected', amountGbp: 84260, change: '+8.7%' },
+      { label: 'Invoices due', value: '37', change: '£26.4k base value' },
+      { label: 'DSO', value: '31 days', change: '-4 days' },
+    ],
+    workQueue: [
+      { task: 'Match mobile payments', detail: '18 transactions need invoice matching', status: 'Action' },
+      { task: 'Contact overdue accounts', detail: '7 customers passed agreed payment terms', status: 'Risk' },
+      { task: 'Review cash forecast', detail: 'Expected 14-day position improved by 9%', status: 'Insight' },
+    ],
+    workflow: ['Delivery confirmed', 'Invoice issued', 'Payment received', 'Transaction matched', 'Ledger updated'],
+    automation: 'Payment matching links bank and mobile money references to open invoices and flags exceptions.',
+    insight: 'Three customers account for 62% of overdue value; prioritised follow-up could release £11,800.',
+  },
+  {
+    slug: 'talent',
+    name: 'Talent Workspace',
+    suite: 'Core Workforce',
+    audience: 'For people teams, recruiters, workforce planners, and managers',
+    summary: 'Manage candidates, employees, onboarding, scheduling, payroll inputs, and performance.',
+    outcome: 'Move people from application to productive work with fewer handoffs and clearer workforce decisions.',
+    modules: ['ATS', 'CRM', 'Onboarding', 'Candidates', 'Jobs', 'Pipelines', 'Interviews', 'Offers', 'Candidate pipeline', 'CV parser'],
+    metrics: [
+      { label: 'Active workforce', value: '412', change: '+18 this month' },
+      { label: 'Open roles', value: '24', change: '9 priority' },
+      { label: 'Payroll ready', value: '96%', change: '16 exceptions' },
+    ],
+    workQueue: [
+      { task: 'Complete onboarding', detail: '11 new starters have outstanding documents', status: 'Action' },
+      { task: 'Fill schedule gaps', detail: 'Three locations are below required weekend cover', status: 'Risk' },
+      { task: 'Progress candidates', detail: '8 screened candidates match priority roles', status: 'Insight' },
+    ],
+    workflow: ['Candidate selected', 'Documents verified', 'Worker onboarded', 'Shift completed', 'Payroll approved'],
+    automation: 'Readiness checks identify missing documents, schedule gaps, and payroll exceptions before deadlines.',
+    insight: 'Promoting qualified internal candidates could fill four priority roles 19 days faster than external hiring.',
+  },
+  {
+    slug: 'health',
+    name: 'Health Workspace',
+    suite: 'Core Operations',
+    audience: 'For clinics, care providers, pharmacies, and health operations teams',
+    summary: 'Coordinate patients, appointments, treatment operations, stock, billing, and compliance.',
+    outcome: 'Give care and operations teams a shared view of demand, capacity, patient flow, and critical supplies.',
+    modules: ['Patients', 'Appointments', 'Records', 'Compliance', 'Billing', 'Referrals', 'Staffing', 'Supplies', 'Telehealth', 'Appointment manager'],
+    metrics: [
+      { label: 'Appointments today', value: '164', change: '91% confirmed' },
+      { label: 'Average wait', value: '18 min', change: '-6 min' },
+      { label: 'Stock alerts', value: '7', change: '2 critical' },
+    ],
+    workQueue: [
+      { task: 'Confirm appointments', detail: '14 patients have not confirmed today’s visit', status: 'Action' },
+      { task: 'Replenish critical stock', detail: 'Two treatment items are below minimum level', status: 'Risk' },
+      { task: 'Balance capacity', detail: 'Afternoon demand can move to an open care team', status: 'Insight' },
+    ],
+    workflow: ['Appointment booked', 'Patient checked in', 'Care delivered', 'Stock recorded', 'Payment reconciled'],
+    automation: 'Capacity and stock rules flag pressure early and prepare follow-up actions for the operations team.',
+    insight: 'Moving six flexible appointments to the afternoon would cut the morning wait forecast by 11 minutes.',
+  },
+]
+
+const workspaceCards = workspaceProducts.map(({ slug, name, summary }) => ({
+  name,
+  href: `/workspaces/${slug}`,
+  summary,
+}))
+
+const operatingLayers = [
+  { label: 'Event Feed', value: 'Live', detail: 'Shared event backbone across all suites and workflows.' },
+  { label: 'Insights Panel', value: 'Live', detail: 'Predictions, risks, anomalies, and workflow suggestions.' },
+  { label: 'Fulfilment-to-Cash', value: 'Live', detail: 'Order → shipment → delivery → invoice → payment tracking.' },
+  { label: 'Buyer subset flags', value: 'Configured', detail: 'Role-based access and market-specific feature toggles.' },
 ] as const
 
-const founderPackages = [
-  { slug: 'quantumos', name: 'QuantumOS', price: '£149/mo', description: 'The full FoundingOS command layer for leaders who want every brand, workflow, and AI decision in one view.', features: ['Portfolio command center', 'Globalisation controls', 'FoundAI orchestration', 'Cross-brand reporting'] },
-  { slug: 'intelligenceos', name: 'IntelligenceOS', price: '£99/mo', description: 'Sharper analytics and automated context for teams that need more signal and less manual review.', features: ['Live analytics', 'Decision snapshots', 'Context-aware alerts', 'Shared task queues'] },
-  { slug: 'systemos', name: 'SystemOS', price: '£59/mo', description: 'A practical control stack for setup, structure, and team access across the core platform.', features: ['Workspace setup', 'Access governance', 'Brand scaffolding', 'Workflow templates'] },
+const packagePlans = [
+  {
+    name: 'Lite',
+    priceGbp: commercialPlans.lite.monthlyPriceGbp,
+    summary: 'Free basic access for one user, designed for low-data environments and offline-tolerant capture.',
+    features: commercialPlans.lite.includedFeatures,
+  },
+  {
+    name: 'Starter',
+    priceGbp: commercialPlans.starter.monthlyPriceGbp,
+    summary: 'Core Operations for a small team, with automatic sync and every supported language included.',
+    features: commercialPlans.starter.includedFeatures,
+  },
+  {
+    name: 'Growth',
+    priceGbp: commercialPlans.growth.monthlyPriceGbp,
+    summary: 'All three cores, team automation, operational intelligence, and advanced reporting.',
+    features: commercialPlans.growth.includedFeatures,
+  },
+  {
+    name: 'Enterprise',
+    priceGbp: commercialPlans.enterprise.monthlyPriceGbp,
+    summary: 'Custom governance, SSO, integrations, usage, support, and rollout requirements.',
+    features: commercialPlans.enterprise.includedFeatures,
+  },
 ] as const
 
-const founderPackageUrl = (slug: string) => `${brands.foundingos.consoleUrl.replace(/\/+$/, '')}/console/packages/${slug}`
-const foundingOsConsoleUrl = brands.foundingos.consoleUrl.replace(/\/+$/, '')
-const founderDemoUrl = (route: string) => `${foundingOsConsoleUrl}${route}`
-
-const brandConsideration: Record<BrandSlug, { painPoints: string[]; outcomes: string[]; reasons: string[] }> = {
-  foundingos: { painPoints: [], outcomes: [], reasons: [] },
-  retail: {
-    painPoints: ['Stock levels are always a guess', 'Customer messages get lost across channels', 'Order and supplier data live in different systems'],
-    outcomes: ['Real-time stock visibility', 'One inbox for every channel', 'Orders, stock, and suppliers in one view'],
-    reasons: ['Retail moves too fast for spreadsheets', 'Customers expect instant replies everywhere', 'Store teams need one place to work from'],
-  },
-  meat: {
-    painPoints: ['Cold chain compliance is hard to prove', 'Supplier lead times are unpredictable', 'Spoilage risk is spotted too late'],
-    outcomes: ['Live cold chain compliance tracking', 'Supplier performance visibility', 'Early spoilage risk alerts'],
-    reasons: ['Trade margins are thin and unforgiving', 'Compliance failures are costly', 'Supply timing changes daily'],
-  },
-  foundthat: {
-    painPoints: ['Discovery signals are scattered', 'Lead capture is inconsistent', 'Data quality erodes trust in reports'],
-    outcomes: ['Unified market intelligence', 'Consistent lead capture', 'Clean, trusted reporting data'],
-    reasons: ['Local discovery needs constant signal', 'Leads are lost without fast follow-up', 'Bad data leads to bad decisions'],
-  },
-  talent: {
-    painPoints: ['Hiring pipelines stall without visibility', 'Recruiter and candidate data live apart', 'Workforce demand is hard to forecast'],
-    outcomes: ['Full pipeline visibility', 'Recruiters and candidates in one system', 'Workforce demand forecasting'],
-    reasons: ['Time-to-hire directly costs revenue', 'Candidates expect a smooth process', 'Workforce planning needs real data'],
-  },
-  crypto: {
-    painPoints: ['Market signals move faster than manual review', 'Wallets and exchanges are hard to track together', 'Risk exposure is discovered too late'],
-    outcomes: ['Live market signal monitoring', 'Unified wallet and exchange view', 'Early risk exposure alerts'],
-    reasons: ['Volatility punishes slow reactions', 'Portfolios span multiple platforms', 'Risk control needs to be continuous'],
-  },
-  finance: {
-    painPoints: ['Cashflow visibility lags reality', 'Invoicing and reconciliation take too long', 'Financial risk is spotted after the fact'],
-    outcomes: ['Real-time cashflow visibility', 'Faster invoicing and reconciliation', 'Earlier financial risk detection'],
-    reasons: ['Cash position drives every decision', 'Manual reconciliation doesn\u2019t scale', 'Risk needs to be caught early, not late'],
-  },
-  health: {
-    painPoints: ['Scheduling gaps hurt patient access', 'Records are hard to keep accurate and current', 'Compliance reporting takes too much manual effort'],
-    outcomes: ['Smarter appointment scheduling', 'Accurate, current patient records', 'Streamlined compliance reporting'],
-    reasons: ['Patient access depends on smooth scheduling', 'Records must be accurate and available', 'Compliance is non-negotiable'],
-  },
-  logistics: {
-    painPoints: ['Fleet visibility is incomplete', 'Route delays are caught too late', 'Warehousing and deliveries are hard to coordinate'],
-    outcomes: ['Full fleet visibility', 'Earlier route delay detection', 'Coordinated warehousing and delivery'],
-    reasons: ['Delivery delays cost customer trust', 'Fleet utilisation drives margin', 'Warehousing and routes must stay in sync'],
-  },
-}
-
-function consoleTitle(brand: BrandDefinition) {
-  switch (brand.slug) {
-    case 'retail':
-      return 'Retail Manager Console'
-    case 'meat':
-      return 'Meat Operations Console'
-    case 'talent':
-      return 'Talent Command Console'
-    case 'crypto':
-      return 'Crypto Command Console'
-    default:
-      return `${brand.name} Console`
-  }
-}
-
-function brandBadge(brand: BrandDefinition) {
-  switch (brand.slug) {
-    case 'retail':
-      return '◉'
-    case 'meat':
-      return '◆'
-    case 'talent':
-      return '⬢'
-    case 'crypto':
-      return '∞'
-    default:
-      return '⌂'
-  }
-}
-
-function DemoPreviewCard({ demo }: { demo: QuantumDemoBrandCard }) {
-  const sourceBrand = brands[demo.sourceBrandSlug]
-  const uplift = getQuantumBrandUplift(demo.sourceBrandSlug)
-  const fallbackImage = uplift.demo.images[0] ?? demo.previewImage
+function SiteNav() {
   return (
-    <article className="card-premium founder-demo-card">
-      <div className="founder-demo-preview">
-        <img src={founderDemoUrl(fallbackImage)} alt={`${demo.title} preview`} />
-      </div>
-      <div className="founder-demo-copy">
-        <p className="eyebrow">{sourceBrand.name}</p>
-        <h2>{demo.title}</h2>
-        <p>{demo.description}</p>
-      </div>
-      <a className="btn btn-primary btn-premium founder-demo-cta" href={founderDemoUrl(demo.route)}>
-        Open demo
-      </a>
-    </article>
-  )
-}
-
-function consoleStyle(brand: BrandDefinition): React.CSSProperties {
-  return {
-    '--accent': brand.accent,
-  } as React.CSSProperties
-}
-
-function kpiWidgets(brand: BrandDefinition) {
-  const widgets: Record<string, Array<{ label: string; value: string; trend: string; icon: string; tone: 'good' | 'watch' | 'risk' }>> = {
-    retail: [
-      { label: 'Sales', value: '£18.6k', trend: 'Today', icon: '£', tone: 'good' },
-      { label: 'Orders', value: '142', trend: 'Open', icon: '▦', tone: 'watch' },
-      { label: 'Stock Levels', value: '87%', trend: 'Healthy', icon: '◍', tone: 'good' },
-    ],
-    meat: [
-      { label: 'Batch Quality', value: '97%', trend: 'Audit ready', icon: '✓', tone: 'good' },
-      { label: 'Logistics Status', value: '9 live', trend: 'In transit', icon: '▦', tone: 'watch' },
-      { label: 'Compliance %', value: '96%', trend: 'Within limits', icon: '◌', tone: 'good' },
-    ],
-    it: [
-      { label: 'System Health', value: '99.98%', trend: '30 days', icon: '✓', tone: 'good' },
-      { label: 'Alerts', value: '6', trend: '2 critical', icon: '!', tone: 'risk' },
-      { label: 'Data Throughput', value: '1.8M', trend: 'events/day', icon: '▦', tone: 'good' },
-    ],
-    talent: [
-      { label: 'Applicants', value: '1,284', trend: 'Active', icon: '◍', tone: 'good' },
-      { label: 'Jobs Active', value: '38', trend: 'Hiring', icon: '▦', tone: 'watch' },
-      { label: 'Recruiter Pipeline', value: '72%', trend: 'Moving', icon: '◌', tone: 'good' },
-    ],
-    crypto: [
-      { label: 'Wallet Balance', value: '£284k', trend: '+4.8%', icon: '£', tone: 'good' },
-      { label: 'Trigger Activity', value: '26', trend: 'Open', icon: '▦', tone: 'watch' },
-      { label: 'Automation Status', value: '92%', trend: 'Live', icon: '◍', tone: 'good' },
-    ],
-    foundingos: [
-      { label: 'Platforms Live', value: '5', trend: 'Connected', icon: '◍', tone: 'good' },
-      { label: 'Modules Active', value: '48', trend: 'Across brands', icon: '▦', tone: 'watch' },
-      { label: 'Open Actions', value: '24', trend: 'Needs review', icon: '!', tone: 'risk' },
-    ],
-  }
-  return widgets[brand.slug] ?? widgets.foundingos
-}
-
-function OdometerKPI({ metric, index }: { metric: { label: string; value: string; trend: string; icon: string; tone: 'good' | 'watch' | 'risk' }; index: number }) {
-  const fill = [86, 72, 61][index % 3]
-  return (
-    <article className={`dashboard-card ${metric.tone}`}>
-      <span>{metric.icon} {metric.label}</span>
-      <strong className="odometer">{metric.value}</strong>
-      <div className="odometer-track" aria-hidden="true">
-        <span className="odometer-fill" style={{ '--odometer-fill': `${fill}%` } as React.CSSProperties} />
-      </div>
-      <small>{metric.trend}</small>
-    </article>
-  )
-}
-
-export function Button({ href, children, variant = 'primary' }: { href?: string; children: ComponentChildren; variant?: 'primary' | 'secondary' }) {
-  const className = variant === 'primary' ? 'btn btn-primary' : 'btn btn-secondary'
-  if (!href) return <button className={className}>{children}</button>
-  return isInternalHref(href) ? <Link className={className} href={href}>{children}</Link> : <a className={className} href={href}>{children}</a>
-}
-
-export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={`input ${props.className || ''}`} />
-}
-
-export function Modal({ title, children }: { title: string; children: ComponentChildren }) {
-  return <div className="modal"><section><h2>{title}</h2>{children}</section></div>
-}
-
-export function Topbar({ brand }: { brand: BrandDefinition }) {
-  return (
-    <header className="topbar glow-premium" style={consoleStyle(brand)}>
-      <div className="topbar-title">
-        <QuantumSphereLogo size={28} />
-        <div>
-          <strong>{consoleTitle(brand)}</strong>
-          <span>{brand.name} command center</span>
-        </div>
-      </div>
-      <div className="topbar-actions">
-        <ThemeToggle />
-        <LiteModeToggle />
-      </div>
-    </header>
-  )
-}
-
-export function Sidebar({ brand }: { brand: BrandDefinition }) {
-  const moduleCards = brand.modules.map((module, index) => ({
-    label: module,
-    href: `/modules/${module.toLowerCase().replaceAll(' ', '-')}`,
-    icon: ['▣', '◍', '◌', '◆'][index % 4],
-    summary: `${module} live workspace`,
-  }))
-
-  const cards = [
-    { label: 'Dashboard', href: '/dashboard', icon: '▦', summary: 'Live operating overview' },
-    { label: 'CRM', href: '/crm', icon: '◎', summary: 'Pipeline and records' },
-    ...moduleCards,
-    { label: 'Settings', href: '/settings', icon: '⚙', summary: 'Brand controls' },
-  ]
-
-  return (
-    <aside className="sidebar glow-premium" style={consoleStyle(brand)}>
-      <Link className="sidebar-brand" href="/console">
-        <QuantumSphereLogo size={38} />
-        <div>
-          <strong>{consoleTitle(brand)}</strong>
-          <span>{brand.summary}</span>
-        </div>
-      </Link>
-      <div className="nav-card-grid">
-        {cards.map((card) => (
-          <a key={card.href} className="nav-card" href={card.href}>
-            <span className="nav-card-icon">{card.icon}</span>
-            <div>
-              <strong>{card.label}</strong>
-              <p>{card.summary}</p>
-            </div>
-          </a>
-        ))}
-      </div>
-    </aside>
-  )
-}
-
-export function ConsoleShell({ brand, children }: { brand: BrandDefinition; children: ComponentChildren }) {
-  return <div className="console-shell"><Sidebar brand={brand} /><main><Topbar brand={brand} /><div className="workspace">{children}</div></main></div>
-}
-
-const brandGradient = (brand: BrandDefinition) => {
-  switch (brand.slug) {
-    case 'crypto':
-      return 'linear-gradient(135deg, color-mix(in srgb, #8E24AA 64%, var(--surface-strong)), color-mix(in srgb, #512DA8 32%, var(--surface)))'
-    case 'meat':
-      return 'linear-gradient(135deg, color-mix(in srgb, #C62828 64%, var(--surface-strong)), color-mix(in srgb, #7F1D1D 32%, var(--surface)))'
-    case 'talent':
-      return `linear-gradient(135deg, color-mix(in srgb, ${LOCKED_BRAND_COLORS.talent} 64%, var(--surface-strong)), color-mix(in srgb, ${LOCKED_BRAND_COLORS.talent} 32%, var(--surface)))`
-    default:
-      return `linear-gradient(135deg, color-mix(in srgb, ${brand.accent} 62%, var(--surface-strong)), color-mix(in srgb, ${brand.accent} 18%, var(--surface)))`
-  }
-}
-
-export function BrandMarketingPage({ brand, page = 'home' }: { brand: BrandDefinition; page?: string }) {
-  const headline = page === 'home' ? `${brand.name} for modern operators` : `${brand.name} ${page}`
-  const dashboardLink = consoleDashboardUrl(brand)
-  const packagePlans = founderPackages
-  const accentStyle = { '--accent': brand.accent, '--accent-secondary': brand.slug === 'crypto' ? '#512DA8' : brand.accent } as React.CSSProperties
-
-  return (
-    <main className="site-shell" style={accentStyle}>
-      <nav>
-        <Link href="/">{brand.name}</Link>
-        <div className="site-nav-links">
-          <Link href="/about">About</Link>
-          <Link href="/pricing">Pricing</Link>
-          <Link href="/contact">Contact</Link>
-          {isInternalHref(dashboardLink) ? <Link href={dashboardLink}>Dashboard</Link> : <a href={dashboardLink}>Dashboard</a>}
-          <ThemeToggle />
-          <LiteModeToggle />
-        </div>
-      </nav>
-
-      <section className="hero">
-        <div className="hero-copy">
-          <p className="eyebrow">{brand.legalName}</p>
-          <h1>{headline}</h1>
-          <p>{brand.summary}</p>
-          <div className="hero-actions">
-          <Link href={founderPackageUrl(packagePlans[0]?.slug ?? 'quantumos')} className="btn btn-primary">Choose your package</Link>
-            {isInternalHref(dashboardLink) ? <Link href={dashboardLink} className="btn btn-secondary">Chat with FoundAI</Link> : <a href={dashboardLink} className="btn btn-secondary">Chat with FoundAI</a>}
-          </div>
-        </div>
-
-        <div className="hero-visual" aria-label={`${brand.name} overview`}>
-          <div className="hero-panel card-premium glow-premium" style={{ background: brandGradient(brand) }}>
-            <span>Brand operating layer</span>
-            <strong>{brand.name}</strong>
-            <ul>
-              {brand.modules.map((module) => <li key={module}>{module}</li>)}
-            </ul>
-          </div>
-        </div>
-      </section>
-      <QuantumBrandUpliftPanel brand={brand} />
-
-      <section id="pricing" className="module-grid">
-        {packagePlans.map((plan) => (
-          <article key={plan.slug} className="card-premium">
-            <p className="eyebrow">{plan.price}</p>
-            <h2>{plan.name}</h2>
-            <p>{plan.description}</p>
-            <ul>
-              {plan.features.map((feature) => <li key={feature}>{feature}</li>)}
-            </ul>
-            <Link className="btn btn-primary btn-premium" href={founderPackageUrl(plan.slug)}>Open {plan.name}</Link>
-          </article>
-        ))}
-      </section>
-      <section id="signup" className="module-grid">
-        <article className="card-premium">
-          <h2 className="header-premium">Sign up your team</h2>
-          <p>Choose the account method that fits the business best, then continue into the console onboarding flow.</p>
-          <div className="signup-grid">
-            {signupOptions.map((option) => <a key={option.label} href={option.href} className="signup-chip">{option.label}</a>)}
-          </div>
-        </article>
-      </section>
-      <section id="contact" className="module-grid">
-        <article className="card-premium">
-          <h2 className="header-premium">Connect with {brand.name}</h2>
-          <p>Use the same social and messaging channels as the rest of the FoundingOS ecosystem.</p>
-          <PremiumSocialLinks accent={brand.accent} mode="inline" label="Social & messaging" />
-        </article>
-      </section>
-      <footer className="site-footer">
-        <PremiumSocialLinks accent={brand.accent} mode="full" label="Social & messaging" />
-      </footer>
-      <FoundAI brand={brand} />
-    </main>
-  )
-}
-
-export function MarketingPage({ brand, page = 'home' }: { brand: BrandDefinition; page?: string }) {
-  return <BrandMarketingPage brand={brand} page={page} />
-}
-
-export function FounderLauncher({ page = 'home' }: { page?: 'home' | 'about' | 'pricing' | 'contact' | 'demos' } = {}) {
-  const foundAiActions = ['Open Retail dashboard', 'Check Meat compliance', 'Review FoundThat market intel', 'Find Talent candidates', 'Show Crypto wallet balance']
-  const packagePlans = founderPackages
-
-  const nav = (
-    <nav className="quantum-header quantum-ambient-grid">
+    <nav>
       <Link href="/">FoundingOS</Link>
-      <div className="quantum-header-links">
-        <Link href="/home">Home</Link>
-        <Link href="/demos">Explore FoundingOS</Link>
-        <a href="#pricing">Intelligence</a>
-        <a href="#found-ai">Insights</a>
-        {/* Real one-click path into the console's full Demo & Survey Switcher hub (every
-            real module demo + every survey, exactly like admin/testers already see once
-            inside) — an already-authenticated session (admin or tester; the session cookie
-            is shared across .foundingos.com) goes straight there; a signed-out visitor is
-            safely bounced to the real sign-in page by the console's own middleware, so this
-            link is never a broken/unsafe shortcut either way. */}
-        <a href={`${brands.foundingos.consoleUrl}/tester/dashboard`}>Console</a>
-        <a href="#contact">Support</a>
-      </div>
       <div className="site-nav-links">
+        <Link href="/suites">Suites</Link>
+        <Link href="/#how-it-works">How it works</Link>
+        <Link href="/workspaces">Workspaces</Link>
+        <Link href="/workspaces/marketing">Marketing</Link>
+        <Link href="/intelligence">Intelligence</Link>
+        <Link href="/pricing">Pricing</Link>
+        <Link href="/about">About</Link>
+        <Link href="/contact">Contact</Link>
+        <GlobalisationControls />
         <ThemeToggle />
-        <LiteModeToggle />
       </div>
     </nav>
   )
+}
 
-  if (page === 'about') {
-    return (
-      <main className="site-shell founder-shell" style={{ '--accent': LOCKED_BRAND_COLORS.foundingos } as React.CSSProperties}>
-        {nav}
-        <section className="hero quantum-ambient-grid" id="top">
-          <div className="hero-copy">
-            <p className="eyebrow">FoundingOS</p>
-            <h1>The Operating System for message-based businesses</h1>
-            <p className="quantum-positioning-statement">One founder-built platform, every brand connected — built so growing teams stop drowning in disconnected tools.</p>
-            <p>FoundingOS unifies commerce, finance, talent, logistics, health, and crypto operations behind a single command layer — with FoundAI guiding every user through it.</p>
-          </div>
-        </section>
-        <section id="our-story" className="module-grid">
-          <article className="card-premium" style={{ gridColumn: '1 / -1' }}>
-            <h2 className="header-premium">Our story</h2>
-            <p>FoundingOS started with a simple observation: growing businesses hit the same wall — too many disconnected tools, no single source of truth, and no time left to actually run the business. We built one platform that connects every brand, every console, and every workflow, so operators can finally see and run their whole business from one place.</p>
-          </article>
-          <article className="card-premium quantum-card">
-            <span className="quantum-corner-marker">⌂</span>
-            <h3>Our mission</h3>
-            <p>Give every operator — from retail staff to meat suppliers, recruiters, IT teams, crypto traders, and founders — one connected system and one guide who knows exactly what they need.</p>
-          </article>
-          <article className="card-premium quantum-card">
-            <span className="quantum-corner-marker">⌂</span>
-            <h3>How we work</h3>
-            <p>Every brand console shares the same Quantum shell, the same AI layer, and the same real-time signals — so switching between Retail, Meat, Talent, Finance, Crypto, and more feels like one system, not ten.</p>
-          </article>
-          <article className="card-premium quantum-card">
-            <span className="quantum-corner-marker">⌂</span>
-            <h3>Built for WhatsApp-first businesses</h3>
-            <p>We designed FoundingOS around how message-based businesses actually operate — offline-friendly, mobile-first, and ready for teams anywhere in the world.</p>
-          </article>
-        </section>
-        <section id="found-ai" className="founder-found-ai-intro">
-          <div className="founder-found-ai-avatar">F</div>
-          <div className="founder-found-ai-copy">
-            <p className="eyebrow">FoundAI</p>
-            <h2>Meet FoundAI.</h2>
-            <p>FoundAI — The Best Onboarding Bot in the World. It handles onboarding, setup, training, workflows, tasks, and questions instantly, for every brand in the ecosystem.</p>
-          </div>
-        </section>
-        <section className="module-grid">
-          {brandList.filter((brand) => brand.slug !== 'foundingos').map((brand) => (
-            <article key={brand.slug} className="card-premium brand-directory-card">
-              <QuantumSphereLogo size={40} />
-              <h2>{brand.name}</h2>
-              <p>{brand.summary}</p>
-            </article>
-          ))}
-        </section>
-        <footer className="site-footer">
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center', marginBottom: 16, fontSize: 13 }}>
-            <Link href="/legal">Legal &amp; Privacy</Link>
-            <Link href="/contact">Contact &amp; Support</Link>
-          </div>
-          <PremiumSocialLinks accent={LOCKED_BRAND_COLORS.foundingos} mode="full" label="Social & messaging" />
-        </footer>
-        <FoundAI brand={brands.foundingos} />
-      </main>
-    )
-  }
-
-  if (page === 'demos') {
-    return (
-      <main className="site-shell founder-shell" style={{ '--accent': LOCKED_BRAND_COLORS.foundingos } as React.CSSProperties}>
-        {nav}
-        <section className="hero quantum-ambient-grid" id="top">
-          <div className="hero-copy">
-            <p className="eyebrow">FoundingOS</p>
-            <h1>Explore FoundingOS</h1>
-            <p>Preview every brand demo and step-by-step walkthrough before entering the guided Quantum experience.</p>
-          </div>
-        </section>
-        <section id="brand-demos" className="module-grid founder-demo-menu">
-          <article className="card-premium founder-demo-intro">
-            <h2 className="header-premium">FoundingOS brand demos</h2>
-            <p>Preview every brand demo before entering the guided Quantum walkthrough.</p>
-          </article>
-          {DEMO_BRAND_CARDS.map((demo) => <DemoPreviewCard key={demo.id} demo={demo} />)}
-          <article className="card-premium founder-demo-intro">
-            <h2 className="header-premium">Surveys</h2>
-            <p>Share feedback on any module once you're signed in as a tester — every demo above has its own quick survey waiting inside the console.</p>
-            <a className="btn btn-primary btn-premium" href={`${brands.foundingos.consoleUrl}/tester/dashboard`}>Open tester console</a>
-          </article>
-        </section>
-        <section id="connect-whatsapp" className="module-grid">
-          <article className="card-premium" style={{ gridColumn: '1 / -1' }}>
-            <h2 className="header-premium">What we need to run your WhatsApp</h2>
-            <p>FoundAI runs on your own WhatsApp Business number — nothing is shared or shared between businesses. Here's exactly what we ask for to connect it, and why.</p>
-          </article>
-          <article className="card-premium quantum-card">
-            <span className="quantum-corner-marker">1</span>
-            <h3>Your WhatsApp Business number</h3>
-            <p>A phone number dedicated to your business (it can be a new number or one you already use on WhatsApp Business). This is the number your customers message and FoundAI replies from.</p>
-          </article>
-          <article className="card-premium quantum-card">
-            <span className="quantum-corner-marker">2</span>
-            <h3>Meta Business verification</h3>
-            <p>A verified Meta Business Account (via Meta Business Manager) proving you're a real, legitimate business — this is Meta's own requirement for any business sending WhatsApp messages at scale, not something FoundingOS adds.</p>
-          </article>
-          <article className="card-premium quantum-card">
-            <span className="quantum-corner-marker">3</span>
-            <h3>Connect it in FoundingOS</h3>
-            <p>Paste in your WhatsApp Business Account ID and access token from Meta (we walk you through exactly where to find these), and FoundingOS securely links your number to your console — no code required.</p>
-          </article>
-          <article className="card-premium quantum-card">
-            <span className="quantum-corner-marker">4</span>
-            <h3>Approve your message templates</h3>
-            <p>WhatsApp requires pre-approved templates for the first message in a conversation (e.g. order confirmations, payment reminders). We provide ready-made templates for every brand — you just review and submit them for Meta's approval, which usually takes minutes to hours.</p>
-          </article>
-          <article className="card-premium quantum-card">
-            <span className="quantum-corner-marker">5</span>
-            <h3>Go live</h3>
-            <p>Once connected, FoundAI reads incoming WhatsApp messages, understands what's being asked (an order, a payment, a stock check), and responds or takes action automatically — with a human always able to step in.</p>
-          </article>
-        </section>
-        <WebTutorialSystem />
-        <footer className="site-footer">
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center', marginBottom: 16, fontSize: 13 }}>
-            <Link href="/legal">Legal &amp; Privacy</Link>
-            <Link href="/contact">Contact &amp; Support</Link>
-          </div>
-          <PremiumSocialLinks accent={LOCKED_BRAND_COLORS.foundingos} mode="full" label="Social & messaging" />
-        </footer>
-        <FoundAI brand={brands.foundingos} />
-      </main>
-    )
-  }
-
+function PageIntro({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
   return (
-    <main className="site-shell founder-shell" style={{ '--accent': LOCKED_BRAND_COLORS.foundingos } as React.CSSProperties}>
-      {nav}
-      <section className="hero quantum-ambient-grid" id="top">
-        <div className="quantum-particle-drift"><span className="quantum-particle" /><span className="quantum-particle" /><span className="quantum-particle" /></div>
-        <div className="hero-copy">
-          <p className="eyebrow">FoundingOS</p>
-          <h1>One ecosystem. Every brand connected.</h1>
-          <p className="quantum-positioning-statement">FoundingOS — The Operating System for WhatsApp, Telegram, and global message-based businesses.</p>
-          <p>Launch brand websites, govern subscriptions, and manage the shared SaaS platform from a single command layer.</p>
-          <p className="quantum-hero-promise">Powered by Quantum intelligence — real-time signals, always on.</p>
+    <section className="hero single-column">
+      <div className="hero-copy">
+        <p className="eyebrow">{eyebrow}</p>
+        <h1>{title}</h1>
+        <p>{copy}</p>
+      </div>
+    </section>
+  )
+}
+
+function WorkspacePreview({ product }: { product: WorkspaceProduct }) {
+  return (
+    <>
+      <section className="console-product-intro">
+        <Link className="text-link" href="/workspaces">← All workspaces</Link>
+        <p className="eyebrow">{product.suite} · Interactive product preview</p>
+        <h1>{product.name}</h1>
+        <p className="console-audience">{product.audience}</p>
+        <p>{product.summary} {product.outcome}</p>
+        <div className="hero-actions">
+          <a className="btn btn-primary" href="#product-preview">Explore the workspace</a>
+          <Link className="btn btn-secondary" href="/contact">Request a guided demo</Link>
         </div>
-        <div className="hero-visual" aria-label="FoundingOS overview">
-          <div className="hero-panel card-premium glow-premium quantum-card" style={{ background: brandGradient(brands.foundingos) }}>
-            <span className="quantum-corner-marker">⌂</span>
-            <span>Platform hub</span>
-            <strong>FoundingOS</strong>
-            <ul>{brandList.filter((brand) => brand.slug !== 'foundingos').map((brand) => <li key={brand.slug}>{brand.name}</li>)}</ul>
+      </section>
+
+      <section id="product-preview" className="product-preview" aria-label={`${product.name} sample workspace`}>
+        <aside className="preview-sidebar">
+          <div className="preview-brand"><span>F</span><strong>FoundingOS</strong></div>
+          <p>{product.name}</p>
+          <ul>{product.modules.map((module, index) => <li className={index === 0 ? 'active' : ''} key={module}>{module}</li>)}</ul>
+        </aside>
+        <div className="preview-workspace">
+          <header>
+            <div><p className="eyebrow">Live workspace</p><h2>Good morning, Operations</h2></div>
+            <span className="demo-badge">Sample data</span>
+          </header>
+          <div className="preview-metrics">
+            {product.metrics.map((metric) => (
+              <article key={metric.label}><p>{metric.label}</p><strong>{metric.amountGbp === undefined ? metric.value : <LocalizedGbp amount={metric.amountGbp} />}</strong><span>{metric.change}</span></article>
+            ))}
           </div>
-        </div>
-      </section>
-      <section id="why-foundingos" className="module-grid">
-        <article className="card-premium" style={{ gridColumn: '1 / -1' }}>
-          <h2 className="header-premium">Why FoundingOS Exists</h2>
-          <p>Growing businesses hit the same wall — too many disconnected tools, no single source of truth, and no time left to actually run the business.</p>
-        </article>
-        <article className="card-premium quantum-card">
-          <span className="quantum-corner-marker">⌂</span>
-          <h3>The chaos problem</h3>
-          <p>Too many tools, too many dashboards — teams lose hours just switching between systems that don't talk to each other.</p>
-        </article>
-        <article className="card-premium quantum-card">
-          <span className="quantum-corner-marker">⌂</span>
-          <h3>The fragmentation problem</h3>
-          <p>Data silos and no single source of truth mean every team sees a different version of the same business.</p>
-        </article>
-        <article className="card-premium quantum-card">
-          <span className="quantum-corner-marker">⌂</span>
-          <h3>The intelligence gap</h3>
-          <p>Without unified insights, decisions get made on gut feel instead of what's actually happening across the brand.</p>
-        </article>
-        <article className="card-premium quantum-card">
-          <span className="quantum-corner-marker">⌂</span>
-          <h3>The automation gap</h3>
-          <p>Too much manual work still happens by hand, slowing teams down and leaving room for costly mistakes.</p>
-        </article>
-        <article className="card-premium quantum-card">
-          <span className="quantum-corner-marker">⌂</span>
-          <h3>The control problem</h3>
-          <p>Businesses feel overwhelmed, reacting to problems instead of steering the brand with confidence.</p>
-        </article>
-      </section>
-      <section id="pricing" className="module-grid">
-        {packagePlans.map((plan) => (
-          <article key={plan.slug} className="card-premium">
-            <p className="eyebrow">{plan.price}</p>
-            <h2>{plan.name}</h2>
-            <p>{plan.description}</p>
-            <ul>
-              {plan.features.map((feature) => <li key={feature}>{feature}</li>)}
-            </ul>
-            <Link className="btn btn-primary btn-premium" href={founderPackageUrl(plan.slug)}>Open {plan.name}</Link>
-          </article>
-        ))}
-      </section>
-      <section id="signup" className="module-grid">
-        <article className="card-premium">
-          <h2 className="header-premium">Sign up your team</h2>
-          <p>Pick the account method that suits the rollout and continue into FoundingOS onboarding.</p>
-          <div className="signup-grid">
-            {signupOptions.map((option) => <a key={option.label} href={option.href} className="signup-chip">{option.label}</a>)}
-          </div>
-        </article>
-      </section>
-      <WebBrandWheel />
-      <section id="found-ai" className="founder-found-ai-intro">
-        <div className="founder-found-ai-avatar">F</div>
-        <div className="founder-found-ai-copy">
-          <p className="eyebrow">FoundAI</p>
-          <h2>Meet FoundAI.</h2>
-          <p>FoundAI — The Best Onboarding Bot in the World. One universal guide for every user, handling onboarding, setup, and questions instantly across the entire FoundingOS ecosystem.</p>
-          <div className="hero-actions">
-            <Link className="btn btn-secondary btn-premium" href="/about">Our story</Link>
-            {isInternalHref(`${consoleDashboardUrl(brands.foundingos)}/console`)
-              ? <Link className="btn btn-primary btn-premium" href={`${consoleDashboardUrl(brands.foundingos)}/console`}>Meet FoundAI</Link>
-              : <a className="btn btn-primary btn-premium" href={`${consoleDashboardUrl(brands.foundingos)}/console`}>Meet FoundAI</a>}
-          </div>
-        </div>
-        <div className="founder-found-ai-actions">
-          {foundAiActions.map((action) => <button key={action} type="button" className="found-ai-chip">{action}</button>)}
-        </div>
-      </section>
-      <section className="module-grid">
-        {brandList.filter((brand) => brand.slug !== 'foundingos').map((brand) => (
-          <article key={brand.slug} className="card-premium brand-directory-card">
-            <QuantumSphereLogo size={48} />
-            <h2>{brand.name}</h2>
-            <p>{brand.summary}</p>
-            <details className="brand-read-more">
-              <summary>Read more</summary>
-              <div className="consideration-grid">
-                <div>
-                  <p className="quantum-nav-desc"><strong>Pain points</strong></p>
-                  <ul>{brandConsideration[brand.slug].painPoints.map((point) => <li key={point}>{point}</li>)}</ul>
-                </div>
-                <div>
-                  <p className="quantum-nav-desc"><strong>Outcomes</strong></p>
-                  <ul>{brandConsideration[brand.slug].outcomes.map((point) => <li key={point}>{point}</li>)}</ul>
-                </div>
-                <div>
-                  <p className="quantum-nav-desc"><strong>Why this console exists</strong></p>
-                  <ul>{brandConsideration[brand.slug].reasons.map((point) => <li key={point}>{point}</li>)}</ul>
-                </div>
+          <div className="preview-panels">
+            <article>
+              <div className="panel-heading"><div><p className="eyebrow">Today</p><h3>Priority work queue</h3></div><span>{product.workQueue.length} items</span></div>
+              <div className="work-queue">
+                {product.workQueue.map((item) => (
+                  <div key={item.task}><span className={`status-dot status-${item.status.toLowerCase()}`} /><div><strong>{item.task}</strong><p>{item.detail}</p></div><small>{item.status}</small></div>
+                ))}
               </div>
-              <WebBrandModulePanel brand={brand} />
-            </details>
-            <div className="hero-actions">
-              {isInternalHref(brand.webUrl)
-                ? <Link className="btn btn-secondary btn-premium" href={brand.webUrl}>{brand.name} Website</Link>
-                : <a className="btn btn-secondary btn-premium" href={brand.webUrl}>{brand.name} Website</a>}
-              <a className="btn btn-primary btn-premium founder-demo-cta" href={founderDemoUrl(`/demo/${brand.slug}`)}>{brand.name} Demo</a>
-              <QuantumConsoleEntry brandName={brand.name} glyph={brand.logo} starterUrl={brand.starterConsoleUrl} growthUrl={brand.consoleUrl} />
-            </div>
-          </article>
-        ))}
-      </section>
-      <section id="core-modules" className="module-grid">
-        <article className="card-premium" style={{ gridColumn: '1 / -1' }}>
-          <h2 className="header-premium">Core Modules</h2>
-          <p>Every console in the FoundingOS ecosystem ships with these core modules.</p>
-        </article>
-        {CORE_MODULES.map((moduleItem) => (
-          <article key={moduleItem.id} className="card-premium premium-card premium-fade-in">
-            <h2>{moduleItem.label}</h2>
-            <p>{moduleItem.description}</p>
-          </article>
-        ))}
-      </section>
-      <section id="contact" className="module-grid">
-        <article className="card-premium">
-          <h2 className="header-premium">Connect with FoundingOS</h2>
-          <p>Explore the full social and messaging network used throughout the platform.</p>
-          <PremiumSocialLinks accent={LOCKED_BRAND_COLORS.foundingos} mode="inline" label="Social & messaging" />
-        </article>
-      </section>
-      <footer className="site-footer">
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center', marginBottom: 16, fontSize: 13 }}>
-          <Link href="/legal">Legal &amp; Privacy</Link>
-          <Link href="/contact">Contact &amp; Support</Link>
+            </article>
+            <article className="insight-card">
+              <p className="eyebrow">Core Intelligence</p>
+              <h3>Recommended next action</h3>
+              <p>{product.insight}</p>
+              <button type="button">Review recommendation</button>
+            </article>
+          </div>
         </div>
-        <PremiumSocialLinks accent={LOCKED_BRAND_COLORS.foundingos} mode="full" label="Social & messaging" />
-      </footer>
-      <FoundAI brand={brands.foundingos} />
-    </main>
+      </section>
+
+      <section className="product-explainer">
+        <article><p className="eyebrow">What you buy</p><h2>A working operational workspace</h2><p>{product.summary}</p><ul>{product.modules.map((module) => <li key={module}>{module}</li>)}</ul></article>
+        <article><p className="eyebrow">Daily workflow</p><h2>One connected process</h2><ol>{product.workflow.map((step) => <li key={step}>{step}</li>)}</ol></article>
+        <article><p className="eyebrow">Automation included</p><h2>Less manual chasing</h2><p>{product.automation}</p><p>Events flow into the shared Event Feed and produce cross-suite alerts in Core Intelligence.</p></article>
+      </section>
+    </>
   )
 }
 
-export { PremiumSocialLinks } from './social-links'
-export { QuantumSphereLogo } from './QuantumSphereLogo'
-export { QuantumBrandUpliftPanel } from './quantum-brand-uplift'
-export { WebBrandModulePanel, WebBrandWheel, WebCustomerJourney, WebTutorialSystem, WebUsedCarShop } from './quantum-web-mirror'
+function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'home'>; workspaceSlug?: WorkspaceSlug }) {
+  if ((page === 'workspaces' || page === 'consoles') && workspaceSlug) {
+    const product = workspaceProducts.find((candidate) => candidate.slug === workspaceSlug)
+    if (product) return <WorkspacePreview product={product} />
+  }
 
-export function ConsoleDashboard({ brand }: { brand: BrandDefinition }) {
-  const widgets = kpiWidgets(brand)
-  return (
-    <section className="stack" style={consoleStyle(brand)}>
-      <header className="module-header">
-        <p>{consoleTitle(brand)}</p>
-        <h1>{brand.name} Dashboard</h1>
-        <span>{brand.summary}</span>
-      </header>
-      <div className="kpi-grid">
-        {widgets.map((metric, index) => <OdometerKPI key={metric.label} metric={metric} index={index} />)}
-      </div>
-      <div className="module-card-grid">
-        {brand.modules.map((module, index) => (
-          <Link key={module} className="module-card" href={`/modules/${module.toLowerCase().replaceAll(' ', '-')}`}>
-            <div className="module-card-top">
-              <span>{String(index + 1).padStart(2, '0')}</span>
-              <strong>{module}</strong>
-            </div>
-            <p>{module} live workspace with branded controls, summaries, and quick actions.</p>
-            <div className="module-card-meta">
-              <small>Live metrics</small>
-              <small>Open queue</small>
-            </div>
-          </Link>
+  if (page === 'suites') return (
+    <>
+      <PageIntro eyebrow="Your business operating system" title="Three connected core suites" copy="An operating system is the shared foundation that keeps your teams, workflows, data, and decisions connected. Choose the layer your organisation needs now." />
+      <section className="module-grid">
+        {suiteCards.map((suite) => (
+          <article id={suite.name.split('.')[1].toLowerCase()} key={suite.name} className="card-premium" style={{ borderTop: `3px solid ${suite.accent}` }}>
+            <p className="eyebrow">Suite</p><h2>{suite.name}</h2><p>{suite.summary}</p>
+            <Link className="btn btn-secondary" href={suite.name === 'Core.Intelligence' ? '/intelligence' : '/workspaces'}>Explore capabilities</Link>
+          </article>
         ))}
-      </div>
-      <ActivityLog brand={brand} />
-    </section>
+      </section>
+    </>
   )
-}
 
-export function SettingsPage({ brand }: { brand: BrandDefinition }) {
-  return (
-    <section className="stack" style={consoleStyle(brand)}>
-      <header className="module-header">
-        <p>{consoleTitle(brand)}</p>
-        <h1>{brand.name} Settings</h1>
-        <span>Accent, access policy, billing, and module availability are controlled with brand isolation.</span>
-      </header>
-      <div className="settings-grid">
-        <article className="panel"><h2>Access policy</h2><p>Manage workspace permissions and session rules.</p></article>
-        <article className="panel"><h2>Automation</h2><p>Enable branded quick actions and alerts.</p></article>
-        <article className="panel"><h2>Appearance</h2><p>Control theme surfaces and console glow.</p></article>
-      </div>
-    </section>
-  )
-}
-
-export function ModulePage({ brand, moduleId }: { brand: BrandDefinition; moduleId: string }) {
-  const moduleName = brand.modules.find((module) => module.toLowerCase().replaceAll(' ', '-') === moduleId) || moduleId
-  return (
-    <section className="stack" style={consoleStyle(brand)}>
-      <header className="module-header">
-        <p>{consoleTitle(brand)}</p>
-        <h1>{moduleName}</h1>
-        <span>{moduleName} is active for {brand.name}. Activity, permissions, and subscription limits are scoped to this brand.</span>
-      </header>
-      <div className="module-card-grid">
-        <article className="module-card module-card-static">
-          <strong>Operational summary</strong>
-          <p>Live queue, approvals, and brand tasks are ready.</p>
+  if (page === 'workspaces' || page === 'consoles') return (
+    <>
+      <PageIntro eyebrow="One account · Modular workspaces" title="Every part of the business, inside one FoundingOS" copy="Retail, Logistics, Finance, Marketing, Talent, and Health are connected workspaces—not separate products or operating systems. Your team signs into one account and sees the workspaces their role and plan enable." />
+      <section className="module-grid">
+        {workspaceCards.map((workspace, index) => (
+          <article id={workspace.name.split(' ')[0].toLowerCase()} key={workspace.name} className="card-premium">
+            <p className="eyebrow">{String(index + 1).padStart(2, '0')}</p><h2>{workspace.name}</h2><p>{workspace.summary}</p>
+            <p>Connected to the Event Feed, Insights Panel, shared permissions, and suite-wide navigation.</p>
+            <Link className="btn btn-primary" href={workspace.href}>Open workspace preview</Link>
+          </article>
+        ))}
+        <article id="marketing" className="card-premium">
+          <p className="eyebrow">06</p><h2>Marketing Workspace</h2>
+          <p>Campaigns, audiences, brand-aware content, publishing, conversion, and revenue attribution.</p>
+          <Link className="btn btn-primary" href="/workspaces/marketing">Open workspace preview</Link>
         </article>
-        <article className="module-card module-card-static">
-          <strong>Quick actions</strong>
-          <p>Open, review, and publish from the console.</p>
+      </section>
+    </>
+  )
+
+  if (page === 'marketing') return (
+    <>
+      <PageIntro
+        eyebrow="Marketing Workspace · Core Operations"
+        title="Turn business activity into campaigns that drive revenue"
+        copy="Marketing was not removed. It is part of Core Operations, connecting customer records, products, promotions, orders, channels, and campaign results in one operating workflow."
+      />
+      <section className="marketing-flow">
+        {[
+          ['01', 'Choose an objective', 'Start with repeat purchases, product launches, stock movement, customer reactivation, or local awareness.'],
+          ['02', 'Build the audience', 'Use first-party customer and order data to select a relevant audience without external scraping.'],
+          ['03', 'Create channel content', 'Prepare campaign ideas, captions, hashtags, ad copy, WhatsApp messages, email, and social content.'],
+          ['04', 'Schedule and approve', 'Save drafts, schedule channel posts, use approval workflows, and control automatic publishing.'],
+          ['05', 'Connect results to revenue', 'Track impressions, engagements, conversions, attributed revenue, and operational follow-up.'],
+          ['06', 'Stay on brand everywhere', 'Brand Studio applies your approved logo, colours, typography, company details, and voice to campaigns, orders, and invoices.'],
+        ].map(([number, title, copy]) => <article key={number}><span>{number}</span><div><h2>{title}</h2><p>{copy}</p></div></article>)}
+      </section>
+
+      <section className="product-preview marketing-preview" aria-label="Marketing Workspace sample">
+        <aside className="preview-sidebar">
+          <div className="preview-brand"><span>F</span><strong>FoundingOS</strong></div>
+          <p>Marketing Workspace</p>
+          <ul>{['Overview', 'Campaigns', 'Audiences', 'Content studio', 'Publishing calendar', 'Analytics'].map((module, index) => <li className={index === 0 ? 'active' : ''} key={module}>{module}</li>)}</ul>
+        </aside>
+        <div className="preview-workspace">
+          <header><div><p className="eyebrow">Campaign command centre</p><h2>Marketing overview</h2></div><span className="demo-badge">Sample data</span></header>
+          <div className="preview-metrics">
+            <article><p>Campaigns live</p><strong>12</strong><span>+3 this week</span></article>
+            <article><p>Reach</p><strong>48.2k</strong><span>+6%</span></article>
+            <article><p>Conversion</p><strong>3.8%</strong><span>Revenue connected</span></article>
+          </div>
+          <div className="preview-panels">
+            <article>
+              <div className="panel-heading"><div><p className="eyebrow">Publishing calendar</p><h3>Campaign queue</h3></div><span>3 ready</span></div>
+              <div className="work-queue">
+                <div><span className="status-dot status-insight" /><div><strong>Restock announcement</strong><p>WhatsApp · Returning customers · Today 14:00</p></div><small>Approved</small></div>
+                <div><span className="status-dot" /><div><strong>Weekend bundle</strong><p>Instagram + Facebook · Local audience · Friday</p></div><small>Review</small></div>
+                <div><span className="status-dot status-action" /><div><strong>Customer win-back</strong><p>Email · Inactive 30 days · Draft</p></div><small>Draft</small></div>
+              </div>
+            </article>
+            <article className="insight-card"><p className="eyebrow">Core Intelligence</p><h3>Recommended campaign</h3><p>Promote the newly replenished staple bundle to 186 customers who previously purchased it and have not ordered this month.</p><button type="button">Create campaign draft</button></article>
+          </div>
+        </div>
+      </section>
+
+      <WorkflowWalkthrough />
+
+      <section className="module-grid">
+        {(Object.entries(marketingPlanFeatures) as Array<[keyof typeof marketingPlanFeatures, string[]]>).map(([tier, features]) => (
+          <article key={tier} className="card-premium">
+            <p className="eyebrow">{tier === 'lite' ? 'Free' : tier}</p>
+            <h2>{tier[0].toUpperCase() + tier.slice(1)} marketing</h2>
+            <ul>{features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
+            <Link className="btn btn-primary" href="/pricing">Compare plans</Link>
+          </article>
+        ))}
+      </section>
+
+      <section className="product-explainer">
+        <article><p className="eyebrow">Channels</p><h2>Meet customers where they are</h2><p>WhatsApp, email, Facebook, Instagram, LinkedIn, and X publishing workflows are represented in the current product.</p></article>
+        <article><p className="eyebrow">First-party data</p><h2>No scraping dependency</h2><p>Audiences and recommendations use your own customers, products, orders, campaign activity, and operational events.</p></article>
+        <article><p className="eyebrow">Connected operations</p><h2>Marketing that can fulfil</h2><p>Campaign demand can be checked against inventory, fulfilment capacity, invoices, payments, and customer history. Brand Studio keeps every customer-facing output consistent.</p></article>
+      </section>
+    </>
+  )
+
+  if (page === 'intelligence') return (
+    <>
+      <PageIntro eyebrow="Core.Intelligence" title="From operating events to clear action" copy="FoundingOS turns cross-suite signals into predictions, risk flags, anomalies, and workflow suggestions." />
+      <section className="module-grid">
+        {operatingLayers.map((layer) => <article key={layer.label} className="card-premium"><p className="eyebrow">{layer.value}</p><h2>{layer.label}</h2><p>{layer.detail}</p></article>)}
+      </section>
+    </>
+  )
+
+  if (page === 'pricing') return (
+    <>
+      <PageIntro eyebrow="Modular pricing" title="Start with one core. Connect the whole OS." copy="Packages are modular so buyers can begin with the operating capability they need and add shared intelligence as they grow." />
+      <section className="module-grid">
+        {packagePlans.map((plan) => (
+          <article key={plan.name} className="card-premium">
+            <p className="eyebrow">{plan.priceGbp === null ? 'Custom' : plan.priceGbp === 0 ? 'Free' : <><LocalizedGbp amount={plan.priceGbp} />/month</>}</p>
+            <h2>{plan.name}</h2>
+            <p>{plan.summary}</p>
+            <h3>What you access</h3>
+            <ul>{commercialPlans[plan.name.toLowerCase() as keyof typeof commercialPlans].access.map((item) => <li key={item}>{item}</li>)}</ul>
+            <h3>Enabled workspaces</h3>
+            <ul>{commercialPlans[plan.name.toLowerCase() as keyof typeof commercialPlans].includedWorkspaces.map((item) => <li key={item}>{item}</li>)}</ul>
+            <ul>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
+            <Link className="btn btn-primary" href="/contact">{plan.name === 'Lite' ? 'Start with Lite' : 'Talk to FoundingOS'}</Link>
+          </article>
+        ))}
+        <article className="card-premium">
+          <p className="eyebrow"><LocalizedGbp amount={commercialAddOns.languagePack.monthlyPriceGbp} />/month on Lite</p>
+          <h2>{commercialAddOns.languagePack.name}</h2>
+          <p>{commercialAddOns.languagePack.description} Included at no extra cost from Starter upward.</p>
         </article>
-      </div>
-    </section>
+      </section>
+    </>
   )
-}
 
-export function ActivityLog({ brand }: { brand: BrandDefinition }) {
+  if (page === 'about') return (
+    <>
+      <PageIntro eyebrow="About FoundingOS" title="One operating system for emerging-market businesses" copy="FoundingOS is a business operating system: it unifies commerce, logistics, finance, workforce, and health operations without forcing teams into disconnected point tools." />
+      <section className="module-grid">
+        <article><h2>Shared by design</h2><p>Identity, permissions, telemetry, events, and intelligence are common infrastructure—not duplicated integrations.</p></article>
+        <article><h2>Built for real workflows</h2><p>WhatsApp, mobile money, intermittent connectivity, and cross-team handoffs are part of the operating model.</p></article>
+        <article><h2>Clear architecture</h2><p>Core.Operations, Core.Workforce, and Core.Intelligence remain the stable product architecture.</p></article>
+      </section>
+    </>
+  )
+
   return (
-    <div className="panel activity-panel">
-      <h2>Activity log</h2>
-      <ul>
-        <li>{brand.name} workspace opened</li>
-        <li>Subscription checked</li>
-        <li>Module permissions refreshed</li>
-      </ul>
-    </div>
+    <>
+      <PageIntro eyebrow="Contact" title="See FoundingOS around your operating model" copy="Tell us which workflows, markets, and teams you need to connect. We will map the right suite configuration." />
+      <section className="module-grid">
+        <article><h2>Product and partnerships</h2><p>Email <a className="text-link" href="mailto:hello@foundingos.com">hello@foundingos.com</a> to request a walkthrough, integration discussion, or acquisition package.</p></article>
+        <article><h2>What to include</h2><p>Your operating verticals, current systems, target markets, and the workflow you most want to simplify.</p></article>
+      </section>
+    </>
   )
 }
 
-export default function RemovedLogin() {
-  return null
+export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: { page?: FounderPage; workspaceSlug?: WorkspaceSlug; consoleSlug?: ConsoleSlug }) {
+  return (
+    <GlobalisationProvider>
+    <main className="site-shell" style={{ ['--accent' as any]: '#24C47A' }}>
+      <SiteNav />
+
+      {page !== 'home' ? <SecondaryPage page={page} workspaceSlug={workspaceSlug ?? consoleSlug} /> : <>
+
+      <section className="hero">
+        <div className="hero-copy">
+          <p className="eyebrow">One operating system for your business</p>
+          <h1>FoundingOS</h1>
+          <p>
+            OS means <strong>Operating System</strong>: run Retail, Logistics, Finance, Marketing,
+            Talent, and Health from one connected platform—starting with WhatsApp.
+          </p>
+          <div className="hero-actions">
+            <Link className="btn btn-primary" href="/#how-it-works">See how it works</Link>
+            <Link className="btn btn-secondary" href="/intelligence">Open Intelligence</Link>
+            <Link className="btn btn-secondary" href="/workspaces/marketing">Explore Marketing</Link>
+          </div>
+        </div>
+
+        <div className="hero-visual" aria-label="FoundingOS OS suite overview">
+          <div className="hero-panel card-premium glow-premium" style={{ background: 'linear-gradient(135deg, rgba(16,151,105,0.98), rgba(37,99,235,0.94) 58%, rgba(124,58,237,0.9))' }}>
+            <span>Your business operating system</span>
+            <strong>FoundingOS</strong>
+            <ul>
+              <li>Core.Operations</li>
+              <li>Core.Workforce</li>
+              <li>Core.Intelligence</li>
+              <li>Shared Event Feed</li>
+              <li>Shared Insights Panel</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="messaging-first">
+        <div className="messaging-first-copy">
+          <p className="eyebrow">WhatsApp-first by design</p>
+          <h2>Run the business from the conversation your team already opens.</h2>
+          <p>FoundingOS connects everyday messages to the same customers, orders, deliveries, invoices, campaigns, and operating events used by every workspace. People can work through familiar conversations while FoundingOS keeps the structured system of record behind them.</p>
+          <div className="channel-pills" aria-label="Messaging channel direction">
+            <span className="channel-live">WhatsApp · first</span>
+            <span>Telegram · planned</span>
+            <span>SMS · planned</span>
+            <span>Messenger · planned</span>
+            <span>Instagram · planned</span>
+          </div>
+        </div>
+        <div className="messaging-status">
+          <article>
+            <span>Implemented foundation</span>
+            <strong>Meta WhatsApp Cloud API</strong>
+            <p>Verified webhook security and authenticated outbound text delivery are wired. Each business connects its approved Meta credentials.</p>
+          </article>
+          <article>
+            <span>One operational record</span>
+            <strong>Chat becomes structured work</strong>
+            <p>Messaging actions can connect to delivery notifications, campaigns, customers, orders, and the shared Event Feed.</p>
+          </article>
+          <article>
+            <span>Channel-ready architecture</span>
+            <strong>More than one inbox</strong>
+            <p>Telegram and other channels follow the same adapter contract as their production provider connections are completed.</p>
+          </article>
+        </div>
+      </section>
+
+      <section className="module-grid">
+        {suiteCards.map((suite) => (
+          <article key={suite.name} className="card-premium" style={{ borderTop: `3px solid ${suite.accent}` }}>
+            <p className="eyebrow">Suite</p>
+            <h2>{suite.name}</h2>
+            <p>{suite.summary}</p>
+            <Link className="btn btn-secondary" href={suite.href}>Explore</Link>
+          </article>
+        ))}
+      </section>
+
+      <section className="module-grid">
+        {workspaceCards.map((workspace, index) => (
+          <article key={workspace.name} className="card-premium">
+            <p className="eyebrow">{String(index + 1).padStart(2, '0')}</p>
+            <h2>{workspace.name}</h2>
+            <p>{workspace.summary}</p>
+            <Link className="btn btn-primary" href={workspace.href}>View workspace</Link>
+          </article>
+        ))}
+      </section>
+
+      <section className="module-grid">
+        <article className="card-premium" style={{ borderTop: '3px solid #EC4899' }}>
+          <p className="eyebrow">Core Operations workspace</p>
+          <h2>Marketing Workspace</h2>
+          <p>Campaigns, audiences, channel content, scheduling, analytics, and revenue attribution connected to live operations.</p>
+          <Link className="btn btn-primary" href="/workspaces/marketing">View workspace</Link>
+        </article>
+        {operatingLayers.map((layer) => (
+          <article key={layer.label} className="card-premium">
+            <p className="eyebrow">{layer.value}</p>
+            <h2>{layer.label}</h2>
+            <p>{layer.detail}</p>
+          </article>
+        ))}
+      </section>
+
+      <WorkflowWalkthrough />
+
+      <section className="module-grid">
+        {packagePlans.map((plan) => (
+          <article key={plan.name} className="card-premium">
+            <p className="eyebrow">{plan.priceGbp === null ? 'Custom' : plan.priceGbp === 0 ? 'Free' : <><LocalizedGbp amount={plan.priceGbp} />/month</>}</p>
+            <h2>{plan.name}</h2>
+            <p>{plan.summary}</p>
+          </article>
+        ))}
+      </section>
+
+      </>}
+
+      <footer className="site-footer">
+        <div>
+          <strong>FoundingOS</strong>
+          <p>Shared operating stack for market-facing operations, workforce, and intelligence.</p>
+        </div>
+      </footer>
+    </main>
+    </GlobalisationProvider>
+  )
+}
+
+export function BrandMarketingPage() {
+  return <FounderLauncher />
+}
+
+export function MarketingPage() {
+  return <FounderLauncher />
+}
+
+export default function HomePage() {
+  return <FounderLauncher />
 }

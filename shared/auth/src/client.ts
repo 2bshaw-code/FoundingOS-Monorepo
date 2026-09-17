@@ -41,7 +41,7 @@ export interface CreateAuthClientOptions {
 }
 
 export type PendingPackageApplication = {
-  app: 'foundretail' | 'foundcrypto' | 'foundit' | 'foundmeat' | 'foundtalent'
+  app: 'core_operations' | 'core_intelligence' | 'core_workforce'
   plan: 'staff' | 'manager' | 'large' | 'recruiter' | 'trader' | 'operator' | 'vault' | 'buyer' | 'supplier' | 'business' | 'premium';
   businessName: string
   contactName: string

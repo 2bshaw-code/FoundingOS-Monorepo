@@ -1,0 +1,10 @@
+**/node_modules
+**/.next
+**/.turbo
+**/ios
+**/android
+build-clean
+coverage
+dist
+*.log
+*.tsbuildinfo

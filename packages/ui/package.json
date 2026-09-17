@@ -60,10 +60,16 @@
     "./quantum/ai": "./src/quantum-ai.tsx",
     "./quantum-demo": "./src/quantum-demo/index.ts",
     "./quantum-brand-uplift": "./src/quantum-brand-uplift.tsx",
+    "./globalisation": "./src/globalisation.tsx",
+    "./workflow-walkthrough": "./src/workflow-walkthrough.tsx",
     "./styles.css": "./src/styles.css",
     "./footer": "./src/FoundingOSFooter.tsx",
     "./brand-micro-dashboard": "./src/brand-micro-dashboard.tsx",
+    "./insights": "./src/insights/InsightsPanel.tsx",
+    "./ai-insights": "./src/ai-insights/AIInsightsPanel.tsx",
     "./quantum-intelligence-section": "./src/quantum-intelligence-section.tsx",
+    "./mobile": "./src/mobile.ts",
+    "./mobile-runtime-mode": "./src/mobile-runtime-mode.ts",
     "./quantum-console-modal": "./src/quantum-console-modal.tsx",
     "./demo-message-board": "./src/demo-message-board.tsx",
     "./get-started-checklist": "./src/get-started-checklist.tsx",
@@ -83,7 +89,6 @@
     "./superdash/SuperDashSurveyGuardian": "./src/superdash/SuperDashSurveyGuardian.ts",
     "./superdash/SuperDashSurveyFeedPanel": "./src/superdash/SuperDashSurveyFeedPanel.tsx",
     "./superdash/SuperDashBrandMetricsPanel": "./src/superdash/SuperDashBrandMetricsPanel.tsx",
-    "./superdash/ScrapingDashboard": "./src/superdash/ScrapingDashboard.tsx",
     "./superdash/CustomerPipelinePanel": "./src/superdash/CustomerPipelinePanel.tsx"
   },
   "dependencies": {
@@ -99,8 +104,8 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
     "typescript": "^5.7.2"
   }
 }
