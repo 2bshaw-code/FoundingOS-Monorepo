@@ -1277,6 +1277,70 @@ a {
   padding: 64px 32px 36px;
 }
 
+.workspace-test-page {
+  margin: 0 auto;
+  max-width: 1480px;
+  padding: 28px clamp(16px, 3vw, 44px) 72px;
+}
+
+.workspace-test-header {
+  align-items: flex-end;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.workspace-test-header h1 {
+  margin: 8px 0;
+}
+
+.workspace-test-header p {
+  max-width: 760px;
+}
+
+.workspace-test-nav,
+.workspace-test-subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.workspace-test-nav a,
+.workspace-test-subnav button {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 9px 14px;
+  text-decoration: none;
+}
+
+.workspace-test-nav a.active,
+.workspace-test-subnav button.active {
+  background: #24c47a;
+  border-color: #24c47a;
+  color: #04140d;
+  font-weight: 800;
+}
+
+.site-nav-links .nav-test-workspaces {
+  border: 1px solid rgba(36, 196, 122, 0.7);
+  border-radius: 999px;
+  color: #7af0b8;
+  padding: 7px 12px;
+}
+
+@media (max-width: 700px) {
+  .workspace-test-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 .console-product-intro h1 {
   margin: 0;
   font-size: clamp(44px, 7vw, 76px);

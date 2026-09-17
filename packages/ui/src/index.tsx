@@ -213,6 +213,7 @@ function SiteNav() {
         <Link href="/suites">Suites</Link>
         <Link href="/#how-it-works">How it works</Link>
         <Link href="/workspaces">Workspaces</Link>
+        <Link className="nav-test-workspaces" href="/test-workspaces/retail">Test workspaces</Link>
         <Link href="/workspaces/marketing">Marketing</Link>
         <Link href="/intelligence">Intelligence</Link>
         <Link href="/pricing">Pricing</Link>
@@ -265,13 +266,15 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
           <article id={workspace.name.split(' ')[0].toLowerCase()} key={workspace.name} className="card-premium">
             <p className="eyebrow">{String(index + 1).padStart(2, '0')}</p><h2>{workspace.name}</h2><p>{workspace.summary}</p>
             <p>Connected to the Event Feed, Insights Panel, shared permissions, and suite-wide navigation.</p>
-            <Link className="btn btn-primary" href={workspace.href}>Open workspace preview</Link>
+            <Link className="btn btn-primary" href={`/test-workspaces/${workspace.name.split(' ')[0].toLowerCase()}`}>Test workspace</Link>
+            <Link className="text-link" href={workspace.href}>View capabilities</Link>
           </article>
         ))}
         <article id="marketing" className="card-premium">
           <p className="eyebrow">06</p><h2>Marketing Workspace</h2>
           <p>Campaigns, audiences, brand-aware content, publishing, conversion, and revenue attribution.</p>
-          <Link className="btn btn-primary" href="/workspaces/marketing">Open workspace preview</Link>
+          <Link className="btn btn-primary" href="/test-workspaces/marketing">Test workspace</Link>
+          <Link className="text-link" href="/workspaces/marketing">View capabilities</Link>
         </article>
       </section>
     </>
@@ -284,6 +287,9 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
         title="Turn business activity into campaigns that drive revenue"
         copy="Marketing was not removed. It is part of Core Operations, connecting customer records, products, promotions, orders, channels, and campaign results in one operating workflow."
       />
+      <div className="hero-actions">
+        <Link className="btn btn-primary" href="/test-workspaces/marketing">Test Marketing workspace</Link>
+      </div>
       <section className="marketing-flow">
         {[
           ['01', 'Choose an objective', 'Start with repeat purchases, product launches, stock movement, customer reactivation, or local awareness.'],
@@ -346,6 +352,9 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
   if (page === 'intelligence') return (
     <>
       <PageIntro eyebrow="Core.Intelligence" title="From operating events to clear action" copy="FoundingOS turns cross-suite signals into predictions, risk flags, anomalies, and workflow suggestions." />
+      <div className="hero-actions">
+        <Link className="btn btn-primary" href="/test-workspaces/intelligence">Test Intelligence workspace</Link>
+      </div>
       <section className="module-grid">
         {operatingLayers.map((layer) => <article key={layer.label} className="card-premium"><p className="eyebrow">{layer.value}</p><h2>{layer.label}</h2><p>{layer.detail}</p></article>)}
       </section>
@@ -489,7 +498,8 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
             <p className="eyebrow">{String(index + 1).padStart(2, '0')}</p>
             <h2>{workspace.name}</h2>
             <p>{workspace.summary}</p>
-            <Link className="btn btn-primary" href={workspace.href}>View workspace</Link>
+            <Link className="btn btn-primary" href={`/test-workspaces/${workspace.name.split(' ')[0].toLowerCase()}`}>Test workspace</Link>
+            <Link className="text-link" href={workspace.href}>View capabilities</Link>
           </article>
         ))}
       </section>
@@ -499,7 +509,8 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
           <p className="eyebrow">Core Operations workspace</p>
           <h2>Marketing Workspace</h2>
           <p>Campaigns, audiences, channel content, scheduling, analytics, and revenue attribution connected to live operations.</p>
-          <Link className="btn btn-primary" href="/workspaces/marketing">View workspace</Link>
+          <Link className="btn btn-primary" href="/test-workspaces/marketing">Test workspace</Link>
+          <Link className="text-link" href="/workspaces/marketing">View capabilities</Link>
         </article>
         {operatingLayers.map((layer) => (
           <article key={layer.label} className="card-premium">

@@ -89,8 +89,8 @@ export function WorkspacePreview({ product }: { product: WorkspacePreviewProduct
         <p className="console-audience">{product.audience}</p>
         <p>{product.summary} {product.outcome}</p>
         <div className="hero-actions">
-          <a className="btn btn-primary" href="#product-preview">Explore every module</a>
-          <Link className="btn btn-secondary" href="/contact">Request a guided demo</Link>
+          <Link className="btn btn-primary" href={`/test-workspaces/${product.slug}`}>Test this workspace</Link>
+          <a className="btn btn-secondary" href="#product-preview">See what is included</a>
         </div>
       </section>
 
