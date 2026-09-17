@@ -3,7 +3,6 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { BrandDashboard, BrandModulePage, BrandSettingsPage } from '@foundingos/ui/console'
-import { brands } from '@foundingos/config'
 import { brandConfig } from '../brand-config'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
@@ -14,12 +13,12 @@ const routeAliases: Record<string, string> = {
 }
 
 function titleForSlug(slug: string[]) {
-  if (slug.length === 0 || slug[0] === 'dashboard') return `${brands.it.name} Dashboard`
-  if (slug[0] === 'settings') return `${brands.it.name} Settings`
-  if (slug[0] === 'crm') return `${brands.it.name} CRM`
-  if (slug[0] === 'modules' && slug[1]) return `${brands.it.name} ${slug[1].replaceAll('-', ' ').replace(/\b\w/g, (char) => char.toUpperCase())}`
-  if (slug[0] && routeAliases[slug[0]]) return `${brands.it.name} ${routeAliases[slug[0]].replaceAll('-', ' ').replace(/\b\w/g, (char) => char.toUpperCase())}`
-  return brands.it.name
+  if (slug.length === 0 || slug[0] === 'dashboard') return `${brandConfig.name} Dashboard`
+  if (slug[0] === 'settings') return `${brandConfig.name} Settings`
+  if (slug[0] === 'crm') return `${brandConfig.name} CRM`
+  if (slug[0] === 'modules' && slug[1]) return `${brandConfig.name} ${slug[1].replaceAll('-', ' ').replace(/\b\w/g, (char) => char.toUpperCase())}`
+  if (slug[0] && routeAliases[slug[0]]) return `${brandConfig.name} ${routeAliases[slug[0]].replaceAll('-', ' ').replace(/\b\w/g, (char) => char.toUpperCase())}`
+  return brandConfig.name
 }
 
 export function generateMetadata({ params }: { params: { slug?: string[] } }): Metadata {

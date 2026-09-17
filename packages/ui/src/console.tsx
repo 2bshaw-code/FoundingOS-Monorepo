@@ -560,14 +560,18 @@ function consoleModules(config: BrandConsoleConfig) {
 
 function bobLabel(config: BrandConsoleConfig) {
   switch (config.name) {
+    case 'Core.Operations':
     case 'FoundRetail':
-      return 'Retail Manager Console'
+      return 'Retail operations'
+    case 'Core.Intelligence':
+      return 'Operational intelligence'
+    case 'Core.Workforce':
+    case 'FoundTalent':
+      return 'People operations'
     case 'FoundMeat':
       return 'Meat Operations Console'
     case 'FoundThat':
       return 'FoundThat Console'
-    case 'FoundTalent':
-      return 'Talent Command Console'
     case 'FoundCrypto':
       return 'Crypto Command Console'
     default:
@@ -794,11 +798,137 @@ export function ModuleHeader({ config, title, description }: { config: BrandCons
   return <header className="module-header header-premium" style={consoleStyle(config)}><p>{bobLabel(config)}</p><h1>{title}</h1><span>{description}</span></header>
 }
 
+type SimulatedActivity = {
+  label: string
+  detail: string
+  source: string
+  status: 'Completed' | 'In progress' | 'Needs review'
+}
+
+const simulationCatalog: Record<string, SimulatedActivity[]> = {
+  'Core.Operations': [
+    { label: 'WhatsApp order received', detail: 'ORD-1054 · Amina Yusuf · 3 products', source: 'Retail', status: 'Completed' },
+    { label: 'Inventory reserved', detail: '8 units allocated at Manchester store', source: 'Inventory', status: 'Completed' },
+    { label: 'Shipment created', detail: 'SHP-883 assigned to North route', source: 'Logistics', status: 'In progress' },
+    { label: 'Invoice prepared', detail: 'INV-1054 · £184.50 awaiting approval', source: 'Finance', status: 'Needs review' },
+    { label: 'Payment reconciled', detail: 'Mobile money receipt matched to ORD-1049', source: 'Finance', status: 'Completed' },
+    { label: 'Low-stock risk detected', detail: 'Blue T-shirt / Medium may sell out in 3 days', source: 'Intelligence', status: 'Needs review' },
+  ],
+  'Core.Workforce': [
+    { label: 'Candidate added', detail: 'Maya Chen added to Store Manager pipeline', source: 'Talent', status: 'Completed' },
+    { label: 'Interview scheduled', detail: 'Video interview booked for tomorrow at 10:30', source: 'Talent', status: 'In progress' },
+    { label: 'Onboarding started', detail: 'Six required tasks assigned to new starter', source: 'Workforce', status: 'In progress' },
+    { label: 'Timesheet submitted', detail: 'Manchester retail team · week 38', source: 'Workforce', status: 'Needs review' },
+    { label: 'Payroll input approved', detail: '24 employee records cleared for processing', source: 'Payroll', status: 'Completed' },
+  ],
+  'Core.Intelligence': [
+    { label: 'Event batch processed', detail: '146 operational events indexed', source: 'Event Feed', status: 'Completed' },
+    { label: 'Revenue risk detected', detail: 'Three overdue invoices need follow-up', source: 'Risk engine', status: 'Needs review' },
+    { label: 'Recommendation created', detail: 'Reallocate stock to Manchester before Friday', source: 'Intelligence', status: 'In progress' },
+    { label: 'Messaging health checked', detail: 'WhatsApp delivery rate remains above target', source: 'Messaging Core', status: 'Completed' },
+    { label: 'Forecast refreshed', detail: 'Four-week cash position recalculated', source: 'Forecasting', status: 'Completed' },
+  ],
+}
+
+function simulationMetrics(metrics: BrandMetric[], activityCount: number) {
+  return metrics.map((metric, index) => {
+    const parsed = parseMetricValue(metric.value)
+    if (!parsed || activityCount === 0) return metric
+    const step = index === 0 ? 0.1 : index === 1 ? 1 : -0.1
+    return { ...metric, value: formatMetricValue(parsed.numeric + step * activityCount, parsed) }
+  })
+}
+
+function LiveActivityPanel({
+  config,
+  activityCount,
+  activities,
+  running,
+  onToggle,
+  onAdvance,
+  onReset,
+}: {
+  config: BrandConsoleConfig
+  activityCount: number
+  activities: Array<SimulatedActivity & { id: number; time: string }>
+  running: boolean
+  onToggle: () => void
+  onAdvance: () => void
+  onReset: () => void
+}) {
+  return (
+    <section className="simulation-panel" aria-label="Simulated live activity">
+      <div className="simulation-heading">
+        <div>
+          <p className="simulation-kicker"><i /> Demo activity</p>
+          <h2>Operations moving in real time</h2>
+          <span>Safe sample data. No customer records or live messages are being used.</span>
+        </div>
+        <div className="simulation-controls">
+          <button type="button" onClick={onToggle}>{running ? 'Pause' : 'Resume'}</button>
+          <button type="button" onClick={onAdvance}>Add event</button>
+          <button type="button" className="simulation-reset" onClick={onReset}>Reset</button>
+        </div>
+      </div>
+      <div className="simulation-stream" aria-live="polite">
+        {activities.map((activity, index) => (
+          <article key={activity.id} className={index === 0 ? 'is-latest' : undefined}>
+            <time>{activity.time}</time>
+            <div>
+              <strong>{activity.label}</strong>
+              <span>{activity.detail}</span>
+            </div>
+            <small>{activity.source}</small>
+            <em data-status={activity.status}>{activity.status}</em>
+          </article>
+        ))}
+      </div>
+      <footer>
+        <span>{activityCount} events simulated this session</span>
+        <span>{config.name} · updates every 5 seconds</span>
+      </footer>
+    </section>
+  )
+}
+
 export function BrandDashboard({ config, variant = 'growth' }: { config: BrandConsoleConfig; variant?: 'growth' | 'starter' }) {
   const crm = config.crm ?? defaultCRM(config)
   const moduleCards = consoleModules(config)
   const accentStyle = consoleStyle(config)
   const brandSlug = resolveBrandSlugFromName(config.name)
+  const catalog = simulationCatalog[config.name] ?? simulationCatalog['Core.Operations']
+  const [activityCount, setActivityCount] = useState(0)
+  const [running, setRunning] = useState(true)
+  const [activities, setActivities] = useState<Array<SimulatedActivity & { id: number; time: string }>>([])
+
+  const advanceSimulation = () => {
+    setActivityCount((current) => {
+      const next = current + 1
+      const activity = catalog[current % catalog.length]
+      const timestamped = {
+        ...activity,
+        id: next,
+        time: new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date()),
+      }
+      setActivities((currentActivities) => [timestamped, ...currentActivities].slice(0, 6))
+      return next
+    })
+  }
+
+  useEffect(() => {
+    if (!running) return
+    const timer = window.setInterval(advanceSimulation, 5_000)
+    return () => window.clearInterval(timer)
+  }, [running, catalog])
+
+  const resetSimulation = () => {
+    setRunning(false)
+    setActivityCount(0)
+    setActivities([])
+  }
+
+  const metrics = simulationMetrics(config.dashboard.metrics, activityCount)
+
   return (
     <section className="console-page quantum-ambient-grid" style={accentStyle}>
       <div className="quantum-particle-drift"><span className="quantum-particle" /><span className="quantum-particle" /><span className="quantum-particle" /></div>
@@ -808,10 +938,20 @@ export function BrandDashboard({ config, variant = 'growth' }: { config: BrandCo
       <AIInsightBanner metrics={config.dashboard.metrics} brandLabel={config.name} />
 
       <div className="kpi-grid">
-        {config.dashboard.metrics.map((metric, index) => <KPIWidget key={metric.label} metric={metric} index={index} />)}
+        {metrics.map((metric, index) => <KPIWidget key={metric.label} metric={metric} index={index} />)}
       </div>
 
       {brandSlug && <RealBrandFinancePanel brandSlug={brandSlug} brandName={config.name} />}
+
+      <LiveActivityPanel
+        config={config}
+        activityCount={activityCount}
+        activities={activities}
+        running={running}
+        onToggle={() => setRunning((value) => !value)}
+        onAdvance={advanceSimulation}
+        onReset={resetSimulation}
+      />
 
       <div className="module-card-grid">
         {moduleCards.map((module, index) => (
@@ -845,7 +985,7 @@ export function BrandDashboard({ config, variant = 'growth' }: { config: BrandCo
         </article>
         <article className="panel panel-premium">
           <h2>Quick actions</h2>
-          <div className="action-list"><QuickActionsBar actions={config.quickActions.map((action) => ({ label: action }))} /></div>
+          <div className="action-list"><QuickActionsBar actions={config.quickActions.map((action) => ({ label: action, onClick: advanceSimulation }))} /></div>
         </article>
         <article className="panel panel-premium">
           <h2>CRM summary</h2>

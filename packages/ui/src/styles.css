@@ -6053,6 +6053,250 @@ html[data-accessibility-simplified='true'] .btn {
   font-size: 16px;
 }
 
+/* Compact application shell and clearly labelled demo activity. */
+.console-shell-page {
+  --topbar-height: 56px;
+}
+
+.console-shell-page .sidebar {
+  top: var(--topbar-height);
+  height: calc(100vh - var(--topbar-height));
+}
+
+.console-shell-page .topbar {
+  left: 0;
+  gap: 16px;
+  height: var(--topbar-height);
+  min-height: var(--topbar-height);
+  padding: 8px 18px;
+}
+
+.console-shell-page .topbar-title {
+  gap: 10px;
+  min-width: var(--sidebar-width);
+}
+
+.console-shell-page .topbar-title div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.console-shell-page .topbar-title strong {
+  font-size: 15px;
+}
+
+.console-shell-page .topbar-title span {
+  font-size: 11px;
+}
+
+.console-shell-page .topbar-chip {
+  min-height: 30px;
+  padding: 0 11px;
+  font-size: 12px;
+}
+
+.environment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.environment-badge i,
+.simulation-kicker i {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
+}
+
+.simulation-panel {
+  display: grid;
+  gap: 16px;
+  margin: 18px 0 24px;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--line));
+  border-radius: 20px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 8%, var(--surface-strong)), var(--surface));
+  box-shadow: 0 18px 48px var(--shadow);
+}
+
+.simulation-heading,
+.simulation-panel footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.simulation-heading h2 {
+  margin: 4px 0;
+  font-size: 20px;
+}
+
+.simulation-heading span,
+.simulation-panel footer {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.simulation-kicker {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.simulation-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.simulation-controls button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 36%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.simulation-controls .simulation-reset {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--muted);
+}
+
+.simulation-stream {
+  display: grid;
+  min-height: 72px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+}
+
+.simulation-stream:empty::before {
+  content: 'Waiting for the next simulated event…';
+  align-self: center;
+  padding: 22px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.simulation-stream article {
+  display: grid;
+  grid-template-columns: 70px minmax(220px, 1fr) 110px 110px;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.simulation-stream article:last-child {
+  border-bottom: 0;
+}
+
+.simulation-stream article.is-latest {
+  animation: simulation-arrival 420ms ease-out;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.simulation-stream time,
+.simulation-stream small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.simulation-stream article div {
+  display: grid;
+  gap: 3px;
+}
+
+.simulation-stream article div strong {
+  font-size: 13px;
+}
+
+.simulation-stream article div span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.simulation-stream em {
+  justify-self: end;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #5ee38d;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.simulation-stream em[data-status='Needs review'] {
+  background: rgba(245, 158, 11, 0.13);
+  color: #fbbf24;
+}
+
+.simulation-stream em[data-status='In progress'] {
+  background: rgba(59, 130, 246, 0.13);
+  color: #60a5fa;
+}
+
+@keyframes simulation-arrival {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 900px) {
+  .console-shell-page .topbar {
+    left: 0;
+    padding: 8px 12px;
+  }
+
+  .console-shell-page .console-shell-main {
+    padding-top: var(--topbar-height);
+  }
+
+  .console-shell-page .topbar-nav,
+  .console-shell-page .topbar-actions {
+    width: auto;
+  }
+
+  .console-shell-page .topbar-title span,
+  .environment-badge,
+  .console-shell-page .topbar-chip:nth-of-type(n + 3) {
+    display: none;
+  }
+
+  .simulation-heading,
+  .simulation-panel footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .simulation-stream article {
+    grid-template-columns: 58px minmax(0, 1fr);
+  }
+
+  .simulation-stream small,
+  .simulation-stream em {
+    display: none;
+  }
+}
+
 /* Demo/survey screen branding — logo header, locked Quantum gradient bar, and the bottom brand-card row. */
 .quantum-brand-header {
   display: grid;

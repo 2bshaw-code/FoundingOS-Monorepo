@@ -20,6 +20,7 @@ export default async function IntelligencePage() {
   return (
     <>
       <BrandMicroDashboard
+        brandSlug="retail"
         brandName={layer.name}
         color={layer.color}
         pulse={ai.pulse}

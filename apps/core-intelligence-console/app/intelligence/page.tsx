@@ -14,12 +14,13 @@ import { InsightsPanel } from '@foundingos/ui/insights'
 const CORE_OPERATIONS_API_BASE = process.env.NEXT_PUBLIC_CORE_OPERATIONS_API_URL || 'https://core-operations-api.foundingos.com/api/v1/ops'
 
 export default async function IntelligencePage() {
-  const layer = BRAND_PERSONALITIES.it
-  const ai = generateBrandAIOutput('it')
-  const quantum = await enrichBrandSignalWithQuantum(buildBrandSignal('it'))
+  const layer = BRAND_PERSONALITIES.retail
+  const ai = generateBrandAIOutput('retail')
+  const quantum = await enrichBrandSignalWithQuantum(buildBrandSignal('retail'))
   return (
     <>
       <BrandMicroDashboard
+        brandSlug="retail"
         brandName={layer.name}
         color={layer.color}
         pulse={ai.pulse}
