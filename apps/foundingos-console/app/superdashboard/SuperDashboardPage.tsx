@@ -308,9 +308,9 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
         </QuantumCard>
 
         <QuantumCard className="module-card panel-premium" brand={brands.foundingos}>
-          <div className="module-card-top"><span>◈</span><strong>Scraping & Customer Pipeline</strong></div>
-          <p><small>Real synthetic engagement data across all 8 brands, a manual "Run Scrape" trigger, and a customer pipeline view built from real survey submissions.</small></p>
-          <Link className="q-button q-button-primary" href={readOnly ? '/superdashboard/scraping?readOnly=1' : '/superdashboard/scraping'}>Open Scraping Dashboard</Link>
+          <div className="module-card-top"><span>◈</span><strong>Messaging & Event Feed</strong></div>
+          <p><small>Tenant-scoped operational events, WhatsApp actions, delivery outcomes, and Intelligence recommendations.</small></p>
+          <Link className="q-button q-button-primary" href="/dashboard">Open Event Feed</Link>
         </QuantumCard>
 
         <QuantumCard className="module-card panel-premium" brand={brands.foundingos}>

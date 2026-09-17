@@ -10,6 +10,12 @@ import { WorkflowWalkthrough } from './workflow-walkthrough'
 import { WorkspacePreview, type WorkspacePreviewProduct } from './workspace-preview'
 import { MessagingDemo } from './messaging-demo'
 
+export { BrandDashboard as ConsoleDashboard, BrandModulePage as ModulePage, BrandSettingsPage as SettingsPage } from './console'
+export { PremiumSocialLinks } from './social-links'
+export { QuantumSphereLogo } from './QuantumSphereLogo'
+export { QuantumBrandUpliftPanel } from './quantum-brand-uplift'
+export { WebUsedCarShop } from './quantum-web-mirror'
+
 type SuiteCard = {
   name: string
   summary: string

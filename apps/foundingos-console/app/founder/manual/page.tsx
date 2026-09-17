@@ -42,7 +42,7 @@ export default async function AdminFounderManualPage() {
           <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 6 }}>
             <li>Cross-brand analytics and brand switching (the mock &quot;Package analytics&quot; panel is explicitly illustrative demo data).</li>
             <li><strong>Real subscriptions</strong> — live, database-backed Package Model D MRR/ARR per brand, with real FX conversion (via the real /api/fx/rates endpoint).</li>
-            <li><strong>Scraping Dashboard</strong> (/superdashboard/scraping) — real scrape history, diffing, anomalies, and the customer pipeline builder.</li>
+            <li><strong>Shared Event Feed</strong> (/dashboard) — tenant-scoped operational history, messaging outcomes, anomalies, and recommended actions.</li>
             <li>Footer: real Verification (AVL) status and real Testers (activation/engagement/retention/stability/autonomy) metrics.</li>
           </ul>
         </article>

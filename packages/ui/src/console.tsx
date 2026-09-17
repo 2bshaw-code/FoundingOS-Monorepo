@@ -7,6 +7,16 @@
 import Link from 'next/link'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
+import { DemoMessageBoard } from './demo-message-board'
+import { GetStartedChecklist } from './get-started-checklist'
+import { DataMigrationHub } from './data-migration-hub'
+import { RealDealsPanel, RealBrandFinancePanel, RealInvoicesPanel } from './real-monetary-panels'
+import { resolveBrandSlugFromName } from './real-monetary'
+import { useAIAssistance, hasSeenOnboarding, markOnboardingSeen, AIAssistanceToggle } from './ai-assistance'
+import { brands } from '@foundingos/config'
+import { recommendQuantumOS, type BusinessProfile } from '@foundingos/config/quantum-recommendation'
+import { RecommendationBadge } from './onboarding/RecommendationBadge'
+import { ImportDataButton } from './import-data'
 
 export type BrandMetric = { label: string; value: string; trend?: string; icon?: string; tone?: 'good' | 'watch' | 'risk' }
 export type BrandModule = { id: string; label: string; description: string; metrics: BrandMetric[]; actions: string[]; workflow?: string[] }
@@ -35,19 +45,19 @@ export type BrandConsoleConfig = {
   settings: string[]
 }
 
-type DataField = {
+export type DataField = {
   key: string
   label: string
   type?: 'text' | 'textarea' | 'select' | 'number' | 'date' | 'file'
   options?: string[]
 }
 
-type DataRow = {
+export type DataRow = {
   id: string
   values: Record<string, string>
 }
 
-type WorkbenchProps = {
+export type WorkbenchProps = {
   title: string
   description: string
   fields: DataField[]
@@ -56,6 +66,7 @@ type WorkbenchProps = {
   accentStyle: CSSProperties
   pageSize?: number
   emptyCopy?: string
+  aiRecommendedAction?: string
 }
 
 function parseMetricValue(value: string) {
@@ -217,24 +228,39 @@ function MetricOdometer({ value }: { value: string }) {
 
 function consoleTitle(config: BrandConsoleConfig) {
   switch (config.name) {
-    case 'CoreOperations':
+    case 'FoundRetail':
       return 'Retail Manager Console'
-    case 'CoreOperations':
+    case 'FoundMeat':
       return 'Meat Operations Console'
-    case 'CoreIntelligence':
-      return 'IT Command Console'
-    case 'CoreWorkforce':
+    case 'FoundThat':
+      return 'FoundThat Console'
+    case 'FoundTalent':
       return 'Talent Command Console'
-    case 'CoreOperations':
+    case 'FoundCrypto':
       return 'Crypto Command Console'
     default:
       return `${config.name} Console`
   }
 }
 
-function consoleStyle(config: BrandConsoleConfig): CSSProperties {
+// Quantum glow intensity per brand (locked spec) — how strong the glow effect is on active
+// elements only (buttons, headers, focused inputs), never applied to full backgrounds.
+const GLOW_INTENSITY: Record<string, number> = {
+  FoundingOS: 0.55,
+  FoundRetail: 0.45,
+  FoundMeat: 0.50,
+  FoundTalent: 0.40,
+  FoundThat: 0.35,
+  FoundCrypto: 0.50,
+  FoundFinance: 0.45,
+  FoundHealth: 0.40,
+  FoundLogistics: 0.50,
+}
+
+export function consoleStyle(config: BrandConsoleConfig): CSSProperties {
   return {
     '--accent': config.colors.accent,
+    '--glow-intensity': GLOW_INTENSITY[config.name] ?? 0.45,
   } as CSSProperties
 }
 
@@ -295,13 +321,47 @@ function workbenchFilterOptions(rows: DataRow[], fields: DataField[]) {
   return { filterField, options }
 }
 
-function DataWorkbench({ title, description, fields, rows, cards, accentStyle, pageSize = 4, emptyCopy = 'No records yet.' }: WorkbenchProps) {
+// A select field's dropdown always includes its originally-configured options, PLUS any
+// distinct value already present in the real records (including freshly imported ones) — the
+// real fix behind "auto-create missing categories": importing a Products sheet with a
+// "Chicken" category that was never in the original Fresh/Frozen/Prepared/Core list makes
+// "Chicken" a real, selectable option from then on, not just an inert string in the table.
+function fieldOptions(field: DataField, records: DataRow[]): string[] {
+  const seen = new Set(field.options ?? [])
+  for (const row of records) {
+    const value = row.values[field.key]
+    if (value) seen.add(value)
+  }
+  return Array.from(seen)
+}
+
+// Small, friendly AI hint shown at the top of every module — explains the module in plain
+// language and gives one real, working "Do this for me" shortcut. The action is always real:
+// it calls straight into DataWorkbench's own beginCreate()/scroll-into-view below, so
+// clicking it genuinely starts the most common task (adding a new record) rather than
+// promising automation that doesn't exist.
+function AIModuleHint({ title, description, recommendedAction, onDoThisForMe }: { title: string; description: string; recommendedAction: string; onDoThisForMe: () => void }) {
+  const aiEnabled = useAIAssistance()
+  if (!aiEnabled) return null
+  return (
+    <div className="ai-hint-banner">
+      <span className="ai-insight-badge">AI</span>
+      <div className="ai-hint-body">
+        <p><strong>{title}:</strong> {description}</p>
+        <button type="button" className="ai-hint-cta" onClick={onDoThisForMe}>Do this for me — {recommendedAction}</button>
+      </div>
+    </div>
+  )
+}
+
+export function DataWorkbench({ title, description, fields, rows, cards, accentStyle, pageSize = 4, emptyCopy = 'No records yet.', aiRecommendedAction }: WorkbenchProps) {
   const [records, setRecords] = useState<DataRow[]>(() => cloneRows(rows))
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('all')
   const [page, setPage] = useState(1)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState<Record<string, string>>(() => seedDraft(fields))
+  const formRef = useRef<HTMLElement>(null)
 
   const { filterField, options } = useMemo(() => workbenchFilterOptions(records, fields), [records, fields])
 
@@ -360,6 +420,16 @@ function DataWorkbench({ title, description, fields, rows, cards, accentStyle, p
         <span>{description}</span>
       </header>
 
+      <AIModuleHint
+        title={title}
+        description={description}
+        recommendedAction={aiRecommendedAction ?? `add your first ${title.toLowerCase()}`}
+        onDoThisForMe={() => {
+          beginCreate()
+          formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }}
+      />
+
       <div className="kpi-grid">
         {summaryCards.map((card) => (
           <article key={card.label} className="dashboard-card">
@@ -371,7 +441,7 @@ function DataWorkbench({ title, description, fields, rows, cards, accentStyle, p
       </div>
 
       <div className="module-card-grid">
-        <article className="panel">
+        <article className="panel" ref={formRef}>
           <h2>{editingId ? `Edit ${title}` : `Create ${title}`}</h2>
           <div className="manager-form">
             {fields.map((field) => (
@@ -389,7 +459,7 @@ function DataWorkbench({ title, description, fields, rows, cards, accentStyle, p
                     onChange={(event) => setDraft((current) => ({ ...current, [field.key]: event.target.value }))}
                   >
                     <option value="">Select</option>
-                    {(field.options ?? []).map((option) => <option key={option} value={option}>{option}</option>)}
+                    {fieldOptions(field, records).map((option) => <option key={option} value={option}>{option}</option>)}
                   </select>
                 ) : field.type === 'file' ? (
                   <>
@@ -433,6 +503,11 @@ function DataWorkbench({ title, description, fields, rows, cards, accentStyle, p
             )}
           </div>
           <div className="manager-empty">{filtered.length === 0 ? emptyCopy : `${filtered.length} records ready.`}</div>
+          <ImportDataButton
+            fields={fields}
+            idPrefix={title.toLowerCase().replaceAll(' ', '-')}
+            onImport={(newRows) => setRecords((current) => [...newRows, ...current])}
+          />
         </article>
       </div>
 
@@ -476,7 +551,7 @@ function consoleModules(config: BrandConsoleConfig) {
     summary: module.description,
   }))
 
-  if (config.name === 'CoreOperations' && !base.some((module) => module.href === '/modules/products')) {
+  if (config.name === 'FoundMeat' && !base.some((module) => module.href === '/modules/products')) {
     base.push({ label: 'Products', href: '/modules/products', icon: '◍', summary: 'Product management and stock control' })
   }
 
@@ -485,19 +560,144 @@ function consoleModules(config: BrandConsoleConfig) {
 
 function bobLabel(config: BrandConsoleConfig) {
   switch (config.name) {
-    case 'CoreOperations':
+    case 'FoundRetail':
       return 'Retail Manager Console'
-    case 'CoreOperations':
+    case 'FoundMeat':
       return 'Meat Operations Console'
-    case 'CoreIntelligence':
-      return 'IT Command Console'
-    case 'CoreWorkforce':
+    case 'FoundThat':
+      return 'FoundThat Console'
+    case 'FoundTalent':
       return 'Talent Command Console'
-    case 'CoreOperations':
+    case 'FoundCrypto':
       return 'Crypto Command Console'
     default:
       return `${config.name} Console`
   }
+}
+
+export type StatusBadgeTone = 'good' | 'watch' | 'risk' | 'neutral'
+
+// Purely additive premium status badge — usable anywhere a small status/tier
+// pill is needed (tables, cards, headers). Does not replace or alter any
+// existing routing, layout, or component.
+export function StatusBadge({ label, tone = 'neutral' }: { label: string; tone?: StatusBadgeTone }) {
+  return <span className={`status-badge status-badge--${tone}`}>{label}</span>
+}
+
+export type AlertTone = 'info' | 'success' | 'warning' | 'danger'
+
+// Purely additive premium inline alert/banner component.
+export function Alert({ tone = 'info', title, children }: { tone?: AlertTone; title?: string; children?: React.ReactNode }) {
+  return (
+    <div className={`premium-alert premium-alert--${tone}`} role="status">
+      {title && <strong>{title}</strong>}
+      {children && <span>{children}</span>}
+    </div>
+  )
+}
+
+export type TableColumn<T> = { key: string; label: string; render?: (row: T) => React.ReactNode }
+
+// Purely additive, generic responsive table. Uses the existing 'panel' /
+// typography conventions so it matches the current system without inventing
+// new tokens. Not wired into any console by default.
+export function Table<T extends Record<string, any>>({ columns, rows, caption }: { columns: TableColumn<T>[]; rows: T[]; caption?: string }) {
+  return (
+    <div className="premium-table-wrap">
+      {caption && <p className="premium-table-caption">{caption}</p>}
+      <table className="premium-table">
+        <thead>
+          <tr>
+            {columns.map((col) => (
+              <th key={col.key}>{col.label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={index}>
+              {columns.map((col) => (
+                <td key={col.key}>{col.render ? col.render(row) : String(row[col.key] ?? '')}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+// Purely additive, non-functional chart shell — a visual placeholder (frame,
+// title, legend) for future metrics. Renders no data/logic of its own.
+export function ChartPlaceholder({ title, legend = [] }: { title: string; legend?: string[] }) {
+  return (
+    <div className="chart-placeholder">
+      <div className="chart-placeholder-head">
+        <strong>{title}</strong>
+        {legend.length > 0 && (
+          <ul className="chart-placeholder-legend">
+            {legend.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div className="chart-placeholder-frame" aria-hidden="true" />
+    </div>
+  )
+}
+
+export type TierName = 'Starter' | 'Growth' | (string & {})
+
+// Purely visual pill for showing a plan/tier label. No logic — the caller
+// decides what text/tier to pass in. Does not imply any restricted-mode or
+// starter/growth feature-gating exists anywhere in the app.
+export function TierIndicator({ tier }: { tier: TierName }) {
+  return <span className="tier-indicator">{tier}</span>
+}
+
+// Generic, brand-agnostic header pattern extracted from SuperDashboardPage's
+// visual style (eyebrow label + title + description). Not wired to any
+// specific console; callers supply their own content and accent via CSS vars.
+export function SuperHeader({ eyebrow, title, description, actions }: { eyebrow?: string; title: string; description?: string; actions?: React.ReactNode }) {
+  return (
+    <header className="module-header header-premium super-header">
+      {eyebrow && <p>{eyebrow}</p>}
+      <h1>{title}</h1>
+      {description && <span>{description}</span>}
+      {actions && <div className="super-header-actions">{actions}</div>}
+    </header>
+  )
+}
+
+// Generic KPI/metric grid — reuses the existing 'kpi-grid' layout class so it
+// visually matches BrandDashboard's grid without duplicating its markup.
+export function MetricsGrid({ metrics }: { metrics: BrandMetric[] }) {
+  return (
+    <div className="kpi-grid">
+      {metrics.map((metric, index) => (
+        <KPIWidget key={metric.label} metric={metric} index={index} />
+      ))}
+    </div>
+  )
+}
+
+export type QuickAction = { label: string; onClick?: () => void; href?: string }
+
+// Generic row of quick-action buttons, styled with the existing 'btn-premium'
+// class. Purely presentational — no new navigation paradigm.
+export function QuickActionsBar({ actions }: { actions: QuickAction[] }) {
+  return (
+    <div className="quick-actions-bar">
+      {actions.map((action) =>
+        action.href ? (
+          <a key={action.label} href={action.href} className="btn-premium">{action.label}</a>
+        ) : (
+          <button key={action.label} type="button" className="btn-premium" onClick={action.onClick}>{action.label}</button>
+        ),
+      )}
+    </div>
+  )
 }
 
 export function KPIWidget({ metric, index = 0 }: { metric: BrandMetric; index?: number }) {
@@ -513,25 +713,110 @@ export function DashboardCard({ metric }: { metric: BrandMetric }) {
   return <KPIWidget metric={metric} />
 }
 
+// Real, friendly, at-a-glance AI insight for the top of a dashboard — no separate fetch, no
+// fabricated numbers. It just reads the same real, already-tone-classified metrics already
+// shown in the KPI grid below and says the single most useful thing in plain language: the
+// first metric marked 'risk' (or 'watch' if nothing's flagged as urgent), or a genuine
+// all-clear when nothing needs attention. This is visible immediately, not hidden behind a
+// click into the FoundAI panel.
+export function AIInsightBanner({ metrics, brandLabel }: { metrics: BrandMetric[]; brandLabel?: string }) {
+  const aiEnabled = useAIAssistance()
+  const flagged = metrics.find((metric) => metric.tone === 'risk') ?? metrics.find((metric) => metric.tone === 'watch')
+  const message = flagged
+    ? `Heads up — ${flagged.label} needs a look (${flagged.value}${flagged.trend ? `, ${flagged.trend}` : ''}). Want me to help with it?`
+    : `Everything looks good${brandLabel ? ` for ${brandLabel}` : ''} today — nothing urgent to flag.`
+  if (!aiEnabled) return null
+  return (
+    <div className="ai-insight-banner">
+      <span className="ai-insight-badge">AI</span>
+      <p>{message}</p>
+    </div>
+  )
+}
+
+// Real "first time in this brand console" welcome — child-level clarity, explains what the
+// screen does, and offers ONE real, working "Do this for me" action: a genuine link into a
+// real page (no fabricated automation). Generic (brandKey/brandName/description/firstAction)
+// so it works for both a brand's own BrandConsoleConfig (see the AIOnboardingWelcome wrapper
+// below) and foundingos-console's own bespoke founder dashboard, which has no
+// BrandConsoleConfig of its own. Seen-state is a cookie shared across every
+// *.foundingos.com subdomain (see ai-assistance.tsx), so once dismissed it stays dismissed.
+export function AIOnboardingWelcomeGeneric({ brandKey, brandName, description, firstAction }: { brandKey: string; brandName: string; description: string; firstAction?: { href: string; label: string } }) {
+  const aiEnabled = useAIAssistance()
+  const [dismissed, setDismissed] = useState(true) // starts hidden; corrected on mount below to avoid a flash for returning users
+
+  useEffect(() => {
+    if (!aiEnabled) return
+    setDismissed(hasSeenOnboarding(brandKey))
+  }, [aiEnabled, brandKey])
+
+  if (!aiEnabled || dismissed) return null
+
+  const dismiss = () => {
+    markOnboardingSeen(brandKey)
+    setDismissed(true)
+  }
+
+  return (
+    <div className="ai-onboarding-card ai-onboarding-glow">
+      <span className="ai-insight-badge">AI</span>
+      <div className="ai-onboarding-body">
+        <strong>Welcome to {brandName}!</strong>
+        <p className="ai-onboarding-purpose">{description}</p>
+        <p className="ai-onboarding-next">Here's what you can do here: {firstAction ? `open ${firstAction.label}, or explore any module below.` : 'explore your real modules below.'}</p>
+        <div className="ai-onboarding-actions">
+          {firstAction && (
+            <Link href={firstAction.href} className="ai-hint-cta" onClick={dismiss}>
+              Do this for me — open {firstAction.label}
+            </Link>
+          )}
+          <button type="button" className="ai-onboarding-dismiss" onClick={dismiss}>Got it, thanks</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function AIOnboardingWelcome({ config }: { config: BrandConsoleConfig }) {
+  const brandSlug = resolveBrandSlugFromName(config.name) ?? config.name.toLowerCase()
+  const firstModule = consoleModules(config)[0]
+  return (
+    <AIOnboardingWelcomeGeneric
+      brandKey={brandSlug}
+      brandName={config.name}
+      description={config.dashboard.subtitle}
+      firstAction={firstModule ? { href: firstModule.href, label: firstModule.label } : undefined}
+    />
+  )
+}
+
 export function ModuleHeader({ config, title, description }: { config: BrandConsoleConfig; title: string; description: string }) {
   return <header className="module-header header-premium" style={consoleStyle(config)}><p>{bobLabel(config)}</p><h1>{title}</h1><span>{description}</span></header>
 }
 
-export function BrandDashboard({ config }: { config: BrandConsoleConfig }) {
+export function BrandDashboard({ config, variant = 'growth' }: { config: BrandConsoleConfig; variant?: 'growth' | 'starter' }) {
   const crm = config.crm ?? defaultCRM(config)
   const moduleCards = consoleModules(config)
   const accentStyle = consoleStyle(config)
+  const brandSlug = resolveBrandSlugFromName(config.name)
   return (
-    <section className="console-page" style={accentStyle}>
+    <section className="console-page quantum-ambient-grid" style={accentStyle}>
+      <div className="quantum-particle-drift"><span className="quantum-particle" /><span className="quantum-particle" /><span className="quantum-particle" /></div>
       <ModuleHeader config={config} title={config.dashboard.title} description={config.dashboard.subtitle} />
+
+      <AIOnboardingWelcome config={config} />
+      <AIInsightBanner metrics={config.dashboard.metrics} brandLabel={config.name} />
 
       <div className="kpi-grid">
         {config.dashboard.metrics.map((metric, index) => <KPIWidget key={metric.label} metric={metric} index={index} />)}
       </div>
 
+      {brandSlug && <RealBrandFinancePanel brandSlug={brandSlug} brandName={config.name} />}
+
       <div className="module-card-grid">
         {moduleCards.map((module, index) => (
-          <Link key={module.href} className="module-card card-premium" href={module.href}>
+          <Link key={module.href} className="module-card card-premium quantum-card" href={module.href}>
+            <span className="quantum-corner-marker">{config.logo}</span>
             <div className="module-card-top">
               <span>{String(index + 1).padStart(2, '0')}</span>
               <strong>{module.label}</strong>
@@ -545,6 +830,11 @@ export function BrandDashboard({ config }: { config: BrandConsoleConfig }) {
         ))}
       </div>
 
+      {variant === 'growth' && <DemoMessageBoard config={config} variant="full" />}
+      {variant === 'growth' && <DataMigrationHub config={config} />}
+      {variant === 'starter' && <GetStartedChecklist config={config} />}
+      {variant === 'starter' && <DemoMessageBoard config={config} variant="limited" />}
+
       <div className="console-grid">
         <article className="panel panel-premium wide">
           <h2>{config.dashboard.tableTitle}</h2>
@@ -555,7 +845,7 @@ export function BrandDashboard({ config }: { config: BrandConsoleConfig }) {
         </article>
         <article className="panel panel-premium">
           <h2>Quick actions</h2>
-          <div className="action-list">{config.quickActions.map((action) => <button key={action} type="button" className="btn-premium">{action}</button>)}</div>
+          <div className="action-list"><QuickActionsBar actions={config.quickActions.map((action) => ({ label: action }))} /></div>
         </article>
         <article className="panel panel-premium">
           <h2>CRM summary</h2>
@@ -684,7 +974,7 @@ function extensionGroups(config: BrandConsoleConfig) {
         { key: 'owner', label: 'Actor' },
         { key: 'notes', label: 'Details', type: 'textarea' },
       ] satisfies DataField[],
-      rows: makeRows('activity', [`${config.name} workspace opened`, 'Subscription checked', 'Module permissions refreshed', 'IntelligenceAI reviewed context'], [
+      rows: makeRows('activity', [`${config.name} workspace opened`, 'Subscription checked', 'Module permissions refreshed', 'FoundAI reviewed context'], [
         { key: 'name', label: 'Event' },
         { key: 'status', label: 'Outcome' },
         { key: 'owner', label: 'Actor' },
@@ -694,7 +984,7 @@ function extensionGroups(config: BrandConsoleConfig) {
   ]
 
   const byBrand: Record<string, Array<{ key: string; title: string; fields: DataField[]; rows: DataRow[] }>> = {
-    'Core.Operations': [
+    FoundRetail: [
       {
         key: 'customers',
         title: 'Customers',
@@ -744,7 +1034,79 @@ function extensionGroups(config: BrandConsoleConfig) {
         ]),
       },
     ],
-    'Core.Intelligence': [
+    FoundMeat: [
+      {
+        key: 'farms',
+        title: 'Farms',
+        fields: [
+          { key: 'name', label: 'Farm' },
+          { key: 'status', label: 'Status', type: 'select', options: ['Approved', 'Review', 'Hold'] },
+          { key: 'owner', label: 'Contact' },
+          { key: 'notes', label: 'Notes', type: 'textarea' },
+        ],
+        rows: makeRows('meat-farm', ['North Farm', 'Hill Butchers', 'Prime Pastures', 'Green Acre'], [
+          { key: 'name', label: 'Farm' },
+          { key: 'status', label: 'Status' },
+          { key: 'owner', label: 'Contact' },
+          { key: 'notes', label: 'Notes' },
+        ]),
+      },
+      {
+        key: 'processors',
+        title: 'Processors',
+        fields: [
+          { key: 'name', label: 'Processor' },
+          { key: 'status', label: 'Status', type: 'select', options: ['Active', 'Audit', 'Hold'] },
+          { key: 'owner', label: 'Owner' },
+          { key: 'notes', label: 'Notes', type: 'textarea' },
+        ],
+        rows: makeRows('meat-processor', ['Cold Chain Co', 'Prime Cut', 'West Pack', 'Fresh Flow'], [
+          { key: 'name', label: 'Processor' },
+          { key: 'status', label: 'Status' },
+          { key: 'owner', label: 'Owner' },
+          { key: 'notes', label: 'Notes' },
+        ]),
+      },
+      {
+        key: 'logistics',
+        title: 'Logistics partners',
+        fields: [
+          { key: 'name', label: 'Partner' },
+          { key: 'status', label: 'Status', type: 'select', options: ['Active', 'Delayed', 'Review'] },
+          { key: 'owner', label: 'Coordinator' },
+          { key: 'notes', label: 'Notes', type: 'textarea' },
+        ],
+        rows: makeRows('meat-logistics', ['Route 1', 'Route 2', 'Route 3', 'Route 4'], [
+          { key: 'name', label: 'Partner' },
+          { key: 'status', label: 'Status' },
+          { key: 'owner', label: 'Coordinator' },
+          { key: 'notes', label: 'Notes' },
+        ]),
+      },
+      {
+        key: 'products',
+        title: 'Products',
+        fields: [
+          { key: 'name', label: 'Product' },
+          { key: 'category', label: 'Category', type: 'select', options: ['Fresh', 'Frozen', 'Prepared'] },
+          { key: 'price', label: 'Price' },
+          { key: 'stock', label: 'Stock' },
+          { key: 'supplier', label: 'Supplier' },
+          { key: 'description', label: 'Description', type: 'textarea' },
+          { key: 'image', label: 'Product image', type: 'file' },
+        ],
+        rows: makeRows('meat-product', ['Ribeye', 'Brisket', 'Sirloin', 'Pork Belly'], [
+          { key: 'name', label: 'Product' },
+          { key: 'category', label: 'Category' },
+          { key: 'price', label: 'Price' },
+          { key: 'stock', label: 'Stock' },
+          { key: 'supplier', label: 'Supplier' },
+          { key: 'description', label: 'Description' },
+          { key: 'image', label: 'Product image' },
+        ]),
+      },
+    ],
+    FoundThat: [
       {
         key: 'clients',
         title: 'Clients',
@@ -794,7 +1156,7 @@ function extensionGroups(config: BrandConsoleConfig) {
         ]),
       },
     ],
-    'Core.Workforce': [
+    FoundTalent: [
       {
         key: 'candidates',
         title: 'Candidates',
@@ -892,6 +1254,74 @@ function extensionGroups(config: BrandConsoleConfig) {
         ]),
       },
     ],
+    FoundCrypto: [
+      {
+        key: 'wallets',
+        title: 'Wallets',
+        fields: [
+          { key: 'name', label: 'Wallet' },
+          { key: 'status', label: 'Status', type: 'select', options: ['Connected', 'Watch', 'Review'] },
+          { key: 'owner', label: 'Owner' },
+          { key: 'notes', label: 'Notes', type: 'textarea' },
+        ],
+        rows: makeRows('crypto-wallet', ['Main treasury', 'Hot wallet', 'Vault', 'Trading desk'], [
+          { key: 'name', label: 'Wallet' },
+          { key: 'status', label: 'Status' },
+          { key: 'owner', label: 'Owner' },
+          { key: 'notes', label: 'Notes' },
+        ]),
+      },
+      {
+        key: 'exchanges',
+        title: 'Exchanges',
+        fields: [
+          { key: 'name', label: 'Exchange' },
+          { key: 'status', label: 'Status', type: 'select', options: ['Live', 'Watch', 'Blocked'] },
+          { key: 'owner', label: 'Owner' },
+          { key: 'notes', label: 'Notes', type: 'textarea' },
+        ],
+        rows: makeRows('crypto-exchange', ['Binance', 'Coinbase', 'Kraken', 'Bybit'], [
+          { key: 'name', label: 'Exchange' },
+          { key: 'status', label: 'Status' },
+          { key: 'owner', label: 'Owner' },
+          { key: 'notes', label: 'Notes' },
+        ]),
+      },
+      {
+        key: 'triggers',
+        title: 'Triggers',
+        fields: [
+          { key: 'name', label: 'Trigger' },
+          { key: 'status', label: 'Status', type: 'select', options: ['Ready', 'Queued', 'Review'] },
+          { key: 'owner', label: 'Owner' },
+          { key: 'notes', label: 'Notes', type: 'textarea' },
+        ],
+        rows: makeRows('crypto-trigger', ['Price breakout', 'Volatility alert', 'Risk guard', 'Momentum watch'], [
+          { key: 'name', label: 'Trigger' },
+          { key: 'status', label: 'Status' },
+          { key: 'owner', label: 'Owner' },
+          { key: 'notes', label: 'Notes' },
+        ]),
+      },
+      {
+        key: 'portfolio',
+        title: 'Portfolio intelligence',
+        fields: [
+          { key: 'name', label: 'Signal' },
+          { key: 'stage', label: 'State', type: 'select', options: ['Bullish', 'Neutral', 'Risk'] },
+          { key: 'value', label: 'Exposure' },
+          { key: 'owner', label: 'Analyst' },
+          { key: 'notes', label: 'Notes', type: 'textarea' },
+        ],
+        rows: makeRows('crypto-portfolio', ['BTC', 'ETH', 'SOL', 'ARB'], [
+          { key: 'name', label: 'Signal' },
+          { key: 'stage', label: 'State' },
+          { key: 'value', label: 'Exposure' },
+          { key: 'owner', label: 'Analyst' },
+          { key: 'notes', label: 'Notes' },
+        ]),
+      },
+    ],
   }
 
   return [...shared, ...(byBrand[config.name] ?? [])]
@@ -920,6 +1350,7 @@ function CRMBoardSection({ title, fields, rows, accentStyle, description }: { ti
 export function BrandModulePage({ config, moduleId }: { config: BrandConsoleConfig; moduleId: string }) {
   const module = config.modules.find((item) => item.id === moduleId) ?? { id: moduleId, label: `Module: ${moduleId}`, description: 'This module is active.', metrics: [], actions: ['Review activity', 'Configure module'] }
   const accentStyle = consoleStyle(config)
+  const brandSlug = resolveBrandSlugFromName(config.name)
 
   if (module.id === 'products') {
     const productFields: DataField[] = [
@@ -945,6 +1376,7 @@ export function BrandModulePage({ config, moduleId }: { config: BrandConsoleConf
         accentStyle={accentStyle}
         pageSize={4}
         emptyCopy="Add your first product to start managing the catalog."
+        aiRecommendedAction="add your first product"
       />
     )
   }
@@ -959,20 +1391,28 @@ export function BrandModulePage({ config, moduleId }: { config: BrandConsoleConf
   const rows = makeRows(module.id, module.actions.length > 0 ? module.actions : [module.label], fields)
 
   return (
-    <DataWorkbench
-      title={module.label}
-      description={module.description}
-      fields={fields}
-      rows={rows}
-      cards={[
-        { label: 'Actions', value: String(module.actions.length), trend: 'Ready', icon: '▦' },
-        { label: 'Metrics', value: String(module.metrics.length), trend: 'Live', icon: '◌' },
-        { label: 'Workflow steps', value: String((module.workflow ?? []).length || 3), trend: 'Guided', icon: '◆' },
-      ]}
-      accentStyle={accentStyle}
-      pageSize={5}
-      emptyCopy={`No ${module.label.toLowerCase()} records yet.`}
-    />
+    <>
+      <DataWorkbench
+        title={module.label}
+        description={module.description}
+        fields={fields}
+        rows={rows}
+        cards={[
+          { label: 'Actions', value: String(module.actions.length), trend: 'Ready', icon: '▦' },
+          { label: 'Metrics', value: String(module.metrics.length), trend: 'Live', icon: '◌' },
+          { label: 'Workflow steps', value: String((module.workflow ?? []).length || 3), trend: 'Guided', icon: '◆' },
+        ]}
+        accentStyle={accentStyle}
+        pageSize={5}
+        emptyCopy={`No ${module.label.toLowerCase()} records yet.`}
+        aiRecommendedAction={module.actions[0]?.toLowerCase() ?? `add your first ${module.label.toLowerCase()} record`}
+      />
+      {module.id === 'accounting' && brandSlug && (
+        <div className="module-card-grid" style={{ marginTop: 16 }}>
+          <RealInvoicesPanel brandSlug={brandSlug} brandName={config.name} />
+        </div>
+      )}
+    </>
   )
 }
 
@@ -981,6 +1421,11 @@ export function BrandSettingsPage({ config }: { config: BrandConsoleConfig }) {
   return (
     <section className="console-page" style={accentStyle}>
       <ModuleHeader config={config} title="Settings" description={`${config.name} configuration, permissions, appearance, CRM, and module controls.`} />
+      <div className="panel panel-premium ai-assistance-panel">
+        <h2>AI Assistance</h2>
+        <p>Turn off to hide onboarding welcomes, module hints, Guardian explanations, and the FoundAI helper everywhere in FoundingOS — on this device, across every brand.</p>
+        <AIAssistanceToggle />
+      </div>
       <div className="settings-grid">
         {config.settings.map((setting) => (
           <article key={setting} className="panel panel-premium">
@@ -1005,6 +1450,7 @@ export function CRMBoard({ config }: { config: BrandConsoleConfig }) {
   const crm = config.crm ?? defaultCRM(config)
   const sections = extensionGroups(config)
   const [activeSection, setActiveSection] = useState(sections[0]?.key ?? 'contacts')
+  const brandSlug = resolveBrandSlugFromName(config.name)
 
   const current = sections.find((section) => section.key === activeSection) ?? sections[0]
 
@@ -1019,8 +1465,20 @@ export function CRMBoard({ config }: { config: BrandConsoleConfig }) {
         </article>
         <article className="module-card card-premium module-card-static">
           <strong>Brand extensions</strong>
-          <p>{config.name === 'CoreOperations' ? 'Customers, suppliers, and stores.' : config.name === 'CoreOperations' ? 'Farms, processors, logistics partners, and products.' : config.name === 'CoreIntelligence' ? 'Clients, systems, and integrations.' : config.name === 'CoreWorkforce' ? 'Candidates, employers, jobs, and intelligence.' : 'Wallets, exchanges, triggers, and portfolio intelligence.'}</p>
+          <p>{
+            {
+              FoundRetail: 'Customers, suppliers, and stores.',
+              FoundMeat: 'Farms, processors, logistics partners, and products.',
+              FoundThat: 'Clients, systems, and integrations.',
+              FoundTalent: 'Candidates, employers, jobs, and intelligence.',
+              FoundCrypto: 'Wallets, exchanges, triggers, and portfolio intelligence.',
+              FoundFinance: 'Accounts, invoices, reconciliations, and cashflow.',
+              FoundHealth: 'Patients, appointments, records, and compliance.',
+              FoundLogistics: 'Fleets, routes, warehouses, and deliveries.',
+            }[config.name] ?? 'Contacts, companies, deals, tasks, notes, and activity.'
+          }</p>
         </article>
+        {brandSlug && <RealDealsPanel brandSlug={brandSlug} brandName={config.name} />}
       </div>
 
       <div className="manager-tabs">
@@ -1056,10 +1514,25 @@ export function packageCatalogForBrand(name: string) {
   return packageCatalog[name] ?? packageCatalog.FoundingOS
 }
 
+// Baseline profile used to compute a recommendation on the package page, where no onboarding
+// quiz has been answered yet. The onboarding form recomputes this from the customer's real answers.
+const BASELINE_PROFILE: BusinessProfile = {
+  businessSize: 'small',
+  industry: 'retail',
+  dataVolume: 'medium',
+  intelligenceNeeds: 'moderate',
+  riskLevel: 'medium',
+  growthTrajectory: 'steady',
+  consoleCount: 1,
+  expectedMonthlyUsage: 200,
+}
+
 export function BrandPackagePage({ config, packageSlug }: { config: BrandConsoleConfig; packageSlug?: string }) {
   const packages = packageCatalogForBrand(config.name)
   const activePackage = packages.find((entry) => entry.slug === packageSlug) ?? packages[0]
   const [formState, setFormState] = useState({ name: '', email: '', company: '', teamSize: '', notes: '' })
+  const isRecommendableAddOn = activePackage?.slug === 'quantumos' || activePackage?.slug === 'intelligenceos'
+  const recommendation = useMemo(() => recommendQuantumOS(BASELINE_PROFILE), [])
 
   if (!activePackage) return null
 
@@ -1111,7 +1584,7 @@ export function BrandPackagePage({ config, packageSlug }: { config: BrandConsole
             </label>
           </div>
           <div className="action-list">
-            <button type="button">Continue onboarding</button>
+            <a className="btn btn-primary quantum-btn" href={`${brands.foundingos.webUrl}/onboarding`}>Continue onboarding</a>
             <Link className="btn btn-secondary" href="/console">Back to console</Link>
           </div>
         </article>
@@ -1121,6 +1594,7 @@ export function BrandPackagePage({ config, packageSlug }: { config: BrandConsole
           <h2>{activePackage.name}</h2>
           <p>{activePackage.description}</p>
           <strong className="package-price">{activePackage.price}</strong>
+          {isRecommendableAddOn && <RecommendationBadge recommendation={recommendation} />}
           <div className="package-block">
             <h3>Features</h3>
             <ul>{activePackage.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
@@ -1146,25 +1620,35 @@ export function BrandPackagePage({ config, packageSlug }: { config: BrandConsole
 
 const packageCatalog: Record<string, BrandPackage[]> = {
   FoundingOS: [
-    { slug: 'quantumos', name: 'QuantumOS', price: '£149/mo', description: 'The full FoundingOS command layer for leaders who want every brand, workflow, and AI decision in one view.', features: ['Portfolio command center', 'Globalisation controls', 'IntelligenceAI orchestration', 'Cross-brand reporting'], benefits: ['See every brand at once', 'Standardise operations', 'Move faster with AI guidance'], audience: 'Best for founders and operators running the full ecosystem.' },
+    { slug: 'quantumos', name: 'QuantumOS', price: '£149/mo', description: 'The full FoundingOS command layer for leaders who want every brand, workflow, and AI decision in one view.', features: ['Portfolio command center', 'Globalisation controls', 'FoundAI orchestration', 'Cross-brand reporting'], benefits: ['See every brand at once', 'Standardise operations', 'Move faster with AI guidance'], audience: 'Best for founders and operators running the full ecosystem.' },
     { slug: 'intelligenceos', name: 'IntelligenceOS', price: '£99/mo', description: 'Sharper analytics and automated context for teams that need more signal and less manual review.', features: ['Live analytics', 'Decision snapshots', 'Context-aware alerts', 'Shared task queues'], benefits: ['Track what matters', 'Reduce follow-up work', 'Keep teams aligned'], audience: 'Best for leadership teams focused on insight and reporting.' },
     { slug: 'systemos', name: 'SystemOS', price: '£59/mo', description: 'A practical control stack for setup, structure, and team access across the core platform.', features: ['Workspace setup', 'Access governance', 'Brand scaffolding', 'Workflow templates'], benefits: ['Launch quickly', 'Keep permissions tidy', 'Create a stable base'], audience: 'Best for new rollouts and lean system administration.' },
   ],
-  'Core.Operations': [
+  FoundRetail: [
     { slug: 'standard', name: 'Standard', price: '£49/mo', description: 'A focused retail package for smaller stores that need stock, sales, and customer visibility.', features: ['POS workflows', 'Stock monitoring', 'Customer records', 'Supplier alerts'], benefits: ['Stay organised', 'Reduce stockouts', 'Serve faster'], audience: 'Best for single-location teams.' },
     { slug: 'pro', name: 'Pro', price: '£89/mo', description: 'Expanded retail control with stronger reporting, order handling, and team collaboration.', features: ['Multi-store reporting', 'Advanced orders', 'Team handoffs', 'Forecast snapshots'], benefits: ['Scale across stores', 'See performance trends', 'Coordinate the team'], audience: 'Best for growing retail operators.' },
     { slug: 'enterprise', name: 'Enterprise', price: '£149/mo', description: 'High-volume retail operations with governance, automation, and deep operational insight.', features: ['Governance controls', 'Automation rules', 'Audit views', 'Regional analytics'], benefits: ['Run larger operations', 'Keep control tight', 'Improve decision speed'], audience: 'Best for multi-site retail organisations.' },
     { slug: 'owneros', name: 'OwnerOS', price: '£199/mo', description: 'The all-in command package for owners who want a premium control room for the full business.', features: ['Executive dashboard', 'Portfolio alerts', 'AI assistance', 'Priority support'], benefits: ['Lead from one view', 'React quickly', 'Keep the business aligned'], audience: 'Best for owners and directors.' },
   ],
-  'Core.Intelligence': [
+  FoundMeat: [
+    { slug: 'butcheros', name: 'ButcherOS', price: '£59/mo', description: 'Daily traceability and stock control for butcher shops and premium meat counters.', features: ['Batch tracking', 'QA checkpoints', 'Cut records', 'Supplier handling'], benefits: ['Protect quality', 'Track every batch', 'Keep counters moving'], audience: 'Best for shops and counters.' },
+    { slug: 'factoryos', name: 'FactoryOS', price: '£109/mo', description: 'Factory-level production tooling for lines, compliance, and throughput management.', features: ['Production schedules', 'Compliance logs', 'Cold-chain alerts', 'Dispatch oversight'], benefits: ['Improve throughput', 'Stay audit-ready', 'Reduce manual checks'], audience: 'Best for processors and production teams.' },
+    { slug: 'distributionos', name: 'DistributionOS', price: '£149/mo', description: 'A distribution control package for warehouses, routes, and regional fulfilment.', features: ['Route visibility', 'Warehouse batches', 'Delivery windows', 'QA summaries'], benefits: ['Keep deliveries accurate', 'Track regional flow', 'Spot risk early'], audience: 'Best for distributors and logistics teams.' },
+  ],
+  FoundThat: [
     { slug: 'supportos', name: 'SupportOS', price: '£69/mo', description: 'Service desk operations with ticket triage, alerts, and fast response paths.', features: ['Ticket queues', 'SLA reminders', 'Alert routing', 'Response templates'], benefits: ['Resolve issues faster', 'Keep service visible', 'Simplify handoffs'], audience: 'Best for support teams.' },
     { slug: 'networkos', name: 'NetworkOS', price: '£119/mo', description: 'Infrastructure and uptime tooling for teams running networks, services, and monitoring.', features: ['Uptime metrics', 'System alerts', 'Event tracking', 'Health checks'], benefits: ['Stay ahead of outages', 'See system health', 'React with clarity'], audience: 'Best for operations and infrastructure teams.' },
     { slug: 'enterpriseos', name: 'EnterpriseOS', price: '£169/mo', description: 'A premium IT command layer for larger organisations with more sites, data, and control needs.', features: ['Enterprise dashboards', 'Governance settings', 'Audit logs', 'Automation rules'], benefits: ['Scale with confidence', 'Keep standards high', 'Centralise oversight'], audience: 'Best for enterprise IT teams.' },
   ],
-  'Core.Workforce': [
+  FoundTalent: [
     { slug: 'recruiteros', name: 'RecruiterOS', price: '£79/mo', description: 'Recruiter workflow tooling for candidate pipelines, interviews, and fast follow-up.', features: ['Candidate pipeline', 'Interview scheduling', 'Email templates', 'Hiring dashboards'], benefits: ['Move candidates faster', 'Keep hiring organised', 'Reduce admin'], audience: 'Best for in-house recruiters.' },
     { slug: 'agencyos', name: 'AgencyOS', price: '£129/mo', description: 'Agency delivery tooling for multi-client recruiting and placement management.', features: ['Client pipelines', 'Role tracking', 'Placement reporting', 'Team coordination'], benefits: ['Manage multiple clients', 'Track delivery clearly', 'Improve placement speed'], audience: 'Best for recruitment agencies.' },
     { slug: 'hrproos', name: 'HRProOS', price: '£169/mo', description: 'HR-focused operations for larger teams with onboarding, compliance, and people data.', features: ['Onboarding flows', 'People records', 'Policy tasks', 'Workforce reporting'], benefits: ['Support HR at scale', 'Keep records tidy', 'Improve team readiness'], audience: 'Best for HR teams and people ops.' },
+  ],
+  FoundCrypto: [
+    { slug: 'traderos', name: 'TraderOS', price: '£89/mo', description: 'Fast-moving trading dashboards for signals, positions, and live market action.', features: ['Signal boards', 'Wallet views', 'Risk snapshots', 'Automation hooks'], benefits: ['See market action fast', 'Track positions clearly', 'Stay responsive'], audience: 'Best for active traders.' },
+    { slug: 'investoros', name: 'InvestorOS', price: '£139/mo', description: 'Portfolio oversight for investors who need calm, structured views of holdings and exposure.', features: ['Portfolio summaries', 'Allocation charts', 'Exposure analysis', 'Watchlists'], benefits: ['Understand exposure', 'Monitor performance', 'Keep a steady view'], audience: 'Best for portfolio investors.' },
+    { slug: 'whaleos', name: 'WhaleOS', price: '£219/mo', description: 'Premium control for large wallets, automation, and higher-touch risk management.', features: ['Large-wallet oversight', 'Advanced automation', 'Risk alarms', 'Priority support'], benefits: ['Protect larger balances', 'Act on movement quickly', 'Keep operations private'], audience: 'Best for high-volume operators.' },
   ],
 }
 

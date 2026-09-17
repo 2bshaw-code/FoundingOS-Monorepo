@@ -148,7 +148,7 @@ const translations = {
 const sections: ControlSection[] = [
   { key: 'businesses', title: 'All businesses', summary: 'Portfolio structure, ownership, and operating health across the group.', amount: 5, status: 'Live', href: '/superdashboard' },
   { key: 'brands', title: 'All brands', summary: 'Brand registry, visual identity, and brand-level controls in one place.', amount: 5, status: 'Live', href: '/superdashboard' },
-  { key: 'workflows', title: 'All workflows', summary: 'Active automations, approvals, and workflow orchestration for every brand.', amount: 18, status: 'Active', href: '/superdashboard/scraping' },
+  { key: 'workflows', title: 'All workflows', summary: 'Active automations, approvals, and workflow orchestration across enabled workspaces.', amount: 18, status: 'Active', href: '/dashboard' },
   { key: 'whatsapp', title: 'All WhatsApp automation', summary: 'Messaging flows, inbox routing, and FoundAI-assisted automation across channels.', amount: 42, status: 'Live', href: '/modules/messaging' },
   { key: 'analytics', title: 'All analytics', summary: 'Revenue, product, order, customer, and AI metrics across the ecosystem.', amount: 24, status: 'Live', href: '/superdashboard' },
   { key: 'ai', title: 'All AI onboarding', summary: 'FoundAI entry points, prompts, handoffs, and onboarding journeys for every brand.', amount: 12, status: 'Active', href: '/modules/foundai-demo' },
