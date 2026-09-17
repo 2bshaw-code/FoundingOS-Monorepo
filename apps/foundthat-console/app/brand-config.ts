@@ -6,7 +6,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 import { brands } from '@foundingos/config'
 
 export const brandConfig: BrandConsoleConfig = {
-  "name": "FoundThat",
+  "name": "Intelligence.ITOps",
   "logo": "✦",
   "accent": "#FFDD00",
   "typography": {
@@ -86,7 +86,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "tickets",
       "label": "Tickets",
-      "description": "FoundThat tickets workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Intelligence.ITOps tickets workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Uptime",
@@ -125,7 +125,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "monitoring",
       "label": "Monitoring",
-      "description": "FoundThat monitoring workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Intelligence.ITOps monitoring workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Uptime",
@@ -164,7 +164,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "alerts",
       "label": "Alerts",
-      "description": "FoundThat alerts workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Intelligence.ITOps alerts workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Uptime",
@@ -203,7 +203,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "assets",
       "label": "Assets",
-      "description": "FoundThat assets workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Intelligence.ITOps assets workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Uptime",
@@ -242,7 +242,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "systems",
       "label": "Systems",
-      "description": "FoundThat systems workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Intelligence.ITOps systems workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Uptime",
@@ -281,7 +281,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "uptime",
       "label": "Uptime",
-      "description": "FoundThat uptime workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Intelligence.ITOps uptime workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Uptime",
@@ -320,7 +320,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "incidents",
       "label": "Incidents",
-      "description": "FoundThat incidents workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Intelligence.ITOps incidents workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Uptime",
@@ -359,7 +359,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "reports",
       "label": "Reports",
-      "description": "FoundThat reports workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Intelligence.ITOps reports workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Uptime",
@@ -593,8 +593,8 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "crm": {
-    "title": "FoundThat CRM",
-    "summary": "FoundThat CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
+    "title": "Intelligence.ITOps CRM",
+    "summary": "Intelligence.ITOps CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
     "records": [
       {
         "name": "API Gateway",

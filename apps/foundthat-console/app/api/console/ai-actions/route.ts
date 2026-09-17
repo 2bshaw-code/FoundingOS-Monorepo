@@ -15,10 +15,6 @@ const REAL_FETCH_ACTIONS: { label: string; fetchPath: string }[] = [
     {
       "label": "Refresh my dashboard",
       "fetchPath": "/api/dashboard/refresh"
-    },
-    {
-      "label": "Analyse my metrics",
-      "fetchPath": "/api/scrape/refresh"
     }
   ]
 

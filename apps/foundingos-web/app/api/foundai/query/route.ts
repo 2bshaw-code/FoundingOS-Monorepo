@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server'
 // FoundAI free-mode Q&A: local, deterministic keyword matching only — no external AI APIs,
 // no secrets, no network calls. Self-contained in this file.
 const KNOWLEDGE: { keywords: string[]; answer: string }[] = [
-  { keywords: ['founderos', 'foundingos', 'what is'], answer: 'FounderOS is one ecosystem connecting every brand console — retail, meat, talent, crypto, finance, health, and logistics — under a single command layer.' },
+  { keywords: ['founderos', 'foundingos', 'what is'], answer: 'FounderOS is one ecosystem connecting every brand console — retail, talent, finance, health, and logistics — under a single command layer.' },
   { keywords: ['sign in', 'login', 'log in'], answer: 'Tap Sign In from the landing page — this is demo mode, so no real account or password is required.' },
   { keywords: ['survey'], answer: 'The survey is a quick, optional set of questions that helps tailor your FounderOS experience. You can skip any question.' },
   { keywords: ['onboarding'], answer: 'Onboarding walks you through choosing a SystemOS tier, and optionally QuantumOS or IntelligenceOS add-ons, based on your answers.' },

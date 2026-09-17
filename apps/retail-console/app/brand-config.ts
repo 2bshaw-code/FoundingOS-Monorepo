@@ -6,7 +6,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 import { brands } from '@foundingos/config'
 
 export const brandConfig: BrandConsoleConfig = {
-  "name": "FoundRetail",
+  "name": "Operations.Retail",
   "logo": "◉",
   "accent": "#00FF66",
   "typography": {
@@ -86,7 +86,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "pos",
       "label": "Pos",
-      "description": "FoundRetail pos workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Operations.Retail pos workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Sales",
@@ -125,7 +125,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "inventory",
       "label": "Inventory",
-      "description": "FoundRetail inventory workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Operations.Retail inventory workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Sales",
@@ -164,7 +164,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "suppliers",
       "label": "Suppliers",
-      "description": "FoundRetail suppliers workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Operations.Retail suppliers workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Sales",
@@ -203,7 +203,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "sales",
       "label": "Sales",
-      "description": "FoundRetail sales workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Operations.Retail sales workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Sales",
@@ -242,7 +242,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "customers",
       "label": "Customers",
-      "description": "FoundRetail customers workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Operations.Retail customers workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Sales",
@@ -281,7 +281,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "orders",
       "label": "Orders",
-      "description": "FoundRetail orders workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Operations.Retail orders workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Sales",
@@ -320,7 +320,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "products",
       "label": "Products",
-      "description": "FoundRetail products workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Operations.Retail products workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Sales",
@@ -359,7 +359,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "stores",
       "label": "Stores",
-      "description": "FoundRetail stores workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Operations.Retail stores workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Sales",
@@ -671,8 +671,8 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "crm": {
-    "title": "FoundRetail CRM",
-    "summary": "FoundRetail CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
+    "title": "Operations.Retail CRM",
+    "summary": "Operations.Retail CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
     "records": [
       {
         "name": "Manchester",

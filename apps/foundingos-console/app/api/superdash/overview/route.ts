@@ -12,24 +12,20 @@ import { getSession } from '../../../lib/session-auth'
 // new numbers invented here — this is a literal copy of that page's own real data.
 const BRAND_ROWS = [
   { brand: 'FoundRetail', marketing: 88, accounting: 96, serviceLoad: 42, previousServiceLoad: 39, messaging: 1240, aiActions: 68, status: 'good', marketingHistory: [80, 82, 85, 84, 87, 88] },
-  { brand: 'FoundMeat', marketing: 76, accounting: 95, serviceLoad: 38, previousServiceLoad: 41, messaging: 640, aiActions: 54, status: 'good', marketingHistory: [70, 72, 74, 75, 75, 76] },
   { brand: 'FoundThat', marketing: 70, accounting: 88, serviceLoad: 26, previousServiceLoad: 24, messaging: 340, aiActions: 33, status: 'good', marketingHistory: [66, 67, 68, 69, 69, 70] },
   { brand: 'FoundTalent', marketing: 78, accounting: 93, serviceLoad: 45, previousServiceLoad: 40, messaging: 910, aiActions: 71, status: 'watch', marketingHistory: [73, 74, 76, 77, 77, 78] },
-  { brand: 'FoundCrypto', marketing: 83, accounting: 85, serviceLoad: 55, previousServiceLoad: 60, messaging: 1580, aiActions: 97, status: 'watch', marketingHistory: [88, 86, 85, 84, 83, 83] },
   { brand: 'FoundFinance', marketing: 74, accounting: 99, serviceLoad: 14, previousServiceLoad: 14, messaging: 520, aiActions: 62, status: 'good', marketingHistory: [72, 73, 73, 74, 74, 74] },
   { brand: 'FoundHealth', marketing: 66, accounting: 92, serviceLoad: 48, previousServiceLoad: 37, messaging: 690, aiActions: 51, status: 'risk', marketingHistory: [70, 69, 68, 67, 66, 66] },
   { brand: 'FoundLogistics', marketing: 81, accounting: 90, serviceLoad: 63, previousServiceLoad: 58, messaging: 770, aiActions: 88, status: 'watch', marketingHistory: [77, 78, 79, 80, 80, 81] },
 ]
 
 const PREDICTIVE_INSIGHTS = [
-  'FoundCrypto messaging volume up 34% over 7 days — monitor support capacity.',
   'FoundLogistics service load projected to cross 70 tickets/day within 5 days.',
   'FoundFinance accounting health holding at 99% — no forecasted risk this quarter.',
 ]
 
 const ANOMALIES = [
   { brand: 'FoundHealth', signal: 'Service load +31% week-over-week', tone: 'risk' },
-  { brand: 'FoundCrypto', signal: 'Messaging volume spiking beyond staffing model', tone: 'watch' },
 ]
 
 const FORECAST_BY_HORIZON = {

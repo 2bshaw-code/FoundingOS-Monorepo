@@ -68,15 +68,14 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/console/')) return NextResponse.next()
 
 
-  // Self-contained synthetic data generators (this brand's own /api/scrape/refresh,
-  // /api/feeds/update, /api/dashboard/refresh) must be reachable with NO session at all —
-  // that's exactly how Vercel's own cron jobs invoke them on schedule (crons carry no
-  // browser cookie), and it's the same real endpoint SuperDash's admin-only "Run Scrape"
-  // trigger calls on demand. Each one only ever mutates this brand's own BrandMetric row
-  // via a deterministic, seeded, no-external-network generator — there is no real data
-  // exposure or write risk from leaving these specific, exact paths open. Every other route
-  // (including the free-roam-blocking checks below) is completely unaffected.
-  const SYNTHETIC_GENERATOR_PATHS = new Set(['/api/scrape/refresh', '/api/feeds/update', '/api/dashboard/refresh'])
+  // Self-contained synthetic data generators (this brand's own /api/feeds/update,
+  // /api/dashboard/refresh) must be reachable with NO session at all — that's exactly how
+  // Vercel's own cron jobs invoke them on schedule (crons carry no browser cookie). Each one
+  // only ever mutates this brand's own BrandMetric row via a deterministic, seeded,
+  // no-external-network generator — there is no real data exposure or write risk from
+  // leaving these specific, exact paths open. Every other route (including the free-roam-
+  // blocking checks below) is completely unaffected.
+  const SYNTHETIC_GENERATOR_PATHS = new Set(['/api/feeds/update', '/api/dashboard/refresh'])
   if (SYNTHETIC_GENERATOR_PATHS.has(pathname)) return NextResponse.next()
 
   const adminToken = request.cookies.get(ADMIN_COOKIE)?.value
@@ -89,9 +88,8 @@ export async function middleware(request: NextRequest) {
   if (!testerId) return NextResponse.redirect(new URL(QUANTUM_LOGIN_URL))
 
   if (isFreeRoamLike(testerId)) {
-    // Free Roam (+ investor/lawyer): read-only. Block any write beneath /api/ — including
-    // GET-triggered scraper writes, which still mutate BrandMetric despite the method.
-    if (pathname.startsWith('/api/scrape/') || (pathname.startsWith('/api/') && request.method !== 'GET')) {
+    // Free Roam (+ investor/lawyer): read-only. Block any write beneath /api/.
+    if (pathname.startsWith('/api/') && request.method !== 'GET') {
       return NextResponse.json({ error: 'Read-only session — write access is disabled.' }, { status: 403 })
     }
     return NextResponse.next()

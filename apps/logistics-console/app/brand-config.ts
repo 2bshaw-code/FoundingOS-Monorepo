@@ -6,7 +6,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 import { brands } from '@foundingos/config'
 
 export const brandConfig: BrandConsoleConfig = {
-  "name": "FoundLogistics",
+  "name": "Operations.Logistics",
   "logo": "▲",
   "accent": "#DC143C",
   "typography": {
@@ -86,7 +86,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "fleet",
           "label": "Fleet",
-          "description": "FoundLogistics fleet workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Logistics fleet workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Vehicles Active",
@@ -125,7 +125,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "routes",
           "label": "Routes",
-          "description": "FoundLogistics routes workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Logistics routes workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Active Routes",
@@ -164,7 +164,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "warehousing",
           "label": "Warehousing",
-          "description": "FoundLogistics warehousing workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Logistics warehousing workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Capacity Used",
@@ -203,7 +203,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "deliveries",
           "label": "Deliveries",
-          "description": "FoundLogistics deliveries workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Logistics deliveries workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Delivered Today",
@@ -242,7 +242,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "dispatch",
           "label": "Dispatch",
-          "description": "FoundLogistics dispatch workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Logistics dispatch workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Dispatched Today",
@@ -281,7 +281,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "tracking",
           "label": "Tracking",
-          "description": "FoundLogistics tracking workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Logistics tracking workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Tracked Shipments",
@@ -320,7 +320,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "maintenance",
           "label": "Maintenance",
-          "description": "FoundLogistics maintenance workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Logistics maintenance workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Scheduled",
@@ -359,7 +359,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "fuel",
           "label": "Fuel",
-          "description": "FoundLogistics fuel workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Logistics fuel workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Fuel Spend",
@@ -398,7 +398,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "compliance",
           "label": "Compliance",
-          "description": "FoundLogistics compliance workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Logistics compliance workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Audit Readiness",
@@ -670,8 +670,8 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "crm": {
-      "title": "FoundLogistics CRM",
-      "summary": "FoundLogistics CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
+      "title": "Operations.Logistics CRM",
+      "summary": "Operations.Logistics CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
       "records": [
           {
               "name": "Harborview Distribution",

@@ -6,7 +6,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 import { brands } from '@foundingos/config'
 
 export const brandConfig: BrandConsoleConfig = {
-  "name": "FoundHealth",
+  "name": "Workforce.Health",
   "logo": "✚",
   "accent": "#33CCFF",
   "typography": {
@@ -86,7 +86,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "patients",
           "label": "Patients",
-          "description": "FoundHealth patients workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Workforce.Health patients workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Active Patients",
@@ -125,7 +125,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "appointments",
           "label": "Appointments",
-          "description": "FoundHealth appointments workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Workforce.Health appointments workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Booked Today",
@@ -164,7 +164,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "records",
           "label": "Records",
-          "description": "FoundHealth records workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Workforce.Health records workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Records Updated",
@@ -203,7 +203,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "compliance",
           "label": "Compliance",
-          "description": "FoundHealth compliance workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Workforce.Health compliance workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Audit Readiness",
@@ -242,7 +242,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "billing",
           "label": "Billing",
-          "description": "FoundHealth billing workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Workforce.Health billing workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Claims Submitted",
@@ -281,7 +281,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "referrals",
           "label": "Referrals",
-          "description": "FoundHealth referrals workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Workforce.Health referrals workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Active Referrals",
@@ -320,7 +320,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "staffing",
           "label": "Staffing",
-          "description": "FoundHealth staffing workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Workforce.Health staffing workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "On Shift",
@@ -359,7 +359,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "supplies",
           "label": "Supplies",
-          "description": "FoundHealth supplies workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Workforce.Health supplies workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Stock Level",
@@ -398,7 +398,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "telehealth",
           "label": "Telehealth",
-          "description": "FoundHealth telehealth workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Workforce.Health telehealth workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Sessions Today",
@@ -670,8 +670,8 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "crm": {
-      "title": "FoundHealth CRM",
-      "summary": "FoundHealth CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
+      "title": "Workforce.Health CRM",
+      "summary": "Workforce.Health CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
       "records": [
           {
               "name": "Riverside Family Practice",

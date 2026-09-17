@@ -72,7 +72,7 @@ export default function Page() {
           <a href="#top" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: '#f5f3ff' }}>
             <QuantumSphereLogo size={42} />
             <div>
-              <strong style={{ display: 'block', fontSize: 22, lineHeight: 1.1 }}>FoundLogistics</strong>
+              <strong style={{ display: 'block', fontSize: 22, lineHeight: 1.1 }}>Operations.Logistics</strong>
               <small style={{ color: '#ddd6fe', fontSize: 12 }}>{'Logistics Intelligence OS'}</small>
             </div>
           </a>
@@ -94,9 +94,9 @@ export default function Page() {
         <div className="quantum-particle-drift"><span className="quantum-particle" /><span className="quantum-particle" /><span className="quantum-particle" /><span className="quantum-particle" /><span className="quantum-particle" /></div>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '72px 20px 52px', display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 28, alignItems: 'center' }}>
           <div>
-            <p style={{ margin: 0, color: '#d8b4fe', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>FoundLogistics brand ecosystem</p>
+            <p style={{ margin: 0, color: '#d8b4fe', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>Operations.Logistics — part of FoundingOS</p>
             <h1 style={{ margin: '22px 0 0', fontSize: 'clamp(48px, 7vw, 92px)', lineHeight: 0.96, letterSpacing: '-0.05em', maxWidth: 700 }}>{'Clearer routes. Faster deliveries.'}</h1>
-            <p style={{ marginTop: 22, maxWidth: 620, color: '#ddd6fe', fontSize: 20, lineHeight: 1.8 }}>{'FoundLogistics connects fleet, routes, warehousing, and deliveries across all core channels.'}</p>
+            <p style={{ marginTop: 22, maxWidth: 620, color: '#ddd6fe', fontSize: 20, lineHeight: 1.8 }}>{'Operations.Logistics connects fleet, routes, warehousing, and deliveries across all core channels.'}</p>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 18, marginTop: 28 }}>
               <PackageModal tier={pricing.find((t) => t.slug === 'traderos')!} packageUrl={logisticsPackageUrl('traderos')} accent={brands.logistics.accent} buttonLabel="Choose your package" buttonStyle={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 50, padding: '0 22px', borderRadius: 12, background: '#DC143C', color: '#061018', textDecoration: 'none', fontWeight: 900 }} />
@@ -137,7 +137,7 @@ export default function Page() {
       <section id="track-order" style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px 24px' }}>
         <div style={{ display: 'grid', gap: 10, marginBottom: 24 }}>
           <h2 style={{ margin: 0, fontSize: 'clamp(28px, 3.5vw, 40px)', lineHeight: 1.08 }}>Track any delivery</h2>
-          <p style={{ margin: 0, lineHeight: 1.7, color: '#bfd8ee' }}>FoundLogistics carries every order across the FoundingOS brand network — track it live below.</p>
+          <p style={{ margin: 0, lineHeight: 1.7, color: '#bfd8ee' }}>Operations.Logistics carries every order across the FoundingOS brand network — track it live below.</p>
         </div>
         <OrderTrackingWidget consoleUrl={brands.logistics.consoleUrl} accent="#DC143C" />
       </section>
@@ -249,13 +249,13 @@ export default function Page() {
       <section id="contact" style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px 12px' }}>
         <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 22, background: 'rgba(255,255,255,0.03)', padding: 22, display: 'grid', gap: 14 }}>
           <p style={{ margin: 0, color: '#DC143C', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>Contact</p>
-          <h3 style={{ margin: 0, fontSize: 'clamp(26px, 3.4vw, 38px)' }}>Connect with FoundLogistics on every channel.</h3>
+          <h3 style={{ margin: 0, fontSize: 'clamp(26px, 3.4vw, 38px)' }}>Connect with Operations.Logistics on every channel.</h3>
         </div>
       </section>
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.08)', background: '#070c14', marginTop: 60 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px 40px', display: 'flex', flexWrap: 'wrap', gap: 20, justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <strong style={{ fontSize: 22 }}>{'FoundLogistics'}</strong>
+            <strong style={{ fontSize: 22 }}>{'Operations.Logistics'}</strong>
             <p style={{ margin: '10px 0 0', maxWidth: 480, color: '#ddd6fe', lineHeight: 1.7 }}>{'Logistics insight and dispatch support for sharper, more structured operations.'}</p>
             <p className="quantum-footer-summary">Powered by Quantum intelligence — real-time signals, always on.</p>
             <p style={{ margin: '10px 0 0', color: '#ddd6fe' }}>Registered address: 24 Founder Way, London, UK</p>
@@ -267,7 +267,7 @@ export default function Page() {
               <a href="/legal" style={{ color: '#DC143C', textDecoration: 'none', fontWeight: 700 }}>Terms</a>
               <a href="/legal" style={{ color: '#DC143C', textDecoration: 'none', fontWeight: 700 }}>Cookies</a>
             </div>
-            <div style={{ color: '#ddd6fe', fontSize: 14 }}>© 2026 FoundLogistics • All rights reserved</div>
+            <div style={{ color: '#ddd6fe', fontSize: 14 }}>© 2026 Operations.Logistics • All rights reserved</div>
           </div>
           <div style={{ width: '100%', marginTop: 8 }}>
             <PremiumSocialLinks accent="#DC143C" mode="full" label="Social & messaging" />

@@ -18,7 +18,9 @@ import { brands, type BrandSlug } from '@foundingos/config'
 // Every brand slug with a real, deployed /api/scrape/refresh endpoint today. Kept as an
 // explicit allowlist (rather than "all brands") so this dashboard never silently claims a
 // brand has a working scraper when it doesn't.
-export const SCRAPER_CONNECTED_BRANDS: BrandSlug[] = ['retail', 'meat', 'talent', 'crypto', 'finance', 'health', 'logistics', 'foundthat']
+// Note: 'foundthat' intentionally excluded — its scraping engine was removed; FoundThat now
+// ships IT Ops functionality only and has no /api/scrape/refresh endpoint to call.
+export const SCRAPER_CONNECTED_BRANDS: BrandSlug[] = ['retail', 'meat', 'talent', 'crypto', 'finance', 'health', 'logistics']
 
 export type BrandScrapeRow = {
   slug: BrandSlug

@@ -13,7 +13,7 @@ import { BRAND, GROWTH_CONSOLE_URL } from '../../lib/brand'
 // Apple Maps on iOS, no API key). Mirrors the console's Distribution module 1:1.
 
 const TRANSPORT_TYPES = ['chilled', 'standard', 'fragile']
-const ORIGIN = { label: 'FoundHealth central pharmacy store — Manchester', lat: 53.4808, lng: -2.2426 }
+const ORIGIN = { label: 'Workforce.Health central pharmacy store — Manchester', lat: 53.4808, lng: -2.2426 }
 
 type RateOption = { optionName: string; estimatedCost: number; estimatedHours: number; reliabilityScore: number; recommended: boolean }
 type Shipment = {
@@ -106,7 +106,7 @@ export default function DistributionScreen() {
     >
       <View style={styles.hero}>
         <Text style={styles.heroTitle}>Distribution</Text>
-        <Text style={styles.heroSubtitle}>Book shipments with FoundLogistics and track them to delivery.</Text>
+        <Text style={styles.heroSubtitle}>Book shipments with Operations.Logistics and track them to delivery.</Text>
       </View>
 
       <View style={styles.mapCard}>

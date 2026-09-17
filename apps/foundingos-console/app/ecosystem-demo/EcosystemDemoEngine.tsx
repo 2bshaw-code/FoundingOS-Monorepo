@@ -22,7 +22,6 @@ const BRANDS = [
   { slug: 'retail', name: 'FoundRetail', accent: '#00E676', url: 'https://retail.foundingos.com' },
   { slug: 'finance', name: 'FoundFinance', accent: '#4A90E2', url: 'https://finance.foundingos.com' },
   { slug: 'talent', name: 'FoundTalent', accent: '#FFB300', url: 'https://talent.foundingos.com' },
-  { slug: 'crypto', name: 'FoundCrypto', accent: '#9C27B0', url: 'https://crypto.foundingos.com' },
 ]
 
 function DemoModeBadge() {
@@ -168,12 +167,12 @@ const STEPS: Step[] = [
     ),
   },
   {
-    title: '10 · Talent · Crypto · Meat · FoundThat',
+    title: '10 · Talent · FoundThat',
     narration: 'Specialized modules for every brand.',
     badge: 'demo',
     render: () => (
       <div className="module-card-grid">
-        {['FoundTalent', 'FoundCrypto', 'FoundMeat', 'FoundThat'].map((name) => (
+        {['FoundTalent', 'FoundThat'].map((name) => (
           <article key={name} className="module-card fo-card quantum-frame"><strong>{name}</strong><DemoModeBadge /><p>Same real console shape, its own specialized modules.</p></article>
         ))}
       </div>

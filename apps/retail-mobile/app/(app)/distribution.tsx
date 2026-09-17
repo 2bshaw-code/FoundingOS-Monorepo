@@ -13,7 +13,7 @@ import { BRAND, GROWTH_CONSOLE_URL } from '../../lib/brand'
 // Apple Maps on iOS, no API key). Mirrors the console's Distribution module 1:1.
 
 const TRANSPORT_TYPES = ['standard', 'fragile', 'bulk']
-const ORIGIN = { label: 'FoundRetail warehouse — London', lat: 51.5072, lng: -0.1276 }
+const ORIGIN = { label: 'Operations.Retail warehouse — London', lat: 51.5072, lng: -0.1276 }
 
 type RateOption = { optionName: string; estimatedCost: number; estimatedHours: number; reliabilityScore: number; recommended: boolean }
 type Shipment = {

@@ -4,6 +4,57 @@
 */
 export type BrandSlug = 'foundingos' | 'retail' | 'meat' | 'foundthat' | 'talent' | 'crypto' | 'finance' | 'health' | 'logistics'
 
+// Suite structure (restructure): FoundingOS is now the single master brand, organised
+// into three suites. 'meat' and 'crypto' are soft-deprecated (kept in code/data model,
+// hidden from all suite membership and UI surfaces). 'foundthat' is retained only as
+// Intelligence.ITOps (its scraping engine has been removed).
+export type SuiteSlug = 'core-operations' | 'core-workforce' | 'core-intelligence'
+
+export type ModuleId =
+  | 'operations-retail'
+  | 'operations-logistics'
+  | 'operations-finance'
+  | 'workforce-talent'
+  | 'workforce-health'
+  | 'intelligence-superdashboard'
+  | 'intelligence-orchestration'
+  | 'intelligence-mapping'
+  | 'intelligence-itops'
+
+export const SUITE_LABELS: Record<SuiteSlug, string> = {
+  'core-operations': 'Core.Operations',
+  'core-workforce': 'Core.Workforce',
+  'core-intelligence': 'Core.Intelligence',
+}
+
+export const MODULE_LABELS: Record<ModuleId, string> = {
+  'operations-retail': 'Operations.Retail',
+  'operations-logistics': 'Operations.Logistics',
+  'operations-finance': 'Operations.Finance',
+  'workforce-talent': 'Workforce.Talent',
+  'workforce-health': 'Workforce.Health',
+  'intelligence-superdashboard': 'Intelligence.SuperDashboard',
+  'intelligence-orchestration': 'Intelligence.Orchestration',
+  'intelligence-mapping': 'Intelligence.Mapping',
+  'intelligence-itops': 'Intelligence.ITOps',
+}
+
+// Maps each active brand slug to its suite + canonical module id. 'meat' and 'crypto'
+// are intentionally absent — they are not part of any suite.
+export const BRAND_SUITE_MAP: Partial<Record<BrandSlug, { suite: SuiteSlug; module: ModuleId }>> = {
+  retail: { suite: 'core-operations', module: 'operations-retail' },
+  logistics: { suite: 'core-operations', module: 'operations-logistics' },
+  finance: { suite: 'core-operations', module: 'operations-finance' },
+  talent: { suite: 'core-workforce', module: 'workforce-talent' },
+  health: { suite: 'core-workforce', module: 'workforce-health' },
+  foundthat: { suite: 'core-intelligence', module: 'intelligence-itops' },
+}
+
+// The single approved positioning statement — must be used everywhere (docs, UI,
+// prompts, buyer materials). Do not write ad-hoc alternative descriptions.
+export const FOUNDINGOS_POSITIONING_STATEMENT =
+  'FoundingOS is a messaging-native operations and orchestration platform with three integrated suites: Operations, Workforce, and Intelligence.'
+
 export type BrandTypography = { heading: string; body: string }
 
 export type BrandDefinition = {

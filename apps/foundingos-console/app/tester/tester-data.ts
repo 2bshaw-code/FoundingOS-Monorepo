@@ -224,16 +224,16 @@ export const BUSINESS_PLAN_QUESTIONS: SurveyQuestion[] = [
 // as such rather than implied to be standalone apps.
 const COMBINED_POS_INTELLIGENCE_SECTION = 'POS/ATS/Compliance + Intelligence Systems'
 const BRAND_WEBSITE_TARGETS = [
-  'Retail website', 'Meat website', 'Logistics website', 'Talent website', 'Crypto website',
+  'Retail website', 'Logistics website', 'Talent website',
   'Finance website', 'Health website', 'FoundThat (Marketplace) website', 'FoundingOS website',
   'WhatsApp OS landing pages',
 ]
 const CONSOLE_TARGETS = [
-  'Retail console', 'Meat console', 'Logistics console', 'Talent console', 'Crypto console',
+  'Retail console', 'Logistics console', 'Talent console',
   'Finance console', 'Health console', 'Messaging module', 'Customer Service module',
 ]
 const POS_TARGETS = [
-  'Retail POS', 'Meat POS', 'Logistics POS', 'Talent ATS', 'FoundThat seller flow', 'Crypto compliance flow',
+  'Retail POS', 'Logistics POS', 'Talent ATS', 'FoundThat seller flow',
 ]
 const INTELLIGENCE_TARGETS = [
   'SuperDash', 'Guardian (system safety layer)', 'Autonomous (auto-optimize/auto-coach)', 'BrandMetric (live brand data)',
@@ -359,11 +359,9 @@ export const TARGET_JOKES: Record<string, string> = {
   'BrandMetric (live brand data)': "BrandMetric is basically the OS's heartbeat.",
   'SuperDash': 'SuperDash loves showing off.',
   'Retail POS': "Conceptual for now — no live checkout yet.",
-  'Meat POS': 'Conceptual for now — weights and cuts, not SKUs.',
   'Logistics POS': 'Conceptual for now — parcel in, parcel out.',
   'Talent ATS': 'Conceptual for now — tracks application to hire.',
   'FoundThat seller flow': 'Conceptual for now — list it, sell it.',
-  'Crypto compliance flow': 'Conceptual for now — careful, checks-first by design.',
 }
 
 // Shown once, at the very top of the survey (before any question) — the mission framing that
@@ -754,7 +752,7 @@ const MARKETING_SUITE_NARRATOR_STEPS: NarratorStep[] = [
   { step: '3 · Templates tab', text: "Here's your reusable message library.", detail: 'Click the Templates tab. Every approved template here is ready to plug into a campaign or an automation without rewriting it from scratch — the Approved/Draft status keeps anything unfinished from accidentally going out.' },
   { step: '4 · Segments tab', text: 'Now let\u2019s target the right people.', detail: 'Click the Segments tab. Each segment is a real audience definition — criteria plus a contact count — the same kind of targeting a real campaign would use to decide exactly who receives it.' },
   { step: '5 · Analytics tab', text: 'And here\u2019s how it all performed.', detail: 'Click the Analytics tab for open rate, click-through rate, revenue attributed, and unsubscribe rate. These are illustrative benchmark figures — real revenue always lives in the real monetary fields (Accounting/Finance), never invented here.' },
-  { step: '6 · Cross-brand integration', text: 'Guardian and Autonomous are both watching.', detail: "Guardian keeps this brand's marketing data safely in its own lane — a spike in FoundRetail's numbers never leaks into FoundMeat's, even though both run the exact same module. Autonomous watches for a real surge or dip worth reacting to, and SuperDash rolls the whole thing up into one live, cross-brand view." },
+  { step: '6 · Cross-brand integration', text: 'Guardian and Autonomous are both watching.', detail: "Guardian keeps this brand's marketing data safely in its own lane — a spike in FoundRetail's numbers never leaks into another brand's, even though both run the exact same module. Autonomous watches for a real surge or dip worth reacting to, and SuperDash rolls the whole thing up into one live, cross-brand view." },
   { step: '7 · AI guidance', text: "FoundAI's got thoughts on this too.", detail: 'Open FoundAI (bottom-right) while you\u2019re on any of these tabs — it already knows it\u2019s watching Marketing Suite on this brand, and can suggest a next step or explain what a number means.' },
   { step: '8 · Summary + next steps', text: "Nice — you're ready to explore more.", detail: "That's Marketing Suite: four real tabs, each with its own real, editable data. Like every module, its usage rolls into the same Package Model D pricing tiers (SystemOS/IntelligenceOS/QuantumOS) the whole OS runs on. Your survey's up next, then Free Roam." },
 ]
@@ -846,9 +844,9 @@ MODULE_NARRATOR_STEPS['sales'] = SALES_NARRATOR_STEPS
 // already covered elsewhere in this file (brand count, SuperDash, Guardian, Autonomous,
 // Package Model D, FoundAI, CRM) — nothing invented for this tour.
 const FOUNDINGOS_OVERVIEW_NARRATOR_STEPS: NarratorStep[] = [
-  { step: '1 · Overview', text: "Let's zoom all the way out.", detail: 'FoundingOS is one operating system running 8 real brands — Retail, Meat, Logistics, Talent, Crypto, Finance, Health, and FoundThat — each with its own console, plus a shared intelligence layer on top.' },
+  { step: '1 · Overview', text: "Let's zoom all the way out.", detail: 'FoundingOS is one operating system running 6 real brands — Retail, Logistics, Talent, Finance, Health, and FoundThat — each with its own console, plus a shared intelligence layer on top.' },
   { step: '2 · Why it exists', text: 'Here\u2019s the problem it solves.', detail: 'Every brand used to run in its own silo. FoundingOS gives every brand the same real modules (Marketing, Accounting, Messaging, Customer Service, CRM, AI Automation) while rolling every signal up into one shared view.' },
-  { step: '3 · Every brand, one console pattern', text: 'Same shape, every time.', detail: 'Each of the 8 brand consoles is a real, separately deployed app — but every one shares the same modules, the same CRM board, and the same FoundAI assistant, so once you know one console, you know them all.' },
+  { step: '3 · Every brand, one console pattern', text: 'Same shape, every time.', detail: 'Each of the 6 brand consoles is a real, separately deployed app — but every one shares the same modules, the same CRM board, and the same FoundAI assistant, so once you know one console, you know them all.' },
   { step: '4 · SuperDash', text: 'This is where it all rolls up.', detail: 'SuperDash pulls every brand\u2019s real engagement, scraper health, and pipeline data into one live, cross-brand view — the same view an admin or investor actually sees.' },
   { step: '5 · Guardian + Autonomous', text: 'The safety net and the reflexes.', detail: 'Guardian keeps every brand\u2019s data in its own lane and flags anomalies; Autonomous reacts to real signals (auto-optimize or auto-coach) without a human needing to click anything.' },
   { step: '6 · Package Model D', text: 'And here\u2019s how it\u2019s priced.', detail: 'SystemOS, IntelligenceOS, and QuantumOS tiers, plus an industry pack per brand — the same real pricing catalog every module\u2019s summary step points back to.' },
@@ -986,10 +984,10 @@ export const FREE_ROAM_TIPS = [
 ]
 
 // Short, reactive line shown once above the brand-cards row (FoundingOS, FoundRetail,
-// FoundMeat, FoundTalent, FoundCrypto, FoundThat, FoundFinance, FoundHealth,
+// FoundTalent, FoundThat, FoundFinance, FoundHealth,
 // FoundLogistics) on demo/survey/investor/dashboard screens — introduces the real brands
 // without altering the row/cards themselves.
-export const BRAND_ROW_NARRATOR_LINE = 'Eight real brands, one OS.'
+export const BRAND_ROW_NARRATOR_LINE = 'Real brands, one OS.'
 
 // "Free Roam" for a tester/investor/buyer/customer session means real, read-only revisiting of
 // whatever real page their module already unlocks — there is no separate /free-roam route.

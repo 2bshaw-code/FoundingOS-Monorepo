@@ -6,7 +6,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 import { brands } from '@foundingos/config'
 
 export const brandConfig: BrandConsoleConfig = {
-  "name": "FoundFinance",
+  "name": "Operations.Finance",
   "logo": "£",
   "accent": "#0033AA",
   "typography": {
@@ -86,7 +86,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "invoicing",
           "label": "Invoicing",
-          "description": "FoundFinance invoicing workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Finance invoicing workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Invoices Sent",
@@ -125,7 +125,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "cashflow",
           "label": "Cashflow",
-          "description": "FoundFinance cashflow workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Finance cashflow workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Cash Runway",
@@ -164,7 +164,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "reconciliation",
           "label": "Reconciliation",
-          "description": "FoundFinance reconciliation workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Finance reconciliation workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Matched",
@@ -203,7 +203,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "reporting",
           "label": "Reporting",
-          "description": "FoundFinance reporting workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Finance reporting workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Reports Generated",
@@ -242,7 +242,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "payables",
           "label": "Payables",
-          "description": "FoundFinance payables workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Finance payables workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Bills Due",
@@ -281,7 +281,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "receivables",
           "label": "Receivables",
-          "description": "FoundFinance receivables workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Finance receivables workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Outstanding",
@@ -320,7 +320,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "forecasting",
           "label": "Forecasting",
-          "description": "FoundFinance forecasting workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Finance forecasting workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Forecast Accuracy",
@@ -359,7 +359,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "risk",
           "label": "Risk",
-          "description": "FoundFinance risk workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Finance risk workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Risk Score",
@@ -398,7 +398,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
           "id": "compliance",
           "label": "Compliance",
-          "description": "FoundFinance compliance workspace for daily operations, reporting, approvals, and team execution.",
+          "description": "Operations.Finance compliance workspace for daily operations, reporting, approvals, and team execution.",
           "metrics": [
                 {
                       "label": "Audit Readiness",
@@ -670,8 +670,8 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "crm": {
-      "title": "FoundFinance CRM",
-      "summary": "FoundFinance CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
+      "title": "Operations.Finance CRM",
+      "summary": "Operations.Finance CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
       "records": [
           {
               "name": "Northgate Retail Group",

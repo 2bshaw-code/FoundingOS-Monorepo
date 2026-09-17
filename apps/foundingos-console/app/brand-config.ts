@@ -22,12 +22,12 @@ export const brandConfig: BrandConsoleConfig = {
     "muted": "#A8B3C3"
   },
   "dashboard": {
-    "title": "Ecosystem overview",
-    "subtitle": "Monitor brand health, revenue, subscriptions, access, and activity across the full FoundingOS group.",
+    "title": "Suite overview",
+    "subtitle": "Monitor suite health, revenue, subscriptions, access, and activity across Core.Operations, Core.Workforce, and Core.Intelligence.",
     "metrics": [
       {
         "label": "Brands",
-        "value": "6",
+        "value": "4",
         "trend": "All systems mapped",
         "icon": "▦",
         "tone": "good"
@@ -54,44 +54,32 @@ export const brandConfig: BrandConsoleConfig = {
         "tone": "good"
       }
     ],
-    "tableTitle": "Operational snapshot",
+    "tableTitle": "Suite snapshot",
     "tableHeaders": [
-      "Brand",
+      "Suite",
       "Status",
       "Revenue",
       "Owner"
     ],
     "tableRows": [
       [
-        "FoundRetail",
+        "Core.Operations",
         "Live",
         "£12.4k",
         "Retail Ops"
       ],
       [
-        "FoundMeat",
-        "Live",
-        "£8.7k",
-        "Supply"
-      ],
-      [
-        "FoundThat",
+        "Core.Intelligence",
         "Live",
         "£9.1k",
         "Data"
       ],
       [
-        "FoundTalent",
+        "Core.Workforce",
         "Live",
         "£10.2k",
         "Talent"
       ],
-      [
-        "FoundCrypto",
-        "Live",
-        "£7.8k",
-        "Trading"
-      ]
     ],
     "workflows": [
       "Create Brand workflow active",
@@ -108,7 +96,7 @@ export const brandConfig: BrandConsoleConfig = {
       "metrics": [
         {
           "label": "Brands",
-          "value": "6",
+          "value": "4",
           "trend": "All systems mapped",
           "icon": "▦",
           "tone": "good"
@@ -147,7 +135,7 @@ export const brandConfig: BrandConsoleConfig = {
       "metrics": [
         {
           "label": "Brands",
-          "value": "6",
+          "value": "4",
           "trend": "All systems mapped",
           "icon": "▦",
           "tone": "good"
@@ -186,7 +174,7 @@ export const brandConfig: BrandConsoleConfig = {
       "metrics": [
         {
           "label": "Brands",
-          "value": "6",
+          "value": "4",
           "trend": "All systems mapped",
           "icon": "▦",
           "tone": "good"
@@ -225,7 +213,7 @@ export const brandConfig: BrandConsoleConfig = {
       "metrics": [
         {
           "label": "Brands",
-          "value": "6",
+          "value": "4",
           "trend": "All systems mapped",
           "icon": "▦",
           "tone": "good"
@@ -264,7 +252,7 @@ export const brandConfig: BrandConsoleConfig = {
       "metrics": [
         {
           "label": "Brands",
-          "value": "6",
+          "value": "4",
           "trend": "All systems mapped",
           "icon": "▦",
           "tone": "good"
@@ -303,7 +291,7 @@ export const brandConfig: BrandConsoleConfig = {
       "metrics": [
         {
           "label": "Brands",
-          "value": "6",
+          "value": "4",
           "trend": "All systems mapped",
           "icon": "▦",
           "tone": "good"
@@ -537,39 +525,25 @@ export const brandConfig: BrandConsoleConfig = {
     "summary": "FoundingOS CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
     "records": [
       {
-        "name": "FoundRetail",
-        "type": "Brand Accounts",
+        "name": "Core.Operations",
+        "type": "Suite Accounts",
         "stage": "Live",
         "value": "£12.4k",
         "nextAction": "Create Brand"
       },
       {
-        "name": "FoundMeat",
-        "type": "Brand Accounts",
-        "stage": "Live",
-        "value": "£8.7k",
-        "nextAction": "Review Subscriptions"
-      },
-      {
-        "name": "FoundThat",
-        "type": "Brand Accounts",
+        "name": "Core.Intelligence",
+        "type": "Suite Accounts",
         "stage": "Live",
         "value": "£9.1k",
         "nextAction": "Audit Activity"
       },
       {
-        "name": "FoundTalent",
-        "type": "Brand Accounts",
+        "name": "Core.Workforce",
+        "type": "Suite Accounts",
         "stage": "Live",
         "value": "£10.2k",
         "nextAction": "Configure Access"
-      },
-      {
-        "name": "FoundCrypto",
-        "type": "Brand Accounts",
-        "stage": "Live",
-        "value": "£7.8k",
-        "nextAction": "Create Brand"
       }
     ],
     "pipeline": [
@@ -649,12 +623,6 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "label": "Finance",
       "href": "/finance",
-      "icon": "▣",
-      "section": "Modules"
-    },
-    {
-      "label": "Crypto",
-      "href": "/crypto",
       "icon": "▣",
       "section": "Modules"
     },

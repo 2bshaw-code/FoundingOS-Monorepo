@@ -50,7 +50,7 @@ export default function Page() {
 
           <section style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 18, background: 'rgba(255,255,255,0.02)', padding: 22 }}>
             <h2 style={{ margin: '0 0 8px', fontSize: 22 }}>Questions about a specific brand?</h2>
-            <p style={{ margin: 0, color: '#b9c2cf', lineHeight: 1.8 }}>Each brand connected to FoundingOS (FoundRetail, FoundCrypto, and the rest) has its own Legal &amp; Compliance page linked from its own site footer, alongside this one for FoundingOS itself.</p>
+            <p style={{ margin: 0, color: '#b9c2cf', lineHeight: 1.8 }}>Each brand connected to FoundingOS (FoundRetail, and the rest) has its own Legal &amp; Compliance page linked from its own site footer, alongside this one for FoundingOS itself.</p>
           </section>
         </div>
       </main>

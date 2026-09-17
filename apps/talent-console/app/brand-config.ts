@@ -6,7 +6,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 import { brands } from '@foundingos/config'
 
 export const brandConfig: BrandConsoleConfig = {
-  "name": "FoundTalent",
+  "name": "Workforce.Talent",
   "logo": "⬢",
   "accent": "#FF8800",
   "typography": {
@@ -86,7 +86,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "ats",
       "label": "Ats",
-      "description": "FoundTalent ats workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Workforce.Talent ats workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Candidates",
@@ -125,7 +125,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "crm",
       "label": "CRM",
-      "description": "FoundTalent crm workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Workforce.Talent crm workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Candidates",
@@ -164,7 +164,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "onboarding",
       "label": "Onboarding",
-      "description": "FoundTalent onboarding workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Workforce.Talent onboarding workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Candidates",
@@ -203,7 +203,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "candidates",
       "label": "Candidates",
-      "description": "FoundTalent candidates workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Workforce.Talent candidates workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Candidates",
@@ -242,7 +242,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "jobs",
       "label": "Jobs",
-      "description": "FoundTalent jobs workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Workforce.Talent jobs workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Candidates",
@@ -281,7 +281,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "pipelines",
       "label": "Pipelines",
-      "description": "FoundTalent pipelines workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Workforce.Talent pipelines workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Candidates",
@@ -320,7 +320,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "interviews",
       "label": "Interviews",
-      "description": "FoundTalent interviews workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Workforce.Talent interviews workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Candidates",
@@ -359,7 +359,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "offers",
       "label": "Offers",
-      "description": "FoundTalent offers workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Workforce.Talent offers workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Candidates",
@@ -632,8 +632,8 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "crm": {
-    "title": "FoundTalent CRM",
-    "summary": "FoundTalent CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
+    "title": "Workforce.Talent CRM",
+    "summary": "Workforce.Talent CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
     "records": [
       {
         "name": "Store Manager",

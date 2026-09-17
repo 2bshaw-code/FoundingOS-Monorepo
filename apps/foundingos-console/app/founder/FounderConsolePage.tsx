@@ -246,10 +246,8 @@ export default function FounderConsolePage() {
             <tbody>
               {[
                 ['FoundRetail', 12400, 42, 'en-GB'],
-                ['FoundMeat', 8700, 31, 'en-GB'],
                 ['FoundThat', 9100, 18, 'en-US'],
                 ['FoundTalent', 10200, 27, 'en-AU'],
-                ['FoundCrypto', 7800, 14, 'en-ZA'],
               ].map(([brand, revenue, orders, locale]) => (
                 <tr key={brand as string}>
                   <td>{brand}</td>
