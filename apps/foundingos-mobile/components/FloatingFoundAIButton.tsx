@@ -4,10 +4,10 @@
 */
 import { useEffect, useRef, useState } from 'react'
 import { Animated, Dimensions, PanResponder, Pressable, StyleSheet, View } from 'react-native'
-import * as SecureStore from 'expo-secure-store'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
 import { FOUNDINGOS_SHELL_THEME } from '../lib/store'
+import { getStoredValue, setStoredValue } from '../lib/platform-storage'
 
 const POSITION_KEY = 'fo_foundingos_sphere_position_v1'
 const BUTTON_SIZE = 58
@@ -35,7 +35,7 @@ export function FloatingFoundAIButton() {
   const draggingRef = useRef(false)
 
   useEffect(() => {
-    SecureStore.getItemAsync(POSITION_KEY).then((raw) => {
+    getStoredValue(POSITION_KEY).then((raw) => {
       let next = { x: rightX, y: maxY - 40 }
       if (raw) {
         try {
@@ -74,7 +74,7 @@ export function FloatingFoundAIButton() {
         const targetX = snapLeft ? leftX : rightX
 
         Animated.spring(pan, { toValue: { x: targetX, y: clampedY }, useNativeDriver: false, friction: 8 }).start()
-        SecureStore.setItemAsync(POSITION_KEY, JSON.stringify({ side: snapLeft ? 'left' : 'right', y: clampedY } as SavedPosition))
+        void setStoredValue(POSITION_KEY, JSON.stringify({ side: snapLeft ? 'left' : 'right', y: clampedY } as SavedPosition))
 
         if (!draggingRef.current && Math.abs(gesture.dx) < 4 && Math.abs(gesture.dy) < 4) {
           router.push('/brandwheel')

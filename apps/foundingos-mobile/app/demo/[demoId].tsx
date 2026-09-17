@@ -5,9 +5,9 @@
 import { useMemo, useState } from 'react'
 import { Image, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import * as SecureStore from 'expo-secure-store'
 import { QuantumButton, QuantumCard, QuantumScreen, QuantumSectionHeader, QuantumText, quantumSpace, useActiveQuantumTheme } from '../../components/QuantumUI'
 import { getMobileQuantumBrandUpliftForDemo } from '../../lib/quantum-brand-uplift'
+import { setStoredValue } from '../../lib/platform-storage'
 
 const demoCompletedKey = (demoId: string) => `fo_demo_completed_${demoId}`
 
@@ -28,7 +28,7 @@ export default function MobileDemoScreen() {
   const steps = uplift.demoSteps
 
   async function completeDemo() {
-    await SecureStore.setItemAsync(demoCompletedKey(demoId), 'true')
+    await setStoredValue(demoCompletedKey(demoId), 'true')
     router.replace(`/survey/${demoId}`)
   }
 

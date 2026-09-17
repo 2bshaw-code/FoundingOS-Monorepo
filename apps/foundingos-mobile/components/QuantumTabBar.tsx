@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import type { BottomTabBarProps } from 'expo-router/build/react-navigation/bottom-tabs/types'
 
-// Premium floating "pill" tab bar replacing the flat, edge-to-edge default tab bar. Shows at
+// Compact enterprise tab bar. Shows at
 // most `maxVisible` primary tabs plus a "More" tab that opens a bottom sheet listing any
 // remaining routes — this is what keeps the bar from ever looking crowded, no matter how many
 // screens a brand's console has. Routes are still real expo-router tabs underneath (deep
@@ -144,17 +144,18 @@ function MoreDots({ color }: { color: string }) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingHorizontal: 16 },
+  wrap: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingHorizontal: 0 },
   bar: {
     flexDirection: 'row',
-    borderRadius: 28,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
-    paddingVertical: 8,
-    paddingHorizontal: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 4,
     width: '100%',
-    maxWidth: 480,
+    maxWidth: 1100,
     shadowColor: '#000',
     shadowOpacity: 0.4,
     shadowRadius: 20,
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   item: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3, paddingVertical: 4 },
-  iconWrap: { width: 34, height: 34, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  iconWrap: { width: 30, height: 27, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
   label: { fontSize: 10.5, fontWeight: '600' },
   labelActive: { fontWeight: '800' },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },

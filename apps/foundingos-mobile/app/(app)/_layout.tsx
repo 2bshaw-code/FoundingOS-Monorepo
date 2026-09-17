@@ -9,10 +9,9 @@ import { BRANDS } from '../../lib/brands'
 import { FOUNDINGOS_SHELL_THEME, useQuantumStore } from '../../lib/store'
 import { QuantumWheelModal } from '../../components/QuantumWheel'
 import { CommandBarModal } from '../../components/CommandBar'
-import { FloatingFoundAIButton } from '../../components/FloatingFoundAIButton'
 import { MultimodalCaptureModal, AIConfirmationModal, AIConfirmationData } from '../../components/MultimodalCaptureModal'
 import { getScreenHeaderOptions, quantumRadius, quantumSpace } from '../../components/QuantumUI'
-import { QuantumOverlay, QuantumShellFooter, QuantumShellHeaderBackdrop, QuantumShellHeaderTitle } from '../../components/QuantumShellVisuals'
+import { QuantumShellHeaderBackdrop, QuantumShellHeaderTitle } from '../../components/QuantumShellVisuals'
 import { createQuantumTabBar } from '../../components/QuantumTabBar'
 import { HomeIcon, SparkleIcon, LayersIcon, PulseIcon, CompassIcon } from '../../components/icons'
 
@@ -40,7 +39,6 @@ export default function AppTabsLayout() {
 
   return (
     <View style={[styles.root, { backgroundColor: shellTheme.bgPrimary }]}>
-      <QuantumOverlay accent={shellAccent} shellTheme={shellTheme} />
       <Tabs
         tabBar={createQuantumTabBar({ accent: shellAccent, maxVisible: 4, icons: tabIcons })}
         screenOptions={{
@@ -65,15 +63,15 @@ export default function AppTabsLayout() {
         <Tabs.Screen
           name="home"
           options={{
-            title: 'Home',
-            headerTitle: () => renderHeaderTitle('FoundingOS Home'),
+            title: 'Overview',
+            headerTitle: () => renderHeaderTitle('Command Deck'),
           }}
         />
         <Tabs.Screen
           name="workflows"
           options={{
-            title: 'Workflows',
-            headerTitle: () => renderHeaderTitle('Workflows & Bolt-Ons'),
+            title: 'Work',
+            headerTitle: () => renderHeaderTitle('Work & Approvals'),
           }}
         />
         <Tabs.Screen
@@ -86,14 +84,14 @@ export default function AppTabsLayout() {
         <Tabs.Screen
           name="automation"
           options={{
-            title: 'Automation',
-            headerTitle: () => renderHeaderTitle('WhatsApp & AI Automation'),
+            title: 'Automate',
+            headerTitle: () => renderHeaderTitle('Messaging & Automation'),
           }}
         />
         <Tabs.Screen
           name="brands"
           options={{
-            title: 'Workspaces',
+            title: 'More',
             headerTitle: () => renderHeaderTitle('Workspace Directory'),
           }}
         />
@@ -104,9 +102,6 @@ export default function AppTabsLayout() {
         <Tabs.Screen name="ai-actions" options={{ href: null }} />
         <Tabs.Screen name="about" options={{ href: null, headerTitle: () => renderHeaderTitle('About FoundingOS') }} />
       </Tabs>
-      <QuantumShellFooter brandName={activeWorkspaceName} accent={shellAccent} shellTheme={shellTheme} />
-      <FloatingFoundAIButton />
-
       {/* Global Overlays */}
       <QuantumWheelModal />
       <CommandBarModal onOpenMultimodal={(type) => setCaptureType(type)} />

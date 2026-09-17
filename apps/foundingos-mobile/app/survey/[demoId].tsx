@@ -5,9 +5,9 @@
 import { useEffect, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import * as SecureStore from 'expo-secure-store'
 import { QuantumButton, QuantumCard, QuantumFormField, QuantumNotice, QuantumScreen, QuantumText, QuantumTextInput, quantumSpace, useActiveQuantumTheme } from '../../components/QuantumUI'
 import { getMobileQuantumBrandUpliftForDemo } from '../../lib/quantum-brand-uplift'
+import { getStoredValue } from '../../lib/platform-storage'
 
 const demoCompletedKey = (demoId: string) => `fo_demo_completed_${demoId}`
 
@@ -28,7 +28,7 @@ export default function MobileSurveyScreen() {
   const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
-    SecureStore.getItemAsync(demoCompletedKey(demoId)).then((completed) => {
+    getStoredValue(demoCompletedKey(demoId)).then((completed) => {
       if (completed !== 'true') {
         router.replace(`/demo/${demoId}`)
         return

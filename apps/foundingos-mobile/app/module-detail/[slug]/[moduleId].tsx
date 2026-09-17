@@ -10,10 +10,45 @@ import { authedFetch } from '../../../lib/api'
 import { AIHintBanner } from '../../../components/AIHintBanner'
 import { QuantumBackButton } from '../../../components/QuantumBackButton'
 import { QuantumButton, QuantumCard, QuantumLoadingScreen, QuantumNotice, QuantumScreen, QuantumSectionHeader, QuantumText, getSemanticColor, quantumSpace } from '../../../components/QuantumUI'
+import { enqueueOutboxAction } from '../../../lib/outbox-sync'
 
 type ModuleMetric = { label: string; value: string; trend?: string; icon?: string; tone?: 'good' | 'watch' | 'risk' }
 type ModuleData = { id: string; label: string; description: string; metrics: ModuleMetric[]; actions: string[]; workflow?: string[] }
 type RecentAction = { id: string; action: string; sessionId: string; note: string | null; createdAt: string }
+
+const moduleLanguage: Record<string, { description: string; actions: string[]; workflow: string[] }> = {
+  orders: { description: 'Create, confirm, dispatch, and complete customer orders from one shared queue.', actions: ['Create order', 'Confirm order', 'Send WhatsApp update'], workflow: ['Capture the customer request', 'Confirm stock and payment', 'Dispatch and publish the delivery event'] },
+  inventory: { description: 'See stock cover, record movements, and act before products run out.', actions: ['Receive stock', 'Record sale', 'Create supplier order'], workflow: ['Review low-stock products', 'Confirm the required quantity', 'Record the movement in the Event Feed'] },
+  deliveries: { description: 'Assign, dispatch, and recover deliveries without losing the customer promise.', actions: ['Assign driver', 'Start delivery', 'Confirm delivered'], workflow: ['Assign an owner and vehicle', 'Share the delivery status', 'Confirm proof and notify Finance'] },
+  invoicing: { description: 'Send invoices, collect payment, and reconcile cash against completed work.', actions: ['Send invoice', 'Send payment reminder', 'Mark paid'], workflow: ['Create from the completed order', 'Send the payment link', 'Reconcile the receipt'] },
+  campaigns: { description: 'Turn customer and order data into measurable campaigns across messaging and social channels.', actions: ['Create campaign', 'Generate content', 'Schedule campaign'], workflow: ['Choose the audience and outcome', 'Approve channel-ready content', 'Measure orders and revenue'] },
+  candidates: { description: 'Move the strongest people through hiring with clear ownership and next steps.', actions: ['Add candidate', 'Schedule interview', 'Prepare offer'], workflow: ['Review role match', 'Coordinate the interview', 'Start onboarding after acceptance'] },
+  patients: { description: 'Coordinate patient requests, appointments, and follow-up in one safe operational view.', actions: ['Add patient', 'Book appointment', 'Send reminder'], workflow: ['Capture the request', 'Confirm the appointment', 'Record the outcome and follow-up'] },
+}
+
+function titleCase(value: string) {
+  return value.split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ')
+}
+
+function buildDemoModule(moduleId: string): ModuleData {
+  const language = moduleLanguage[moduleId] ?? {
+    description: `Manage ${titleCase(moduleId).toLowerCase()} records, decisions, and activity from the shared FoundingOS workspace.`,
+    actions: [`Create ${titleCase(moduleId)} record`, 'Review priorities', 'Send WhatsApp update'],
+    workflow: ['Review the current queue', 'Take the next accountable action', 'Publish the result to the Event Feed'],
+  }
+  return {
+    id: moduleId,
+    label: titleCase(moduleId),
+    description: language.description,
+    metrics: [
+      { label: 'Active', value: '24', trend: '+8% this week', icon: '●', tone: 'good' },
+      { label: 'Needs attention', value: '3', trend: '2 high priority', icon: '!', tone: 'watch' },
+      { label: 'Completed', value: '87%', trend: '+6% vs last week', icon: '✓', tone: 'good' },
+    ],
+    actions: language.actions,
+    workflow: language.workflow,
+  }
+}
 
 function timeAgo(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime()
@@ -43,15 +78,16 @@ export default function ModuleDetailScreen() {
     try {
       const response = await authedFetch(`https://${slug}-console.foundingos.com/api/console/modules/${moduleId}`)
       if (!response.ok) {
-        setError(response.status === 401 ? 'Your session has expired. Please sign in again.' : 'Could not load this module.')
-        setData(null)
+        setError(response.status === 401 ? 'Your session has expired. Safe demo data is shown until you sign in again.' : 'Live sync is unavailable. Safe demo data is active.')
+        setData(buildDemoModule(moduleId))
         return
       }
       const json = await response.json()
-      setData(json.module)
+      setData(json.module ?? buildDemoModule(moduleId))
       setRecentActions(Array.isArray(json.recentActions) ? json.recentActions : [])
     } catch {
-      setError('Could not load this module. Pull down to try again.')
+      setData(buildDemoModule(moduleId))
+      setError('Live sync is unavailable. Safe demo data is active and actions will use the offline outbox.')
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -79,11 +115,16 @@ export default function ModuleDetailScreen() {
         return
       }
       const json = await response.json()
-      if (json.action) setRecentActions((current) => [json.action, ...current].slice(0, 10))
+      const savedAction: RecentAction = json.action ?? { id: `offline-${Date.now()}`, action, sessionId: 'offline', note: 'Waiting for sync', createdAt: new Date().toISOString() }
+      if (!json.action) await enqueueOutboxAction(`MODULE_${action.toUpperCase().replaceAll(' ', '_')}`, slug, { moduleId, action, source: 'mobile-workspace' })
+      setRecentActions((current) => [savedAction, ...current].slice(0, 10))
       setConfirmedAction(action)
       setTimeout(() => setConfirmedAction((current) => (current === action ? null : current)), 2500)
     } catch {
-      setError('Could not save this action. Check your connection and try again.')
+      await enqueueOutboxAction(`MODULE_${action.toUpperCase().replaceAll(' ', '_')}`, slug, { moduleId, action, source: 'mobile-workspace' })
+      setRecentActions((current) => [{ id: `offline-${Date.now()}`, action, sessionId: 'offline', note: 'Waiting for sync', createdAt: new Date().toISOString() }, ...current].slice(0, 10))
+      setConfirmedAction(action)
+      setError('Live sync is unavailable. This action is safely waiting in the offline outbox.')
     } finally {
       setSubmittingAction(null)
     }

@@ -12,6 +12,9 @@ import { GetStartedChecklist } from './get-started-checklist'
 import { DataMigrationHub } from './data-migration-hub'
 import { RetailOperationsWorkspace } from './retail-operations-workspace'
 import { CommercialOperationsWorkspace } from './commercial-operations-workspace'
+import { DashboardAnalytics } from './dashboard-analytics'
+import { WorkforceIntelligenceWorkspace } from './workforce-intelligence-workspaces'
+import { HealthOperationsWorkspace } from './health-operations-workspace'
 import { RealDealsPanel, RealBrandFinancePanel, RealInvoicesPanel } from './real-monetary-panels'
 import { resolveBrandSlugFromName } from './real-monetary'
 import { useAIAssistance, hasSeenOnboarding, markOnboardingSeen, AIAssistanceToggle } from './ai-assistance'
@@ -943,6 +946,8 @@ export function BrandDashboard({ config, variant = 'growth' }: { config: BrandCo
         {metrics.map((metric, index) => <KPIWidget key={metric.label} metric={metric} index={index} />)}
       </div>
 
+      <DashboardAnalytics suite={config.name} />
+
       {brandSlug && <RealBrandFinancePanel brandSlug={brandSlug} brandName={config.name} />}
 
       <LiveActivityPanel
@@ -1494,12 +1499,24 @@ export function BrandModulePage({ config, moduleId }: { config: BrandConsoleConf
   const accentStyle = consoleStyle(config)
   const brandSlug = resolveBrandSlugFromName(config.name)
 
+  if (config.name === 'Core.Workforce') {
+    return <WorkforceIntelligenceWorkspace suite="workforce" moduleId={module.id} />
+  }
+
+  if (config.name === 'Core.Intelligence') {
+    return <WorkforceIntelligenceWorkspace suite="intelligence" moduleId={module.id} />
+  }
+
   if (config.name === 'Core.Operations' && (module.id === 'orders' || module.id === 'inventory')) {
     return <RetailOperationsWorkspace moduleId={module.id} />
   }
 
   if (config.name === 'Core.Operations' && ['logistics', 'finance', 'accounting'].includes(module.id)) {
     return <CommercialOperationsWorkspace moduleId={module.id} />
+  }
+
+  if (config.name === 'Core.Operations' && module.id === 'health') {
+    return <HealthOperationsWorkspace />
   }
 
   if (module.id === 'products') {

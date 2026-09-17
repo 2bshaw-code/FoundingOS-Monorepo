@@ -10,18 +10,18 @@
 // respected across every screen *within this one app*, which is the real, correct scope for
 // a native app. Default is ON until the user explicitly turns it off.
 import { useEffect, useState } from 'react'
-import * as SecureStore from 'expo-secure-store'
+import { getStoredValue, setStoredValue } from './platform-storage'
 
 const AI_ASSISTANCE_KEY = 'fo_ai_assistance'
 const ONBOARDED_KEY = 'fo_onboarded_screens'
 
 export async function isAIAssistanceEnabled(): Promise<boolean> {
-  const value = await SecureStore.getItemAsync(AI_ASSISTANCE_KEY)
+  const value = await getStoredValue(AI_ASSISTANCE_KEY)
   return value !== 'off'
 }
 
 export async function setAIAssistanceEnabled(enabled: boolean): Promise<void> {
-  await SecureStore.setItemAsync(AI_ASSISTANCE_KEY, enabled ? 'on' : 'off')
+  await setStoredValue(AI_ASSISTANCE_KEY, enabled ? 'on' : 'off')
 }
 
 // Every AI surface (FoundAI-equivalent AI Actions tab, onboarding welcomes, module hints,
@@ -42,14 +42,14 @@ export function useAIAssistance(): [boolean, (enabled: boolean) => void] {
 }
 
 export async function hasSeenOnboarding(key: string): Promise<boolean> {
-  const raw = await SecureStore.getItemAsync(ONBOARDED_KEY)
+  const raw = await getStoredValue(ONBOARDED_KEY)
   if (!raw) return false
   return raw.split(',').filter(Boolean).includes(key)
 }
 
 export async function markOnboardingSeen(key: string): Promise<void> {
-  const raw = await SecureStore.getItemAsync(ONBOARDED_KEY)
+  const raw = await getStoredValue(ONBOARDED_KEY)
   const seen = new Set(raw ? raw.split(',').filter(Boolean) : [])
   seen.add(key)
-  await SecureStore.setItemAsync(ONBOARDED_KEY, [...seen].join(','))
+  await setStoredValue(ONBOARDED_KEY, [...seen].join(','))
 }

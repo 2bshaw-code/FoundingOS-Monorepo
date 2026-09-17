@@ -52,6 +52,25 @@ const emptyWorkspace: MarketingWorkspace = {
   metrics: { campaigns: 0, scheduledPosts: 0, impressions: 0, conversions: 0, revenuePence: 0 },
 }
 
+const demoWorkspace: MarketingWorkspace = {
+  campaigns: [
+    { id: 'CAM-104', name: 'September repeat purchase', objective: 'Bring recent buyers back', audience: 'Customers inactive for 30 days', status: 'Live', impressions: 12480, engagements: 1420, conversions: 186, revenuePence: 684200, caption: 'Your favourites are back — order in WhatsApp today.' },
+    { id: 'CAM-103', name: 'Manchester launch', objective: 'Build local demand', audience: 'Customers within 15 miles', status: 'Scheduled', impressions: 8400, engagements: 910, conversions: 74, revenuePence: 291000, caption: 'FoundingOS is now operating in Manchester.' },
+    { id: 'CAM-102', name: 'Delivery recovery', objective: 'Restore customer confidence', audience: 'Customers affected by delays', status: 'Completed', impressions: 2180, engagements: 624, conversions: 91, revenuePence: 148500, caption: 'Thank you for your patience — here is a personal update.' },
+  ],
+  socialPosts: [
+    { id: 'POST-88', content: 'Three ways WhatsApp can remove admin from your working day.', status: 'Scheduled · Today 18:00', scheduledAt: '2026-09-17T18:00', platforms: ['LinkedIn', 'Instagram'] },
+    { id: 'POST-87', content: 'Behind the scenes: an order moving from message to paid delivery.', status: 'Ready for approval', scheduledAt: null, platforms: ['TikTok', 'Instagram'] },
+  ],
+  media: [
+    { id: 'MEDIA-31', format: 'WhatsApp promotion', brief: 'Repeat purchase campaign', output: 'Hi {{first_name}}, your most-loved products are ready to reorder. Reply YES and we will prepare the basket.' },
+    { id: 'MEDIA-30', format: 'Social media content', brief: 'Explain the connected order journey', output: 'One message. One order. One delivery. One clear view of cash.' },
+  ],
+  metrics: { campaigns: 3, scheduledPosts: 2, impressions: 23060, conversions: 351, revenuePence: 1123700 },
+}
+
+const DEMO_STORAGE_KEY = 'foundingos-demo-marketing-v1'
+
 async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -68,13 +87,27 @@ export default function MarketingPage() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
+  const [demoMode, setDemoMode] = useState(false)
+
+  const updateDemoWorkspace = useCallback((update: (current: MarketingWorkspace) => MarketingWorkspace) => {
+    setWorkspace((current) => {
+      const next = update(current.campaigns.length ? current : demoWorkspace)
+      window.localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(next))
+      return next
+    })
+    setDemoMode(true)
+    setError('')
+  }, [])
 
   const loadWorkspace = useCallback(async () => {
     try {
       setWorkspace(await apiRequest<MarketingWorkspace>('/marketing/workspace'))
       setError('')
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Marketing workspace could not be loaded.')
+      const stored = window.localStorage.getItem(DEMO_STORAGE_KEY)
+      setWorkspace(stored ? JSON.parse(stored) as MarketingWorkspace : demoWorkspace)
+      setDemoMode(true)
+      setError(loadError instanceof Error ? loadError.message : 'Marketing service could not be reached.')
     }
   }, [])
 
@@ -84,7 +117,8 @@ export default function MarketingPage() {
 
   const submitCampaign = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const form = new FormData(event.currentTarget)
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
     setBusy(true)
     setNotice('')
     try {
@@ -97,11 +131,17 @@ export default function MarketingPage() {
           platforms: form.getAll('platforms'),
         }),
       })
-      event.currentTarget.reset()
+      formElement.reset()
       setNotice('Campaign created with generated campaign copy.')
       await loadWorkspace()
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Campaign could not be created.')
+      const name = String(form.get('name'))
+      updateDemoWorkspace((current) => {
+        const campaign: Campaign = { id: `CAM-${105 + current.campaigns.length}`, name, objective: String(form.get('objective')), audience: String(form.get('audience')), status: 'Draft', impressions: 0, engagements: 0, conversions: 0, revenuePence: 0, caption: `${name} is ready for review.` }
+        return { ...current, campaigns: [campaign, ...current.campaigns], metrics: { ...current.metrics, campaigns: current.metrics.campaigns + 1 } }
+      })
+      formElement.reset()
+      setNotice('Campaign saved safely in demo mode with generated draft copy.')
     } finally {
       setBusy(false)
     }
@@ -109,7 +149,8 @@ export default function MarketingPage() {
 
   const submitPost = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const form = new FormData(event.currentTarget)
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
     setBusy(true)
     setNotice('')
     try {
@@ -122,11 +163,16 @@ export default function MarketingPage() {
           autoPost: form.get('autoPost') === 'on',
         }),
       })
-      event.currentTarget.reset()
+      formElement.reset()
       setNotice('Social post saved to the publishing queue.')
       await loadWorkspace()
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Social post could not be scheduled.')
+      updateDemoWorkspace((current) => {
+        const post: SocialPost = { id: `POST-${89 + current.socialPosts.length}`, content: String(form.get('content')), status: 'Scheduled', scheduledAt: String(form.get('scheduledAt') || ''), platforms: form.getAll('platforms') }
+        return { ...current, socialPosts: [post, ...current.socialPosts], metrics: { ...current.metrics, scheduledPosts: current.metrics.scheduledPosts + 1 } }
+      })
+      formElement.reset()
+      setNotice('Social post added to the demo publishing queue.')
     } finally {
       setBusy(false)
     }
@@ -134,7 +180,8 @@ export default function MarketingPage() {
 
   const submitMedia = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const form = new FormData(event.currentTarget)
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
     setBusy(true)
     setNotice('')
     try {
@@ -142,11 +189,15 @@ export default function MarketingPage() {
         method: 'POST',
         body: JSON.stringify({ format: form.get('format'), brief: form.get('brief') }),
       })
-      event.currentTarget.reset()
+      formElement.reset()
       setNotice('Marketing content generated from current operational context.')
       await loadWorkspace()
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Marketing content could not be generated.')
+      const format = String(form.get('format'))
+      const brief = String(form.get('brief'))
+      updateDemoWorkspace((current) => ({ ...current, media: [{ id: `MEDIA-${32 + current.media.length}`, format, brief, output: `${brief} — drafted in the approved FoundingOS voice and ready for human review.` }, ...current.media] }))
+      formElement.reset()
+      setNotice('Content generated in demo mode and saved for review.')
     } finally {
       setBusy(false)
     }
@@ -158,7 +209,7 @@ export default function MarketingPage() {
         <div><p className="eyebrow">Core Operations</p><h1>Marketing Suite</h1><p>Plan campaigns, create channel content, schedule publishing, and connect results to customers, orders, and revenue.</p></div>
       </header>
 
-      {error ? <div className="panel" role="alert"><strong>Marketing service unavailable</strong><p>{error}</p><button type="button" onClick={() => void loadWorkspace()}>Try again</button></div> : null}
+      {demoMode ? <div className="panel marketing-demo-notice" role="status"><strong>Interactive demo mode</strong><p>Safe sample data is active because the production marketing service is not connected in this browser. Everything you create persists locally.</p>{error ? <small>{error}</small> : null}<button type="button" onClick={() => void loadWorkspace()}>Try live service</button></div> : null}
       {notice ? <div className="panel" role="status">{notice}</div> : null}
 
       <div className="kpi-grid">
@@ -166,6 +217,7 @@ export default function MarketingPage() {
         <article><p>Scheduled posts</p><strong>{workspace.metrics.scheduledPosts}</strong><span>Publishing queue</span></article>
         <article><p>Impressions</p><strong>{workspace.metrics.impressions.toLocaleString()}</strong><span>Reported reach</span></article>
         <article><p>Conversions</p><strong>{workspace.metrics.conversions.toLocaleString()}</strong><span>Attributed actions</span></article>
+        <article><p>Attributed revenue</p><strong>£{(workspace.metrics.revenuePence / 100).toLocaleString('en-GB', { maximumFractionDigits: 0 })}</strong><span>Connected to orders</span></article>
       </div>
 
       <div className="module-grid">
@@ -174,7 +226,7 @@ export default function MarketingPage() {
           <label>Name<input className="input" name="name" required /></label>
           <label>Objective<input className="input" name="objective" placeholder="Increase repeat purchases" required /></label>
           <label>Audience<input className="input" name="audience" placeholder="Customers inactive for 30 days" required /></label>
-          <fieldset><legend>Channels</legend>{['WhatsApp', 'Email', 'Facebook', 'Instagram'].map((platform) => <label key={platform}><input type="checkbox" name="platforms" value={platform} /> {platform}</label>)}</fieldset>
+          <fieldset><legend>Channels</legend>{['WhatsApp', 'Email', 'Facebook', 'Instagram'].map((platform) => <label className={`marketing-channel channel-${platform.toLowerCase()}`} key={platform}><input type="checkbox" name="platforms" value={platform} /> {platform}</label>)}</fieldset>
           <button className="btn btn-primary" disabled={busy} type="submit">Create campaign</button>
         </form>
 
@@ -182,7 +234,7 @@ export default function MarketingPage() {
           <p className="eyebrow">Publishing</p><h2>Schedule a social post</h2>
           <label>Post<textarea className="input" name="content" rows={4} required /></label>
           <label>Publish at<input className="input" name="scheduledAt" type="datetime-local" /></label>
-          <fieldset><legend>Channels</legend>{['Facebook', 'Instagram', 'LinkedIn', 'X'].map((platform) => <label key={platform}><input type="checkbox" name="platforms" value={platform} /> {platform}</label>)}</fieldset>
+          <fieldset><legend>Channels</legend>{['Facebook', 'Instagram', 'LinkedIn', 'X'].map((platform) => <label className={`marketing-channel channel-${platform.toLowerCase()}`} key={platform}><input type="checkbox" name="platforms" value={platform} /> {platform}</label>)}</fieldset>
           <label><input type="checkbox" name="autoPost" /> Publish automatically when due</label>
           <button className="btn btn-primary" disabled={busy} type="submit">Add to publishing queue</button>
         </form>

@@ -20,11 +20,11 @@ export function computeSuperDashAISummary(brandRows: SuperDashBrandRow[], anomal
   let dailySummary: string
   if (riskCount > 0) {
     const watchNote = watchCount > 0 ? `, and ${watchCount} more worth watching` : ''
-    dailySummary = `${riskCount} of ${brandRows.length} brands ${riskCount > 1 ? 'need' : 'needs'} attention right now${watchNote}.`
+    dailySummary = `${riskCount} of ${brandRows.length} workspaces ${riskCount > 1 ? 'need' : 'needs'} attention right now${watchNote}.`
   } else if (watchCount > 0) {
-    dailySummary = `Everything is stable with ${watchCount} brand${watchCount > 1 ? 's' : ''} worth monitoring.`
+    dailySummary = `Everything is stable with ${watchCount} workspace${watchCount > 1 ? 's' : ''} worth monitoring.`
   } else {
-    dailySummary = `All ${brandRows.length} brands are operating cleanly today.`
+    dailySummary = `All ${brandRows.length} workspaces are operating cleanly today.`
   }
 
   let whatChanged: string | null = null
@@ -43,8 +43,8 @@ export function computeSuperDashAISummary(brandRows: SuperDashBrandRow[], anomal
     const topAnomaly = anomalies.find((anomaly) => anomaly.tone === 'risk') ?? anomalies[0]
     whatMatters = { text: `${topAnomaly.brand}: ${topAnomaly.signal}`, investigateLabel: 'View anomalies below', investigateHref: '' }
   } else {
-    const worstBrand = brandRows.find((row) => row.status === 'risk') ?? brandRows.find((row) => row.status === 'watch')
-    if (worstBrand) whatMatters = { text: `${worstBrand.brand} is flagged as ${worstBrand.status}.`, investigateLabel: 'View brand rows below', investigateHref: '' }
+    const worstWorkspace = brandRows.find((row) => row.status === 'risk') ?? brandRows.find((row) => row.status === 'watch')
+    if (worstWorkspace) whatMatters = { text: `${worstWorkspace.brand} is flagged as ${worstWorkspace.status}.`, investigateLabel: 'View workspace rows below', investigateHref: '' }
   }
 
   return { dailySummary, whatChanged, whatMatters }

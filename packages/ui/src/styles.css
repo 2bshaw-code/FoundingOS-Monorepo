@@ -490,7 +490,7 @@
 }
 
 .q-ai-trend-bars {
-  align-items: end;
+  align-items: flex-end;
   display: flex;
   gap: 8px;
   min-height: 112px;
@@ -3082,7 +3082,7 @@ body[data-sidebar-collapsed='true'] .nav-card {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 300px;
     gap: 16px;
-    align-items: start;
+    align-items: flex-start;
   }
 
   .retail-table-panel,
@@ -7428,4 +7428,177 @@ html[data-accessibility-simplified='true'] .btn {
     transform-origin: center;
     margin: 8px auto;
   }
+}
+.foundingos-footer {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 28px 20px;
+  color: #98a6b9;
+  font-size: 12px;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, .08);
+  background: rgba(4, 10, 22, .86);
+}
+
+.suite-analytics {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(16, 27, 44, .96), rgba(6, 14, 28, .98));
+  box-shadow: 0 22px 60px rgba(0, 0, 0, .28);
+}
+
+.suite-analytics-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.suite-analytics-heading h2,
+.suite-funnel h3 { margin: 4px 0 6px; }
+.suite-analytics-heading p { max-width: 760px; margin-bottom: 0; }
+.suite-analytics-heading > span {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border-radius: 999px;
+  color: #72e6a2;
+  background: rgba(37, 211, 102, .1);
+  border: 1px solid rgba(37, 211, 102, .24);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.suite-trend-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.suite-trend-card {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, currentColor 6%, rgba(255, 255, 255, .02));
+}
+
+.suite-trend-card.tone-cyan { color: #4cc9ff; }
+.suite-trend-card.tone-green { color: #43e083; }
+.suite-trend-card.tone-amber { color: #ffbe45; }
+.suite-trend-card.tone-pink { color: #f56fc2; }
+.suite-trend-card > div { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 4px 12px; }
+.suite-trend-card span { color: #d9e2ef; font-size: 13px; }
+.suite-trend-card strong { grid-column: 1; color: #fff; font-size: clamp(24px, 3vw, 34px); }
+.suite-trend-card em { grid-column: 2; grid-row: 2; font-style: normal; font-size: 12px; font-weight: 900; }
+.suite-trend-card small { display: block; color: #73839a; font-size: 9px; letter-spacing: .03em; }
+.suite-trend-chart { width: 100%; height: 86px; margin: 8px 0 4px; overflow: visible; }
+
+.suite-funnel {
+  display: grid;
+  grid-template-columns: minmax(180px, .7fr) minmax(320px, 1.5fr);
+  gap: 24px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, .08);
+}
+
+.suite-funnel-bars { display: grid; gap: 9px; }
+.suite-funnel-bars > div { display: grid; grid-template-columns: 90px minmax(80px, 1fr) 70px 110px; align-items: center; gap: 10px; }
+.suite-funnel-bars span,
+.suite-funnel-bars small { color: #8fa0b7; font-size: 11px; }
+.suite-funnel-bars i { height: 11px; border-radius: 999px; background: linear-gradient(90deg, #4cc9ff, #8b5cf6, #ec4899); box-shadow: 0 0 18px rgba(76, 201, 255, .24); }
+.suite-funnel-bars strong { color: #fff; text-align: right; }
+
+.retail-detail-note {
+  margin: 14px 0;
+  padding: 12px;
+  border-radius: 12px;
+  color: #dce7f5;
+  background: rgba(76, 201, 255, .08);
+  border: 1px solid rgba(76, 201, 255, .18);
+}
+
+.retail-status.status-applied,
+.retail-status.status-open { color: #ffb74d; background: rgba(255, 183, 77, .12); }
+.retail-status.status-qualified,
+.retail-status.status-reviewing { color: #4cc9ff; background: rgba(76, 201, 255, .12); }
+.retail-status.status-interview { color: #c084fc; background: rgba(192, 132, 252, .12); }
+.retail-status.status-offer { color: #f56fc2; background: rgba(245, 111, 194, .12); }
+.retail-status.status-hired,
+.retail-status.status-resolved { color: #43e083; background: rgba(67, 224, 131, .12); }
+.retail-status.status-scheduled { color: #4cc9ff; background: rgba(76, 201, 255, .12); }
+.retail-status.status-checked-in { color: #c084fc; background: rgba(192, 132, 252, .12); }
+.retail-status.status-follow-up { color: #ffbe45; background: rgba(255, 190, 69, .12); }
+.retail-status.status-completed { color: #43e083; background: rgba(67, 224, 131, .12); }
+
+.marketing-demo-notice {
+  border-color: rgba(76, 201, 255, .28);
+  background: linear-gradient(135deg, rgba(76, 201, 255, .1), rgba(139, 92, 246, .08));
+}
+
+.marketing-channel {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 5px 6px 5px 0;
+  padding: 7px 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.channel-whatsapp { color: #25d366; }
+.channel-email { color: #4cc9ff; }
+.channel-facebook { color: #1877f2; }
+.channel-instagram { color: #e1306c; }
+.channel-linkedin { color: #0a66c2; }
+.channel-x { color: #fff; }
+
+.logistics-map {
+  overflow: hidden;
+  border: 1px solid rgba(76, 201, 255, .18);
+  border-radius: 20px;
+  background: #07111f;
+}
+.logistics-map-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+.logistics-map-heading p { margin: 0 0 4px; color: #7f91a5; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.logistics-map-heading h2 { margin: 0; font-size: 18px; }
+.logistics-map-heading > span { color: #43e083; font-size: 12px; font-weight: 800; }
+.logistics-map-heading > span i { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: #43e083; box-shadow: 0 0 12px #43e083; }
+.logistics-map-canvas { position: relative; min-height: 300px; background-color: #091728; background-image: linear-gradient(rgba(76, 201, 255, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(76, 201, 255, .035) 1px, transparent 1px); background-size: 28px 28px; }
+.logistics-map-canvas svg { display: block; width: 100%; min-width: 700px; height: 300px; }
+.map-road { fill: none; stroke-linecap: round; }
+.map-road-muted { stroke: #263b52; stroke-width: 8; }
+.map-road-active { stroke: #4cc9ff; stroke-width: 6; stroke-dasharray: 10 8; filter: drop-shadow(0 0 7px rgba(76, 201, 255, .7)); }
+.map-road-alert { stroke: #ff5470; stroke-width: 5; stroke-dasharray: 5 7; }
+.map-stop circle { fill: #07111f; stroke: #4cc9ff; stroke-width: 5; }
+.map-stop text { fill: #dbe7f4; font-size: 12px; font-weight: 800; }
+.map-stop text + text { fill: #7f91a5; font-size: 10px; font-weight: 600; }
+.map-stop-alert circle { stroke: #ff5470; }
+.map-stop-destination circle { stroke: #43e083; }
+.logistics-map-legend { position: absolute; left: 16px; bottom: 14px; display: flex; gap: 14px; padding: 8px 10px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; background: rgba(3, 9, 18, .82); backdrop-filter: blur(10px); }
+.logistics-map-legend span { color: #9aacbf; font-size: 10px; font-weight: 700; }
+.logistics-map-legend i { display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 50%; }
+.logistics-map-legend .is-live { background: #4cc9ff; }
+.logistics-map-legend .is-alert { background: #ff5470; }
+.logistics-map-legend .is-stop { background: #43e083; }
+
+@media (max-width: 760px) {
+  .suite-trend-grid { grid-template-columns: 1fr; }
+  .suite-funnel { grid-template-columns: 1fr; }
+  .suite-funnel-bars > div { grid-template-columns: 74px minmax(70px, 1fr) 54px; }
+  .suite-funnel-bars small { display: none; }
+  .suite-analytics-heading { display: grid; }
 }

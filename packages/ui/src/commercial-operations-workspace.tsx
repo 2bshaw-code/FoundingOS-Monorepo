@@ -84,6 +84,22 @@ function LogisticsWorkspace() {
     <div className="retail-stat-grid">
       <article><span>Active</span><strong>{active}</strong><small>Moving today</small></article><article><span>Exceptions</span><strong>{exceptions}</strong><small>Needs intervention</small></article><article><span>Unassigned</span><strong>{unassigned}</strong><small>Needs an owner</small></article><article><span>Completion</span><strong>{Math.round(deliveries.filter((item) => item.status === 'Delivered').length / deliveries.length * 100)}%</strong><small>Visible delivery set</small></article>
     </div>
+    <section className="logistics-map" aria-label="Live delivery map">
+      <div className="logistics-map-heading"><div><p>Dispatch map · simulated positions</p><h2>North region delivery board</h2></div><span><i /> 3 vehicles reporting</span></div>
+      <div className="logistics-map-canvas">
+        <svg viewBox="0 0 900 310" role="img" aria-label="Stylised delivery routes across Manchester, Leeds, and Bristol">
+          <path className="map-road map-road-muted" d="M-20 80 C130 20 210 150 350 82 S620 20 920 95" />
+          <path className="map-road map-road-muted" d="M80 330 C170 245 270 250 360 170 S590 60 760 -20" />
+          <path className="map-road map-road-active" d="M110 222 C230 188 300 245 410 164 S610 100 770 72" />
+          <path className="map-road map-road-alert" d="M410 164 C480 210 545 240 642 226" />
+          <g className="map-stop"><circle cx="110" cy="222" r="9" /><text x="128" y="218">Manchester depot</text><text x="128" y="236">4 routes · 09:42</text></g>
+          <g className="map-stop"><circle cx="410" cy="164" r="9" /><text x="428" y="159">VAN-04 · Jordan</text><text x="428" y="178">2 stops remaining</text></g>
+          <g className="map-stop map-stop-alert"><circle cx="642" cy="226" r="11" /><text x="662" y="221">BIKE-12 · Exception</text><text x="662" y="240">Customer unavailable</text></g>
+          <g className="map-stop map-stop-destination"><circle cx="770" cy="72" r="9" /><text x="790" y="68">Leeds LS1</text><text x="790" y="86">ETA 16:08</text></g>
+        </svg>
+        <div className="logistics-map-legend"><span><i className="is-live" /> Active route</span><span><i className="is-alert" /> Exception</span><span><i className="is-stop" /> Delivery stop</span></div>
+      </div>
+    </section>
     <div className="retail-toolbar"><label><span>Search deliveries</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Shipment, order, customer, driver…" /></label><label><span>Status</span><select value={status} onChange={(event) => setStatus(event.target.value as 'All' | DeliveryStatus)}><option>All</option><option>Unassigned</option><option>Assigned</option><option>Out for delivery</option><option>Delivered</option><option>Exception</option></select></label><button type="button" onClick={() => setDeliveries(seedDeliveries)}>Reset demo data</button></div>
     <div className="retail-record-layout">
       <div className="retail-table-panel"><div className="retail-table-heading"><div><strong>Delivery control</strong><span>{visible.length} matching shipments</span></div><span>Live demo queue</span></div><div className="retail-table-scroll"><table className="retail-data-table"><thead><tr><th>Shipment</th><th>Order</th><th>Customer</th><th>Destination</th><th>Driver</th><th>Window</th><th>Status</th></tr></thead><tbody>{visible.map((delivery) => <tr key={delivery.id} className={selected?.id === delivery.id ? 'is-selected' : undefined} onClick={() => setSelectedId(delivery.id)}><td><strong>{delivery.id}</strong></td><td>{delivery.order}</td><td>{delivery.customer}</td><td>{delivery.destination}</td><td>{delivery.driver}</td><td>{delivery.window}</td><td><span className="retail-status" data-status={delivery.status}>{delivery.status}</span></td></tr>)}</tbody></table></div></div>

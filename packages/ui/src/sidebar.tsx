@@ -13,6 +13,7 @@ function ActualSidebar({ config }: { config?: BrandConsoleConfig }) {
       { label: 'Logistics', href: '/modules/logistics', icon: '↗' },
       { label: 'Finance', href: '/modules/finance', icon: '£' },
       { label: 'Marketing', href: '/marketing', icon: '◎' },
+      { label: 'Health', href: '/modules/health', icon: '✚' },
       { label: 'Fulfilment-to-Cash', href: '/fulfilment-to-cash', icon: '⇄' },
     ],
     'Core.Workforce': [

@@ -2,8 +2,8 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import * as SecureStore from 'expo-secure-store'
 import { IS_DEMO_MODE } from '@foundingos/ui/mobile-runtime-mode'
+import { deleteStoredValue, getStoredValue, setStoredValue } from './platform-storage'
 
 // Real API client — talks to the real, live foundingos-console backend (the same one every
 // web brand console and the main website use). No mock data, no fabricated endpoints, no
@@ -38,17 +38,17 @@ export async function login(email: string, password: string): Promise<LoginResul
     setCookie?.match(/fo_tester_admin_session=([^;,]+)/)?.[1] ||
     setCookie?.match(/fo_tester_session=([^;,]+)/)?.[1]
   if (token) {
-    await SecureStore.setItemAsync(TOKEN_KEY, token)
+    await setStoredValue(TOKEN_KEY, token)
   }
   return { ok: true, category: data?.category ?? 'tester' }
 }
 
 export async function getToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(TOKEN_KEY)
+  return getStoredValue(TOKEN_KEY)
 }
 
 export async function logout(): Promise<void> {
-  await SecureStore.deleteItemAsync(TOKEN_KEY)
+  await deleteStoredValue(TOKEN_KEY)
 }
 
 // Every authenticated call in the app goes through this — attaches the real Bearer token,

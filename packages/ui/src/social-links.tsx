@@ -19,13 +19,27 @@ type Network =
   | 'imessage'
   | 'sms'
 
+const networkColors: Record<Network, string> = {
+  instagram: '#E1306C',
+  linkedin: '#0A66C2',
+  tiktok: '#25F4EE',
+  x: '#FFFFFF',
+  facebook: '#1877F2',
+  youtube: '#FF0000',
+  whatsapp: '#25D366',
+  telegram: '#2AABEE',
+  messenger: '#A334FA',
+  imessage: '#34C759',
+  sms: '#65C466',
+}
+
 const targets: Record<Network, { label: string; href: string }> = {
-  instagram: { label: 'Instagram', href: 'https://instagram.com/core_operations' },
-  linkedin: { label: 'LinkedIn', href: 'https://linkedin.com/company/core_operations' },
-  tiktok: { label: 'TikTok', href: 'https://tiktok.com/@core_operations' },
-  x: { label: 'X', href: 'https://x.com/core_operations' },
-  facebook: { label: 'Facebook', href: 'https://facebook.com/core_operations' },
-  youtube: { label: 'YouTube', href: 'https://youtube.com/@core_operations' },
+  instagram: { label: 'Instagram', href: 'https://instagram.com/foundingos' },
+  linkedin: { label: 'LinkedIn', href: 'https://linkedin.com/company/foundingos' },
+  tiktok: { label: 'TikTok', href: 'https://tiktok.com/@foundingos' },
+  x: { label: 'X', href: 'https://x.com/foundingos' },
+  facebook: { label: 'Facebook', href: 'https://facebook.com/foundingos' },
+  youtube: { label: 'YouTube', href: 'https://youtube.com/@foundingos' },
   whatsapp: { label: 'WhatsApp', href: 'https://wa.me/00000000000' },
   telegram: { label: 'Telegram', href: 'https://t.me/core_operations' },
   messenger: { label: 'Messenger', href: 'https://m.me/core_operations' },
@@ -79,10 +93,12 @@ export function PremiumSocialLinks({
   accent,
   mode = 'full',
   label,
+  networks = premiumRow,
 }: {
   accent: string
   mode?: 'header' | 'full' | 'inline'
   label?: string
+  networks?: readonly Network[]
 }) {
   const size = mode === 'header' ? 32 : mode === 'inline' ? 30 : 36
   const gap = mode === 'inline' ? 8 : 10
@@ -105,8 +121,9 @@ export function PremiumSocialLinks({
           {label}
         </span>
       )}
-      {premiumRow.map((network) => {
+      {networks.map((network) => {
         const meta = targets[network]
+        const networkColor = networkColors[network]
         return (
           <a
             key={network}
@@ -122,16 +139,16 @@ export function PremiumSocialLinks({
               padding: mode === 'inline' ? 0 : '0 12px',
               borderRadius: 999,
               border: '1px solid rgba(255,255,255,0.08)',
-              background: `linear-gradient(180deg, color-mix(in srgb, ${accent} 15%, rgba(255,255,255,0.04)), rgba(255,255,255,0.03))`,
+              background: `linear-gradient(180deg, color-mix(in srgb, ${networkColor} 20%, rgba(255,255,255,0.05)), rgba(255,255,255,0.03))`,
               color: 'white',
               textDecoration: 'none',
-              boxShadow: `0 0 0 1px color-mix(in srgb, ${accent} 12%, transparent) inset, 0 0 18px color-mix(in srgb, ${accent} 20%, transparent)`,
+              boxShadow: `0 0 0 1px color-mix(in srgb, ${networkColor} 18%, transparent) inset, 0 0 18px color-mix(in srgb, ${networkColor} 18%, transparent)`,
               transition: 'transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, opacity 180ms ease',
             }}
             onMouseEnter={(event) => {
               event.currentTarget.style.transform = 'translateY(-1px)'
-              event.currentTarget.style.borderColor = accent
-              event.currentTarget.style.boxShadow = `0 0 0 1px color-mix(in srgb, ${accent} 28%, transparent) inset, 0 0 24px color-mix(in srgb, ${accent} 28%, transparent)`
+              event.currentTarget.style.borderColor = networkColor
+              event.currentTarget.style.boxShadow = `0 0 0 1px color-mix(in srgb, ${networkColor} 32%, transparent) inset, 0 0 24px color-mix(in srgb, ${networkColor} 30%, transparent)`
             }}
             onMouseLeave={(event) => {
               event.currentTarget.style.transform = 'translateY(0)'
@@ -139,7 +156,7 @@ export function PremiumSocialLinks({
               event.currentTarget.style.boxShadow = `0 0 0 1px color-mix(in srgb, ${accent} 12%, transparent) inset, 0 0 18px color-mix(in srgb, ${accent} 20%, transparent)`
             }}
           >
-            <span style={{ width: size - 8, height: size - 8, display: 'grid', placeItems: 'center', color: accent }}>
+            <span style={{ width: size - 8, height: size - 8, display: 'grid', placeItems: 'center', color: networkColor }}>
               {glyph(network)}
             </span>
             {mode !== 'inline' && <span style={{ fontSize: 12, fontWeight: 800 }}>{meta.label}</span>}

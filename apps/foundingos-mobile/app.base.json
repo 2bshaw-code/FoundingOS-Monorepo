@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "FoundingOS Quantum Mobile",
+    "name": "FoundingOS",
     "slug": "foundingos-mobile",
     "scheme": "foundingos",
     "version": "1.0.0",
@@ -17,10 +17,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.foundingos.quantum",
       "infoPlist": {
-        "NSCameraUsageDescription": "FoundingOS Quantum uses the camera to scan shelves, receipts, product labels, and workflow media for AI-assisted actions.",
-        "NSMicrophoneUsageDescription": "FoundingOS Quantum uses the microphone to capture voice commands for AI-assisted workflows.",
-        "NSPhotoLibraryUsageDescription": "FoundingOS Quantum uses your photo library to select receipts, product photos, videos, and workflow media for AI-assisted actions.",
-        "NSPhotoLibraryAddUsageDescription": "FoundingOS Quantum may save generated receipts, workflow captures, and AI confirmation assets to your photo library when requested.",
+        "NSCameraUsageDescription": "FoundingOS uses the camera to scan shelves, receipts, product labels, and workflow media for AI-assisted actions.",
+        "NSMicrophoneUsageDescription": "FoundingOS uses the microphone to capture voice commands for AI-assisted workflows.",
+        "NSPhotoLibraryUsageDescription": "FoundingOS uses your photo library to select receipts, product photos, videos, and workflow media for AI-assisted actions.",
+        "NSPhotoLibraryAddUsageDescription": "FoundingOS may save generated receipts, workflow captures, and AI confirmation assets to your photo library when requested.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },

@@ -20,7 +20,7 @@ export default function LoginScreen() {
 
   useEffect(() => {
     getToken().then((token) => {
-      if (token) router.replace('/(app)/brands')
+      if (token) router.replace('/(app)/home')
       setCheckingSession(false)
     })
   }, [])
@@ -38,7 +38,7 @@ export default function LoginScreen() {
       setError(result.error)
       return
     }
-    router.replace('/(app)/brands')
+    router.replace('/(app)/home')
   }
 
   if (checkingSession) {
@@ -54,9 +54,9 @@ export default function LoginScreen() {
       <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.brand}>
           <QuantumSphere size={72} />
-          <QuantumText variant="h1" align="center">FoundingOS Quantum</QuantumText>
+          <QuantumText variant="h1" align="center">FoundingOS</QuantumText>
           <QuantumText color="#D8D8D8" align="center">
-            One premium mobile command system for every FoundingOS brand.
+            One command system for every workspace in your business.
           </QuantumText>
         </View>
 

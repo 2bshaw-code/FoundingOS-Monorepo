@@ -86,11 +86,11 @@ export function usePersistentRecords<T>(key: string, seed: T[]) {
   return [records, updateRecords] as const
 }
 
-export function WorkspaceHeader({ title, description, onCreate }: { title: string; description: string; onCreate: () => void }) {
+export function WorkspaceHeader({ title, description, onCreate, eyebrow = 'Retail workspace' }: { title: string; description: string; onCreate: () => void; eyebrow?: string }) {
   return (
     <header className="retail-workspace-header">
       <div>
-        <p>Retail workspace</p>
+        <p>{eyebrow}</p>
         <h1>{title}</h1>
         <span>{description}</span>
       </div>

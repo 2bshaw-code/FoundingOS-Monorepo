@@ -87,7 +87,7 @@ export function QuantumShellHeaderTitle({ title, brandName, accent }: { title: s
   return (
     <View style={styles.headerTitleWrap}>
       <QuantumText variant="caption" color={accent} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
-        FoundingOS Quantum Command
+        FoundingOS Command
       </QuantumText>
       <QuantumText variant="h3" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.68} ellipsizeMode="tail">
         {title}
