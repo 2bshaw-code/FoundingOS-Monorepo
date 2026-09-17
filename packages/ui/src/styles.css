@@ -3159,18 +3159,23 @@ body[data-sidebar-collapsed='true'] .nav-card {
 
   .retail-status[data-status='Delivered'],
   .retail-status[data-status='Healthy'],
-  .retail-status[data-status='Ready'] {
+  .retail-status[data-status='Ready'],
+  .retail-status[data-status='Paid'] {
     background: rgba(34, 197, 94, 0.13);
     color: #5ee38d;
   }
 
   .retail-status[data-status='Low stock'],
-  .retail-status[data-status='New'] {
+  .retail-status[data-status='New'],
+  .retail-status[data-status='Draft'],
+  .retail-status[data-status='Unassigned'] {
     background: rgba(245, 158, 11, 0.13);
     color: #fbbf24;
   }
 
-  .retail-status[data-status='Out of stock'] {
+  .retail-status[data-status='Out of stock'],
+  .retail-status[data-status='Overdue'],
+  .retail-status[data-status='Exception'] {
     background: rgba(239, 68, 68, 0.13);
     color: #fb7185;
   }

@@ -11,6 +11,7 @@ import { DemoMessageBoard } from './demo-message-board'
 import { GetStartedChecklist } from './get-started-checklist'
 import { DataMigrationHub } from './data-migration-hub'
 import { RetailOperationsWorkspace } from './retail-operations-workspace'
+import { CommercialOperationsWorkspace } from './commercial-operations-workspace'
 import { RealDealsPanel, RealBrandFinancePanel, RealInvoicesPanel } from './real-monetary-panels'
 import { resolveBrandSlugFromName } from './real-monetary'
 import { useAIAssistance, hasSeenOnboarding, markOnboardingSeen, AIAssistanceToggle } from './ai-assistance'
@@ -1495,6 +1496,10 @@ export function BrandModulePage({ config, moduleId }: { config: BrandConsoleConf
 
   if (config.name === 'Core.Operations' && (module.id === 'orders' || module.id === 'inventory')) {
     return <RetailOperationsWorkspace moduleId={module.id} />
+  }
+
+  if (config.name === 'Core.Operations' && ['logistics', 'finance', 'accounting'].includes(module.id)) {
+    return <CommercialOperationsWorkspace moduleId={module.id} />
   }
 
   if (module.id === 'products') {

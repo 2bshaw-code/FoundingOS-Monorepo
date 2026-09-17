@@ -67,7 +67,7 @@ function stockStatus(record: InventoryRecord): StockStatus {
   return 'Healthy'
 }
 
-function usePersistentRecords<T>(key: string, seed: T[]) {
+export function usePersistentRecords<T>(key: string, seed: T[]) {
   const [records, setRecords] = useState<T[]>(seed)
 
   useEffect(() => {
@@ -86,7 +86,7 @@ function usePersistentRecords<T>(key: string, seed: T[]) {
   return [records, updateRecords] as const
 }
 
-function WorkspaceHeader({ title, description, onCreate }: { title: string; description: string; onCreate: () => void }) {
+export function WorkspaceHeader({ title, description, onCreate }: { title: string; description: string; onCreate: () => void }) {
   return (
     <header className="retail-workspace-header">
       <div>
@@ -99,7 +99,7 @@ function WorkspaceHeader({ title, description, onCreate }: { title: string; desc
   )
 }
 
-function ActivityToast({ activity }: { activity: ActivityRecord | null }) {
+export function ActivityToast({ activity }: { activity: ActivityRecord | null }) {
   if (!activity) return null
   return (
     <div className="retail-activity-toast" role="status">
@@ -109,7 +109,7 @@ function ActivityToast({ activity }: { activity: ActivityRecord | null }) {
   )
 }
 
-function CEOBriefing({
+export function CEOBriefing({
   headline,
   summary,
   standing,
