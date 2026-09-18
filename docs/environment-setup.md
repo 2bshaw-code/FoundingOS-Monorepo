@@ -147,6 +147,10 @@ Share only the generated password. Add the three printed `SITE_ACCESS_*`
 values to the web deployment environment and redeploy. The password itself is
 not stored in source control or shipped to the browser. Access is represented
 by a signed, HTTP-only, seven-day cookie; failed attempts are rate-limited.
+Set the web deployment's `TESTER_SESSION_SECRET` to the same secret used by the
+FoundingOS Console. Existing `super-founder-admin` sessions then bypass the
+tester gate without changing the founder password or granting testers any
+administrative permissions.
 Set `SITE_ACCESS_ENABLED=false` and redeploy when the public site should no
 longer require the preview password.
 

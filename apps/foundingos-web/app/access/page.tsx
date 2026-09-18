@@ -11,6 +11,7 @@ export default function SiteAccessPage({ searchParams }: { searchParams: { retur
         {searchParams.error ? <div className="complete-workspace-error" role="alert">That password was not accepted. Please try again.</div> : null}
         <button className="retail-app-primary" type="submit">Open FoundingOS</button>
       </form>
+      <a className="site-access-admin" href="https://console.foundingos.com/tester/login">Founder or administrator? Sign in with your account →</a>
       <small className="site-access-note">Access expires after seven days. Do not forward customer or provider credentials.</small>
     </section>
   </main>

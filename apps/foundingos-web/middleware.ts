@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyFounderSession } from './src/founder-session'
 
 const cookieName = 'foundingos_site_access'
 const cookieValue = 'granted'
+const founderCookieName = 'fo_tester_admin_session'
+const encoder = new TextEncoder()
 
 const bytesToHex = (bytes: ArrayBuffer) => Array.from(new Uint8Array(bytes), (byte) => byte.toString(16).padStart(2, '0')).join('')
 
@@ -19,8 +22,15 @@ const constantTimeEqual = (left: string, right: string) => {
   return difference === 0
 }
 
+async function hasFounderSession(request: NextRequest) {
+  const token = request.cookies.get(founderCookieName)?.value
+  const secret = process.env.TESTER_SESSION_SECRET?.trim()
+  return verifyFounderSession(token, secret)
+}
+
 export async function middleware(request: NextRequest) {
   if (process.env.SITE_ACCESS_ENABLED !== 'true') return NextResponse.next()
+  if (await hasFounderSession(request)) return NextResponse.next()
   const expected = await expectedSignature()
   if (!expected) return new NextResponse('Site access is enabled but not configured.', { status: 503 })
   const provided = request.cookies.get(cookieName)?.value ?? ''

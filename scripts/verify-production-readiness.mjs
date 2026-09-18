@@ -30,6 +30,7 @@ for (const name of required) check(name, Boolean(process.env[name]?.trim()), `${
 if (process.env.SITE_ACCESS_ENABLED === 'true') {
   check('SITE_ACCESS_PASSWORD_HASH', Boolean(process.env.SITE_ACCESS_PASSWORD_HASH?.trim()), 'SITE_ACCESS_PASSWORD_HASH is required when site access is enabled')
   check('SITE_ACCESS_SECRET', Boolean(process.env.SITE_ACCESS_SECRET?.trim()) && process.env.SITE_ACCESS_SECRET.trim().length >= 32, 'SITE_ACCESS_SECRET must contain at least 32 characters')
+  check('TESTER_SESSION_SECRET', Boolean(process.env.TESTER_SESSION_SECRET?.trim()), 'TESTER_SESSION_SECRET is required so founder sessions can bypass the tester gate')
 }
 
 for (const name of ['FOUNDINGOS_WEB_URL', 'NEXT_PUBLIC_FOUNDINGOS_API_URL']) {

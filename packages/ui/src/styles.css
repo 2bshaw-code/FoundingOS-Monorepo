@@ -2159,6 +2159,17 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   margin-top: 18px;
 }
 
+.site-access-admin {
+  border-top: 1px solid #dfe5ed;
+  color: #245d43;
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  margin-top: 22px;
+  padding-top: 18px;
+  text-decoration: none;
+}
+
 .complete-workspace-checkboxes {
   border: 1px solid #dfe5ed;
   border-radius: 8px;
