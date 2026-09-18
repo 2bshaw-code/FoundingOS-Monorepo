@@ -27,3 +27,5 @@ core-workforce/backend/src/generated/
 /public/
 core-workforce/backend/api/
 core-workforce/backend/public/
+core-intelligence/backend/api/
+core-intelligence/backend/public/
