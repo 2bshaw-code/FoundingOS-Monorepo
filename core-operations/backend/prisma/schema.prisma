@@ -750,3 +750,25 @@ model AgentActionExecution {
   @@index([tenantId, status, createdAt])
   @@schema("wros")
 }
+
+// Real, persisted record of which suite(s) a tenant is licensed to use.
+// This is the single source of truth `createModuleAccessMiddleware`
+// (see @founder-os/auth) checks before allowing non-founder_master
+// access to any suite's gated routes — across Core.Operations,
+// Core.Workforce, and Core.Intelligence. `suite` holds one of
+// 'core_operations' | 'core_workforce' | 'core_intelligence'.
+model TenantSuiteLicense {
+  id          String    @id @default(cuid())
+  tenantId    String
+  suite       String
+  planTier    String    @default("starter")
+  enabled     Boolean   @default(true)
+  seats       Int?
+  trialEndsAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([tenantId, suite])
+  @@index([tenantId, enabled])
+  @@schema("wros")
+}

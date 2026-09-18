@@ -17,6 +17,7 @@ import { acceptTeamInvitation, assertWorkspaceAccess, bootstrapTenant, checkInte
 import { verifyBootstrapToken } from './platform-security.js'
 import { createTenantCheckout, verifyStripeWebhookSignature } from './stripe.js'
 import { decideAgentAction, executeAgentAction, getAgentActionTrail, getAgentIntelligenceSummary, listAgentActions, proposeAgentAction, proposeReplenishmentAction, reverseAgentActionExecution } from './agent-actions.js'
+import { isSuiteLicensed, listTenantSuiteLicenses, setTenantSuiteLicense } from './licensing.js'
 
 const requireTenant: RequestHandler = (_req, res, next) => {
   if (res.locals.auth?.role === 'founder_master') return next()
@@ -28,6 +29,25 @@ const readTenant = (req: { header(name: string): string | undefined }, res: { lo
 const writeTenant = (req: { body?: Record<string, unknown>; header(name: string): string | undefined }, res: { locals: Record<string, any> }) => readTenant(req, res) || String(req.body?.tenantId || '')
 export const apiRouter = Router()
 apiRouter.get('/status', (_req, res) => res.json({ app: 'core_operations', status: 'operational' }))
+// Real, cross-suite suite-licensing gate. Core.Workforce and
+// Core.Intelligence call this over HTTP (via FOUNDER_API_URL +
+// createModuleAccessMiddleware); Core.Operations checks it locally for
+// its own gated routes too, so there is exactly one TenantSuiteLicense
+// source of truth across all three backends.
+apiRouter.get('/module-access/:tenantId/:module', requireMerchantAccess, async (req, res, next) => {
+  try {
+    const tenantId = String(req.params.tenantId)
+    const module = String(req.params.module)
+    if (res.locals.auth?.role !== 'founder_master' && res.locals.auth?.tenantId !== tenantId) return res.status(403).json({ success: false, allowed: false })
+    res.json({ success: true, allowed: await isSuiteLicensed(tenantId, module) })
+  } catch (error) { next(error) }
+})
+apiRouter.get('/platform/suite-licenses', requireOwnerAccess, requireTenant, async (req, res, next) => {
+  try { res.json({ success: true, data: await listTenantSuiteLicenses(readTenant(req, res) || '') }) } catch (error) { next(error) }
+})
+apiRouter.put('/platform/suite-licenses/:suite', requireTenantOwnerAccess, requireTenant, async (req, res, next) => {
+  try { res.json({ success: true, data: await setTenantSuiteLicense(readTenant(req, res) || '', String(req.params.suite), Boolean(req.body?.enabled)) }) } catch (error) { next(error) }
+})
 apiRouter.post('/platform/bootstrap', async (req, res, next) => {
   if (!verifyBootstrapToken(req.header('x-bootstrap-token'))) return res.status(401).json({ success: false, message: 'Valid bootstrap token required' })
   try { res.status(201).json({ success: true, data: await bootstrapTenant(req.body || {}) }) } catch (error) { next(error) }
