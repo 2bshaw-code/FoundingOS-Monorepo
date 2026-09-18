@@ -3,16 +3,16 @@ export default function SiteAccessPage({ searchParams }: { searchParams: { retur
     <section>
       <div className="complete-workspace-access-brand"><span>F</span><div><strong>FoundingOS</strong><small>Private product preview</small></div></div>
       <p className="eyebrow">Invitation only</p>
-      <h1>Enter the preview password</h1>
-      <p>This private environment contains interactive FoundingOS workspaces for invited testers.</p>
+      <h1>Sign in to FoundingOS</h1>
+      <p>Use your email address and the shared invitation password to explore the complete FoundingOS system.</p>
       <form action="/api/access/login" method="post">
         <input name="returnTo" type="hidden" value={searchParams.returnTo || '/'} />
-        <label>Shared password<input autoComplete="current-password" autoFocus minLength={8} name="password" required type="password" /></label>
-        {searchParams.error ? <div className="complete-workspace-error" role="alert">That password was not accepted. Please try again.</div> : null}
+        <label>Email address<input autoComplete="email" autoFocus name="email" required type="email" /></label>
+        <label>Invitation password<input autoComplete="current-password" minLength={8} name="password" required type="password" /></label>
+        {searchParams.error ? <div className="complete-workspace-error" role="alert">That email or password was not accepted. Please try again.</div> : null}
         <button className="retail-app-primary" type="submit">Open FoundingOS</button>
       </form>
-      <a className="site-access-admin" href="https://console.foundingos.com/tester/login">Founder or administrator? Sign in with your account →</a>
-      <small className="site-access-note">Access expires after seven days. Do not forward customer or provider credentials.</small>
+      <small className="site-access-note">Access expires after seven days. Your email is recorded so we can support your preview and understand product interest.</small>
     </section>
   </main>
 }
