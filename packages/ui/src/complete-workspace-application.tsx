@@ -246,6 +246,62 @@ function Overview({ workspace, config, state, events }: { workspace: BusinessWor
   </>
 }
 
+const superDashboardWorkspaces: Array<{ workspace: Exclude<BusinessWorkspaceSlug, 'intelligence'>; health: number; headline: string; value: string; trend: string; risk: string }> = [
+  { workspace: 'retail', health: 94, headline: 'Revenue', value: '£18.6k', trend: '+12.4%', risk: '2 low-stock lines' },
+  { workspace: 'logistics', health: 89, headline: 'On-time', value: '94.8%', trend: '+2.1pt', risk: '3 delivery exceptions' },
+  { workspace: 'finance', health: 96, headline: 'Cash', value: '£86.4k', trend: '+9.7%', risk: '£8.1k due this week' },
+  { workspace: 'marketing', health: 91, headline: 'ROAS', value: '4.8x', trend: '+0.6x', risk: '2 campaigns awaiting review' },
+  { workspace: 'talent', health: 86, headline: 'Engagement', value: '82%', trend: '+4pt', risk: '4 priority hires' },
+  { workspace: 'health', health: 88, headline: 'Capacity', value: '86%', trend: '+5pt', risk: '2 priority follow-ups' },
+]
+
+function SuperDashboardOverview({ events }: { events: WorkspaceEvent[] }) {
+  const [horizon, setHorizon] = useState<'Today' | '7 days' | '30 days'>('7 days')
+  const forecast = horizon === 'Today' ? { revenue: '+0.8%', cash: '£87.1k', confidence: '95%' } : horizon === '7 days' ? { revenue: '+4.6%', cash: '£91.8k', confidence: '91%' } : { revenue: '+13.2%', cash: '£103.5k', confidence: '86%' }
+  return <>
+    <WorkspaceHeading eyebrow="FoundingOS SuperDashboard" title="Your whole business, in one view." copy="Live operating health, cross-workspace priorities, forecasts, and recommended actions from the shared event graph." action={<Link className="retail-app-primary" href={`${workspaceRoot}/intelligence/recommendations`}>Review AI actions</Link>} />
+    <section className="retail-app-metrics">
+      <Metric label="Operating health" value="91%" change="+3 points this week" />
+      <Metric label="Revenue influenced" value="£74.2k" change="+11.8% this month" />
+      <Metric label="Active exceptions" value="13" change="4 require a decision" />
+      <Metric label="Automations completed" value="1,284" change="96.7% success rate" />
+    </section>
+    <section className="superdashboard-workspace-grid">
+      {superDashboardWorkspaces.map((item) => <Link href={`${workspaceRoot}/${item.workspace}`} key={item.workspace} style={{ ['--workspace-color' as string]: configs[item.workspace].accent }}>
+        <header><div><span>{configs[item.workspace].label.slice(0, 2).toUpperCase()}</span><strong>{configs[item.workspace].label}</strong></div><b>{item.health}% healthy</b></header>
+        <div><small>{item.headline}</small><strong>{item.value}</strong><em>{item.trend}</em></div>
+        <footer><span>{item.risk}</span><b>Open →</b></footer>
+      </Link>)}
+    </section>
+    <section className="retail-app-dashboard-grid superdashboard-main-grid">
+      <article className="retail-app-panel retail-app-chart-panel">
+        <div className="retail-app-panel-heading"><div><p>Predictive outlook</p><h2>Combined operating trajectory</h2></div><div className="superdashboard-horizons">{(['Today', '7 days', '30 days'] as const).map((item) => <button className={item === horizon ? 'active' : ''} key={item} onClick={() => setHorizon(item)} type="button">{item}</button>)}</div></div>
+        <div className="superdashboard-forecast"><div><small>Revenue trend</small><strong>{forecast.revenue}</strong></div><div><small>Projected cash</small><strong>{forecast.cash}</strong></div><div><small>Model confidence</small><strong>{forecast.confidence}</strong></div></div>
+        <svg viewBox="0 0 620 180" role="img" aria-label={`${horizon} combined business forecast`}><defs><linearGradient id="superdashboard-trend" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#b77aff" stopOpacity=".42" /><stop offset="1" stopColor="#b77aff" stopOpacity="0" /></linearGradient></defs>{[30, 75, 120, 165].map((y) => <line key={y} stroke="#dfe5ed" x1="25" x2="600" y1={y} y2={y} />)}<path d="M25 148 L115 135 L205 142 L295 101 L385 110 L475 64 L600 35 L600 175 L25 175 Z" fill="url(#superdashboard-trend)" /><polyline fill="none" points="25,148 115,135 205,142 295,101 385,110 475,64 600,35" stroke="#8a50d2" strokeLinecap="round" strokeLinejoin="round" strokeWidth="5" /></svg>
+      </article>
+      <article className="retail-app-panel">
+        <div className="retail-app-panel-heading"><div><p>Decision queue</p><h2>Recommended next actions</h2></div><Link href={`${workspaceRoot}/intelligence/recommendations`}>View all</Link></div>
+        <div className="superdashboard-decisions">
+          <Link href={`${workspaceRoot}/finance/cashflow`}><i data-tone="risk" /><div><strong>Protect seven-day cash position</strong><span>Chase £8.1k receivables due this week</span></div><b>£8.1k</b></Link>
+          <Link href={`${workspaceRoot}/logistics/exceptions`}><i data-tone="watch" /><div><strong>Recover delayed deliveries</strong><span>Reassign three exceptions before the afternoon run</span></div><b>3 routes</b></Link>
+          <Link href={`${workspaceRoot}/retail/inventory`}><i data-tone="watch" /><div><strong>Approve inventory replenishment</strong><span>Two fast-moving lines will stock out within four days</span></div><b>4 days</b></Link>
+          <Link href={`${workspaceRoot}/talent/jobs`}><i data-tone="good" /><div><strong>Accelerate priority hiring</strong><span>Six candidates match the four urgent roles</span></div><b>6 matches</b></Link>
+        </div>
+      </article>
+    </section>
+    <section className="retail-app-dashboard-grid lower">
+      <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Shared Event Feed</p><h2>What changed across the business</h2></div><Link href={`${workspaceRoot}/intelligence/event-feed`}>Open feed</Link></div><ul className="retail-app-activity">{(events.length ? events : [
+        { id: 'sd-1', workspace: 'retail' as const, text: 'Order value crossed the weekly plan', time: 'Now' },
+        { id: 'sd-2', workspace: 'finance' as const, text: 'Stripe settlement reconciled automatically', time: '12m' },
+        { id: 'sd-3', workspace: 'logistics' as const, text: 'Delivery exception requires approval', time: '28m' },
+        { id: 'sd-4', workspace: 'marketing' as const, text: 'Campaign created three qualified opportunities', time: '41m' },
+        { id: 'sd-5', workspace: 'health' as const, text: 'Follow-up queue exceeded target', time: '1h' },
+      ]).slice(0, 6).map((event) => <li key={event.id}><i /><span><strong>{configs[event.workspace].label}</strong> · {event.text}</span><span>{event.time}</span></li>)}</ul></article>
+      <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>AI control</p><h2>Autonomy with approval</h2></div><Link href={`${workspaceRoot}/intelligence/workflows`}>Manage workflows</Link></div><div className="superdashboard-autonomy"><div><span>Observed</span><strong>420 signals</strong><small>Across six operational workspaces</small></div><div><span>Recommended</span><strong>17 actions</strong><small>£24k estimated business value</small></div><div><span>Auto-completed</span><strong>11 actions</strong><small>Within approved guardrails</small></div><div><span>Needs approval</span><strong>4 decisions</strong><small>No external action taken yet</small></div></div></article>
+    </section>
+  </>
+}
+
 function RecordsPage({ workspace, config, item, state, createRecord, advanceRecord, publishHandoff }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
   const records = state.records[item.id] ?? []
   const statuses = statusFor(item)
@@ -478,7 +534,8 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
   if (!hydrated) return <main className="complete-workspace-access"><section><h1>Loading FoundingOS…</h1></section></main>
   if (production && !session) return <ProductionAccess onAuthenticated={setSession} />
   let content: React.ReactNode
-  if (current.id === 'overview') content = <Overview config={config} events={events} state={state} workspace={workspace} />
+  if (current.id === 'overview' && workspace === 'intelligence') content = <SuperDashboardOverview events={events} />
+  else if (current.id === 'overview') content = <Overview config={config} events={events} state={state} workspace={workspace} />
   else if (current.id === 'automations') content = <AutomationsPage config={config} state={state} update={update} />
   else if (current.id === 'integrations') content = <IntegrationsPage production={production} state={state} update={update} />
   else if (current.id === 'team' && production) content = <TeamPage workspace={workspace} />

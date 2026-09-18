@@ -1848,6 +1848,224 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   padding: 10px 12px;
 }
 
+.superdashboard-workspace-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 16px;
+}
+
+.superdashboard-workspace-grid > a {
+  background: #fff;
+  border: 1px solid #dfe5ed;
+  border-radius: 10px;
+  color: #172033;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  text-decoration: none;
+}
+
+.superdashboard-workspace-grid header,
+.superdashboard-workspace-grid header > div,
+.superdashboard-workspace-grid footer,
+.superdashboard-workspace-grid > a > div {
+  align-items: center;
+  display: flex;
+}
+
+.superdashboard-workspace-grid header,
+.superdashboard-workspace-grid footer {
+  justify-content: space-between;
+}
+
+.superdashboard-workspace-grid header > div {
+  gap: 8px;
+}
+
+.superdashboard-workspace-grid header span {
+  background: color-mix(in srgb, var(--workspace-color) 16%, #fff);
+  border-radius: 6px;
+  color: var(--workspace-color);
+  display: grid;
+  font-size: 9px;
+  font-weight: 900;
+  height: 27px;
+  place-items: center;
+  width: 27px;
+}
+
+.superdashboard-workspace-grid header b {
+  color: #35815d;
+  font-size: 10px;
+}
+
+.superdashboard-workspace-grid > a > div {
+  gap: 9px;
+}
+
+.superdashboard-workspace-grid > a > div small {
+  color: #738299;
+}
+
+.superdashboard-workspace-grid > a > div strong {
+  font-size: 24px;
+}
+
+.superdashboard-workspace-grid > a > div em {
+  color: #35815d;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.superdashboard-workspace-grid footer {
+  border-top: 1px solid #edf0f4;
+  color: #738299;
+  font-size: 10px;
+  padding-top: 12px;
+}
+
+.superdashboard-workspace-grid footer b {
+  color: var(--workspace-color);
+}
+
+.superdashboard-main-grid {
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr);
+}
+
+.superdashboard-horizons {
+  background: #eef2f7;
+  border-radius: 7px;
+  display: flex;
+  padding: 3px;
+}
+
+.superdashboard-horizons button {
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  color: #64748a;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 6px 8px;
+}
+
+.superdashboard-horizons button.active {
+  background: #fff;
+  color: #7140aa;
+  box-shadow: 0 1px 4px rgba(23, 32, 51, .12);
+}
+
+.superdashboard-forecast {
+  display: flex;
+  gap: 24px;
+  margin-top: 18px;
+}
+
+.superdashboard-forecast div {
+  display: grid;
+  gap: 3px;
+}
+
+.superdashboard-forecast small {
+  color: #738299;
+  font-size: 9px;
+}
+
+.superdashboard-forecast strong {
+  font-size: 18px;
+}
+
+.superdashboard-decisions {
+  display: grid;
+  margin-top: 12px;
+}
+
+.superdashboard-decisions > a {
+  align-items: center;
+  border-top: 1px solid #edf0f4;
+  color: #172033;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  padding: 13px 0;
+  text-decoration: none;
+}
+
+.superdashboard-decisions i {
+  background: #28b675;
+  border-radius: 50%;
+  height: 8px;
+  width: 8px;
+}
+
+.superdashboard-decisions i[data-tone="risk"] {
+  background: #e74c67;
+}
+
+.superdashboard-decisions i[data-tone="watch"] {
+  background: #f3ae37;
+}
+
+.superdashboard-decisions div {
+  display: grid;
+  gap: 3px;
+}
+
+.superdashboard-decisions span,
+.superdashboard-decisions > a > b {
+  color: #738299;
+  font-size: 9px;
+}
+
+.superdashboard-autonomy {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 14px;
+}
+
+.superdashboard-autonomy > div {
+  background: #f6f8fb;
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  padding: 13px;
+}
+
+.superdashboard-autonomy span,
+.superdashboard-autonomy small {
+  color: #738299;
+  font-size: 9px;
+}
+
+.superdashboard-autonomy strong {
+  font-size: 17px;
+}
+
+@media (max-width: 1050px) {
+  .superdashboard-workspace-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .superdashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .superdashboard-workspace-grid,
+  .superdashboard-autonomy {
+    grid-template-columns: 1fr;
+  }
+
+  .superdashboard-forecast {
+    justify-content: space-between;
+  }
+}
+
 .complete-workspace-access {
   align-items: center;
   background: radial-gradient(circle at top, #18314c, #07111f 58%);
@@ -1861,6 +2079,7 @@ body:has(.complete-workspace-directory) .found-ai-panel {
 .complete-workspace-access > section {
   background: #fff;
   border-radius: 16px;
+  box-sizing: border-box;
   box-shadow: 0 28px 90px rgba(0, 0, 0, .35);
   color: #172033;
   max-width: 480px;
@@ -1931,6 +2150,13 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   font-size: 11px;
   margin-top: 18px;
   padding: 0;
+}
+
+.site-access-note {
+  color: #718096;
+  display: block;
+  line-height: 1.5;
+  margin-top: 18px;
 }
 
 .complete-workspace-checkboxes {

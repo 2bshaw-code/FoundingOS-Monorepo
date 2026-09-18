@@ -9,7 +9,9 @@ RUN npm ci \
   && npm run build --workspace @founder-os/auth \
   && npm run build --workspace @foundingos/foundingos-website
 
-FROM nginx:1.27-alpine
-COPY apps/foundingos-web/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/apps/foundingos-web/out /usr/share/nginx/html
-EXPOSE 80
+FROM node:20-bookworm-slim
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build /app /app
+EXPOSE 3000
+CMD ["npm", "run", "start", "--workspace", "@foundingos/foundingos-website", "--", "-p", "3000"]

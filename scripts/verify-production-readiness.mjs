@@ -27,6 +27,10 @@ const check = (name, passed, detail) => {
 check('runtime mode', process.env.APP_MODE === 'production', 'APP_MODE must equal production')
 check('scraping disabled', process.env.SCRAPING_DISABLED === 'true', 'SCRAPING_DISABLED must equal true')
 for (const name of required) check(name, Boolean(process.env[name]?.trim()), `${name} is required`)
+if (process.env.SITE_ACCESS_ENABLED === 'true') {
+  check('SITE_ACCESS_PASSWORD_HASH', Boolean(process.env.SITE_ACCESS_PASSWORD_HASH?.trim()), 'SITE_ACCESS_PASSWORD_HASH is required when site access is enabled')
+  check('SITE_ACCESS_SECRET', Boolean(process.env.SITE_ACCESS_SECRET?.trim()) && process.env.SITE_ACCESS_SECRET.trim().length >= 32, 'SITE_ACCESS_SECRET must contain at least 32 characters')
+}
 
 for (const name of ['FOUNDINGOS_WEB_URL', 'NEXT_PUBLIC_FOUNDINGOS_API_URL']) {
   if (!process.env[name]) continue

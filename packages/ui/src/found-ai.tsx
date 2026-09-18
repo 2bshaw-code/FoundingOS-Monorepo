@@ -51,6 +51,8 @@ function routeLabel(pathname: string) {
 
 function foundAITheme(brand: FoundAIBrand) {
   switch (brand.name) {
+    case 'FoundingOS':
+      return { accent: '#24c47a', glow: 'rgba(36, 196, 122, 0.38)' }
     case 'FoundRetail':
       return { accent: LOCKED_BRAND_COLORS.retail, glow: 'color-mix(in srgb, var(--found-ai-accent) 35%, transparent)' }
     case 'FoundMeat':

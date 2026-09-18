@@ -37,6 +37,12 @@ placeholder with real credentials, and set `APP_MODE=production`. Production
 providers are selected only when the explicit mode is production and required
 credentials are present. Never commit `.env.production`.
 
+For an invitation-only launch, run `npm run generate:site-access`, store the
+generated `SITE_ACCESS_PASSWORD_HASH` and `SITE_ACCESS_SECRET` in the web
+deployment secret manager, and enable `SITE_ACCESS_ENABLED`. Share only the
+one-time displayed password with testers. This gate protects the whole website;
+the tenant-scoped `/app` login remains a separate application security layer. Never commit `.env.production`.
+
 ## Required production secrets
 
 Store these in the deployment secret manager, never in git:

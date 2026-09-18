@@ -4,7 +4,6 @@
 // on this iCloud-synced workspace and stalls the build indefinitely.
 const DEMO_MODE = process.env.APP_MODE === 'demo'
 const nextConfig = {
-  output: 'export',
   transpilePackages: DEMO_MODE
     ? ['@foundingos/ui', '@foundingos/config']
     : ['@foundingos/ui', '@foundingos/config', '@foundingos/auth', '@foundingos/db'],

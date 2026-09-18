@@ -12,7 +12,7 @@ const workspaces: Array<{ slug: TestWorkspaceSlug; label: string; suite: string;
   { slug: 'marketing', label: 'Marketing', suite: 'Core.Operations', summary: 'Campaigns, audiences, leads, content, journeys, channels, and attribution.', modules: 18, accent: '#ef6c57' },
   { slug: 'talent', label: 'Talent', suite: 'Core.Workforce', summary: 'Hiring, interviews, onboarding, people, performance, leave, learning, and payroll.', modules: 18, accent: '#d65db1' },
   { slug: 'health', label: 'Health', suite: 'Core.Operations', summary: 'Appointments, patients, care plans, triage, practitioners, billing, claims, and compliance.', modules: 18, accent: '#00a6a6' },
-  { slug: 'intelligence', label: 'Intelligence', suite: 'Core.Intelligence', summary: 'Signals, risks, recommendations, forecasts, scenarios, anomalies, and the Event Feed.', modules: 17, accent: '#f2a900' },
+  { slug: 'intelligence', label: 'SuperDashboard', suite: 'Core.Intelligence', summary: 'Executive control across every workspace, with signals, risks, forecasts, decisions, and the Event Feed.', modules: 17, accent: '#b77aff' },
 ]
 
 export function WorkspaceDirectory({ basePath = '/test-workspaces' }: { basePath?: '/test-workspaces' | '/app' }) {

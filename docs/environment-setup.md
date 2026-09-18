@@ -134,6 +134,22 @@ owner. The token is sent only to the API and is not persisted by the browser.
 After signing in, configure WhatsApp and Stripe in **Integrations**, configure
 the business in **Settings**, and mark onboarding ready for go-live.
 
+### Private tester access
+
+To put the complete website behind one shared preview password, generate a
+password, scrypt hash, and independent cookie-signing secret:
+
+```bash
+npm run generate:site-access
+```
+
+Share only the generated password. Add the three printed `SITE_ACCESS_*`
+values to the web deployment environment and redeploy. The password itself is
+not stored in source control or shipped to the browser. Access is represented
+by a signed, HTTP-only, seven-day cookie; failed attempts are rate-limited.
+Set `SITE_ACCESS_ENABLED=false` and redeploy when the public site should no
+longer require the preview password.
+
 For customer payment collection, register the tenant webhook URL in Stripe:
 
 ```text
