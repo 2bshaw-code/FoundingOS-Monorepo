@@ -2,10 +2,21 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { useState } from 'react'
-import { StyleSheet, View } from 'react-native'
-import { useQuantumStore } from '../../lib/store'
-import { enqueueOutboxAction } from '../../lib/outbox-sync'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { ActivityIndicator, RefreshControl, StyleSheet, View } from 'react-native'
+import { getAllOutboxItems } from '../../lib/outbox-sync'
+import {
+  AgentAction,
+  MessagingChannelConnection,
+  MessagingParticipant,
+  MessagingReadiness,
+  fetchMessagingConnections,
+  fetchMessagingParticipants,
+  fetchMessagingReadiness,
+  getSession,
+  listAgentActions,
+  sendMessagingIntelligenceBrief,
+} from '../../lib/core-operations-api'
 import {
   QuantumButton,
   QuantumCard,
@@ -13,142 +24,200 @@ import {
   QuantumScreen,
   QuantumSectionHeader,
   QuantumText,
-  QuantumTextInput,
   quantumColors,
   quantumSpace,
   useActiveQuantumTheme,
 } from '../../components/QuantumUI'
 
-// Short, plain-language steps only — no images, no long paragraphs — this app is built for
-// Africa-ready, low-end/low-data devices, so this stays light and collapsed by default.
-const WHATSAPP_SETUP_STEPS = [
-  'Your WhatsApp Business number (new or existing).',
-  'A verified Meta Business Account (Meta\u2019s own requirement, not ours).',
-  'Your WhatsApp Business Account ID + access token, added in Settings.',
-  'Approve your message templates (we provide ready-made ones).',
-  'Go live \u2014 FoundAI reads and replies automatically, with you always able to step in.',
-]
+function formatParticipant(participant: MessagingParticipant) {
+  return participant.displayName ? `${participant.displayName} · ${participant.address}` : participant.address
+}
 
-const WHATSAPP_WORKFLOWS = [
-  {
-    id: 'wa_pay_link',
-    title: 'Send payment link',
-    desc: 'Generate a secure collection link and prepare a WhatsApp-native message.',
-    actionType: 'WHATSAPP_PAY_LINK',
-    payload: { amount: 99, currency: 'USD' },
-  },
-  {
-    id: 'wa_stock_alert',
-    title: 'Supplier restock alert',
-    desc: 'Notify suppliers when stock crosses a reorder threshold.',
-    actionType: 'WHATSAPP_RESTOCK_ALERT',
-    payload: { threshold: 10 },
-  },
-  {
-    id: 'wa_candidate_ping',
-    title: 'Candidate interview ping',
-    desc: 'Send interview reminder, time, and directions to a candidate.',
-    actionType: 'WHATSAPP_CANDIDATE_PING',
-    payload: {},
-  },
-  {
-    id: 'wa_ops_alert',
-    title: 'Operations risk alert',
-    desc: 'Escalate an operational exception to the responsible team.',
-    actionType: 'WHATSAPP_RISK_ALERT',
-    payload: {},
-  },
-]
+function maskExternalId(value: string) {
+  if (value.length <= 4) return value
+  return `••••${value.slice(-4)}`
+}
 
 export default function AutomationScreen() {
-  const activeBrandSlug = useQuantumStore((state) => state.activeBrandSlug)
   const theme = useActiveQuantumTheme()
-  const [phone, setPhone] = useState('+254712345678')
-  const [customMsg, setCustomMsg] = useState('')
-  const [logNotice, setLogNotice] = useState('')
-  const [setupOpen, setSetupOpen] = useState(false)
+  const [connected, setConnected] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [readiness, setReadiness] = useState<MessagingReadiness | null>(null)
+  const [connections, setConnections] = useState<MessagingChannelConnection[]>([])
+  const [participants, setParticipants] = useState<MessagingParticipant[]>([])
+  const [actions, setActions] = useState<AgentAction[]>([])
+  const [queuedCommands, setQueuedCommands] = useState<Array<{ id: string; actionType: string; brandSlug: string; status: string }>>([])
+  const [busyParticipantId, setBusyParticipantId] = useState<string | null>(null)
+  const [notice, setNotice] = useState('')
 
-  const queueWorkflow = async (workflow: (typeof WHATSAPP_WORKFLOWS)[number]) => {
-    await enqueueOutboxAction(workflow.actionType, activeBrandSlug, { phone, ...workflow.payload })
-    setLogNotice(`${workflow.title} queued for WhatsApp delivery.`)
-  }
+  const load = useCallback(async () => {
+    const session = await getSession()
+    setConnected(Boolean(session))
+    if (!session) {
+      setLoading(false)
+      return
+    }
+    const [readinessResult, connectionsResult, participantsResult, actionsResult, outboxItems] = await Promise.all([
+      fetchMessagingReadiness().catch(() => null),
+      fetchMessagingConnections().catch(() => []),
+      fetchMessagingParticipants().catch(() => []),
+      listAgentActions().catch(() => []),
+      getAllOutboxItems(),
+    ])
+    setReadiness(readinessResult)
+    setConnections(connectionsResult)
+    setParticipants(participantsResult)
+    setActions(actionsResult)
+    setQueuedCommands(
+      outboxItems
+        .filter((item) => item.actionType.startsWith('GOVERNED_ACTION_') || item.actionType.startsWith('WHATSAPP_'))
+        .slice(0, 12)
+        .map((item) => ({ id: item.id, actionType: item.actionType, brandSlug: item.brandSlug, status: item.status }))
+    )
+    setLoading(false)
+  }, [])
 
-  const handleCustomSend = async () => {
-    if (!customMsg.trim()) return
-    await enqueueOutboxAction('WHATSAPP_CUSTOM_MSG', activeBrandSlug, { phone, message: customMsg })
-    setLogNotice('Custom WhatsApp message queued for delivery.')
-    setCustomMsg('')
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const actionable = useMemo(
+    () => actions.filter((action) => action.status === 'proposed' || action.status === 'approved'),
+    [actions]
+  )
+
+  const deliverBrief = async (participantId: string) => {
+    setBusyParticipantId(participantId)
+    try {
+      const latestAction = actionable[0]
+      const result = await sendMessagingIntelligenceBrief(participantId, latestAction?.id)
+      setNotice(result.sent ? 'Intelligence brief handed to WhatsApp delivery.' : 'Delivery was attempted but not confirmed by the provider.')
+      await load()
+    } catch (error: any) {
+      setNotice(error?.message || 'Could not deliver the intelligence brief.')
+    } finally {
+      setBusyParticipantId(null)
+    }
   }
 
   return (
-    <QuantumScreen>
+    <QuantumScreen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false) }} tintColor={theme.accent} />}>
       <QuantumCard accent={quantumColors.whatsapp}>
-        <QuantumText variant="overline" color={quantumColors.whatsapp}>
-          WhatsApp-native automation
-        </QuantumText>
-        <QuantumText variant="h1">Automation</QuantumText>
+        <QuantumText variant="overline" color={quantumColors.whatsapp}>WhatsApp-native automation</QuantumText>
+        <QuantumText variant="h1">Messaging & Automation</QuantumText>
         <QuantumText color={theme.subtextColor}>
-          Queue customer, supplier, talent, and operations messages through the offline-first action engine.
+          Real channel readiness, real authorized recipients, and governed intelligence brief delivery — without inventing message history the backend does not expose yet.
         </QuantumText>
       </QuantumCard>
 
-      {logNotice ? <QuantumNotice tone="success">{logNotice}</QuantumNotice> : null}
+      {notice ? <QuantumNotice tone="info">{notice}</QuantumNotice> : null}
 
-      <QuantumCard>
-        <QuantumButton tone="ghost" onPress={() => setSetupOpen((open) => !open)}>
-          {setupOpen ? 'Hide what we need to connect WhatsApp' : 'What we need to connect your WhatsApp'}
-        </QuantumButton>
-        {setupOpen ? (
-          <View style={styles.setupList}>
-            {WHATSAPP_SETUP_STEPS.map((step, index) => (
-              <View style={styles.setupRow} key={step}>
-                <QuantumText variant="caption" color={quantumColors.whatsapp}>{index + 1}</QuantumText>
-                <QuantumText variant="caption" style={styles.flex}>{step}</QuantumText>
-              </View>
-            ))}
-          </View>
-        ) : null}
-      </QuantumCard>
+      {!connected && !loading ? (
+        <QuantumNotice tone="warning">Sign in with your Core.Operations account to inspect real messaging readiness.</QuantumNotice>
+      ) : null}
 
-      <QuantumCard>
-        <QuantumText variant="h3">Recipient</QuantumText>
-        <QuantumTextInput value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-      </QuantumCard>
-
-      <QuantumSectionHeader label="Preset flows" />
-      {WHATSAPP_WORKFLOWS.map((workflow) => (
-        <QuantumCard key={workflow.id} accent={quantumColors.whatsapp}>
-          <View style={styles.rowBetween}>
-            <View style={styles.flex}>
-              <QuantumText variant="h3">{workflow.title}</QuantumText>
-              <QuantumText variant="caption" color={theme.subtextColor}>
-                {workflow.desc}
-              </QuantumText>
-            </View>
-            <QuantumButton onPress={() => queueWorkflow(workflow)}>Queue</QuantumButton>
-          </View>
+      {loading ? (
+        <QuantumCard accent={theme.accent}>
+          <ActivityIndicator color={theme.accent} />
         </QuantumCard>
-      ))}
+      ) : null}
 
-      <QuantumSectionHeader label="Custom message" />
-      <QuantumCard>
-        <QuantumTextInput
-          value={customMsg}
-          onChangeText={setCustomMsg}
-          placeholder="Type a WhatsApp-ready update..."
-          multiline
-          style={styles.messageInput}
-        />
-        <QuantumButton onPress={handleCustomSend}>Dispatch to outbox</QuantumButton>
-      </QuantumCard>
+      {connected && !loading ? (
+        <>
+          <QuantumCard accent={quantumColors.whatsapp}>
+            <View style={styles.metricGrid}>
+              <View style={styles.metricBox}>
+                <QuantumText variant="caption" color={theme.subtextColor}>Operational</QuantumText>
+                <QuantumText variant="h2" color={readiness?.operational ? quantumColors.success : quantumColors.warning}>{readiness?.operational ? 'YES' : 'NO'}</QuantumText>
+              </View>
+              <View style={styles.metricBox}>
+                <QuantumText variant="caption" color={theme.subtextColor}>Connections</QuantumText>
+                <QuantumText variant="h2">{readiness?.activeConnections.length ?? 0}</QuantumText>
+              </View>
+              <View style={styles.metricBox}>
+                <QuantumText variant="caption" color={theme.subtextColor}>Recipients</QuantumText>
+                <QuantumText variant="h2">{readiness?.authorizedParticipants ?? 0}</QuantumText>
+              </View>
+            </View>
+            <QuantumText variant="caption" color={theme.subtextColor}>
+              Failed deliveries 24h: {readiness?.failedDeliveriesLast24Hours ?? 0} · Unrecognized inbound messages 24h: {readiness?.unrecognizedMessagesLast24Hours ?? 0}
+            </QuantumText>
+            {readiness ? <QuantumText variant="caption" color={theme.subtextColor}>{readiness.dependencyRisk}</QuantumText> : null}
+          </QuantumCard>
+
+          <QuantumSectionHeader label="Channel state" />
+          {connections.length === 0 ? (
+            <QuantumNotice tone="warning">No active messaging connection is configured for this business yet.</QuantumNotice>
+          ) : (
+            connections.map((connection) => (
+              <QuantumCard key={`${connection.channel}-${connection.externalAccountId}`} accent={quantumColors.whatsapp}>
+                <View style={styles.rowBetween}>
+                  <QuantumText variant="h3">{connection.displayName || connection.channel}</QuantumText>
+                  <QuantumText variant="caption" color={connection.active ? quantumColors.success : quantumColors.warning}>{connection.active ? 'ACTIVE' : 'INACTIVE'}</QuantumText>
+                </View>
+                <QuantumText variant="caption" color={theme.subtextColor}>Account {maskExternalId(connection.externalAccountId)}</QuantumText>
+              </QuantumCard>
+            ))
+          )}
+
+          <QuantumSectionHeader label="Authorized recipients" />
+          {participants.length === 0 ? (
+            <QuantumNotice tone="warning">No messaging participants have been linked to this tenant yet.</QuantumNotice>
+          ) : (
+            participants.map((participant) => (
+              <QuantumCard key={participant.id} accent={quantumColors.whatsapp}>
+                <View style={styles.rowBetween}>
+                  <View style={styles.flex}>
+                    <QuantumText variant="h3">{formatParticipant(participant)}</QuantumText>
+                    <QuantumText variant="caption" color={theme.subtextColor}>{participant.role} · {participant.channel}</QuantumText>
+                  </View>
+                  <QuantumText variant="caption" color={participant.active ? quantumColors.success : quantumColors.warning}>{participant.active ? 'READY' : 'DISABLED'}</QuantumText>
+                </View>
+                <QuantumButton
+                  onPress={() => deliverBrief(participant.id)}
+                  disabled={busyParticipantId === participant.id || !readiness?.operational || !participant.active}
+                >
+                  {busyParticipantId === participant.id ? 'Sending…' : actionable[0] ? 'Send latest governed brief' : 'Send live intelligence snapshot'}
+                </QuantumButton>
+              </QuantumCard>
+            ))
+          )}
+
+          <QuantumSectionHeader label="Governed command bridge" />
+          {queuedCommands.length === 0 ? (
+            <QuantumNotice>No offline messaging or governed command actions are queued locally right now.</QuantumNotice>
+          ) : (
+            queuedCommands.map((item) => (
+              <QuantumCard key={item.id} accent={item.actionType.startsWith('GOVERNED_ACTION_') ? theme.accent : quantumColors.whatsapp}>
+                <View style={styles.rowBetween}>
+                  <QuantumText variant="h3" style={styles.flex}>{item.actionType}</QuantumText>
+                  <QuantumText variant="caption" color={theme.subtextColor}>{item.status.toUpperCase()}</QuantumText>
+                </View>
+                <QuantumText variant="caption" color={theme.subtextColor}>{item.brandSlug}</QuantumText>
+              </QuantumCard>
+            ))
+          )}
+
+          {readiness?.webFallbackUrl ? <QuantumNotice tone="info">Web fallback: {readiness.webFallbackUrl}</QuantumNotice> : null}
+        </>
+      ) : null}
     </QuantumScreen>
   )
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: quantumSpace.md },
-  messageInput: { minHeight: 88, textAlignVertical: 'top' },
-  setupList: { gap: quantumSpace.xs, marginTop: quantumSpace.sm },
-  setupRow: { flexDirection: 'row', gap: quantumSpace.sm, alignItems: 'flex-start' },
+  flex: { flex: 1 },
+  metricGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
+  metricBox: {
+    flex: 1,
+    minWidth: 88,
+    padding: quantumSpace.sm,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    gap: quantumSpace.xs,
+  },
 })

@@ -6,7 +6,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 
 export const brandConfig: BrandConsoleConfig = {
   "name": "Core.Intelligence",
-  "logo": "✦",
+  "logo": "F",
   "accent": "#FFD600",
   "typography": {
     "heading": "Inter",

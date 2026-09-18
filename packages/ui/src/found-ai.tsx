@@ -47,7 +47,7 @@ function routeLabel(pathname: string) {
     return moduleMatch[1].replaceAll('-', ' ').replace(/\b\w/g, (char) => char.toUpperCase())
   }
 
-  return 'Console'
+  return 'Workspace'
 }
 
 function foundAITheme(brand: FoundAIBrand) {
@@ -80,7 +80,7 @@ function suggestedPrompts(brand: FoundAIBrand, context: string) {
   // FoundingOS website contexts (landing/login/survey/onboarding) — distinguished by
   // context string, not just brand name, since foundingos-console shares the same brand
   // name but never produces these specific context labels.
-  if (brand.name === 'FoundingOS' && context === 'Landing') return ['What is FounderOS?', 'What can I do here?', 'How do I sign in?', 'Recommend a package for me']
+  if (brand.name === 'FoundingOS' && context === 'Landing') return ['What is FoundingOS?', 'What can I do here?', 'How do I sign in?', 'Recommend a package for me']
   if (brand.name === 'FoundingOS' && context === 'Sign In') return ['How do I sign in?', 'Is this demo mode?', 'What happens after I sign in?']
   if (brand.name === 'FoundingOS' && context === 'Survey') return ['Why are you asking this?', 'Can I skip this question?', 'What happens to my answer?']
   if (brand.name === 'FoundingOS' && context === 'Onboarding') return ['Recommend a package for me', 'What is QuantumOS?', 'What is IntelligenceOS?', 'What is SystemOS?']
@@ -235,7 +235,7 @@ const DASHBOARD_REFRESH_ACTION: SmartAction = { label: 'Read dashboard metrics',
 function smartActions(brand: FoundAIBrand, context: string): SmartAction[] {
   if (brand.name === 'FoundingOS' && context === 'Landing') {
     return [
-      { label: 'What is FounderOS?', answer: 'FounderOS is one ecosystem connecting every brand console — retail, meat, talent, crypto, finance, health, and logistics — under a single command layer.' },
+      { label: 'What is FoundingOS?', answer: 'FoundingOS is one system of record connecting Core.Operations, Core.Workforce, and Core.Intelligence under a single governed command layer.' },
       { label: 'How do I sign in?', answer: 'Tap Sign In on this page — it\u2019s demo mode, so no real account is required.' },
       { label: 'Recommend a package for me', answer: 'Once you reach onboarding, I can recommend a SystemOS tier and add-ons based on your business profile.' },
     ]
@@ -243,7 +243,7 @@ function smartActions(brand: FoundAIBrand, context: string): SmartAction[] {
   if (brand.name === 'FoundingOS' && context === 'Sign In') {
     return [
       { label: 'Is this demo mode?', answer: 'Yes — this sign-in is demo mode only. No real account or password is required.' },
-      { label: 'What happens after I sign in?', answer: 'You\u2019ll be taken to a quick survey question, then on into the FounderOS experience.' },
+      { label: 'What happens after I sign in?', answer: 'You\u2019ll be taken to a quick survey question, then on into the FoundingOS experience.' },
     ]
   }
   if (brand.name === 'FoundingOS' && context === 'Survey') {
@@ -254,15 +254,15 @@ function smartActions(brand: FoundAIBrand, context: string): SmartAction[] {
   }
   if (brand.name === 'FoundingOS' && context === 'Onboarding') {
     return [
-      { label: 'What is QuantumOS?', answer: 'QuantumOS is the cross-console intelligence add-on — scenario simulations, confidence scoring, and forecasting on top of your SystemOS base.' },
+      { label: 'What is QuantumOS?', answer: 'QuantumOS is the cross-suite intelligence add-on — scenario simulations, confidence scoring, and forecasting on top of your SystemOS base.' },
       { label: 'What is IntelligenceOS?', answer: 'IntelligenceOS adds sharper analytics and automated context so your team spends less time on manual review.' },
       { label: 'What is SystemOS?', answer: 'SystemOS is the foundation tier — workspace setup, access governance, and core modules every account starts on.' },
-      { label: 'Recommend a package for me', answer: 'Based on your answers so far, I\u2019d suggest starting with the tier that matches your team size, then adding QuantumOS if you need cross-console visibility.' },
+      { label: 'Recommend a package for me', answer: 'Based on your answers so far, I\u2019d suggest starting with the tier that matches your team size, then adding QuantumOS if you need cross-suite visibility.' },
     ]
   }
   if (brand.name === 'FoundingOS' && context === 'Tester Access') {
     return [
-      { label: 'What am I testing?', answer: 'You\u2019re previewing FounderOS in demo mode — no real data, no real payments, fully safe to explore.' },
+      { label: 'What am I testing?', answer: 'You\u2019re previewing FoundingOS in demo mode — no real data, no real payments, fully safe to explore.' },
       { label: 'What is the legal acceptance for?', answer: 'It\u2019s a quick agreement covering confidentiality and pre-release terms before you continue.' },
     ]
   }
@@ -283,7 +283,7 @@ function smartActions(brand: FoundAIBrand, context: string): SmartAction[] {
   }
   if (brand.name === 'FoundingOS' && context === 'Founder Console') {
     return [
-      { label: 'Show me all brands', answer: 'All 8 brand consoles — Retail, Meat, Logistics, Talent, Crypto, Finance, Health, and FoundThat — are live under All brands and All businesses below.' },
+      { label: 'Show me all brands', answer: 'All 3 licensed suites — Core.Operations, Core.Workforce, and Core.Intelligence — are live under All suites and All workspaces below.' },
       { label: 'What needs my approval?', answer: 'Anything AVL classifies as high-risk sits in GuardianQueue, unresolved, until you review it — check the SuperDash footer for the current pending count.' },
       { label: 'Summarise system stability', answer: 'Stability is scored from real anomaly and drift counts (see the SuperDash footer\u2019s Testers line) — fewer open anomalies and less unresolved drift means a higher score.' },
     ]
@@ -396,7 +396,7 @@ function smartActions(brand: FoundAIBrand, context: string): SmartAction[] {
     { label: `Review ${context.toLowerCase()}`, answer: `I’ve reviewed the current ${context.toLowerCase()} context and lined up the next operational steps.` },
     { label: 'Summarise priorities', answer: 'I’ve pulled the top priorities into a concise action list.' },
     { label: 'Show likely risks', answer: 'I’ve highlighted the main risks and the quickest ways to respond.' },
-    { label: 'Plan next steps', answer: 'I’ve drafted the clearest next-step plan for the current console context.' },
+    { label: 'Plan next steps', answer: 'I’ve drafted the clearest next-step plan for the current workspace context.' },
   ]
 }
 
@@ -416,10 +416,10 @@ const KNOWLEDGE_BASE: Array<{ match: RegExp; answer: string }> = [
   { match: /automat/i, answer: 'Automations run through Guardian + Autonomous reactions on top of real BrandMetric signals — no manual triggering needed.' },
   { match: /superdash|super dash/i, answer: 'SuperDash is the cross-brand intelligence layer — analytics, brand switching, tester metrics, stability, and autonomy all roll up there in real time.' },
   { match: /intelligenceos/i, answer: 'IntelligenceOS is the sharper-analytics tier of Package Model D, feeding the live BrandMetric rollups in SuperDash.' },
-  { match: /quantumos/i, answer: 'QuantumOS is the top Package Model D tier — cross-console simulations, confidence scoring, and forecasting on top of SystemOS.' },
+  { match: /quantumos/i, answer: 'QuantumOS is the top Package Model D tier — cross-suite simulations, confidence scoring, and forecasting on top of SystemOS.' },
   { match: /systemos/i, answer: 'SystemOS is the Package Model D foundation tier — workspace setup, access governance, and core modules every account starts on.' },
   { match: /guardian/i, answer: 'Guardian watches each brand\u2019s own engagement and anomaly signals to keep it safely inside its own lane, and flags anything unusual for review.' },
-  { match: /\bbrand(s)?\b|multi-brand|ecosystem/i, answer: 'FoundingOS connects all 8 brand consoles — Retail, Meat, Logistics, Talent, Crypto, Finance, Health, and FoundThat — under one shared intelligence layer.' },
+  { match: /\bbrand(s)?\b|multi-brand|ecosystem|\bsuite(s)?\b/i, answer: 'FoundingOS connects all 3 licensed suites — Core.Operations, Core.Workforce, and Core.Intelligence — under one shared governed intelligence layer.' },
 ]
 
 function matchKnowledge(text: string): string | null {

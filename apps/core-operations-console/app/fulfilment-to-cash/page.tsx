@@ -5,7 +5,7 @@ import { AIInsightsPanel } from '@foundingos/ui/ai-insights'
 import { InsightsPanel } from '@foundingos/ui/insights'
 import { eventDisplayIcon, eventDisplayTitle } from '@foundingos/config/event-display-map'
 
-const CORE_OPERATIONS_API_BASE = process.env.NEXT_PUBLIC_CORE_OPERATIONS_API_URL || 'https://core-operations-api.foundingos.com/api/v1/ops'
+const CORE_OPERATIONS_API_BASE = '/api/core-operations/ops'
 const resolveApiPath = (base: string, path: string) => `${base.replace(/\/+$/, '')}${path.startsWith('/') ? path : `/${path}`}`
 
 type FeedEvent = {

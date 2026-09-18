@@ -47,14 +47,29 @@ export function readSiteAccess(token: string | undefined, now = Date.now()) {
   }
 }
 
-export function verifySitePassword(candidate: string) {
-  const configured = process.env.SITE_ACCESS_PASSWORD_HASH?.trim()
-  if (!configured) throw new Error('SITE_ACCESS_PASSWORD_HASH is required')
+// SITE_ACCESS_PASSWORD_HASH holds one or more "scrypt$salt$hash" entries
+// separated by ";" so multiple distinct invitation passwords (e.g. one per
+// investor/partner) can be issued without sharing a single password.
+function verifyAgainstHash(candidate: string, configured: string) {
   const [algorithm, saltHex, hashHex] = configured.split('$')
   if (algorithm !== 'scrypt' || !/^[0-9a-f]+$/i.test(saltHex) || !/^[0-9a-f]+$/i.test(hashHex)) throw new Error('SITE_ACCESS_PASSWORD_HASH is invalid')
   const expected = Buffer.from(hashHex, 'hex')
   const actual = scryptSync(candidate, Buffer.from(saltHex, 'hex'), expected.length)
   return expected.length === actual.length && timingSafeEqual(expected, actual)
+}
+
+export function verifySitePassword(candidate: string) {
+  const configured = process.env.SITE_ACCESS_PASSWORD_HASH?.trim()
+  if (!configured) throw new Error('SITE_ACCESS_PASSWORD_HASH is required')
+  const entries = configured.split(';').map((entry) => entry.trim()).filter(Boolean)
+  if (entries.length === 0) throw new Error('SITE_ACCESS_PASSWORD_HASH is invalid')
+  // Check every entry (rather than short-circuiting) so response time does not
+  // reveal which slot, if any, matched.
+  let matched = false
+  for (const entry of entries) {
+    if (verifyAgainstHash(candidate, entry)) matched = true
+  }
+  return matched
 }
 
 export function safeReturnPath(value: FormDataEntryValue | null) {

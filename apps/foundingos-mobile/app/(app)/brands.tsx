@@ -2,66 +2,74 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { StyleSheet, View } from 'react-native'
 import { router } from 'expo-router'
+import { useEffect, useMemo, useState } from 'react'
+import { View, StyleSheet } from 'react-native'
 import { BRANDS, FOUNDINGOS_ACCENT } from '../../lib/brands'
-import { logout } from '../../lib/api'
-import { AIOnboardingCard } from '../../components/AIOnboardingCard'
-import { QuantumButton, QuantumCard, QuantumHeader, QuantumListItem, QuantumScreen, QuantumText, quantumSpace } from '../../components/QuantumUI'
+import { getSession } from '../../lib/core-operations-api'
+import { useQuantumStore } from '../../lib/store'
+import { QuantumButton, QuantumCard, QuantumHeader, QuantumNotice, QuantumScreen, QuantumText, quantumSpace } from '../../components/QuantumUI'
 
-export default function DashboardScreen() {
-  async function handleLogout() {
-    await logout()
-    router.dismissTo('/')
+export default function WorkspaceDirectoryScreen() {
+  const setActiveBrand = useQuantumStore((state) => state.setActiveBrand)
+  const [connected, setConnected] = useState(false)
+
+  useEffect(() => {
+    getSession().then((session) => setConnected(Boolean(session)))
+  }, [])
+
+  const statuses = useMemo(() => ({
+    foundingos: { label: connected ? 'Shell active' : 'Shell ready', tone: 'info' as const, route: '/home' },
+    core_operations: { label: connected ? 'Live Core.Operations data connected' : 'Sign in required', tone: connected ? 'success' as const : 'warning' as const, route: '/home' },
+    core_workforce: { label: 'Not yet connected to a real backend', tone: 'warning' as const, route: null },
+    core_intelligence: { label: connected ? 'Live intelligence via Core.Operations' : 'Sign in required', tone: connected ? 'success' as const : 'warning' as const, route: '/intelligence' },
+  }), [connected])
+
+  const openWorkspace = (slug: string, route: string | null) => {
+    setActiveBrand(slug)
+    if (route) router.push(route)
   }
 
   return (
     <QuantumScreen>
       <QuantumHeader
-        eyebrow="One FoundingOS account"
-        title="Workspace directory"
-        description="Open the operational areas enabled for your role and plan without leaving the shared FoundingOS shell."
+        eyebrow="Unified suite directory"
+        title="Workspace Directory"
+        description="Only the four current suite entries remain in the shell: Home, Core.Operations, Core.Workforce, and Core.Intelligence."
         accent={FOUNDINGOS_ACCENT}
       />
 
-      <AIOnboardingCard
-        accent={FOUNDINGOS_ACCENT}
-        brandKey="foundingos-workspaces"
-        brandName="FoundingOS"
-        description="Tap a workspace to inspect its activity, or open one of its included modules directly."
-        actionLabel={BRANDS[0] ? `open ${BRANDS[0].name}` : undefined}
-        onDoThisForMe={BRANDS[0] ? () => router.push(`/brand-detail/${BRANDS[0].slug}`) : undefined}
-      />
-
-      {BRANDS.map((brand) => (
-        <QuantumCard key={brand.slug} accent={brand.accent}>
-          <QuantumListItem
-            title={brand.name}
-            subtitle={brand.tagline}
-            accent={brand.accent}
-            onPress={() => router.push(`/brand-detail/${brand.slug}`)}
-          />
-          <View style={styles.moduleGrid}>
-            {brand.modules.map((module) => (
-              <QuantumButton
-                key={module}
-                tone="ghost"
-                onPress={() => router.push(`/module-detail/${brand.slug}/${module.toLowerCase().replaceAll(' ', '-')}`)}
-              >
-                {module}
-              </QuantumButton>
-            ))}
-          </View>
-        </QuantumCard>
-      ))}
-
-      <QuantumButton tone="danger" onPress={handleLogout}>Log out</QuantumButton>
-      <QuantumButton tone="ghost" onPress={() => router.push('/about')}>About FoundingOS</QuantumButton>
-      <QuantumText variant="caption" align="center">One account · Role-based workspaces · Shared Event Feed</QuantumText>
+      {BRANDS.map((brand) => {
+        const state = statuses[brand.slug as keyof typeof statuses]
+        return (
+          <QuantumCard key={brand.slug} accent={brand.accent}>
+            <View style={styles.rowBetween}>
+              <View style={styles.flex}>
+                <QuantumText variant="overline" color={brand.accent}>{brand.homeLabel}</QuantumText>
+                <QuantumText variant="h2">{brand.name}</QuantumText>
+                <QuantumText variant="caption">{brand.tagline}</QuantumText>
+              </View>
+              <QuantumNotice tone={state.tone}>{state.label}</QuantumNotice>
+            </View>
+            <View style={styles.moduleGrid}>
+              {brand.modules.map((module) => (
+                <QuantumButton key={module} tone="ghost" onPress={state.route ? () => openWorkspace(brand.slug, state.route) : undefined}>
+                  {module}
+                </QuantumButton>
+              ))}
+            </View>
+            <QuantumButton onPress={() => openWorkspace(brand.slug, state.route)} disabled={!state.route}>
+              {state.route ? `Open ${brand.shortName}` : 'Backend not connected yet'}
+            </QuantumButton>
+          </QuantumCard>
+        )
+      })}
     </QuantumScreen>
   )
 }
 
 const styles = StyleSheet.create({
+  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: quantumSpace.md },
+  flex: { flex: 1 },
   moduleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
 })

@@ -10,6 +10,18 @@ test('site password verification uses the configured scrypt hash', () => {
   assert.equal(verifySitePassword('wrong-password'), false)
 })
 
+test('site password verification accepts any of several distinct issued passwords', () => {
+  const entries = ['investor-one-pw', 'investor-two-pw', 'investor-three-pw'].map((password) => {
+    const salt = randomBytes(16)
+    return `scrypt$${salt.toString('hex')}$${scryptSync(password, salt, 32).toString('hex')}`
+  })
+  process.env.SITE_ACCESS_PASSWORD_HASH = entries.join(';')
+  assert.equal(verifySitePassword('investor-one-pw'), true)
+  assert.equal(verifySitePassword('investor-two-pw'), true)
+  assert.equal(verifySitePassword('investor-three-pw'), true)
+  assert.equal(verifySitePassword('not-issued'), false)
+})
+
 test('site access signatures require a sufficiently strong secret', () => {
   process.env.SITE_ACCESS_SECRET = 'short'
   assert.throws(() => signSiteAccess('tester@example.com'))

@@ -22,6 +22,7 @@ import { brands } from '@foundingos/config'
 import { recommendQuantumOS, type BusinessProfile } from '@foundingos/config/quantum-recommendation'
 import { RecommendationBadge } from './onboarding/RecommendationBadge'
 import { ImportDataButton } from './import-data'
+import { CoreOperationsDashboard, CoreOperationsLoginPage, CoreOperationsMarketingWorkspace, CoreOperationsModulePage } from './core-operations-live-console'
 
 export type BrandMetric = { label: string; value: string; trend?: string; icon?: string; tone?: 'good' | 'watch' | 'risk' }
 export type BrandModule = { id: string; label: string; description: string; metrics: BrandMetric[]; actions: string[]; workflow?: string[] }
@@ -897,6 +898,7 @@ function LiveActivityPanel({
 }
 
 export function BrandDashboard({ config, variant = 'growth' }: { config: BrandConsoleConfig; variant?: 'growth' | 'starter' }) {
+  if (config.name === 'Core.Operations') return <CoreOperationsDashboard />
   const crm = config.crm ?? defaultCRM(config)
   const moduleCards = consoleModules(config)
   const accentStyle = consoleStyle(config)
@@ -1495,6 +1497,7 @@ function CRMBoardSection({ title, fields, rows, accentStyle, description }: { ti
 }
 
 export function BrandModulePage({ config, moduleId }: { config: BrandConsoleConfig; moduleId: string }) {
+  if (config.name === 'Core.Operations') return <CoreOperationsModulePage moduleId={moduleId} />
   const module = config.modules.find((item) => item.id === moduleId) ?? { id: moduleId, label: `Module: ${moduleId}`, description: 'This module is active.', metrics: [], actions: ['Review activity', 'Configure module'] }
   const accentStyle = consoleStyle(config)
   const brandSlug = resolveBrandSlugFromName(config.name)
@@ -1822,3 +1825,5 @@ const packageCatalog: Record<string, BrandPackage[]> = {
 export default function RemovedLogin() {
   return null
 }
+
+export { CoreOperationsDashboard, CoreOperationsLoginPage, CoreOperationsMarketingWorkspace, CoreOperationsModulePage }

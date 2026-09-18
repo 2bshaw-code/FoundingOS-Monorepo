@@ -2152,6 +2152,30 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   padding: 11px 12px;
 }
 
+.site-access-password-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.site-access-password-wrap input {
+  padding-right: 56px;
+  width: 100%;
+}
+
+.site-access-password-toggle {
+  background: transparent;
+  border: 0;
+  color: #3372b9;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 8px;
+  position: absolute;
+  right: 6px;
+}
+
 .complete-workspace-access-switch {
   background: transparent;
   border: 0;
@@ -8500,28 +8524,11 @@ body[data-sidebar-collapsed='true'] .nav-card {
   place-items: center;
   width: 38px;
   height: 38px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.85), transparent 42%),
-    conic-gradient(from var(--sphere-angle, 0deg), var(--accent), #9933ff, #00e0ff, #ff0033, var(--accent));
+  border-radius: 10px;
+  background: var(--accent);
   color: #071014;
   font-weight: 900;
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.22) inset,
-    0 0 14px color-mix(in srgb, var(--accent) 55%, transparent),
-    0 0 28px color-mix(in srgb, var(--accent) 30%, transparent),
-    0 4px 10px rgba(0, 0, 0, 0.15);
-  animation: quantumSphereRotate 14s linear infinite, quantumSphereBreathe 5s ease-in-out infinite;
-}
-
-@keyframes quantumSphereRotate {
-  from { --sphere-angle: 0deg; }
-  to { --sphere-angle: 360deg; }
-}
-
-@keyframes quantumSphereBreathe {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.12); }
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
 }
 
 .brand-logo.small {
@@ -9768,18 +9775,11 @@ body.superdash-heatmap-off .quantum-heatmap {
   min-width: 48px;
   display: grid;
   place-items: center;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.85), transparent 42%),
-    conic-gradient(from var(--sphere-angle, 0deg), currentColor, #9933ff, #00e0ff, #ff0033, currentColor);
+  border-radius: 10px;
+  background: currentColor;
   font-size: 22px;
   margin-bottom: 10px;
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.22) inset,
-    0 0 14px color-mix(in srgb, currentColor 55%, transparent),
-    0 0 28px color-mix(in srgb, currentColor 30%, transparent),
-    0 4px 10px rgba(0, 0, 0, 0.15);
-  animation: quantumSphereRotate 14s linear infinite, quantumSphereBreathe 5s ease-in-out infinite;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
 }
 .brand-read-more {
   margin: 6px 0;
@@ -9864,16 +9864,9 @@ body.superdash-heatmap-off .quantum-heatmap {
    (brand websites use raw style objects for sizing/color; this class overrides
    shape/material/glow/animation only, without touching layout or spacing). */
 .quantum-sphere-logo {
-  border-radius: 50% !important;
-  background:
-    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.85), transparent 42%),
-    conic-gradient(from var(--sphere-angle, 0deg), var(--accent, currentColor), #9933ff, #00e0ff, #ff0033, var(--accent, currentColor)) !important;
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.22) inset,
-    0 0 14px color-mix(in srgb, var(--accent, currentColor) 55%, transparent),
-    0 0 28px color-mix(in srgb, var(--accent, currentColor) 30%, transparent),
-    0 4px 10px rgba(0, 0, 0, 0.15);
-  animation: quantumSphereRotate 14s linear infinite, quantumSphereBreathe 5s ease-in-out infinite;
+  border-radius: 10px !important;
+  background: var(--accent, currentColor) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
 }
 
 /* Package Activation System — AI recommendation badge (subtle vs strong styles). */

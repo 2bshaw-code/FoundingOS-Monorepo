@@ -2,7 +2,7 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { ReactElement, ReactNode } from 'react'
+import { ReactElement, ReactNode, useState } from 'react'
 import {
   ActivityIndicator,
   Pressable,
@@ -269,6 +269,33 @@ export function QuantumTextInput(props: TextInputProps) {
         props.style,
       ]}
     />
+  )
+}
+
+export function QuantumPasswordInput(props: TextInputProps) {
+  const theme = useActiveQuantumTheme()
+  const [visible, setVisible] = useState(false)
+  return (
+    <View style={{ position: 'relative', justifyContent: 'center' }}>
+      <TextInput
+        placeholderTextColor={quantumColors.neutral500}
+        {...props}
+        secureTextEntry={!visible}
+        style={[
+          styles.input,
+          { backgroundColor: theme.bgSecondary, borderColor: theme.borderColor, color: theme.textColor, paddingRight: 56 },
+          props.style,
+        ]}
+      />
+      <Pressable
+        onPress={() => setVisible((current) => !current)}
+        accessibilityRole="button"
+        accessibilityLabel={visible ? 'Hide password' : 'Show password'}
+        style={{ position: 'absolute', right: quantumSpace.md, padding: quantumSpace.xs }}
+      >
+        <Text style={{ color: theme.textColor, fontSize: 13, fontWeight: '600' }}>{visible ? 'Hide' : 'Show'}</Text>
+      </Pressable>
+    </View>
   )
 }
 

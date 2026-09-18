@@ -2,14 +2,11 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { useState } from 'react'
-import { StyleSheet, View } from 'react-native'
-import { useQuantumStore, UserTier } from '../../lib/store'
-import { BRANDS } from '../../lib/brands'
-import { MultimodalCaptureModal, AIConfirmationModal, AIConfirmationData } from '../../components/MultimodalCaptureModal'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { ActivityIndicator, Pressable, RefreshControl, StyleSheet, View } from 'react-native'
 import {
-  QuantumButton,
   QuantumCard,
+  QuantumMetric,
   QuantumNotice,
   QuantumPill,
   QuantumScreen,
@@ -18,184 +15,212 @@ import {
   quantumSpace,
   useActiveQuantumTheme,
 } from '../../components/QuantumUI'
+import {
+  AgentAction,
+  AgentActionStatus,
+  decideAgentAction,
+  executeAgentAction,
+  getSession,
+  listAgentActions,
+  reverseAgentActionExecution,
+} from '../../lib/core-operations-api'
+import { enqueueOutboxAction } from '../../lib/outbox-sync'
+import { useQuantumStore } from '../../lib/store'
 
-type BoltOn = {
-  id: string
-  brandSlug: string
-  name: string
-  icon: string
-  description: string
-  endpoint: string
-  allowedTiers: UserTier[]
+const STATUS_LABEL: Record<AgentActionStatus, string> = {
+  proposed: 'Suggested',
+  approved: 'Awaiting execution',
+  rejected: 'Rejected',
+  executing: 'Executing',
+  completed: 'Executed',
 }
 
-const BOLT_ON_CATALOG: BoltOn[] = [
-  {
-    id: 'shelfScanner',
-    brandSlug: 'retail',
-    name: 'Shelf Stock Scanner',
-    icon: '◐',
-    description: 'Photo capture maps shelf state to inventory suggestions and reorder alerts.',
-    endpoint: '/boltons/shelf-scanner',
-    allowedTiers: ['starter', 'growth', 'enterprise'],
-  },
-  {
-    id: 'financeExpense',
-    brandSlug: 'finance',
-    name: 'Expense Intake',
-    icon: '▣',
-    description: 'Receipt capture extracts vendor, amount, tax, due date, and reconciliation hints.',
-    endpoint: '/boltons/finance-expense',
-    allowedTiers: ['starter', 'growth', 'enterprise'],
-  },
-  {
-    id: 'logisticsRoute',
-    brandSlug: 'logistics',
-    name: 'Route Optimiser',
-    icon: '⟡',
-    description: 'Orders become a driver-ready route with fuel, timing, and WhatsApp dispatch context.',
-    endpoint: '/boltons/logistics-route',
-    allowedTiers: ['growth', 'enterprise'],
-  },
-  {
-    id: 'cvScanner',
-    brandSlug: 'talent',
-    name: 'Candidate Matcher',
-    icon: '▤',
-    description: 'CV or voice intake extracts skills, seniority, fit, and outreach recommendations.',
-    endpoint: '/api/ai/talent-intake',
-    allowedTiers: ['growth', 'enterprise'],
-  },
-  {
-    id: 'campaignAssistant',
-    brandSlug: 'marketing',
-    name: 'Campaign Assistant',
-    icon: '◎',
-    description: 'Turn a goal into brand-checked campaign copy, audience suggestions, and a review-ready draft.',
-    endpoint: '/api/ai/marketing/director/suggest-campaigns',
-    allowedTiers: ['growth', 'enterprise'],
-  },
-  {
-    id: 'healthRecordExtractor',
-    brandSlug: 'health',
-    name: 'Record Extractor',
-    icon: '✦',
-    description: 'Documents become structured health records, vitals, and follow-up prompts.',
-    endpoint: '/api/ai/health-records',
-    allowedTiers: ['growth', 'enterprise'],
-  },
+const FILTERS: Array<{ label: string; status?: AgentActionStatus }> = [
+  { label: 'All' },
+  { label: 'Suggested', status: 'proposed' },
+  { label: 'Awaiting execution', status: 'approved' },
+  { label: 'Executed', status: 'completed' },
+  { label: 'Rejected', status: 'rejected' },
 ]
 
+function formatPence(pence: number | null | undefined) {
+  if (!pence) return '£0'
+  return `£${(pence / 100).toLocaleString('en-GB', { maximumFractionDigits: 0 })}`
+}
+
+function formatRelativeTime(iso: string) {
+  const diffMs = Date.now() - new Date(iso).getTime()
+  const minutes = Math.round(diffMs / 60000)
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.round(hours / 24)}d ago`
+}
+
 export default function WorkflowsScreen() {
-  const activeBrandSlug = useQuantumStore((state) => state.activeBrandSlug)
-  const role = useQuantumStore((state) => state.role)
-  const tier = useQuantumStore((state) => state.tier)
   const theme = useActiveQuantumTheme()
-  const [captureModalType, setCaptureModalType] = useState<'voice' | 'photo' | 'video' | null>(null)
-  const [confirmationData, setConfirmationData] = useState<AIConfirmationData | null>(null)
+  const activeBrandSlug = useQuantumStore((state) => state.activeBrandSlug)
+  const [connected, setConnected] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [actions, setActions] = useState<AgentAction[]>([])
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]>(FILTERS[0])
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [notice, setNotice] = useState('')
 
-  const currentBrand = BRANDS.find((brand) => brand.slug === activeBrandSlug) ?? BRANDS[0]
-  const activeBoltOns = BOLT_ON_CATALOG.filter((boltOn) => {
-    const isRelevantBrand = boltOn.brandSlug === activeBrandSlug
-    const isTierAllowed = boltOn.allowedTiers.includes(tier)
-    return isRelevantBrand && isTierAllowed
-  })
-
-  const handleLaunchBoltOn = (boltOnId: string) => {
-    if (['shelfScanner', 'financeExpense'].includes(boltOnId)) {
-      setCaptureModalType('photo')
+  const load = useCallback(async () => {
+    const session = await getSession()
+    setConnected(Boolean(session))
+    if (!session) {
+      setLoading(false)
       return
     }
+    setActions(await listAgentActions().catch(() => []))
+    setLoading(false)
+  }, [])
 
-    if (['cvScanner', 'healthRecordExtractor'].includes(boltOnId)) {
-      setCaptureModalType('voice')
-      return
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const showNotice = (text: string) => {
+    setNotice(text)
+    setTimeout(() => setNotice(''), 3500)
+  }
+
+  const run = async (action: AgentAction, outboxType: string, call: () => Promise<AgentAction>) => {
+    setBusyId(action.id)
+    try {
+      await call()
+      await load()
+      showNotice('Done. Recorded in the audit trail.')
+    } catch (err: any) {
+      if (err?.status && err.status < 500) {
+        showNotice(err.message || 'That action could not be completed.')
+      } else {
+        await enqueueOutboxAction(outboxType, activeBrandSlug, { actionId: action.id })
+        showNotice('Offline — queued for secure sync.')
+      }
+    } finally {
+      setBusyId(null)
     }
+  }
 
-    setCaptureModalType('video')
+  const visible = useMemo(
+    () => (filter.status ? actions.filter((action) => action.status === filter.status) : actions),
+    [actions, filter]
+  )
+  const priority = visible.filter((action) => action.status === 'proposed' || action.status === 'approved')
+  const history = visible.filter((action) => !priority.includes(action))
+  const counts = {
+    proposed: actions.filter((action) => action.status === 'proposed').length,
+    approved: actions.filter((action) => action.status === 'approved').length,
+    completed: actions.filter((action) => action.status === 'completed').length,
+    rejected: actions.filter((action) => action.status === 'rejected').length,
+  }
+
+  const renderActionCard = (action: AgentAction) => (
+    <QuantumCard key={action.id} accent={theme.accent}>
+      <View style={styles.rowBetween}>
+        <QuantumText variant="h3" style={styles.flex}>{action.title || action.kind}</QuantumText>
+        <QuantumText variant="caption" color={theme.accent}>{STATUS_LABEL[action.status]}</QuantumText>
+      </View>
+      <QuantumText>{action.summary}</QuantumText>
+      <QuantumText variant="caption" color={theme.subtextColor}>
+        {formatRelativeTime(action.createdAt)} · {action.requiresApproval ? 'Human approval required' : 'Auto-governed'}
+      </QuantumText>
+      {action.estimatedValuePence ? <QuantumText variant="caption" color={theme.accent}>Estimated impact {formatPence(action.estimatedValuePence)}</QuantumText> : null}
+      <View style={styles.actionRow}>
+        {action.status === 'proposed' ? (
+          <>
+            <Pressable disabled={busyId === action.id} onPress={() => run(action, 'GOVERNED_ACTION_DECISION_APPROVE', () => decideAgentAction(action.id, 'approve'))}>
+              <QuantumText variant="caption" color={theme.accent}>Approve</QuantumText>
+            </Pressable>
+            <Pressable disabled={busyId === action.id} onPress={() => run(action, 'GOVERNED_ACTION_DECISION_REJECT', () => decideAgentAction(action.id, 'reject'))}>
+              <QuantumText variant="caption" color="#FF5470">Reject</QuantumText>
+            </Pressable>
+          </>
+        ) : null}
+        {action.status === 'approved' ? (
+          <Pressable disabled={busyId === action.id} onPress={() => run(action, 'GOVERNED_ACTION_EXECUTE', () => executeAgentAction(action.id))}>
+            <QuantumText variant="caption" color={theme.accent}>Execute</QuantumText>
+          </Pressable>
+        ) : null}
+        {action.status === 'completed' && action.execution?.status === 'completed' ? (
+          <Pressable disabled={busyId === action.id} onPress={() => run(action, 'GOVERNED_ACTION_REVERSE', () => reverseAgentActionExecution(action.id))}>
+            <QuantumText variant="caption" color="#FF5470">Undo</QuantumText>
+          </Pressable>
+        ) : null}
+      </View>
+    </QuantumCard>
+  )
+
+  if (loading) {
+    return (
+      <QuantumScreen scroll={false} contentStyle={styles.center}>
+        <ActivityIndicator color={theme.accent} />
+      </QuantumScreen>
+    )
   }
 
   return (
-    <QuantumScreen>
+    <QuantumScreen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false) }} tintColor={theme.accent} />}>
       <QuantumCard accent={theme.accent}>
-        <QuantumText variant="overline" color={theme.accent}>
-          {role} · {tier}
+        <QuantumText variant="overline" color={theme.accent}>Core.Operations</QuantumText>
+        <QuantumText variant="h1">Work & Approvals</QuantumText>
+        <QuantumText color={theme.subtextColor}>
+          Governed AI actions grouped by what needs a decision now, what is waiting for execution, and what is already part of the audit history.
         </QuantumText>
-        <QuantumText variant="h1">{currentBrand.name} Workflows</QuantumText>
-        <QuantumText color={theme.subtextColor}>{currentBrand.tagline}</QuantumText>
       </QuantumCard>
 
-      <QuantumSectionHeader label="Multimodal intake" />
-      <View style={styles.multimodalRow}>
-        <QuantumButton tone="secondary" style={styles.launcher} onPress={() => setCaptureModalType('voice')}>
-          Voice
-        </QuantumButton>
-        <QuantumButton tone="secondary" style={styles.launcher} onPress={() => setCaptureModalType('photo')}>
-          Photo
-        </QuantumButton>
-        <QuantumButton tone="secondary" style={styles.launcher} onPress={() => setCaptureModalType('video')}>
-          Video
-        </QuantumButton>
+      <View style={styles.metricRow}>
+        <QuantumMetric label="Suggested" value={counts.proposed} tone="info" />
+        <QuantumMetric label="Awaiting execution" value={counts.approved} tone="watch" />
+        <QuantumMetric label="Executed" value={counts.completed} tone="good" />
+        <QuantumMetric label="Rejected" value={counts.rejected} tone="risk" />
       </View>
 
-      <QuantumSectionHeader label="Active AI bolt-ons" />
-      {activeBoltOns.length > 0 ? (
-        activeBoltOns.map((boltOn) => (
-          <QuantumCard key={boltOn.id} accent={boltOn.brandSlug === activeBrandSlug ? theme.accent : undefined}>
-            <View style={styles.boltOnHeader}>
-              <QuantumText variant="h2" color={theme.accent} style={styles.boltOnIcon}>
-                {boltOn.icon}
-              </QuantumText>
-              <View style={styles.boltOnCopy}>
-                <QuantumText variant="h3">{boltOn.name}</QuantumText>
-                <QuantumText variant="caption" color={theme.subtextColor}>
-                  {boltOn.description}
-                </QuantumText>
-              </View>
-            </View>
-            <View style={styles.boltOnFooter}>
-              <QuantumPill accent={theme.accent}>{boltOn.allowedTiers.join(' / ')}</QuantumPill>
-              <QuantumButton onPress={() => handleLaunchBoltOn(boltOn.id)}>Launch</QuantumButton>
-            </View>
-            <QuantumText variant="caption" color={theme.subtextColor}>
-              Endpoint: {boltOn.endpoint}
-            </QuantumText>
-          </QuantumCard>
-        ))
+      {notice ? <QuantumNotice tone="info">{notice}</QuantumNotice> : null}
+
+      {!connected ? (
+        <QuantumNotice tone="warning">Sign in with your Core.Operations account to see governed actions.</QuantumNotice>
       ) : (
-        <QuantumNotice tone="warning">No bolt-ons are enabled for this brand/tier combination.</QuantumNotice>
+        <>
+          <View style={styles.filterRow}>
+            {FILTERS.map((option) => (
+              <QuantumPill key={option.label} active={filter.label === option.label} accent={theme.accent} onPress={() => setFilter(option)}>
+                {option.label}
+              </QuantumPill>
+            ))}
+          </View>
+
+          <QuantumSectionHeader label="Decision queue" />
+          {priority.length === 0 ? (
+            <QuantumNotice>No actions currently need approval or execution.</QuantumNotice>
+          ) : (
+            priority.map(renderActionCard)
+          )}
+
+          <QuantumSectionHeader label={filter.status ? `${visible.length} matching action(s)` : 'Audit history'} />
+          {filter.status ? (
+            visible.length === 0 ? <QuantumNotice>No governed actions match this filter yet.</QuantumNotice> : visible.map(renderActionCard)
+          ) : history.length === 0 ? (
+            <QuantumNotice>No completed or rejected history yet.</QuantumNotice>
+          ) : (
+            history.map(renderActionCard)
+          )}
+        </>
       )}
-
-      <QuantumSectionHeader label="Console modules" />
-      <View style={styles.moduleGrid}>
-        {currentBrand.modules.map((moduleName) => (
-          <QuantumCard key={moduleName} style={styles.moduleCard}>
-            <QuantumText variant="h3">{moduleName}</QuantumText>
-            <QuantumText variant="caption" color={theme.accent}>
-              Live workflow sync
-            </QuantumText>
-          </QuantumCard>
-        ))}
-      </View>
-
-      <MultimodalCaptureModal
-        visible={!!captureModalType}
-        captureType={captureModalType}
-        onClose={() => setCaptureModalType(null)}
-        onConfirmationReady={(data) => setConfirmationData(data)}
-      />
-      <AIConfirmationModal data={confirmationData} onClose={() => setConfirmationData(null)} />
     </QuantumScreen>
   )
 }
 
 const styles = StyleSheet.create({
-  multimodalRow: { flexDirection: 'row', gap: quantumSpace.sm },
-  launcher: { flex: 1 },
-  boltOnHeader: { flexDirection: 'row', gap: quantumSpace.md, alignItems: 'center' },
-  boltOnIcon: { width: 32, textAlign: 'center' },
-  boltOnCopy: { flex: 1, gap: quantumSpace.xs },
-  boltOnFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: quantumSpace.md },
-  moduleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.md },
-  moduleCard: { flexGrow: 1, flexBasis: '47%', minWidth: 148 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: quantumSpace.md },
+  flex: { flex: 1 },
+  metricRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.xs },
+  actionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.lg, marginTop: quantumSpace.xs },
 })

@@ -5,6 +5,7 @@
 import { Platform } from 'react-native'
 import { authedFetch } from './api'
 import { useQuantumStore, OutboxItem } from './store'
+import { decideAgentAction, executeAgentAction, reverseAgentActionExecution } from './core-operations-api'
 
 // Fallback in-memory outbox store when SQLite native driver isn't initialized (e.g. web/Expo web)
 let memoryOutbox: OutboxItem[] = []
@@ -139,6 +140,19 @@ export async function processOutboxSync(): Promise<{ synced: number; failed: num
     const pendingItems = await getPendingOutboxItems()
     for (const item of pendingItems) {
       try {
+        // Real governed AI Actions (Core.Operations) — dispatch directly to the live
+        // backend via the typed client rather than the legacy generic AI intake below.
+        if (item.actionType.startsWith('GOVERNED_ACTION_')) {
+          const actionId = String((item.payload as Record<string, unknown>).actionId)
+          if (item.actionType === 'GOVERNED_ACTION_DECISION_APPROVE') await decideAgentAction(actionId, 'approve')
+          else if (item.actionType === 'GOVERNED_ACTION_DECISION_REJECT') await decideAgentAction(actionId, 'reject')
+          else if (item.actionType === 'GOVERNED_ACTION_EXECUTE') await executeAgentAction(actionId)
+          else if (item.actionType === 'GOVERNED_ACTION_REVERSE') await reverseAgentActionExecution(actionId)
+          await updateItemStatus(item.id, 'synced')
+          synced++
+          continue
+        }
+
         let endpoint = '/api/ai/generic'
         if (item.actionType.includes('inventory')) endpoint = '/api/ai/inventory-intake'
         else if (item.actionType.includes('order')) endpoint = '/api/ai/order-assist'

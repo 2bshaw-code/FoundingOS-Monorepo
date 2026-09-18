@@ -6,10 +6,12 @@ import { useEffect, useState } from 'react'
 import { ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { router } from 'expo-router'
-import { login, getToken } from '../lib/api'
+import { login as legacyLogin, getToken as getLegacyToken } from '../lib/api'
+import { login as coreOpsLogin, getSession as getCoreOpsSession } from '../lib/core-operations-api'
+import { login as coreWorkforceLogin, getSession as getCoreWorkforceSession } from '../lib/core-workforce-api'
 import { FOUNDINGOS_ACCENT, FOUNDINGOS_BASE } from '../lib/brands'
 import { QuantumSphere } from '../components/QuantumSphere'
-import { QuantumButton, QuantumCard, QuantumFormField, QuantumNotice, QuantumText, QuantumTextInput, quantumSpace } from '../components/QuantumUI'
+import { QuantumButton, QuantumCard, QuantumFormField, QuantumNotice, QuantumPasswordInput, QuantumText, QuantumTextInput, quantumSpace } from '../components/QuantumUI'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
@@ -19,8 +21,8 @@ export default function LoginScreen() {
   const [checkingSession, setCheckingSession] = useState(true)
 
   useEffect(() => {
-    getToken().then((token) => {
-      if (token) router.replace('/(app)/home')
+    Promise.all([getCoreOpsSession(), getLegacyToken()]).then(([coreOpsSession, legacyToken]) => {
+      if (coreOpsSession || legacyToken) router.replace('/(app)/home')
       setCheckingSession(false)
     })
   }, [])
@@ -32,10 +34,25 @@ export default function LoginScreen() {
     }
     setError('')
     setLoading(true)
-    const result = await login(email.trim(), password.trim())
+    // Try the real Core.Operations tenant-auth backend first (live governed-workflow
+    // system). Fall back to the legacy tester-login system only if the real backend
+    // rejects the credentials or is unreachable, so existing tester accounts keep working.
+    const realResult = await coreOpsLogin(email.trim(), password.trim())
+    if (realResult.ok) {
+      // Core.Workforce runs its own independent auth/database — attempt a parallel
+      // sign-in with the same credentials so a founder with access to both suites
+      // gets a consistent session without a second login screen. Best-effort only:
+      // if this account has no Core.Workforce identity yet, Workforce screens show
+      // an honest "not connected" state rather than blocking Core.Operations sign-in.
+      coreWorkforceLogin(email.trim(), password.trim()).catch(() => undefined)
+      setLoading(false)
+      router.replace('/(app)/home')
+      return
+    }
+    const legacyResult = await legacyLogin(email.trim(), password.trim())
     setLoading(false)
-    if (!result.ok) {
-      setError(result.error)
+    if (!legacyResult.ok) {
+      setError(realResult.error || legacyResult.error)
       return
     }
     router.replace('/(app)/home')
@@ -71,7 +88,7 @@ export default function LoginScreen() {
             />
           </QuantumFormField>
           <QuantumFormField label="Password or access code">
-            <QuantumTextInput placeholder="••••••••" secureTextEntry value={password} onChangeText={setPassword} />
+            <QuantumPasswordInput placeholder="••••••••" value={password} onChangeText={setPassword} />
           </QuantumFormField>
           {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
           <QuantumButton onPress={handleSignIn} disabled={loading}>

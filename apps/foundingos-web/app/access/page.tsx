@@ -1,3 +1,5 @@
+import { PasswordField } from './password-field'
+
 export default function SiteAccessPage({ searchParams }: { searchParams: { returnTo?: string; error?: string } }) {
   return <main className="complete-workspace-access">
     <section>
@@ -8,7 +10,7 @@ export default function SiteAccessPage({ searchParams }: { searchParams: { retur
       <form action="/api/access/login" method="post">
         <input name="returnTo" type="hidden" value={searchParams.returnTo || '/'} />
         <label>Email address<input autoComplete="email" autoFocus name="email" required type="email" /></label>
-        <label>Invitation password<input autoComplete="current-password" minLength={8} name="password" required type="password" /></label>
+        <PasswordField label="Invitation password" minLength={8} name="password" />
         {searchParams.error ? <div className="complete-workspace-error" role="alert">That email or password was not accepted. Please try again.</div> : null}
         <button className="retail-app-primary" type="submit">Open FoundingOS</button>
       </form>

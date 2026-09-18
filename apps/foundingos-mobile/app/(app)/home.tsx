@@ -2,57 +2,110 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { useState } from 'react'
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
-import Svg, { Circle, Path, Polygon, Polyline, Text as SvgText } from 'react-native-svg'
 import { router } from 'expo-router'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { QuantumMiniBars } from '../../components/QuantumMiniCharts'
+import { QuantumButton, QuantumCard, QuantumNotice, QuantumScreen, QuantumText, quantumColors, quantumSpace } from '../../components/QuantumUI'
 import { BRANDS } from '../../lib/brands'
-import { useQuantumStore } from '../../lib/store'
+import {
+  AgentAction,
+  AgentActionIntelligence,
+  AgentActionTrailEvent,
+  BusinessPulse,
+  OwnerOperationsData,
+  PlatformEvent,
+  decideAgentAction,
+  executeAgentAction,
+  fetchAgentActionIntelligence,
+  fetchBusinessPulse,
+  fetchEventFeed,
+  fetchOwnerOperations,
+  getAgentActionTrail,
+  getSession,
+  listAgentActions,
+  reverseAgentActionExecution,
+} from '../../lib/core-operations-api'
 import { enqueueOutboxAction } from '../../lib/outbox-sync'
-import { QuantumScreen } from '../../components/QuantumUI'
-
-const KPI_DATA = [
-  { label: 'Revenue', value: '£18.6k', change: '+12.4%', color: '#22C55E', points: [42, 47, 45, 54, 58, 66, 74] },
-  { label: 'Orders', value: '142', change: '+8.1%', color: '#38BDF8', points: [35, 39, 46, 43, 51, 59, 64] },
-  { label: 'Cash collected', value: '£12.4k', change: '+9.7%', color: '#F59E0B', points: [38, 42, 48, 46, 55, 61, 68] },
-  { label: 'Risks resolved', value: '87%', change: '+6.4%', color: '#E879F9', points: [44, 47, 52, 57, 61, 66, 73] },
-] as const
-
-const PRIORITIES = [
-  { id: 'FIN-18', area: 'Finance', title: '3 overdue invoices', impact: '£4,820 delayed', owner: 'Finance', severity: 'High', color: '#FB7185' },
-  { id: 'LOG-07', area: 'Logistics', title: 'Delivery exception', impact: 'Customer waiting', owner: 'Samira', severity: 'High', color: '#FB7185' },
-  { id: 'RET-22', area: 'Retail', title: 'Low stock cover', impact: '4 days remaining', owner: 'Operations', severity: 'Medium', color: '#FBBF24' },
-  { id: 'HR-09', area: 'Workforce', title: 'Offer expires soon', impact: '2 days remaining', owner: 'Ava', severity: 'Medium', color: '#FBBF24' },
-] as const
+import { useQuantumStore } from '../../lib/store'
 
 const WORKSPACES = BRANDS.filter((workspace) => workspace.slug !== 'foundingos')
-const FILTERS = ['All', 'High', 'Medium'] as const
 
-function MiniTrend({ points, color }: { points: readonly number[]; color: string }) {
-  const maximum = Math.max(...points)
-  const minimum = Math.min(...points)
-  const range = maximum - minimum || 1
-  const coordinates = points.map((point, index) => `${(index / (points.length - 1)) * 120},${38 - ((point - minimum) / range) * 32}`).join(' ')
-  return <Svg width="100%" height={42} viewBox="0 0 120 42"><Polygon points={`0,42 ${coordinates} 120,42`} fill={color} opacity={0.14} /><Polyline points={coordinates} fill="none" stroke={color} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></Svg>
+const STATUS_LABEL: Record<AgentAction['status'], string> = {
+  proposed: 'Suggested',
+  approved: 'Awaiting execution',
+  rejected: 'Rejected',
+  executing: 'Executing',
+  completed: 'Executed',
 }
 
-function DispatchMap() {
-  return (
-    <Svg width="100%" height={190} viewBox="0 0 360 190">
-      <Path d="M-10 42 C72 8 118 88 182 52 S284 18 380 56" stroke="#24364A" strokeWidth={7} fill="none" strokeLinecap="round" />
-      <Path d="M22 178 C84 134 122 158 174 106 S276 56 350 18" stroke="#24364A" strokeWidth={7} fill="none" strokeLinecap="round" />
-      <Path d="M42 151 C102 122 146 146 191 100 S275 66 326 48" stroke="#38BDF8" strokeWidth={5} fill="none" strokeDasharray="9 7" strokeLinecap="round" />
-      <Path d="M191 100 C229 126 255 139 294 135" stroke="#FB7185" strokeWidth={4} fill="none" strokeDasharray="5 6" />
-      <Circle cx={42} cy={151} r={7} fill="#07101C" stroke="#22C55E" strokeWidth={4} />
-      <Circle cx={191} cy={100} r={8} fill="#07101C" stroke="#38BDF8" strokeWidth={4} />
-      <Circle cx={294} cy={135} r={9} fill="#07101C" stroke="#FB7185" strokeWidth={4} />
-      <Circle cx={326} cy={48} r={7} fill="#07101C" stroke="#22C55E" strokeWidth={4} />
-      <SvgText x={54} y={147} fill="#CBD5E1" fontSize={10} fontWeight="700">Depot</SvgText>
-      <SvgText x={203} y={96} fill="#CBD5E1" fontSize={10} fontWeight="700">VAN-04</SvgText>
-      <SvgText x={243} y={158} fill="#FB7185" fontSize={10} fontWeight="700">Exception</SvgText>
-      <SvgText x={286} y={34} fill="#CBD5E1" fontSize={10} fontWeight="700">Leeds · 16:08</SvgText>
-    </Svg>
-  )
+const STATUS_COLOR: Record<AgentAction['status'], string> = {
+  proposed: '#38BDF8',
+  approved: '#FBBF24',
+  rejected: '#FF5470',
+  executing: '#A78BFA',
+  completed: quantumColors.success,
+}
+
+function formatPence(pence: number | null | undefined): string {
+  if (!pence) return '£0'
+  return `£${(pence / 100).toLocaleString('en-GB', { maximumFractionDigits: 0 })}`
+}
+
+function formatRelativeTime(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime()
+  const minutes = Math.round(diffMs / 60000)
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.round(hours / 24)}d ago`
+}
+
+function isOpenOrder(status: string | null | undefined) {
+  const normalized = String(status || '').toLowerCase()
+  return normalized && !['completed', 'delivered', 'cancelled', 'closed', 'fulfilled'].includes(normalized)
+}
+
+function isUnpaidInvoice(status: string | null | undefined) {
+  return !['paid', 'cancelled'].includes(String(status || '').toLowerCase())
+}
+
+function buildDailySeries<T>(
+  items: T[],
+  readDate: (item: T) => string | null | undefined,
+  readValue: (item: T) => number,
+  days = 7
+) {
+  const buckets = Array.from({ length: days }, (_, index) => {
+    const date = new Date()
+    date.setHours(0, 0, 0, 0)
+    date.setDate(date.getDate() - (days - 1 - index))
+    return { key: date.toISOString().slice(0, 10), value: 0 }
+  })
+  const bucketMap = new Map(buckets.map((bucket) => [bucket.key, bucket]))
+  let hasPoint = false
+  for (const item of items) {
+    const rawDate = readDate(item)
+    if (!rawDate) continue
+    const parsed = new Date(rawDate)
+    if (Number.isNaN(parsed.getTime())) continue
+    const key = parsed.toISOString().slice(0, 10)
+    const bucket = bucketMap.get(key)
+    if (!bucket) continue
+    bucket.value += readValue(item)
+    hasPoint = true
+  }
+  return hasPoint ? buckets.map((bucket) => bucket.value) : []
+}
+
+function buildInventoryAlertSeries(operations: OwnerOperationsData | null) {
+  if (!operations) return []
+  const lowStockItems = operations.inventory
+    .filter((item) => item.stock <= item.lowStockLevel)
+    .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
+    .slice(0, 7)
+  return lowStockItems.map((item) => Math.max(1, item.lowStockLevel - item.stock + 1))
 }
 
 export default function FounderCommandDeck() {
@@ -61,81 +114,461 @@ export default function FounderCommandDeck() {
   const setActiveWorkspace = useQuantumStore((state) => state.setActiveBrand)
   const setCommandBarOpen = useQuantumStore((state) => state.setCommandBarOpen)
   const pendingSyncCount = useQuantumStore((state) => state.pendingSyncCount)
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>('All')
-  const [refreshing, setRefreshing] = useState(false)
-  const [notice, setNotice] = useState('')
-  const priorities = PRIORITIES.filter((item) => filter === 'All' || item.severity === filter)
-  const activeWorkspace = BRANDS.find((workspace) => workspace.slug === activeWorkspaceSlug) ?? BRANDS[0]
 
-  const runAction = async (action: string) => {
-    await enqueueOutboxAction(`COMMAND_${action.toUpperCase().replaceAll(' ', '_')}`, activeWorkspaceSlug, { action, source: 'founder-command-deck' })
-    setNotice(`${action} is ready in the secure action queue.`)
+  const [connected, setConnected] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [pulse, setPulse] = useState<BusinessPulse | null>(null)
+  const [operations, setOperations] = useState<OwnerOperationsData | null>(null)
+  const [actions, setActions] = useState<AgentAction[]>([])
+  const [events, setEvents] = useState<PlatformEvent[]>([])
+  const [intelligence, setIntelligence] = useState<AgentActionIntelligence | null>(null)
+  const [notice, setNotice] = useState('')
+  const [busyActionId, setBusyActionId] = useState<string | null>(null)
+  const [expandedActionId, setExpandedActionId] = useState<string | null>(null)
+  const [trail, setTrail] = useState<AgentActionTrailEvent[]>([])
+  const [trailLoading, setTrailLoading] = useState(false)
+
+  const loadAll = useCallback(async () => {
+    const session = await getSession()
+    setConnected(Boolean(session))
+    if (!session) {
+      setLoading(false)
+      return
+    }
+    const [actionsResult, pulseResult, operationsResult, eventsResult, intelligenceResult] = await Promise.all([
+      listAgentActions().catch(() => []),
+      fetchBusinessPulse(),
+      fetchOwnerOperations().catch(() => null),
+      fetchEventFeed(15),
+      fetchAgentActionIntelligence().catch(() => null),
+    ])
+    setActions(actionsResult)
+    setPulse(pulseResult)
+    setOperations(operationsResult)
+    setEvents(eventsResult)
+    setIntelligence(intelligenceResult)
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    loadAll()
+  }, [loadAll])
+
+  const showNotice = (text: string) => {
+    setNotice(text)
     setTimeout(() => setNotice(''), 3500)
+  }
+
+  const withOfflineFallback = async (
+    actionId: string,
+    outboxType: string,
+    payload: Record<string, unknown>,
+    run: () => Promise<AgentAction>
+  ) => {
+    setBusyActionId(actionId)
+    try {
+      await run()
+      await loadAll()
+      showNotice('Done. Full evidence recorded in the audit trail.')
+    } catch (err: any) {
+      if (err?.status && err.status < 500 && err.status !== 0) {
+        showNotice(err.message || 'That action could not be completed.')
+      } else {
+        await enqueueOutboxAction(outboxType, activeWorkspaceSlug, payload)
+        showNotice('Offline — queued for secure sync and will apply automatically once reconnected.')
+      }
+    } finally {
+      setBusyActionId(null)
+    }
+  }
+
+  const handleDecision = (action: AgentAction, decision: 'approve' | 'reject') =>
+    withOfflineFallback(action.id, `GOVERNED_ACTION_DECISION_${decision.toUpperCase()}`, { actionId: action.id, decision }, () =>
+      decideAgentAction(action.id, decision)
+    )
+
+  const handleExecute = (action: AgentAction) =>
+    withOfflineFallback(action.id, 'GOVERNED_ACTION_EXECUTE', { actionId: action.id }, () => executeAgentAction(action.id))
+
+  const handleReverse = (action: AgentAction) =>
+    withOfflineFallback(action.id, 'GOVERNED_ACTION_REVERSE', { actionId: action.id }, () => reverseAgentActionExecution(action.id))
+
+  const handleViewEvidence = async (action: AgentAction) => {
+    if (expandedActionId === action.id) {
+      setExpandedActionId(null)
+      return
+    }
+    setExpandedActionId(action.id)
+    setTrail([])
+    setTrailLoading(true)
+    try {
+      setTrail(await getAgentActionTrail(action.id))
+    } catch {
+      setTrail([])
+    } finally {
+      setTrailLoading(false)
+    }
+  }
+
+  const activeWorkspace = BRANDS.find((workspace) => workspace.slug === activeWorkspaceSlug) ?? BRANDS[0]
+  const pulseZero = pulse && !pulse.orderRevenuePence && !pulse.openOrders && !pulse.unpaidInvoices && !pulse.lowStock
+  const actionableActions = actions.filter((action) => ['proposed', 'approved', 'completed'].includes(action.status)).slice(0, 4)
+
+  const revenueSeries = useMemo(
+    () => buildDailySeries(operations?.orders ?? [], (order) => order.createdAt, (order) => order.totalPence),
+    [operations]
+  )
+  const openOrdersSeries = useMemo(
+    () => buildDailySeries(operations?.orders.filter((order) => isOpenOrder(order.status)) ?? [], (order) => order.createdAt, () => 1),
+    [operations]
+  )
+  const overdueInvoicesSeries = useMemo(
+    () => buildDailySeries(
+      operations?.invoices.filter((invoice) => isUnpaidInvoice(invoice.status)) ?? [],
+      (invoice) => invoice.dueAt ?? invoice.createdAt,
+      () => 1
+    ),
+    [operations]
+  )
+  const inventoryAlertSeries = useMemo(() => buildInventoryAlertSeries(operations), [operations])
+
+  const focusedEvents = useMemo(() => {
+    if (activeWorkspaceSlug === 'core_intelligence') {
+      return events.filter((event) => event.type.includes('agent') || event.source.includes('agent') || event.source.includes('messaging')).slice(0, 8)
+    }
+    return events.slice(0, 8)
+  }, [activeWorkspaceSlug, events])
+
+  const renderKpiGrid = () => (
+    <View style={styles.kpiGrid}>
+      <QuantumCard accent="#22C55E" style={styles.kpiPanel}>
+        <Text style={styles.kpiLabel}>Revenue (orders)</Text>
+        <Text style={styles.kpiValue}>{formatPence(pulse?.orderRevenuePence)}</Text>
+        <QuantumMiniBars
+          values={revenueSeries}
+          accent="#22C55E"
+          emptyLabel="Trend data will appear after order activity is recorded."
+          footerLabel={revenueSeries.length ? 'Last 7 days of real order value' : undefined}
+        />
+      </QuantumCard>
+      <QuantumCard accent="#38BDF8" style={styles.kpiPanel}>
+        <Text style={styles.kpiLabel}>Open orders</Text>
+        <Text style={styles.kpiValue}>{pulse?.openOrders ?? 0}</Text>
+        <QuantumMiniBars
+          values={openOrdersSeries}
+          accent="#38BDF8"
+          emptyLabel="Trend data will appear after orders enter the live queue."
+          footerLabel={openOrdersSeries.length ? 'Last 7 days of open-order intake' : undefined}
+        />
+      </QuantumCard>
+      <QuantumCard accent="#FB7185" style={styles.kpiPanel}>
+        <Text style={styles.kpiLabel}>Overdue payments</Text>
+        <Text style={styles.kpiValue}>{pulse?.unpaidInvoices ?? 0}</Text>
+        <Text style={styles.kpiSub}>{formatPence(pulse?.outstandingPence)} outstanding</Text>
+        <QuantumMiniBars
+          values={overdueInvoicesSeries}
+          accent="#FB7185"
+          emptyLabel="Trend data will appear after invoices age into real payment windows."
+          footerLabel={overdueInvoicesSeries.length ? 'Last 7 days of unpaid invoice dates' : undefined}
+        />
+      </QuantumCard>
+      <QuantumCard accent="#FBBF24" style={styles.kpiPanel}>
+        <Text style={styles.kpiLabel}>Inventory alerts</Text>
+        <Text style={styles.kpiValue}>{pulse?.lowStock ?? 0}</Text>
+        <Text style={styles.kpiSub}>of {pulse?.inventoryItems ?? 0} items tracked</Text>
+        <QuantumMiniBars
+          values={inventoryAlertSeries}
+          accent="#FBBF24"
+          emptyLabel="Bar data will appear when live inventory drops below threshold."
+          footerLabel={inventoryAlertSeries.length ? 'Current stock-gap severity across flagged items' : undefined}
+        />
+      </QuantumCard>
+    </View>
+  )
+
+  const renderActionsQueue = () => (
+    <View style={styles.panel}>
+      {actionableActions.length === 0 ? (
+        <Text style={styles.emptyText}>
+          No governed actions right now. FoundingOS will queue replenishment, receivables, delivery, expense,
+          campaign, and budget decisions here as real activity creates them.
+        </Text>
+      ) : (
+        actionableActions.map((action) => {
+          const isBusy = busyActionId === action.id
+          const expanded = expandedActionId === action.id
+          return (
+            <View key={action.id} style={styles.actionCard}>
+              <View style={styles.actionHeaderRow}>
+                <View style={[styles.statusPill, { backgroundColor: `${STATUS_COLOR[action.status]}22`, borderColor: STATUS_COLOR[action.status] }]}>
+                  <Text style={[styles.statusPillText, { color: STATUS_COLOR[action.status] }]}>{STATUS_LABEL[action.status]}</Text>
+                </View>
+                {action.requiresApproval ? <Text style={styles.approvalBadge}>Requires approval</Text> : null}
+              </View>
+              <Text style={styles.actionTitle}>{action.title || action.kind}</Text>
+              <Text style={styles.actionSummary}>{action.summary}</Text>
+              {action.estimatedValuePence ? <Text style={styles.actionValue}>Estimated impact: {formatPence(action.estimatedValuePence)}</Text> : null}
+
+              <View style={styles.actionButtonRow}>
+                {action.status === 'proposed' ? (
+                  <>
+                    <Pressable disabled={isBusy} style={[styles.actionButton, styles.approveButton]} onPress={() => handleDecision(action, 'approve')}>
+                      <Text style={styles.actionButtonText}>{isBusy ? '…' : 'Approve'}</Text>
+                    </Pressable>
+                    <Pressable disabled={isBusy} style={[styles.actionButton, styles.rejectButton]} onPress={() => handleDecision(action, 'reject')}>
+                      <Text style={styles.actionButtonText}>{isBusy ? '…' : 'Reject'}</Text>
+                    </Pressable>
+                  </>
+                ) : null}
+                {action.status === 'approved' ? (
+                  <Pressable disabled={isBusy} style={[styles.actionButton, styles.approveButton]} onPress={() => handleExecute(action)}>
+                    <Text style={styles.actionButtonText}>{isBusy ? '…' : 'Execute'}</Text>
+                  </Pressable>
+                ) : null}
+                {action.status === 'completed' && action.execution?.status === 'completed' ? (
+                  <Pressable disabled={isBusy} style={[styles.actionButton, styles.rejectButton]} onPress={() => handleReverse(action)}>
+                    <Text style={styles.actionButtonText}>{isBusy ? '…' : 'Undo'}</Text>
+                  </Pressable>
+                ) : null}
+                {action.execution?.status === 'reversed' ? <Text style={styles.reversedText}>Reversed</Text> : null}
+                <Pressable style={[styles.actionButton, styles.evidenceButton]} onPress={() => handleViewEvidence(action)}>
+                  <Text style={styles.evidenceButtonText}>{expanded ? 'Hide evidence' : 'View evidence'}</Text>
+                </Pressable>
+              </View>
+
+              {expanded ? (
+                <View style={styles.trailBox}>
+                  {trailLoading ? (
+                    <ActivityIndicator color="#38BDF8" />
+                  ) : trail.length === 0 ? (
+                    <Text style={styles.emptyText}>No audit events recorded yet.</Text>
+                  ) : (
+                    trail.map((event) => (
+                      <View key={event.id} style={styles.trailRow}>
+                        <Text style={styles.trailType}>{event.type}</Text>
+                        <Text style={styles.trailTime}>{formatRelativeTime(event.createdAt)}</Text>
+                      </View>
+                    ))
+                  )}
+                </View>
+              ) : null}
+            </View>
+          )
+        })
+      )}
+    </View>
+  )
+
+  const renderWorkspaceFocus = () => {
+    if (activeWorkspaceSlug === 'core_workforce') {
+      return (
+        <QuantumCard accent={activeWorkspace.accent}>
+          <QuantumText variant="overline" color={activeWorkspace.accent}>Core.Workforce</QuantumText>
+          <QuantumText variant="h2">Present in the shell, not yet connected</QuantumText>
+          <QuantumText>
+            Core.Workforce is visible in navigation now, but it is not connected to a real backend yet. No workforce records are fabricated here.
+          </QuantumText>
+          <QuantumNotice tone="warning">No jobs, candidates, or staffing metrics are shown until a real backend is live.</QuantumNotice>
+        </QuantumCard>
+      )
+    }
+
+    if (activeWorkspaceSlug === 'core_intelligence') {
+      return (
+        <View style={styles.stack}>
+          <QuantumCard accent={activeWorkspace.accent}>
+            <QuantumText variant="overline" color={activeWorkspace.accent}>Core.Intelligence live</QuantumText>
+            <QuantumText variant="h2">Governed learning snapshot</QuantumText>
+            <QuantumText>{intelligence?.snapshot.learningMomentum.narrative ?? 'Live intelligence appears here once you sign in.'}</QuantumText>
+            {intelligence ? (
+              <View style={styles.intelligenceRow}>
+                <View style={styles.intelligenceMetric}>
+                  <Text style={styles.metricLabel}>Accuracy</Text>
+                  <Text style={styles.metricValue}>{intelligence.snapshot.recentAccuracyTrend.current}%</Text>
+                </View>
+                <View style={styles.intelligenceMetric}>
+                  <Text style={styles.metricLabel}>Momentum</Text>
+                  <Text style={styles.metricValue}>{intelligence.snapshot.learningMomentum.score}</Text>
+                </View>
+                <View style={styles.intelligenceMetric}>
+                  <Text style={styles.metricLabel}>Signals</Text>
+                  <Text style={styles.metricValue}>{intelligence.emergingSignals.length}</Text>
+                </View>
+              </View>
+            ) : null}
+            <QuantumButton onPress={() => router.push('/intelligence')}>Open Intelligence</QuantumButton>
+          </QuantumCard>
+          {intelligence?.emergingSignals.length ? (
+            <QuantumCard accent={activeWorkspace.accent}>
+              <QuantumText variant="h3">Latest advisory</QuantumText>
+              <QuantumText>{intelligence.emergingSignals[0].summary}</QuantumText>
+              <QuantumText variant="caption" color="#d9e4ef">{intelligence.emergingSignals[0].advisory}</QuantumText>
+            </QuantumCard>
+          ) : (
+            <QuantumNotice tone="info">{intelligence?.snapshot.recentAccuracyTrend.narrative ?? 'No intelligence snapshot is available yet.'}</QuantumNotice>
+          )}
+        </View>
+      )
+    }
+
+    if (activeWorkspaceSlug === 'core_operations') {
+      return (
+        <View style={styles.stack}>
+          {renderKpiGrid()}
+          <QuantumCard accent={activeWorkspace.accent}>
+            <QuantumText variant="overline" color={activeWorkspace.accent}>Department launchers</QuantumText>
+            <QuantumText variant="h3">Operations keeps the live system moving</QuantumText>
+            <View style={styles.launcherRow}>
+              <QuantumButton onPress={() => router.push('/workflows')}>Open approvals</QuantumButton>
+              <QuantumButton tone="secondary" onPress={() => router.push('/marketing')}>Open marketing</QuantumButton>
+            </View>
+          </QuantumCard>
+        </View>
+      )
+    }
+
+    return (
+      <View style={styles.stack}>
+        {renderKpiGrid()}
+        <View style={styles.launcherGrid}>
+          <QuantumCard accent="#26E07F" style={styles.launcherCard}>
+            <QuantumText variant="h3">Core.Operations</QuantumText>
+            <QuantumText variant="caption">Live orders, inventory, approvals, and campaign controls.</QuantumText>
+            <QuantumButton onPress={() => router.push('/workflows')}>Open work</QuantumButton>
+          </QuantumCard>
+          <QuantumCard accent="#A78BFA" style={styles.launcherCard}>
+            <QuantumText variant="h3">Core.Intelligence</QuantumText>
+            <QuantumText variant="caption">Accuracy trends, learning momentum, emerging signals, and audit history.</QuantumText>
+            <QuantumButton tone="secondary" onPress={() => router.push('/intelligence')}>Open intelligence</QuantumButton>
+          </QuantumCard>
+        </View>
+      </View>
+    )
   }
 
   return (
     <QuantumScreen
       contentStyle={styles.screen}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); setTimeout(() => setRefreshing(false), 700) }} tintColor="#38BDF8" />}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={async () => {
+            setRefreshing(true)
+            await loadAll()
+            setRefreshing(false)
+          }}
+          tintColor="#38BDF8"
+        />
+      }
     >
       <View style={styles.commandHeader}>
         <View>
           <Text style={styles.product}>FOUNDINGOS</Text>
           <Text style={styles.title}>Founder Command Deck</Text>
-          <Text style={styles.subtitle}>{role} view · Demo environment · Updated now</Text>
+          <Text style={styles.subtitle}>
+            {role} view · {connected ? 'Core.Operations live' : 'Not connected'}
+          </Text>
         </View>
-        <Pressable style={styles.profile}><Text style={styles.profileText}>BS</Text><View style={styles.online} /></Pressable>
+        <Pressable style={styles.profile} onPress={() => setCommandBarOpen(true)}>
+          <Text style={styles.profileText}>●</Text>
+          {connected ? <View style={styles.online} /> : null}
+        </Pressable>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.workspaceRail}>
-        <Pressable style={[styles.workspaceTab, activeWorkspaceSlug === 'foundingos' && styles.workspaceTabActive]} onPress={() => setActiveWorkspace('foundingos')}>
+        <Pressable
+          style={[styles.workspaceTab, activeWorkspaceSlug === 'foundingos' && styles.workspaceTabActive]}
+          onPress={() => setActiveWorkspace('foundingos')}
+        >
           <Text style={styles.workspaceTabLabel}>Overview</Text>
         </Pressable>
         {WORKSPACES.map((workspace) => (
-          <Pressable key={workspace.slug} style={[styles.workspaceTab, activeWorkspaceSlug === workspace.slug && { borderColor: workspace.accent, backgroundColor: `${workspace.accent}18` }]} onPress={() => setActiveWorkspace(workspace.slug)}>
-            <View style={[styles.workspaceDot, { backgroundColor: workspace.accent }]} /><Text style={styles.workspaceTabLabel}>{workspace.name.replace(' Workspace', '')}</Text>
+          <Pressable
+            key={workspace.slug}
+            style={[
+              styles.workspaceTab,
+              activeWorkspaceSlug === workspace.slug && { borderColor: workspace.accent, backgroundColor: `${workspace.accent}18` },
+            ]}
+            onPress={() => setActiveWorkspace(workspace.slug)}
+          >
+            <View style={[styles.workspaceDot, { backgroundColor: workspace.accent }]} />
+            <Text style={styles.workspaceTabLabel}>{workspace.homeLabel}</Text>
           </Pressable>
         ))}
       </ScrollView>
 
-      <View style={styles.executiveBrief}>
-        <View style={styles.briefCopy}><Text style={styles.briefEyebrow}>{activeWorkspace.name.toUpperCase()}</Text><Text style={styles.briefTitle}>Revenue is growing. Cash collection and one delivery exception need your attention.</Text><Text style={styles.briefText}>The business is operating normally overall. Resolve the overdue invoices first, then recover the blocked delivery before today’s customer window closes.</Text></View>
-        <View style={styles.healthScore}><Text style={styles.healthValue}>82</Text><Text style={styles.healthLabel}>Health score</Text><Text style={styles.healthChange}>+6 this week</Text></View>
-      </View>
-
       {notice ? <View style={styles.notice}><Text style={styles.noticeText}>{notice}</Text></View> : null}
 
-      <View style={styles.commandStrip}>
-        <Pressable style={styles.whatsappAction} onPress={() => setCommandBarOpen(true)}><Text style={styles.commandIcon}>●</Text><View><Text style={styles.commandLabel}>Ask FoundingOS</Text><Text style={styles.commandHint}>Type or speak a WhatsApp-style command</Text></View></Pressable>
-        {['Create order', 'Collect payment', 'Approve'].map((action) => <Pressable key={action} style={styles.compactAction} onPress={() => runAction(action)}><Text style={styles.compactActionText}>{action}</Text></Pressable>)}
-      </View>
+      {!connected && !loading ? (
+        <QuantumNotice tone="warning">
+          Sign in with your Core.Operations account to see live business data, Core.Intelligence signals, and the governed AI Actions Queue.
+        </QuantumNotice>
+      ) : null}
 
-      <View style={styles.sectionHeading}><View><Text style={styles.sectionTitle}>Business performance</Text><Text style={styles.sectionCaption}>Seven-day trend · simulated data</Text></View><Text style={styles.live}>● LIVE</Text></View>
-      <View style={styles.kpiGrid}>
-        {KPI_DATA.map((metric) => (
-          <View key={metric.label} style={[styles.kpiPanel, { borderTopColor: metric.color }]}>
-            <View style={styles.rowBetween}><Text style={styles.kpiLabel}>{metric.label}</Text><Text style={[styles.kpiChange, { color: metric.color }]}>{metric.change}</Text></View>
-            <Text style={styles.kpiValue}>{metric.value}</Text>
-            <MiniTrend points={metric.points} color={metric.color} />
+      {loading ? (
+        <View style={styles.loadingRow}>
+          <ActivityIndicator color="#38BDF8" />
+          <Text style={styles.loadingText}>Loading live business data…</Text>
+        </View>
+      ) : null}
+
+      {connected && !loading ? (
+        <>
+          <View style={styles.sectionHeading}>
+            <View>
+              <Text style={styles.sectionTitle}>{activeWorkspace.name}</Text>
+              <Text style={styles.sectionCaption}>{activeWorkspace.tagline}</Text>
+            </View>
+            <Text style={styles.live}>● LIVE</Text>
           </View>
-        ))}
-      </View>
 
-      <View style={styles.panel}>
-        <View style={styles.sectionHeading}><View><Text style={styles.sectionTitle}>Priority ledger</Text><Text style={styles.sectionCaption}>Decisions ranked by business impact</Text></View><View style={styles.filterRow}>{FILTERS.map((value) => <Pressable key={value} style={[styles.filter, filter === value && styles.filterActive]} onPress={() => setFilter(value)}><Text style={[styles.filterText, filter === value && styles.filterTextActive]}>{value}</Text></Pressable>)}</View></View>
-        <View style={styles.tableHeader}><Text style={[styles.tableHeading, styles.priorityColumn]}>PRIORITY</Text><Text style={styles.tableHeading}>IMPACT</Text><Text style={styles.tableHeading}>OWNER</Text></View>
-        {priorities.map((item) => <Pressable key={item.id} style={styles.tableRow} onPress={() => runAction(`Review ${item.id}`)}><View style={[styles.priorityColumn, styles.priorityCell]}><View style={[styles.severity, { backgroundColor: item.color }]} /><View><Text style={styles.rowTitle}>{item.title}</Text><Text style={styles.rowMeta}>{item.area} · {item.id}</Text></View></View><Text style={styles.rowImpact}>{item.impact}</Text><View><Text style={styles.rowOwner}>{item.owner}</Text><Text style={[styles.rowSeverity, { color: item.color }]}>{item.severity}</Text></View></Pressable>)}
-      </View>
+          {renderWorkspaceFocus()}
 
-      <View style={styles.panel}>
-        <View style={styles.sectionHeading}><View><Text style={styles.sectionTitle}>Logistics command map</Text><Text style={styles.sectionCaption}>3 vehicles reporting · 1 route exception</Text></View><Pressable onPress={() => router.push('/module-detail/logistics/deliveries')}><Text style={styles.openLink}>Open dispatch →</Text></Pressable></View>
-        <View style={styles.mapCanvas}><DispatchMap /><View style={styles.mapLegend}><Text style={styles.mapLive}>● Active route</Text><Text style={styles.mapAlert}>● Exception</Text><Text style={styles.mapStop}>● Stop</Text></View></View>
-      </View>
+          {pulseZero ? (
+            <QuantumNotice tone="info">
+              No transactions recorded yet for this tenant. Real numbers will appear here as soon as orders, invoices,
+              inventory, or governed actions are recorded.
+            </QuantumNotice>
+          ) : null}
 
-      <View style={styles.bottomGrid}>
-        <View style={[styles.panel, styles.bottomPanel]}><Text style={styles.sectionTitle}>Approvals</Text>{['Invoice batch · £4,820', 'Campaign · Founder Friday', 'Stock transfer · 18 units'].map((item, index) => <Pressable key={item} style={styles.approvalRow} onPress={() => runAction(`Approve ${item}`)}><Text style={styles.approvalIndex}>0{index + 1}</Text><Text style={styles.approvalText}>{item}</Text><Text style={styles.approvalAction}>Review</Text></Pressable>)}</View>
-        <View style={[styles.panel, styles.bottomPanel]}><Text style={styles.sectionTitle}>Live activity</Text>{['Payment received · £912.40', 'Delivery assigned · VAN-07', 'Interview booked · 10:30', 'WhatsApp order · ORD-1054'].map((item, index) => <View key={item} style={styles.activityRow}><View style={[styles.activityDot, { backgroundColor: KPI_DATA[index].color }]} /><View><Text style={styles.activityText}>{item}</Text><Text style={styles.activityTime}>{index * 3 + 1}m ago · Event Feed</Text></View></View>)}</View>
-      </View>
+          {activeWorkspaceSlug !== 'core_workforce' ? (
+            <>
+              <View style={styles.sectionHeading}>
+                <View>
+                  <Text style={styles.sectionTitle}>Governed AI Actions Queue</Text>
+                  <Text style={styles.sectionCaption}>Suggestion → simulation → approval → execution → outcome</Text>
+                </View>
+              </View>
+              {renderActionsQueue()}
+            </>
+          ) : null}
+
+          <View style={styles.sectionHeading}>
+            <View>
+              <Text style={styles.sectionTitle}>Shared Event Feed</Text>
+              <Text style={styles.sectionCaption}>Real cross-suite activity</Text>
+            </View>
+          </View>
+          <View style={styles.panel}>
+            {focusedEvents.length === 0 ? (
+              <Text style={styles.emptyText}>No cross-suite events yet.</Text>
+            ) : (
+              focusedEvents.map((event) => (
+                <View key={event.id} style={styles.activityRow}>
+                  <View style={[styles.activityDot, { backgroundColor: activeWorkspace.accent }]} />
+                  <View style={styles.activityCopy}>
+                    <Text style={styles.activityText}>{event.type}</Text>
+                    <Text style={styles.activityTime}>
+                      {formatRelativeTime(event.createdAt)} · {event.source}
+                    </Text>
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
+        </>
+      ) : null}
 
       {pendingSyncCount ? <Text style={styles.syncText}>{pendingSyncCount} action(s) waiting for secure sync</Text> : null}
     </QuantumScreen>
@@ -143,79 +576,139 @@ export default function FounderCommandDeck() {
 }
 
 const styles = StyleSheet.create({
-  screen: { paddingHorizontal: 14, paddingTop: 10, paddingBottom: 110, gap: 14, maxWidth: 1100, width: '100%', alignSelf: 'center' },
-  commandHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
-  product: { color: '#38BDF8', fontSize: 10, fontWeight: '900', letterSpacing: 2 },
-  title: { color: '#F8FAFC', fontSize: 24, lineHeight: 29, fontWeight: '900', letterSpacing: -0.6 },
-  subtitle: { color: '#64748B', fontSize: 11, marginTop: 2 },
-  profile: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: '#132236', borderWidth: 1, borderColor: '#28405A' },
-  profileText: { color: '#E2E8F0', fontWeight: '900' },
-  online: { position: 'absolute', right: -1, bottom: -1, width: 10, height: 10, borderRadius: 5, backgroundColor: '#22C55E', borderWidth: 2, borderColor: '#07101C' },
-  workspaceRail: { gap: 8, paddingVertical: 2 },
-  workspaceTab: { height: 34, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, borderColor: '#203247', backgroundColor: '#0B1726' },
-  workspaceTabActive: { borderColor: '#38BDF8', backgroundColor: '#0C263A' },
-  workspaceDot: { width: 7, height: 7, borderRadius: 4 },
-  workspaceTabLabel: { color: '#CBD5E1', fontSize: 11, fontWeight: '800' },
-  executiveBrief: { flexDirection: 'row', gap: 16, padding: 18, borderRadius: 14, borderWidth: 1, borderColor: '#25405C', backgroundColor: '#0A1B2D' },
-  briefCopy: { flex: 1, gap: 5 },
-  briefEyebrow: { color: '#38BDF8', fontSize: 9, fontWeight: '900', letterSpacing: 1.2 },
-  briefTitle: { color: '#F8FAFC', fontSize: 17, lineHeight: 22, fontWeight: '900' },
-  briefText: { color: '#94A3B8', fontSize: 11, lineHeight: 16 },
-  healthScore: { width: 86, justifyContent: 'center', alignItems: 'center', borderLeftWidth: 1, borderLeftColor: '#25405C' },
-  healthValue: { color: '#22C55E', fontSize: 34, fontWeight: '900' },
-  healthLabel: { color: '#CBD5E1', fontSize: 9, fontWeight: '800' },
-  healthChange: { color: '#22C55E', fontSize: 9, marginTop: 3 },
-  notice: { padding: 10, borderRadius: 8, borderWidth: 1, borderColor: '#22C55E55', backgroundColor: '#22C55E12' },
-  noticeText: { color: '#86EFAC', fontSize: 11, fontWeight: '700' },
-  commandStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  whatsappAction: { minWidth: 240, flexGrow: 1, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 10, backgroundColor: '#0D2B24', borderWidth: 1, borderColor: '#25D36666' },
-  commandIcon: { color: '#25D366', fontSize: 18 },
-  commandLabel: { color: '#F8FAFC', fontSize: 12, fontWeight: '900' },
-  commandHint: { color: '#7EA397', fontSize: 9 },
-  compactAction: { justifyContent: 'center', paddingHorizontal: 14, minHeight: 48, borderRadius: 9, backgroundColor: '#111E2E', borderWidth: 1, borderColor: '#263A50' },
-  compactActionText: { color: '#CBD5E1', fontSize: 10, fontWeight: '800' },
-  sectionHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  sectionTitle: { color: '#F1F5F9', fontSize: 14, fontWeight: '900' },
-  sectionCaption: { color: '#64748B', fontSize: 9, marginTop: 2 },
-  live: { color: '#22C55E', fontSize: 9, fontWeight: '900', letterSpacing: 1 },
-  kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 9 },
-  kpiPanel: { minWidth: 150, flexBasis: '47%', flexGrow: 1, padding: 13, borderRadius: 10, borderWidth: 1, borderColor: '#1D3045', borderTopWidth: 3, backgroundColor: '#0B1624' },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  kpiLabel: { color: '#94A3B8', fontSize: 10, fontWeight: '700' },
-  kpiChange: { fontSize: 10, fontWeight: '900' },
-  kpiValue: { color: '#F8FAFC', fontSize: 25, fontWeight: '900', marginTop: 4 },
-  panel: { padding: 14, borderRadius: 11, borderWidth: 1, borderColor: '#1D3045', backgroundColor: '#0B1624' },
-  filterRow: { flexDirection: 'row', gap: 5 },
-  filter: { paddingHorizontal: 9, paddingVertical: 5, borderRadius: 6, backgroundColor: '#111E2E' },
-  filterActive: { backgroundColor: '#38BDF8' },
-  filterText: { color: '#94A3B8', fontSize: 9, fontWeight: '800' },
-  filterTextActive: { color: '#06101C' },
-  tableHeader: { flexDirection: 'row', paddingVertical: 10, marginTop: 8, borderBottomWidth: 1, borderBottomColor: '#1D3045' },
-  tableHeading: { flex: 1, color: '#52667E', fontSize: 8, fontWeight: '900', letterSpacing: .7 },
-  priorityColumn: { flex: 1.6 },
-  tableRow: { flexDirection: 'row', alignItems: 'center', minHeight: 56, borderBottomWidth: 1, borderBottomColor: '#142538' },
-  priorityCell: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  severity: { width: 4, height: 30, borderRadius: 2 },
-  rowTitle: { color: '#E2E8F0', fontSize: 10, fontWeight: '800' },
-  rowMeta: { color: '#52667E', fontSize: 8, marginTop: 2 },
-  rowImpact: { flex: 1, color: '#CBD5E1', fontSize: 9, fontWeight: '700' },
-  rowOwner: { color: '#CBD5E1', fontSize: 9, fontWeight: '700' },
-  rowSeverity: { fontSize: 8, fontWeight: '900', marginTop: 2 },
-  openLink: { color: '#38BDF8', fontSize: 10, fontWeight: '800' },
-  mapCanvas: { marginTop: 10, overflow: 'hidden', borderRadius: 9, backgroundColor: '#07101C' },
-  mapLegend: { position: 'absolute', left: 10, bottom: 8, flexDirection: 'row', gap: 12, padding: 7, borderRadius: 6, backgroundColor: '#07101CDD' },
-  mapLive: { color: '#38BDF8', fontSize: 8, fontWeight: '700' },
-  mapAlert: { color: '#FB7185', fontSize: 8, fontWeight: '700' },
-  mapStop: { color: '#22C55E', fontSize: 8, fontWeight: '700' },
-  bottomGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  bottomPanel: { flexGrow: 1, flexBasis: '47%', minWidth: 260 },
-  approvalRow: { flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 46, borderBottomWidth: 1, borderBottomColor: '#142538' },
-  approvalIndex: { color: '#52667E', fontSize: 9, fontWeight: '900' },
-  approvalText: { flex: 1, color: '#CBD5E1', fontSize: 10, fontWeight: '700' },
-  approvalAction: { color: '#38BDF8', fontSize: 9, fontWeight: '900' },
-  activityRow: { flexDirection: 'row', alignItems: 'center', gap: 9, minHeight: 46, borderBottomWidth: 1, borderBottomColor: '#142538' },
-  activityDot: { width: 7, height: 7, borderRadius: 4 },
-  activityText: { color: '#CBD5E1', fontSize: 10, fontWeight: '700' },
-  activityTime: { color: '#52667E', fontSize: 8, marginTop: 2 },
-  syncText: { color: '#FBBF24', textAlign: 'center', fontSize: 9, fontWeight: '700' },
+  screen: { gap: quantumSpace.lg },
+  stack: { gap: quantumSpace.md },
+  commandHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  product: { color: '#38BDF8', fontSize: 11, fontWeight: '900', letterSpacing: 1.4 },
+  title: { color: '#fff', fontSize: 28, fontWeight: '900', marginTop: 2 },
+  subtitle: { color: '#D9E4EF', fontSize: 13, marginTop: 6 },
+  profile: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  profileText: { color: '#38BDF8', fontSize: 16, fontWeight: '900' },
+  online: {
+    position: 'absolute',
+    right: 9,
+    top: 9,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: quantumColors.success,
+  },
+  workspaceRail: { gap: quantumSpace.sm, paddingRight: quantumSpace.lg },
+  workspaceTab: {
+    minHeight: 40,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: quantumSpace.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: quantumSpace.sm,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  workspaceTabActive: {
+    borderColor: '#38BDF8',
+    backgroundColor: 'rgba(56, 189, 248, 0.14)',
+  },
+  workspaceDot: { width: 8, height: 8, borderRadius: 4 },
+  workspaceTabLabel: { color: '#fff', fontSize: 12, fontWeight: '800' },
+  notice: {
+    borderRadius: 12,
+    backgroundColor: 'rgba(56, 189, 248, 0.12)',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.35)',
+  },
+  noticeText: { color: '#BEE9FF', fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  loadingRow: { alignItems: 'center', justifyContent: 'center', gap: quantumSpace.sm, paddingVertical: 28 },
+  loadingText: { color: '#D9E4EF', fontSize: 13 },
+  sectionHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: quantumSpace.md },
+  sectionTitle: { color: '#fff', fontSize: 19, fontWeight: '900' },
+  sectionCaption: { color: '#9FB3C8', fontSize: 12, marginTop: 4 },
+  live: { color: '#38BDF8', fontSize: 11, fontWeight: '900', letterSpacing: 1 },
+  kpiGrid: { gap: quantumSpace.md },
+  kpiPanel: { gap: quantumSpace.sm },
+  kpiLabel: { color: '#B6D7EA', fontSize: 12, fontWeight: '700' },
+  kpiValue: { color: '#fff', fontSize: 26, fontWeight: '900' },
+  kpiSub: { color: '#9FB3C8', fontSize: 12 },
+  intelligenceRow: { flexDirection: 'row', gap: quantumSpace.sm, flexWrap: 'wrap' },
+  intelligenceMetric: {
+    flex: 1,
+    minWidth: 88,
+    padding: quantumSpace.sm,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  metricLabel: { color: '#9FB3C8', fontSize: 11, fontWeight: '700' },
+  metricValue: { color: '#fff', fontSize: 20, fontWeight: '900', marginTop: 4 },
+  launcherGrid: { gap: quantumSpace.md },
+  launcherCard: { gap: quantumSpace.sm },
+  launcherRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
+  panel: {
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(0, 26, 61, 0.78)',
+    padding: quantumSpace.lg,
+    gap: quantumSpace.md,
+  },
+  emptyText: { color: '#B8C8D8', fontSize: 13, lineHeight: 19 },
+  actionCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    padding: quantumSpace.md,
+    gap: quantumSpace.sm,
+  },
+  actionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: quantumSpace.sm },
+  statusPill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+  statusPillText: { fontSize: 11, fontWeight: '900' },
+  approvalBadge: { color: '#DDEFFF', fontSize: 11, fontWeight: '800' },
+  actionTitle: { color: '#fff', fontSize: 16, fontWeight: '900' },
+  actionSummary: { color: '#D9E4EF', fontSize: 13, lineHeight: 19 },
+  actionValue: { color: '#9DE6BA', fontSize: 12, fontWeight: '800' },
+  actionButtonRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm, alignItems: 'center' },
+  actionButton: {
+    minHeight: 34,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  approveButton: { backgroundColor: '#26E07F', borderColor: '#26E07F' },
+  rejectButton: { backgroundColor: '#FF5470', borderColor: '#FF5470' },
+  evidenceButton: { borderColor: '#38BDF8', backgroundColor: 'transparent' },
+  actionButtonText: { color: '#05060A', fontSize: 12, fontWeight: '900' },
+  evidenceButtonText: { color: '#38BDF8', fontSize: 12, fontWeight: '900' },
+  reversedText: { color: '#FCA5A5', fontSize: 12, fontWeight: '800' },
+  trailBox: {
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
+    padding: quantumSpace.md,
+    gap: quantumSpace.sm,
+  },
+  trailRow: { flexDirection: 'row', justifyContent: 'space-between', gap: quantumSpace.md },
+  trailType: { color: '#DDEFFF', fontSize: 12, fontWeight: '700', flex: 1 },
+  trailTime: { color: '#8AA0B5', fontSize: 11, fontWeight: '700' },
+  activityRow: { flexDirection: 'row', gap: quantumSpace.sm, alignItems: 'flex-start' },
+  activityDot: { width: 10, height: 10, borderRadius: 5, marginTop: 4 },
+  activityCopy: { flex: 1, gap: 2 },
+  activityText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  activityTime: { color: '#8AA0B5', fontSize: 11 },
+  syncText: { color: '#BEE9FF', fontSize: 12, textAlign: 'center', fontWeight: '700' },
 })

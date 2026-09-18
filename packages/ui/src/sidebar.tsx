@@ -9,11 +9,14 @@ function ActualSidebar({ config }: { config?: BrandConsoleConfig }) {
   const theme = { '--accent': config?.colors.accent ?? '#4A90E2' } as React.CSSProperties
   const grouped: Record<string, Array<{ label: string; href: string; icon: string }>> = {
     'Core.Operations': [
-      { label: 'Retail', href: '/modules/retail', icon: '▣' },
-      { label: 'Logistics', href: '/modules/logistics', icon: '↗' },
-      { label: 'Finance', href: '/modules/finance', icon: '£' },
+      { label: 'Orders', href: '/modules/orders', icon: '▦' },
+      { label: 'Inventory', href: '/modules/inventory', icon: '▣' },
+      { label: 'Customers', href: '/modules/customers', icon: '◍' },
+      { label: 'Accounting', href: '/modules/accounting', icon: '£' },
+      { label: 'Delivery', href: '/modules/logistics', icon: '↗' },
       { label: 'Marketing', href: '/marketing', icon: '◎' },
-      { label: 'Health', href: '/modules/health', icon: '✚' },
+      { label: 'Messaging', href: '/modules/messaging', icon: '✉' },
+      { label: 'Monitoring', href: '/modules/monitoring', icon: '◈' },
       { label: 'Fulfilment-to-Cash', href: '/fulfilment-to-cash', icon: '⇄' },
     ],
     'Core.Workforce': [

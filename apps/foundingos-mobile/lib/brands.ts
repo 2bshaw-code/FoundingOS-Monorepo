@@ -5,17 +5,20 @@
 import type { ImageSourcePropType } from 'react-native'
 declare const require: (path: string) => ImageSourcePropType
 
-// Kept as BRANDS temporarily for route/store compatibility while the original multi-brand
-// mobile prototype is migrated. Customer-facing values represent FoundingOS workspaces.
+export type BrandAvailability = 'overview' | 'live' | 'not_connected'
+
 export type Brand = {
   id?: string
   slug: string
   name: string
+  shortName: string
   default?: boolean
   logo: ImageSourcePropType
   accent: string
   tagline: string
   modules: string[]
+  availability: BrandAvailability
+  homeLabel: string
   theme?: {
     background: string
     surface: string
@@ -36,11 +39,14 @@ export const BRANDS: Brand[] = [
     id: 'foundingos',
     slug: 'foundingos',
     name: 'FoundingOS Home',
+    shortName: 'Home',
     default: true,
     logo: require('../assets/logos/foundingos.png'),
     accent: FOUNDINGOS_ACCENT,
-    tagline: 'One account. Every enabled workspace connected.',
-    modules: ['Operations', 'Workforce', 'Intelligence', 'Event Feed', 'WhatsApp'],
+    tagline: 'One shell for Core.Operations, Core.Workforce, and Core.Intelligence.',
+    modules: ['Business Pulse', 'Approvals', 'Messaging', 'Event Feed'],
+    availability: 'overview',
+    homeLabel: 'Overview',
     theme: {
       background: FOUNDINGOS_BASE,
       surface: FOUNDINGOS_SURFACE_GRADIENT,
@@ -49,10 +55,40 @@ export const BRANDS: Brand[] = [
       quantumLines: 'enabled',
     },
   },
-  { id: 'retail', slug: 'retail', name: 'Retail Workspace', accent: '#00A651', logo: require('../assets/logos/retail.png'), tagline: 'Products, stock, customers, orders, and stores.', modules: ['POS', 'Inventory', 'Customers', 'Orders', 'Products', 'Stores'] },
-  { id: 'logistics', slug: 'logistics', name: 'Logistics Workspace', accent: '#DC143C', logo: require('../assets/logos/logistics.png'), tagline: 'Fleet, routes, dispatch, warehousing, and delivery.', modules: ['Fleet', 'Routes', 'Dispatch', 'Warehousing', 'Deliveries', 'Tracking'] },
-  { id: 'finance', slug: 'finance', name: 'Finance Workspace', accent: '#A8A8A8', logo: require('../assets/logos/finance.png'), tagline: 'Invoices, cashflow, reconciliation, and risk.', modules: ['Invoicing', 'Cashflow', 'Reconciliation', 'Payables', 'Receivables', 'Reporting'] },
-  { id: 'marketing', slug: 'marketing', name: 'Marketing Workspace', accent: '#EC4899', logo: require('../assets/logos/foundingos.png'), tagline: 'Campaigns, audiences, content, and revenue attribution.', modules: ['Campaigns', 'Audiences', 'Content', 'Scheduling', 'Analytics', 'Attribution'] },
-  { id: 'talent', slug: 'talent', name: 'Talent Workspace', accent: '#FF7A00', logo: require('../assets/logos/talent.png'), tagline: 'Candidates, jobs, pipelines, interviews, and offers.', modules: ['Candidates', 'Jobs', 'Pipelines', 'Interviews', 'Offers', 'Onboarding'] },
-  { id: 'health', slug: 'health', name: 'Health Workspace', accent: '#4FC3F7', logo: require('../assets/logos/health.png'), tagline: 'Patients, appointments, records, billing, and supplies.', modules: ['Patients', 'Appointments', 'Records', 'Treatments', 'Billing', 'Supplies'] },
+  {
+    id: 'core_operations',
+    slug: 'core_operations',
+    name: 'Core.Operations',
+    shortName: 'Ops',
+    logo: require('../assets/logos/foundingos.png'),
+    accent: '#26E07F',
+    tagline: 'Live operations, governed actions, campaigns, delivery, and shared records.',
+    modules: ['Orders', 'Invoices', 'Inventory', 'Marketing', 'Messaging'],
+    availability: 'live',
+    homeLabel: 'Core.Operations',
+  },
+  {
+    id: 'core_workforce',
+    slug: 'core_workforce',
+    name: 'Core.Workforce',
+    shortName: 'Workforce',
+    logo: require('../assets/logos/talent.png'),
+    accent: '#FFB703',
+    tagline: 'Live hiring pipeline with governed shortlisting actions.',
+    modules: ['Roles', 'Applicants', 'Pipeline', 'Interviews'],
+    availability: 'live',
+    homeLabel: 'Core.Workforce',
+  },
+  {
+    id: 'core_intelligence',
+    slug: 'core_intelligence',
+    name: 'Core.Intelligence',
+    shortName: 'Intelligence',
+    logo: require('../assets/logos/finance.png'),
+    accent: '#A78BFA',
+    tagline: 'Live intelligence using governed action evidence from Core.Operations.',
+    modules: ['Accuracy', 'Learning', 'Signals', 'Audit Trail'],
+    availability: 'live',
+    homeLabel: 'Core.Intelligence',
+  },
 ]

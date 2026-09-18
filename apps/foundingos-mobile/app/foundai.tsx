@@ -5,5 +5,5 @@
 import { Redirect } from 'expo-router'
 
 export default function FoundAIScreen() {
-  return <Redirect href="/(app)/ai-actions" />
+  return <Redirect href="/(app)/home" />
 }
