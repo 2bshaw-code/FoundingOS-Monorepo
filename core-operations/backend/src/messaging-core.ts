@@ -8,6 +8,7 @@ import { publishEvent } from './event-feed.js'
 import { classifyMessagingIntent, extractWhatsAppMessages, type MessagingIntent, type WhatsAppInbound } from './messaging-intents.js'
 import { createCampaign, createInvoice, createOrder, invoiceDocument, operationsSummary, updateOrder } from './operations.js'
 import { sendWhatsAppText } from './whatsapp.js'
+import { getIntegrationCredentials } from './platform.js'
 
 const json = (value: unknown): Prisma.InputJsonValue =>
   JSON.parse(JSON.stringify(value ?? {})) as Prisma.InputJsonValue
@@ -139,7 +140,8 @@ async function sendAndStoreReply(input: {
   })
 
   try {
-    const result = await sendWhatsAppText(input.recipient, input.text, input.phoneNumberId) as { messages?: Array<{ id?: string }> }
+    const credentials = await getIntegrationCredentials(input.tenantId, 'whatsapp')
+    const result = await sendWhatsAppText(input.recipient, input.text, input.phoneNumberId, credentials) as { messages?: Array<{ id?: string }> }
     const providerMessageId = clean(result.messages?.[0]?.id)
     await prisma.messagingMessage.update({
       where: { id: pending.id },

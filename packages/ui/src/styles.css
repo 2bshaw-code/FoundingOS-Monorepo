@@ -1675,7 +1675,10 @@ a {
 }
 
 body:has(.complete-workspace-shell) > div > .foundingos-footer,
-body:has(.complete-workspace-shell) .foundingos-footer {
+body:has(.complete-workspace-shell) .foundingos-footer,
+body:has(.complete-workspace-access) .foundingos-footer,
+body:has(.complete-workspace-access) .found-ai-fab,
+body:has(.complete-workspace-access) .found-ai-panel {
   display: none;
 }
 
@@ -1691,6 +1694,145 @@ body:has(.complete-workspace-shell) .foundingos-footer {
   font-size: 10px;
   font-weight: 900;
   letter-spacing: .08em;
+}
+
+.complete-workspace-signout {
+  border: 1px solid #d7dfe9 !important;
+  border-radius: 7px;
+  color: #405067 !important;
+  font-size: 10px !important;
+  font-weight: 800;
+  padding: 7px 9px;
+}
+
+.complete-workspace-error {
+  background: #fff0f3;
+  border: 1px solid #f5b7c3;
+  border-radius: 7px;
+  color: #a92842;
+  font-size: 11px;
+  padding: 10px 12px;
+}
+
+.complete-workspace-save-message {
+  background: #e8f8f0;
+  border: 1px solid #a9e5c8;
+  border-radius: 7px;
+  color: #245d43;
+  font-size: 11px;
+  padding: 10px 12px;
+}
+
+.complete-workspace-access {
+  align-items: center;
+  background: radial-gradient(circle at top, #18314c, #07111f 58%);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.complete-workspace-access > section {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .35);
+  color: #172033;
+  max-width: 480px;
+  padding: 32px;
+  width: 100%;
+}
+
+.complete-workspace-access-brand {
+  align-items: center;
+  display: flex;
+  gap: 11px;
+  margin-bottom: 28px;
+}
+
+.complete-workspace-access-brand > span {
+  align-items: center;
+  background: #24c47a;
+  border-radius: 9px;
+  display: flex;
+  font-size: 18px;
+  font-weight: 900;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.complete-workspace-access-brand div {
+  display: grid;
+}
+
+.complete-workspace-access-brand small,
+.complete-workspace-access > section > p {
+  color: #718096;
+}
+
+.complete-workspace-access h1 {
+  font-size: 30px;
+  margin: 6px 0 10px;
+}
+
+.complete-workspace-access form {
+  display: grid;
+  gap: 13px;
+  margin-top: 24px;
+}
+
+.complete-workspace-access label {
+  color: #4f5f74;
+  display: grid;
+  font-size: 11px;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.complete-workspace-access input {
+  border: 1px solid #ced7e3;
+  border-radius: 7px;
+  font: inherit;
+  padding: 11px 12px;
+}
+
+.complete-workspace-access-switch {
+  background: transparent;
+  border: 0;
+  color: #3372b9;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  margin-top: 18px;
+  padding: 0;
+}
+
+.complete-workspace-checkboxes {
+  border: 1px solid #dfe5ed;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  padding: 14px;
+}
+
+.complete-workspace-checkboxes legend {
+  color: #4f5f74;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 0 5px;
+}
+
+.complete-workspace-checkboxes label {
+  align-items: center;
+  display: flex;
+  font-size: 11px;
+  gap: 7px;
+}
+
+.retail-app-table-card td .retail-app-secondary {
+  padding: 6px 9px;
 }
 
 .complete-workspace-coverage {

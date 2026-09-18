@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: foundingos
+      POSTGRES_USER: foundingos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - foundingos-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U foundingos -d foundingos"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: core-operations/backend/Dockerfile
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      DATABASE_URL: postgresql://foundingos:${POSTGRES_PASSWORD}@postgres:5432/foundingos
+      PORT: 4001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "4001:4001"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4001/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/foundingos-web/Dockerfile
+      args:
+        NEXT_PUBLIC_APP_MODE: production
+        NEXT_PUBLIC_FOUNDINGOS_API_URL: ${NEXT_PUBLIC_FOUNDINGOS_API_URL:?NEXT_PUBLIC_FOUNDINGOS_API_URL is required}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  foundingos-postgres:

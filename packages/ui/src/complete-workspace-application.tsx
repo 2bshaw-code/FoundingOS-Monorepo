@@ -2,10 +2,13 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { bootstrapProduction, getProductionSession, loginToProduction, logoutProduction, productionApiConfigured, productionModeEnabled, productionRecords, productionRequest, type ProductionSession, type ProductionWorkspaceRecord } from './workspace-production-client'
+
+const workspaceRoot = productionModeEnabled ? '/app' : '/test-workspaces'
 
 export type BusinessWorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'marketing' | 'talent' | 'health' | 'intelligence'
 
-type WorkspaceRecord = { id: string; name: string; secondary: string; value: string; status: string; owner: string; updated: string }
+type WorkspaceRecord = { id: string; backendId?: string; version?: number; name: string; secondary: string; value: string; status: string; owner: string; updated: string }
 type WorkspaceModule = { id: string; label: string; group: string; statuses?: string[] }
 type WorkspaceEvent = { id: string; workspace: BusinessWorkspaceSlug; text: string; time: string }
 type WorkspaceState = {
@@ -109,34 +112,114 @@ const seedWorkspace = (workspace: BusinessWorkspaceSlug): WorkspaceState => {
 const EVENTS_KEY = 'foundingos-shared-workspace-events-v1'
 const storageKey = (workspace: BusinessWorkspaceSlug) => `foundingos-${workspace}-complete-workspace-v1`
 
-function useWorkspaceState(workspace: BusinessWorkspaceSlug) {
-  const [state, setState] = useState<WorkspaceState>(() => seedWorkspace(workspace))
+const emptyWorkspace = (workspace: BusinessWorkspaceSlug): WorkspaceState => {
+  const seeded = seedWorkspace(workspace)
+  return { ...seeded, records: Object.fromEntries(Object.keys(seeded.records).map((key) => [key, []])), integrations: seeded.integrations.map((item) => ({ ...item, connected: false })) }
+}
+
+const displayMoney = (valuePence: number | null | undefined) => valuePence === null || valuePence === undefined
+  ? '—'
+  : new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(valuePence / 100)
+
+const fromProductionRecord = (record: ProductionWorkspaceRecord): WorkspaceRecord => ({
+  id: record.reference,
+  backendId: record.id,
+  version: record.version,
+  name: record.name,
+  secondary: String(record.data.secondary || 'Workspace record'),
+  value: record.valuePence === null || record.valuePence === undefined ? String(record.data.value || '—') : displayMoney(record.valuePence),
+  status: record.status,
+  owner: record.ownerId || String(record.data.owner || 'Unassigned'),
+  updated: new Date(record.updatedAt).toLocaleString(),
+})
+
+function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: string, session: ProductionSession | null) {
+  const production = productionModeEnabled && productionApiConfigured
+  const [state, setState] = useState<WorkspaceState>(() => production ? emptyWorkspace(workspace) : seedWorkspace(workspace))
   const [events, setEvents] = useState<WorkspaceEvent[]>([])
+  const [loading, setLoading] = useState(production)
+  const [error, setError] = useState('')
   useEffect(() => {
+    if (production) {
+      if (!session) {
+        setLoading(false)
+        return
+      }
+      setLoading(true)
+      setError('')
+      const requests: Promise<void>[] = []
+      if (!['overview', 'reports', 'forecasting', 'attribution', 'settings', 'integrations', 'automations'].includes(activeModule)) {
+        requests.push(
+          productionRecords.list(workspace, activeModule)
+            .then((records) => setState((current) => ({ ...current, records: { ...current.records, [activeModule]: records.map(fromProductionRecord) } }))),
+        )
+      }
+      if (activeModule === 'integrations') {
+        requests.push(
+          productionRequest<Array<{ id: string; provider: string; displayName: string; configuration: { category?: string }; status: string }>>('/platform/integrations')
+            .then((integrations) => setState((current) => ({ ...current, integrations: integrations.map((item) => ({ id: item.provider, name: item.displayName, category: item.configuration?.category || 'Integration', connected: item.status === 'ready' || item.status === 'configured' })) }))),
+        )
+      }
+      if (activeModule === 'settings') {
+        requests.push(productionRequest<{ businessName: string; countryCode: string } | null>('/platform/onboarding').then((onboarding) => {
+          if (onboarding) setState((current) => ({ ...current, settings: { ...current.settings, businessName: onboarding.businessName, region: onboarding.countryCode } }))
+        }))
+      }
+      requests.push(
+        productionRequest<Array<{ id: string; source: BusinessWorkspaceSlug; type: string; createdAt: string }>>('/platform/events?limit=20')
+          .then((items) => setEvents(items.map((item) => ({ id: item.id, workspace: workspaceOrder.includes(item.source) ? item.source : 'intelligence', text: item.type.replaceAll('.', ' '), time: new Date(item.createdAt).toLocaleString() })))),
+      )
+      void Promise.all(requests).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Workspace data could not be loaded')).finally(() => setLoading(false))
+      return
+    }
     const stored = window.localStorage.getItem(storageKey(workspace))
     const storedEvents = window.localStorage.getItem(EVENTS_KEY)
     if (stored) setState(JSON.parse(stored) as WorkspaceState)
     if (storedEvents) setEvents(JSON.parse(storedEvents) as WorkspaceEvent[])
-  }, [workspace])
+    setLoading(false)
+  }, [activeModule, production, session, workspace])
   const update = (mutate: (current: WorkspaceState) => WorkspaceState, eventText?: string) => {
     setState((current) => {
       const next = mutate(current)
-      window.localStorage.setItem(storageKey(workspace), JSON.stringify(next))
+      if (!production) window.localStorage.setItem(storageKey(workspace), JSON.stringify(next))
       return next
     })
     if (eventText) {
       setEvents((current) => {
         const next = [{ id: `${workspace}-${Date.now()}`, workspace, text: eventText, time: 'Now' }, ...current].slice(0, 40)
-        window.localStorage.setItem(EVENTS_KEY, JSON.stringify(next))
+        if (!production) window.localStorage.setItem(EVENTS_KEY, JSON.stringify(next))
         return next
       })
     }
   }
+  const createRecord = async (module: string, record: WorkspaceRecord) => {
+    if (!production) {
+      update((current) => ({ ...current, records: { ...current.records, [module]: [record, ...(current.records[module] ?? [])] } }), `${module}: ${record.name} created`)
+      return record
+    }
+    const numericValue = Number(record.value.replace(/[^0-9.-]/g, ''))
+    const created = await productionRecords.create(workspace, module, { reference: record.id, name: record.name, status: record.status, ownerId: record.owner, valuePence: Number.isFinite(numericValue) ? Math.round(numericValue * 100) : null, data: { secondary: record.secondary, value: record.value, owner: record.owner } })
+    const mapped = fromProductionRecord(created)
+    update((current) => ({ ...current, records: { ...current.records, [module]: [mapped, ...(current.records[module] ?? [])] } }))
+    return mapped
+  }
+  const advanceRecord = async (module: string, record: WorkspaceRecord, status: string) => {
+    if (production && !record.backendId) throw new Error('Production record identifier is missing')
+    const nextRecord = production
+      ? fromProductionRecord(await productionRecords.update(record.backendId!, { status, version: record.version }))
+      : { ...record, status, updated: 'Now' }
+    update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? nextRecord : item) } }), `${module}: ${record.name} moved to ${status}`)
+  }
+  const publishHandoff = async (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => {
+    if (production) await productionRequest('/platform/events', { method: 'POST', body: JSON.stringify({ type: 'workspace.handoff.requested', source: workspace, payload: { module, recordId: record.backendId, reference: record.id, target } }) })
+    update((current) => current, `${module}: ${record.name} handed to ${configs[target].label}`)
+  }
   const reset = () => {
+    if (production) return
     window.localStorage.removeItem(storageKey(workspace))
     setState(seedWorkspace(workspace))
   }
-  return { state, events, update, reset }
+  return { state, events, update, reset, loading, error, production, createRecord, advanceRecord, publishHandoff }
 }
 
 function WorkspaceHeading({ eyebrow, title, copy, action }: { eyebrow: string; title: string; copy: string; action?: React.ReactNode }) {
@@ -154,35 +237,69 @@ function Overview({ workspace, config, state, events }: { workspace: BusinessWor
     <section className="retail-app-metrics">{config.metrics.map((metric) => <Metric key={metric.label} {...metric} />)}</section>
     <section className="retail-app-dashboard-grid">
       <article className="retail-app-panel retail-app-chart-panel"><div className="retail-app-panel-heading"><div><p>Performance</p><h2>Seven-day operating trend</h2></div><span>Live simulation</span></div><svg viewBox="0 0 620 220" role="img" aria-label={`${config.label} seven-day trend`}><defs><linearGradient id={`${workspace}-trend`} x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor={config.accent} stopOpacity=".38" /><stop offset="1" stopColor={config.accent} stopOpacity="0" /></linearGradient></defs>{[35, 80, 125, 170].map((y) => <line key={y} stroke="#dfe5ed" x1="30" x2="600" y1={y} y2={y} />)}<path d="M30 175 L120 150 L210 159 L300 112 L390 126 L480 73 L600 39 L600 205 L30 205 Z" fill={`url(#${workspace}-trend)`} /><polyline fill="none" points="30,175 120,150 210,159 300,112 390,126 480,73 600,39" stroke={config.accent} strokeLinecap="round" strokeLinejoin="round" strokeWidth="5" /></svg></article>
-      <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Priority queue</p><h2>Work needing attention</h2></div></div><div className="retail-app-priorities">{operational.map((item, index) => <Link href={`/test-workspaces/${workspace}/${item.id}`} key={item.id}><i data-tone={index < 2 ? 'risk' : 'watch'} /><div><strong>{state.records[item.id]?.[0]?.name}</strong><span>{item.label} · {state.records[item.id]?.[0]?.status}</span></div><b>→</b></Link>)}</div></article>
+      <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Priority queue</p><h2>Work needing attention</h2></div></div><div className="retail-app-priorities">{operational.map((item, index) => <Link href={`${workspaceRoot}/${workspace}/${item.id}`} key={item.id}><i data-tone={index < 2 ? 'risk' : 'watch'} /><div><strong>{state.records[item.id]?.[0]?.name}</strong><span>{item.label} · {state.records[item.id]?.[0]?.status}</span></div><b>→</b></Link>)}</div></article>
     </section>
     <section className="retail-app-dashboard-grid lower">
-      <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Connected system</p><h2>Workspace coverage</h2></div></div><div className="complete-workspace-coverage">{config.modules.slice(1, 9).map((item) => <Link href={`/test-workspaces/${workspace}/${item.id}`} key={item.id}><strong>{state.records[item.id]?.length ?? 0}</strong><span>{item.label}</span></Link>)}</div></article>
-      <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Shared backbone</p><h2>Latest cross-workspace events</h2></div><Link href="/test-workspaces/intelligence/event-feed">View feed</Link></div><ul className="retail-app-activity">{(events.length ? events : [{ id: '1', workspace, text: `${config.label} workspace opened`, time: 'Now' }, { id: '2', workspace: 'finance' as const, text: 'Payment reconciled to customer order', time: '24m' }, { id: '3', workspace: 'marketing' as const, text: 'Campaign revenue attribution updated', time: '42m' }]).slice(0, 5).map((event) => <li key={event.id}><i /><span><strong>{configs[event.workspace].label}</strong> · {event.text}</span><span>{event.time}</span></li>)}</ul></article>
+      <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Connected system</p><h2>Workspace coverage</h2></div></div><div className="complete-workspace-coverage">{config.modules.slice(1, 9).map((item) => <Link href={`${workspaceRoot}/${workspace}/${item.id}`} key={item.id}><strong>{state.records[item.id]?.length ?? 0}</strong><span>{item.label}</span></Link>)}</div></article>
+      <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Shared backbone</p><h2>Latest cross-workspace events</h2></div><Link href={`${workspaceRoot}/intelligence/event-feed`}>View feed</Link></div><ul className="retail-app-activity">{(events.length ? events : [{ id: '1', workspace, text: `${config.label} workspace opened`, time: 'Now' }, { id: '2', workspace: 'finance' as const, text: 'Payment reconciled to customer order', time: '24m' }, { id: '3', workspace: 'marketing' as const, text: 'Campaign revenue attribution updated', time: '42m' }]).slice(0, 5).map((event) => <li key={event.id}><i /><span><strong>{configs[event.workspace].label}</strong> · {event.text}</span><span>{event.time}</span></li>)}</ul></article>
     </section>
   </>
 }
 
-function RecordsPage({ workspace, config, item, state, update }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; update: (mutate: (current: WorkspaceState) => WorkspaceState, eventText?: string) => void }) {
+function RecordsPage({ workspace, config, item, state, createRecord, advanceRecord, publishHandoff }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
   const records = state.records[item.id] ?? []
   const statuses = statusFor(item)
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState(records[0]?.id)
   const [creating, setCreating] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const visible = records.filter((record) => `${record.id} ${record.name} ${record.secondary} ${record.status}`.toLowerCase().includes(query.toLowerCase()))
   const selected = records.find((record) => record.id === selectedId) ?? records[0]
-  const create = (event: FormEvent<HTMLFormElement>) => {
+  const create = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    setSaving(true)
+    setError('')
     const form = new FormData(event.currentTarget)
     const record: WorkspaceRecord = { id: `${item.id.slice(0, 3).toUpperCase()}-${100 + records.length + 1}`, name: String(form.get('name')), secondary: String(form.get('secondary')), value: String(form.get('value')), status: statuses[0], owner: String(form.get('owner')), updated: 'Now' }
-    update((current) => ({ ...current, records: { ...current.records, [item.id]: [record, ...(current.records[item.id] ?? [])] } }), `${item.label}: ${record.name} created`)
-    setSelectedId(record.id)
-    setCreating(false)
+    try {
+      const created = await createRecord(item.id, record)
+      setSelectedId(created.id)
+      setCreating(false)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Record could not be created')
+    } finally {
+      setSaving(false)
+    }
   }
-  const advance = () => {
+  const advance = async () => {
     if (!selected) return
     const next = statuses[Math.min(statuses.indexOf(selected.status) + 1, statuses.length - 1)]
-    update((current) => ({ ...current, records: { ...current.records, [item.id]: current.records[item.id].map((record) => record.id === selected.id ? { ...record, status: next, updated: 'Now' } : record) } }), `${item.label}: ${selected.name} moved to ${next}`)
+    setSaving(true)
+    setError('')
+    try {
+      await advanceRecord(item.id, selected, next)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Record could not be updated')
+    } finally {
+      setSaving(false)
+    }
+  }
+  const collectPayment = async () => {
+    if (!selected?.backendId) return
+    setSaving(true)
+    setError('')
+    try {
+      const checkout = await productionRequest<{ url: string }>('/platform/payments/checkout', {
+        method: 'POST',
+        headers: { 'Idempotency-Key': crypto.randomUUID() },
+        body: JSON.stringify({ workspace, recordId: selected.backendId, currency: 'GBP' }),
+      })
+      window.location.assign(checkout.url)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Stripe Checkout could not be created')
+      setSaving(false)
+    }
   }
   const handoffTarget = workspaceOrder[(workspaceOrder.indexOf(workspace) + 1) % workspaceOrder.length]
   return <>
@@ -191,9 +308,9 @@ function RecordsPage({ workspace, config, item, state, update }: { workspace: Bu
     <div className="retail-app-toolbar"><input aria-label={`Search ${item.label}`} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${item.label.toLowerCase()}`} value={query} /><span className="retail-app-record-count">{visible.length} matching</span><button onClick={() => window.print()} type="button">Export / print</button></div>
     <section className="retail-app-record-layout">
       <div className="retail-app-table-card"><div className="retail-app-panel-heading"><div><p>{item.group}</p><h2>{visible.length} records</h2></div></div><div className="retail-app-table-scroll"><table><thead><tr><th>Record</th><th>Context</th><th>Value</th><th>Status</th><th>Owner</th><th>Updated</th></tr></thead><tbody>{visible.map((record) => <tr className={selected?.id === record.id ? 'selected' : ''} key={record.id} onClick={() => setSelectedId(record.id)}><td><strong>{record.name}</strong><small>{record.id}</small></td><td>{record.secondary}</td><td>{record.value}</td><td><span className={`retail-app-status status-${record.status.toLowerCase().replaceAll(' ', '-')}`}>{record.status}</span></td><td>{record.owner}</td><td>{record.updated}</td></tr>)}</tbody></table></div></div>
-      {selected ? <aside className="retail-app-detail"><p>Selected record</p><h2>{selected.name}</h2><strong>{selected.id}</strong><dl><div><dt>Workflow</dt><dd>{item.label}</dd></div><div><dt>Status</dt><dd>{selected.status}</dd></div><div><dt>Owner</dt><dd>{selected.owner}</dd></div><div><dt>Value</dt><dd>{selected.value}</dd></div><div><dt>Updated</dt><dd>{selected.updated}</dd></div></dl><div className="retail-app-stage">{statuses.map((status) => <span className={status === selected.status ? 'active' : ''} key={status}>{status}</span>)}</div>{selected.status !== statuses.at(-1) ? <button className="retail-app-primary" onClick={advance} type="button">Move to {statuses[Math.min(statuses.indexOf(selected.status) + 1, statuses.length - 1)]}</button> : null}<button className="retail-app-secondary" onClick={() => update((current) => current, `${item.label}: ${selected.name} handed to ${configs[handoffTarget].label}`)} type="button">Handoff to {configs[handoffTarget].label}</button></aside> : null}
+      {selected ? <aside className="retail-app-detail"><p>Selected record</p><h2>{selected.name}</h2><strong>{selected.id}</strong><dl><div><dt>Workflow</dt><dd>{item.label}</dd></div><div><dt>Status</dt><dd>{selected.status}</dd></div><div><dt>Owner</dt><dd>{selected.owner}</dd></div><div><dt>Value</dt><dd>{selected.value}</dd></div><div><dt>Updated</dt><dd>{selected.updated}</dd></div></dl><div className="retail-app-stage">{statuses.map((status) => <span className={status === selected.status ? 'active' : ''} key={status}>{status}</span>)}</div>{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}{productionModeEnabled && item.id === 'payments' && selected.status !== 'Paid' ? <button className="retail-app-primary" disabled={saving || !selected.backendId} onClick={() => void collectPayment()} type="button">Collect with Stripe</button> : selected.status !== statuses.at(-1) ? <button className="retail-app-primary" disabled={saving} onClick={() => void advance()} type="button">Move to {statuses[Math.min(statuses.indexOf(selected.status) + 1, statuses.length - 1)]}</button> : null}<button className="retail-app-secondary" disabled={saving} onClick={() => void publishHandoff(item.id, selected, handoffTarget).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Handoff could not be published'))} type="button">Handoff to {configs[handoffTarget].label}</button></aside> : null}
     </section>
-    {creating ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={create}><div><p>{item.label}</p><h2>Create a record</h2></div><label>Name<input name="name" required /></label><label>Context<input name="secondary" required /></label><div className="retail-app-form-grid"><label>Value<input name="value" placeholder="£0 or priority" required /></label><label>Owner<select name="owner"><option>Maya</option><option>Noah</option><option>Ava</option><option>Bobby</option></select></label></div><footer><button className="retail-app-secondary" onClick={() => setCreating(false)} type="button">Cancel</button><button className="retail-app-primary" type="submit">Create record</button></footer></form></div> : null}
+    {creating ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void create(event)}><div><p>{item.label}</p><h2>Create a record</h2></div><label>Name<input name="name" required /></label><label>Context<input name="secondary" required /></label><div className="retail-app-form-grid"><label>Value<input name="value" placeholder="£0 or priority" required /></label><label>Owner<select name="owner"><option>Maya</option><option>Noah</option><option>Ava</option><option>Bobby</option></select></label></div>{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setCreating(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Saving…' : 'Create record'}</button></footer></form></div> : null}
   </>
 }
 
@@ -201,8 +318,46 @@ function AutomationsPage({ config, state, update }: { config: WorkspaceConfig; s
   return <><WorkspaceHeading eyebrow="Workflow engine" title="Automations" copy={`Control ${config.label.toLowerCase()} triggers, approvals, confirmations, and cross-workspace handoffs.`} /><div className="retail-app-automation-grid">{state.automations.map((automation) => <article className="retail-app-panel" key={automation.id}><div className="retail-app-panel-heading"><div><p>{automation.enabled ? 'Active' : 'Paused'}</p><h2>{automation.name}</h2></div><button aria-label={`Toggle ${automation.name}`} className={`retail-app-toggle ${automation.enabled ? 'active' : ''}`} onClick={() => update((current) => ({ ...current, automations: current.automations.map((item) => item.id === automation.id ? { ...item, enabled: !item.enabled } : item) }), `${automation.name} ${automation.enabled ? 'paused' : 'enabled'}`)} type="button"><i /></button></div><p>Runs against the shared FoundingOS event feed with explicit confirmation and audit history.</p><footer><span>{automation.runs} runs</span><span>{automation.enabled ? 'Monitoring events' : 'No events processed'}</span></footer></article>)}</div></>
 }
 
-function IntegrationsPage({ state, update }: { state: WorkspaceState; update: (mutate: (current: WorkspaceState) => WorkspaceState, eventText?: string) => void }) {
-  return <><WorkspaceHeading eyebrow="Connected platform" title="Integrations" copy="Connect channels and systems through one governed FoundingOS integration layer." /><div className="retail-app-automation-grid">{state.integrations.map((integration) => <article className="retail-app-panel" key={integration.id}><div className="retail-app-panel-heading"><div><p>{integration.category}</p><h2>{integration.name}</h2></div><span className={`retail-app-status ${integration.connected ? 'status-active' : 'status-draft'}`}>{integration.connected ? 'Connected' : 'Available'}</span></div><p>{integration.connected ? 'Data is flowing into the shared event backbone.' : 'Ready to configure with production credentials.'}</p><button className={integration.connected ? 'retail-app-secondary' : 'retail-app-primary'} onClick={() => update((current) => ({ ...current, integrations: current.integrations.map((item) => item.id === integration.id ? { ...item, connected: !item.connected } : item) }), `${integration.name} ${integration.connected ? 'disconnected' : 'connected'}`)} type="button">{integration.connected ? 'Disconnect demo' : 'Connect demo'}</button></article>)}</div></>
+const providerCatalog = [
+  { id: 'whatsapp', name: 'WhatsApp Cloud API', category: 'Messaging', fields: ['accessToken', 'phoneNumberId', 'verifyToken', 'appSecret'] },
+  { id: 'stripe', name: 'Stripe', category: 'Payments', fields: ['secretKey', 'webhookSecret'] },
+  { id: 'resend', name: 'Resend', category: 'Email', fields: ['apiKey', 'fromAddress'] },
+  { id: 'twilio', name: 'Twilio', category: 'SMS', fields: ['accountSid', 'authToken', 'fromNumber'] },
+  { id: 'aws', name: 'AWS', category: 'Storage', fields: ['region', 'bucket', 'accessKeyId', 'secretAccessKey'] },
+  { id: 'sentry', name: 'Sentry', category: 'Monitoring', fields: ['dsn'] },
+  { id: 'clerk', name: 'Clerk', category: 'Identity', fields: ['secretKey', 'publishableKey'] },
+] as const
+
+function IntegrationsPage({ state, update, production }: { state: WorkspaceState; update: (mutate: (current: WorkspaceState) => WorkspaceState, eventText?: string) => void; production: boolean }) {
+  const [selectedProvider, setSelectedProvider] = useState<(typeof providerCatalog)[number] | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const integrations = production
+    ? providerCatalog.map((provider) => ({ ...provider, connected: state.integrations.some((item) => item.id === provider.id && item.connected) }))
+    : state.integrations.map((integration) => ({ ...integration, fields: [] as readonly string[] }))
+  const connect = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!selectedProvider) return
+    setSaving(true)
+    setError('')
+    const form = new FormData(event.currentTarget)
+    const credentials = Object.fromEntries(selectedProvider.fields.map((field) => [field, String(form.get(field) || '')]))
+    try {
+      await productionRequest(`/platform/integrations/${selectedProvider.id}`, { method: 'PUT', body: JSON.stringify({ displayName: selectedProvider.name, configuration: { category: selectedProvider.category }, credentials }) })
+      const checked = await productionRequest<{ status: string }>(`/platform/integrations/${selectedProvider.id}/check`, { method: 'POST', body: '{}' })
+      update((current) => ({ ...current, integrations: [...current.integrations.filter((item) => item.id !== selectedProvider.id), { id: selectedProvider.id, name: selectedProvider.name, category: selectedProvider.category, connected: checked.status === 'ready' }] }))
+      if (checked.status !== 'ready') {
+        setError('Credentials were stored, but this provider requires an operator verification before it is marked ready.')
+      } else {
+        setSelectedProvider(null)
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Integration could not be connected')
+    } finally {
+      setSaving(false)
+    }
+  }
+  return <><WorkspaceHeading eyebrow="Connected platform" title="Integrations" copy="Connect channels and systems through one governed FoundingOS integration layer. Credentials are encrypted before storage and never returned to the browser." /><div className="retail-app-automation-grid">{integrations.map((integration) => <article className="retail-app-panel" key={integration.id}><div className="retail-app-panel-heading"><div><p>{integration.category}</p><h2>{integration.name}</h2></div><span className={`retail-app-status ${integration.connected ? 'status-active' : 'status-draft'}`}>{integration.connected ? 'Connected' : 'Available'}</span></div><p>{integration.connected ? 'Configuration passed the platform readiness check.' : 'Add provider credentials to activate this service.'}</p><button className={integration.connected ? 'retail-app-secondary' : 'retail-app-primary'} onClick={() => production ? setSelectedProvider(providerCatalog.find((item) => item.id === integration.id) || null) : update((current) => ({ ...current, integrations: current.integrations.map((item) => item.id === integration.id ? { ...item, connected: !item.connected } : item) }), `${integration.name} ${integration.connected ? 'disconnected' : 'connected'}`)} type="button">{production ? (integration.connected ? 'Replace credentials' : 'Configure') : (integration.connected ? 'Disconnect demo' : 'Connect demo')}</button></article>)}</div>{selectedProvider ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void connect(event)}><div><p>{selectedProvider.category}</p><h2>Connect {selectedProvider.name}</h2></div>{selectedProvider.fields.map((field) => <label key={field}>{field.replace(/([A-Z])/g, ' $1')}<input autoComplete="off" name={field} required type={field.toLowerCase().includes('secret') || field.toLowerCase().includes('token') || field.toLowerCase().includes('key') ? 'password' : 'text'} /></label>)}{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setSelectedProvider(null)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Checking…' : 'Save and check'}</button></footer></form></div> : null}</>
 }
 
 function ReportsPage({ config }: { config: WorkspaceConfig }) {
@@ -216,30 +371,123 @@ function EventFeedPage({ events }: { events: WorkspaceEvent[] }) {
   return <><WorkspaceHeading eyebrow="Shared backbone" title="Shared Event Feed" copy="Every confirmed action, automation, and cross-workspace handoff appears in one traceable operating timeline." /><div className="retail-app-table-card full"><div className="retail-app-panel-heading"><div><p>Event graph</p><h2>{visible.length} recent events</h2></div><span>Newest first</span></div><div className="complete-workspace-event-feed">{visible.map((event) => <article key={event.id}><i style={{ background: configs[event.workspace].accent }} /><div><strong>{event.text}</strong><span>{configs[event.workspace].label} · {configs[event.workspace].suite}</span></div><time>{event.time}</time></article>)}</div></div></>
 }
 
-function SettingsPage({ config, state, update }: { config: WorkspaceConfig; state: WorkspaceState; update: (mutate: (current: WorkspaceState) => WorkspaceState, eventText?: string) => void }) {
-  const save = (event: FormEvent<HTMLFormElement>) => {
+type ProductionTeamMember = { id: string; email: string; role: string; active: boolean; permissions?: { workspaces?: string[] }; updatedAt?: string }
+
+function TeamPage({ workspace }: { workspace: BusinessWorkspaceSlug }) {
+  const [members, setMembers] = useState<ProductionTeamMember[]>([])
+  const [inviting, setInviting] = useState(false)
+  const [temporaryPassword, setTemporaryPassword] = useState('')
+  const [error, setError] = useState('')
+  const load = () => productionRequest<ProductionTeamMember[]>('/platform/team').then(setMembers)
+  useEffect(() => { void load().catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Team could not be loaded')) }, [])
+  const invite = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    setError('')
     const form = new FormData(event.currentTarget)
-    update((current) => ({ ...current, settings: { businessName: String(form.get('businessName')), region: String(form.get('region')), notifications: form.get('notifications') === 'on' } }), `${config.label} settings updated`)
+    try {
+      const result = await productionRequest<{ user: ProductionTeamMember; temporaryPassword: string }>('/platform/team', { method: 'POST', body: JSON.stringify({ email: form.get('email'), role: form.get('role'), workspaces: form.getAll('workspaces') }) })
+      setMembers((current) => [...current, result.user])
+      setTemporaryPassword(result.temporaryPassword)
+      setInviting(false)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Invitation could not be created')
+    }
   }
-  return <><WorkspaceHeading eyebrow="Administration" title="Settings" copy={`Configure the ${config.label} workspace identity, region, access, and notifications.`} /><form className="retail-app-settings retail-app-panel" onSubmit={save}><section><h2>Workspace identity</h2><p>Shared across records, reports, notifications, and integrations.</p><label>Business name<input defaultValue={state.settings.businessName} name="businessName" required /></label><label>Operating region<select defaultValue={state.settings.region} name="region"><option>United Kingdom</option><option>Nigeria</option><option>United States</option><option>European Union</option></select></label></section><section><h2>Event notifications</h2><label className="retail-app-check"><input defaultChecked={state.settings.notifications} name="notifications" type="checkbox" /> Notify owners about high-priority events and required approvals</label></section><footer><button className="retail-app-primary" type="submit">Save settings</button></footer></form></>
+  const toggle = async (member: ProductionTeamMember) => {
+    setError('')
+    try {
+      const updated = await productionRequest<ProductionTeamMember>(`/platform/team/${member.id}`, { method: 'PATCH', body: JSON.stringify({ active: !member.active }) })
+      setMembers((current) => current.map((item) => item.id === member.id ? { ...item, ...updated } : item))
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Team member could not be updated')
+    }
+  }
+  return <><WorkspaceHeading eyebrow="Administration" title="Team & access" copy="Invite operators, assign role-based workspace access, and suspend access without deleting audit history." action={<button className="retail-app-primary" onClick={() => setInviting(true)} type="button">+ Invite team member</button>} />{temporaryPassword ? <div className="retail-product-notice"><span>!</span>One-time temporary password: <strong>{temporaryPassword}</strong>. Share it securely and require the user to change it after sign-in.<button onClick={() => setTemporaryPassword('')} type="button">×</button></div> : null}{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<div className="retail-app-table-card full"><div className="retail-app-panel-heading"><div><p>Access control</p><h2>{members.length} team members</h2></div></div><div className="retail-app-table-scroll"><table><thead><tr><th>Email</th><th>Role</th><th>Workspaces</th><th>Status</th><th>Action</th></tr></thead><tbody>{members.map((member) => <tr key={member.id}><td><strong>{member.email}</strong></td><td>{member.role.replaceAll('_', ' ')}</td><td>{member.permissions?.workspaces?.join(', ') || 'All enabled'}</td><td><span className={`retail-app-status ${member.active ? 'status-active' : 'status-draft'}`}>{member.active ? 'Active' : 'Suspended'}</span></td><td><button className="retail-app-secondary" onClick={() => void toggle(member)} type="button">{member.active ? 'Suspend' : 'Restore'}</button></td></tr>)}</tbody></table></div></div>{inviting ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void invite(event)}><div><p>Team access</p><h2>Invite a team member</h2></div><label>Email<input name="email" required type="email" /></label><label>Role<select name="role"><option value="business_staff">Staff</option><option value="business_manager">Manager</option><option value="business_owner">Owner</option></select></label><fieldset className="complete-workspace-checkboxes"><legend>Workspace access</legend>{workspaceOrder.map((item) => <label key={item}><input defaultChecked={item === workspace} name="workspaces" type="checkbox" value={item} /> {configs[item].label}</label>)}</fieldset>{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setInviting(false)} type="button">Cancel</button><button className="retail-app-primary" type="submit">Create invitation</button></footer></form></div> : null}</>
+}
+
+function SettingsPage({ config, state, update, production }: { config: WorkspaceConfig; state: WorkspaceState; update: (mutate: (current: WorkspaceState) => WorkspaceState, eventText?: string) => void; production: boolean }) {
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState('')
+  const save = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setSaving(true)
+    setMessage('')
+    const form = new FormData(event.currentTarget)
+    const settings = { businessName: String(form.get('businessName')), region: String(form.get('region')), notifications: form.get('notifications') === 'on' }
+    try {
+      if (production) await productionRequest('/platform/onboarding', { method: 'PUT', body: JSON.stringify({ businessName: settings.businessName, countryCode: settings.region, completedSteps: ['business', 'owner', 'workspaces', 'integrations'], goLiveStatus: form.get('goLive') === 'on' ? 'live' : 'setup', acceptTerms: form.get('goLive') === 'on' }) })
+      update((current) => ({ ...current, settings }), `${config.label} settings updated`)
+      setMessage('Settings saved.')
+    } catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : 'Settings could not be saved')
+    } finally {
+      setSaving(false)
+    }
+  }
+  return <><WorkspaceHeading eyebrow="Administration" title="Settings" copy={`Configure the ${config.label} workspace identity, region, access, and notifications.`} /><form className="retail-app-settings retail-app-panel" onSubmit={(event) => void save(event)}><section><h2>Workspace identity</h2><p>Shared across records, reports, notifications, and integrations.</p><label>Business name<input defaultValue={state.settings.businessName} name="businessName" required /></label><label>Operating region<select defaultValue={state.settings.region} name="region"><option value="GB">United Kingdom</option><option value="NG">Nigeria</option><option value="US">United States</option><option value="EU">European Union</option></select></label></section><section><h2>Event notifications</h2><label className="retail-app-check"><input defaultChecked={state.settings.notifications} name="notifications" type="checkbox" /> Notify owners about high-priority events and required approvals</label>{production ? <label className="retail-app-check"><input name="goLive" type="checkbox" /> Mark onboarding complete and request go-live readiness</label> : null}</section>{message ? <div className="complete-workspace-save-message" role="status">{message}</div> : null}<footer><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Saving…' : 'Save settings'}</button></footer></form></>
+}
+
+function ProductionAccess({ onAuthenticated }: { onAuthenticated: (session: ProductionSession) => void }) {
+  const [initializing, setInitializing] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const login = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    const form = new FormData(event.currentTarget)
+    try {
+      onAuthenticated(await loginToProduction(String(form.get('email')), String(form.get('password'))))
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Sign in failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+  const bootstrap = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    const form = new FormData(event.currentTarget)
+    const email = String(form.get('email'))
+    const password = String(form.get('password'))
+    try {
+      await bootstrapProduction({ businessName: form.get('businessName'), ownerName: form.get('ownerName'), email, password, plan: 'growth' }, String(form.get('bootstrapToken')))
+      onAuthenticated(await loginToProduction(email, password))
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Deployment initialization failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+  return <main className="complete-workspace-access"><section><div className="complete-workspace-access-brand"><span>F</span><div><strong>FoundingOS</strong><small>Business in a box</small></div></div><p className="eyebrow">{initializing ? 'First deployment' : 'Secure workspace access'}</p><h1>{initializing ? 'Initialize your business' : 'Sign in to FoundingOS'}</h1><p>{initializing ? 'Create the first tenant and owner. The bootstrap token comes from your deployment secret manager and is never stored in the browser.' : 'Access every enabled workspace with your tenant-scoped account.'}</p><form onSubmit={(event) => void (initializing ? bootstrap(event) : login(event))}>{initializing ? <><label>Business name<input name="businessName" required /></label><label>Owner name<input name="ownerName" required /></label></> : null}<label>Email<input autoComplete="email" name="email" required type="email" /></label><label>Password<input autoComplete={initializing ? 'new-password' : 'current-password'} minLength={12} name="password" required type="password" /></label>{initializing ? <label>Deployment bootstrap token<input autoComplete="off" name="bootstrapToken" required type="password" /></label> : null}{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<button className="retail-app-primary" disabled={busy} type="submit">{busy ? 'Please wait…' : initializing ? 'Initialize and sign in' : 'Sign in'}</button></form><button className="complete-workspace-access-switch" onClick={() => { setInitializing((value) => !value); setError('') }} type="button">{initializing ? 'Return to sign in' : 'Initialize a new deployment'}</button></section></main>
 }
 
 export function CompleteWorkspaceApplication({ workspace, section = 'overview' }: { workspace: BusinessWorkspaceSlug; section?: string }) {
   const config = configs[workspace]
   const current = config.modules.find((item) => item.id === section) ?? config.modules[0]
-  const { state, events, update, reset } = useWorkspaceState(workspace)
+  const [hydrated, setHydrated] = useState(!productionModeEnabled)
+  const [session, setSession] = useState<ProductionSession | null>(null)
+  useEffect(() => {
+    setSession(getProductionSession())
+    setHydrated(true)
+  }, [])
+  const { state, events, update, reset, loading, error, production, createRecord, advanceRecord, publishHandoff } = useWorkspaceState(workspace, current.id, session)
   const groups = useMemo(() => [...new Set(config.modules.map((item) => item.group))], [config.modules])
+  if (productionModeEnabled && !productionApiConfigured) return <main className="complete-workspace-access"><section><h1>Production API is not configured</h1><p>Set NEXT_PUBLIC_FOUNDINGOS_API_URL to the deployed API root before publishing this application.</p></section></main>
+  if (!hydrated) return <main className="complete-workspace-access"><section><h1>Loading FoundingOS…</h1></section></main>
+  if (production && !session) return <ProductionAccess onAuthenticated={setSession} />
   let content: React.ReactNode
   if (current.id === 'overview') content = <Overview config={config} events={events} state={state} workspace={workspace} />
   else if (current.id === 'automations') content = <AutomationsPage config={config} state={state} update={update} />
-  else if (current.id === 'integrations') content = <IntegrationsPage state={state} update={update} />
+  else if (current.id === 'integrations') content = <IntegrationsPage production={production} state={state} update={update} />
+  else if (current.id === 'team' && production) content = <TeamPage workspace={workspace} />
   else if (['reports', 'forecasting', 'attribution'].includes(current.id)) content = <ReportsPage config={config} />
   else if (current.id === 'event-feed') content = <EventFeedPage events={events} />
-  else if (current.id === 'settings') content = <SettingsPage config={config} state={state} update={update} />
-  else content = <RecordsPage config={config} item={current} state={state} update={update} workspace={workspace} />
+  else if (current.id === 'settings') content = <SettingsPage config={config} production={production} state={state} update={update} />
+  else content = <RecordsPage advanceRecord={advanceRecord} config={config} createRecord={createRecord} item={current} publishHandoff={publishHandoff} state={state} workspace={workspace} />
   return <main className="retail-product-shell complete-workspace-shell" style={{ ['--retail-accent' as string]: config.accent }}>
-    <aside className="retail-product-sidebar"><Link className="retail-product-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{config.suite}</small></div></Link><div className="retail-product-store"><span>{config.label.slice(0, 2).toUpperCase()}</span><div><strong>{state.settings.businessName}</strong><small>{config.label} Workspace</small></div><b>⌄</b></div><nav aria-label={`${config.label} workspace navigation`}>{groups.map((group) => <div key={group}><p>{group}</p>{config.modules.filter((item) => item.group === group).map((item) => <Link className={item.id === current.id ? 'active' : ''} href={`/test-workspaces/${workspace}${item.id === 'overview' ? '' : `/${item.id}`}`} key={item.id}><i>{item.id === 'overview' ? '⌂' : '◇'}</i><span>{item.label}</span>{state.records[item.id]?.length ? <em>{state.records[item.id].length}</em> : null}</Link>)}</div>)}</nav><Link className="retail-product-switcher" href="/test-workspaces"><span>All workspaces</span><b>↗</b></Link></aside>
-    <section className="retail-product-main"><header className="retail-product-topbar"><form onSubmit={(event) => event.preventDefault()}><span>⌕</span><input aria-label="Global workspace search" placeholder={`Search ${config.label}, or ask FoundAI…`} /></form><div><span className="complete-workspace-live">● SIMULATION LIVE</span><span className="retail-product-user">BS</span></div></header><div className="retail-product-content"><div className="retail-product-notice"><span>✓</span> Complete interactive simulation · actions persist and publish to the Shared Event Feed</div>{content}</div><footer className="retail-product-footer"><span>{config.label} Workspace · browser-persistent shared simulation</span><button onClick={reset} type="button">Reset {config.label} data</button></footer></section>
+    <aside className="retail-product-sidebar"><Link className="retail-product-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{config.suite}</small></div></Link><div className="retail-product-store"><span>{config.label.slice(0, 2).toUpperCase()}</span><div><strong>{state.settings.businessName}</strong><small>{config.label} Workspace</small></div><b>⌄</b></div><nav aria-label={`${config.label} workspace navigation`}>{groups.map((group) => <div key={group}><p>{group}</p>{config.modules.filter((item) => item.group === group).map((item) => <Link className={item.id === current.id ? 'active' : ''} href={`${workspaceRoot}/${workspace}${item.id === 'overview' ? '' : `/${item.id}`}`} key={item.id}><i>{item.id === 'overview' ? '⌂' : '◇'}</i><span>{item.label}</span>{state.records[item.id]?.length ? <em>{state.records[item.id].length}</em> : null}</Link>)}</div>)}</nav><Link className="retail-product-switcher" href="/workspaces"><span>Switch workspace</span><b>↗</b></Link></aside>
+    <section className="retail-product-main"><header className="retail-product-topbar"><form onSubmit={(event) => event.preventDefault()}><span>⌕</span><input aria-label="Global workspace search" placeholder={`Search ${config.label}, or ask FoundAI…`} /></form><div><span className="complete-workspace-live">● {production ? 'PRODUCTION' : 'SIMULATION'} LIVE</span>{production ? <button className="complete-workspace-signout" onClick={() => void logoutProduction().then(() => setSession(null))} type="button">Sign out</button> : null}<span className="retail-product-user">{session?.user.email.slice(0, 2).toUpperCase() || 'BS'}</span></div></header><div className="retail-product-content"><div className="retail-product-notice"><span>{loading ? '…' : error ? '!' : '✓'}</span>{loading ? 'Loading tenant data…' : error ? error : production ? 'Tenant data is secured in PostgreSQL and every action is audited' : 'Interactive simulation · actions persist in this browser'}</div>{content}</div><footer className="retail-product-footer"><span>{config.label} Workspace · {production ? 'tenant-isolated production data' : 'browser-persistent shared simulation'}</span>{!production ? <button onClick={reset} type="button">Reset {config.label} data</button> : null}</footer></section>
   </main>
 }

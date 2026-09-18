@@ -541,3 +541,114 @@ model LocationProfile {
 
   @@schema("wros")
 }
+
+model TenantOnboarding {
+  id                String   @id @default(cuid())
+  tenantId          String   @unique
+  businessName      String
+  ownerName         String
+  industry          String?
+  countryCode       String   @default("GB")
+  currency          String   @default("GBP")
+  timezone          String   @default("Europe/London")
+  completedSteps    Json
+  goLiveStatus      String   @default("setup")
+  acceptedTermsAt   DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@schema("wros")
+}
+
+model TenantWorkspace {
+  id        String   @id @default(cuid())
+  tenantId  String
+  workspace String
+  enabled   Boolean  @default(true)
+  plan      String   @default("growth")
+  modules   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, workspace])
+  @@index([tenantId, enabled])
+  @@schema("wros")
+}
+
+model WorkspaceRecord {
+  id          String    @id @default(cuid())
+  tenantId    String
+  workspace   String
+  module      String
+  reference   String
+  name        String
+  status      String
+  ownerId     String?
+  valuePence  Int?
+  data        Json
+  version     Int       @default(1)
+  createdBy   String
+  updatedBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@unique([tenantId, workspace, module, reference])
+  @@index([tenantId, workspace, module, status])
+  @@index([tenantId, updatedAt])
+  @@schema("wros")
+}
+
+model IntegrationCredential {
+  id                    String   @id @default(cuid())
+  tenantId              String
+  provider              String
+  displayName           String
+  status                String   @default("configured")
+  configuration         Json
+  credentialsCiphertext String
+  credentialsIv         String
+  credentialsTag        String
+  lastCheckedAt         DateTime?
+  lastError             String?
+  createdBy             String
+  updatedBy             String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([tenantId, provider])
+  @@index([tenantId, status])
+  @@schema("wros")
+}
+
+model WorkspaceAuditEvent {
+  id         String   @id @default(cuid())
+  tenantId   String
+  actorId    String
+  action     String
+  workspace  String?
+  module     String?
+  entityId   String?
+  requestId  String?
+  metadata   Json
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, workspace, module])
+  @@schema("wros")
+}
+
+model IdempotencyRecord {
+  id         String   @id @default(cuid())
+  tenantId   String
+  key        String
+  operation  String
+  response   Json
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@unique([tenantId, key])
+  @@index([expiresAt])
+  @@schema("wros")
+}

@@ -66,6 +66,7 @@
     "./workspace-test-page": "./src/workspace-test-page.tsx",
     "./retail-business-application": "./src/retail-business-application.tsx",
     "./complete-workspace-application": "./src/complete-workspace-application.tsx",
+    "./workspace-production-client": "./src/workspace-production-client.ts",
     "./marketing-operations-workspace": "./src/marketing-operations-workspace.tsx",
     "./messaging-demo": "./src/messaging-demo.tsx",
     "./styles.css": "./src/styles.css",

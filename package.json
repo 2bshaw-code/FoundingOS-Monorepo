@@ -48,6 +48,7 @@
     "verify:superdashboard-isolation": "node scripts/verify-superdashboard-isolation.mjs",
     "verify:lockdown": "node scripts/verify-ecosystem-lockdown.mjs",
     "verify:backup-readiness": "node scripts/verify-backup-readiness.mjs",
+    "verify:production-readiness": "node scripts/verify-production-readiness.mjs",
     "verify:hydration-safety": "node scripts/verify-hydration-safety.mjs",
     "test:tester-system": "node --experimental-strip-types scripts/test-tester-system.mjs",
     "demo:credentials": "node scripts/load-demo-credentials.mjs",

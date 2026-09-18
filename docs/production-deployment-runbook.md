@@ -1,8 +1,10 @@
 # FoundingOS Production Deployment Runbook
 
-Target providers: AWS (Postgres, S3, ECS), Cloudflare (DNS/CDN), Clerk
-(authentication), Stripe (billing), Resend (email), Twilio (SMS), and Sentry
-(error monitoring).
+Target providers: AWS (Postgres, S3, ECS), Cloudflare (DNS/CDN), Stripe
+(billing and tenant payment collection), Resend (email), Twilio (SMS), and
+Sentry (error monitoring). The production workspace currently uses the Core
+Operations JWT access/refresh implementation. Clerk is optional and must not
+be treated as active unless the runtime is deliberately migrated to it.
 
 ## Demo mode
 
@@ -44,6 +46,8 @@ DATABASE_URL
 DIRECT_URL
 AUTH_ACCESS_TOKEN_SECRET
 AUTH_REFRESH_TOKEN_SECRET
+PLATFORM_BOOTSTRAP_TOKEN
+INTEGRATION_ENCRYPTION_KEY
 PASSWORD_RESET_WEBHOOK_URL
 CLERK_SECRET_KEY
 CLERK_PUBLISHABLE_KEY
@@ -74,6 +78,9 @@ APPLE_KEY_ID
 APPLE_ISSUER_ID
 CORS_ORIGINS
 FOUNDINGOS_WEB_URL
+NEXT_PUBLIC_APP_MODE
+NEXT_PUBLIC_FOUNDINGOS_API_URL
+REQUIRED_INTEGRATIONS
 ```
 
 Also set (non-secret, but required for the correct runtime mode/behavior):
@@ -104,12 +111,22 @@ hand.
    backups, and alarms.
 2. Set production secrets and run `prisma generate` plus migrations for each
    backend from CI.
+   Run `npm run verify:production-readiness` before building. Generate
+   `INTEGRATION_ENCRYPTION_KEY` with `openssl rand -hex 32`; rotating this key
+   requires a reviewed credential re-encryption procedure.
 3. Deploy API services and verify `/health`, `/api/v1/ops/whatsapp/status`,
    and tenant-scoped `/api/v1/ops/messaging/readiness`.
 4. Configure Cloudflare DNS and CDN routes for the unified web app and API.
-5. Configure Clerk production instance and allowed origins.
-6. Create Stripe products/prices, webhook endpoint, customer portal, and
-   idempotent subscription/usage handlers.
+5. Generate independent high-entropy JWT access and refresh secrets, configure
+   allowed CORS origins, and verify login, refresh rotation, logout, tenant
+   isolation, and role enforcement. Configure Clerk only after an intentional
+   identity-provider migration.
+6. Configure platform subscription billing with FoundingOS Stripe
+   products/prices and the global billing webhook. Separately, for every buyer
+   using customer payment collection, register
+   `/api/v1/ops/stripe/webhook/<tenant-id>` for
+   `checkout.session.completed` and save that endpoint's secret with the
+   tenant's Stripe key in **Integrations**.
 7. Configure Resend and Twilio sender identities and delivery webhooks.
 8. Configure Sentry projects, release source maps, alert routing, and on-call
    escalation.
@@ -122,6 +139,25 @@ hand.
 12. Build and submit the single primary FoundingOS mobile application from the
     authorized Apple team. Historical vertical apps are not independent
     products and must not drive release packaging.
+
+## First customer activation
+
+1. Open any production workspace and choose **Initialize a new deployment**.
+2. Enter the server-side `PLATFORM_BOOTSTRAP_TOKEN`, business details, and the
+   first owner account. The API creates one tenant, all seven workspace
+   entitlements, and an audit event.
+3. Sign in with the new owner account.
+4. In **Integrations**, add provider credentials. Credentials are encrypted
+   with AES-256-GCM and are never returned by an API response.
+   Configure Meta's callback URL as
+   `https://<api-host>/api/v1/ops/whatsapp/webhook/<tenant-id>` so verification,
+   signature checks, outbound replies, and message ownership use that tenant's
+   encrypted WhatsApp connection.
+5. In **Team & access**, invite managers and staff and limit their workspace
+   access.
+6. In **Settings**, confirm the business identity and request go-live.
+7. Call authenticated `GET /api/v1/ops/platform/readiness`. Do not onboard a
+   paying customer until `ready` is `true` and `missingIntegrations` is empty.
 
 ## Rollback
 

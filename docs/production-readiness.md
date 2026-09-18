@@ -31,6 +31,12 @@ authorized operator.
 
 - Every request carries a tenant identity and is authorized against an enabled
   suite license.
+- First deployment is protected by `PLATFORM_BOOTSTRAP_TOKEN`; it creates a
+  tenant-scoped owner and seven explicit workspace entitlements.
+- Provider credentials are encrypted with AES-256-GCM using
+  `INTEGRATION_ENCRYPTION_KEY` and are never returned to clients.
+- Workspace record writes use optimistic versions, idempotency keys, soft
+  deletion, audit events, and Shared Event Feed publication.
 - Billing and usage webhooks are idempotent and written to an audit trail.
 - Production secrets are injected by the deployment platform and never stored
   in the repository.
@@ -44,7 +50,7 @@ authorized operator.
 - Support incidents include severity, owner, timestamps, customer impact, and
   SLA status.
 
-## Current release blockers
+## Operator-controlled release blockers
 
 - Production and staging database targets, backup ownership, and restore
   evidence have not been confirmed.
@@ -55,6 +61,9 @@ authorized operator.
   evidence exists yet.
 - Pilot customers and measurable activation/reliability outcomes have not been
   established.
+- Production provider credentials have not been supplied. Run
+  `npm run verify:production-readiness` after loading secrets and do not accept
+  payment until the authenticated platform readiness endpoint reports ready.
 
 The Core Operations backend, Core Operations console, and public website
 currently pass their targeted builds and typechecks. This is necessary but not

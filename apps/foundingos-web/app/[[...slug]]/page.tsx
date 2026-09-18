@@ -6,7 +6,7 @@ import { FounderLauncher, type WorkspaceSlug } from '@foundingos/ui'
 import { WorkspaceTestPage, type TestWorkspaceSlug } from '@foundingos/ui/workspace-test-page'
 import { notFound } from 'next/navigation'
 
-const pages = new Set(['suites', 'workspaces', 'consoles', 'test-workspaces', 'marketing', 'intelligence', 'about', 'pricing', 'contact'])
+const pages = new Set(['suites', 'workspaces', 'consoles', 'app', 'test-workspaces', 'marketing', 'intelligence', 'about', 'pricing', 'contact'])
 const workspaceSlugs = new Set<WorkspaceSlug>(['retail', 'logistics', 'finance', 'talent', 'health'])
 const testWorkspaceSlugs = new Set<TestWorkspaceSlug>(['retail', 'logistics', 'finance', 'marketing', 'talent', 'health', 'intelligence'])
 const workspaceSections: Record<TestWorkspaceSlug, string[]> = {
@@ -26,6 +26,7 @@ export function generateStaticParams() {
     { slug: [] },
     { slug: ['suites'] },
     { slug: ['workspaces'] },
+    { slug: ['app'] },
     { slug: ['workspaces', 'retail'] },
     { slug: ['workspaces', 'logistics'] },
     { slug: ['workspaces', 'finance'] },
@@ -35,6 +36,8 @@ export function generateStaticParams() {
     ...Object.entries(workspaceSections).flatMap(([workspace, sections]) => [
       { slug: ['test-workspaces', workspace] },
       ...sections.filter((section) => section !== 'overview').map((section) => ({ slug: ['test-workspaces', workspace, section] })),
+      { slug: ['app', workspace] },
+      ...sections.filter((section) => section !== 'overview').map((section) => ({ slug: ['app', workspace, section] })),
     ]),
     // Compatibility paths for previously published links.
     { slug: ['consoles'] },
@@ -56,7 +59,8 @@ export default async function Page({ params }: { params: Promise<{ slug?: string
   const page = slug[0] || 'home'
   if (page === 'home') return <FounderLauncher />
   if (!pages.has(page)) notFound()
-  if (page === 'test-workspaces') {
+  if (page === 'app' && slug.length === 1) return <WorkspaceTestPage workspace="retail" />
+  if (page === 'test-workspaces' || page === 'app') {
     const workspace = slug[1] as TestWorkspaceSlug
     const section = slug[2] ?? 'overview'
     if (!testWorkspaceSlugs.has(workspace) || slug.length > 3 || !workspaceSections[workspace].includes(section)) notFound()

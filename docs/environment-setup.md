@@ -100,6 +100,62 @@ which runs `expo export` with demo env vars and writes to
 3. Set `APP_MODE=production` in the deployment environment.
 4. Run the deployment runbook's release order.
 
+The production workspace client also requires:
+
+```text
+NEXT_PUBLIC_APP_MODE=production
+NEXT_PUBLIC_FOUNDINGOS_API_URL=https://core-operations-api.example.com/api/v1
+PLATFORM_BOOTSTRAP_TOKEN=<one-time deployment secret>
+INTEGRATION_ENCRYPTION_KEY=<32-byte key encoded as 64 hex characters or base64>
+REQUIRED_INTEGRATIONS=whatsapp,stripe
+```
+
+Generate the integration encryption key with:
+
+```bash
+openssl rand -hex 32
+```
+
+Before deployment, validate the environment without printing secret values:
+
+```bash
+npm run verify:production-readiness
+```
+
+After the web and API services are reachable:
+
+```bash
+npm run verify:production-readiness -- --live
+```
+
+On the first production visit, select **Initialize a new deployment**. Enter
+the bootstrap token from the secret manager and create the first business
+owner. The token is sent only to the API and is not persisted by the browser.
+After signing in, configure WhatsApp and Stripe in **Integrations**, configure
+the business in **Settings**, and mark onboarding ready for go-live.
+
+For customer payment collection, register the tenant webhook URL in Stripe:
+
+```text
+https://<api-host>/api/v1/ops/stripe/webhook/<tenant-id>
+```
+
+Subscribe it to `checkout.session.completed`, then save that endpoint's signing
+secret with the tenant Stripe secret key in **Integrations**. Production payment
+records expose **Collect with Stripe** and return customers to the matching
+FoundingOS `/app/<workspace>/payments` screen.
+
+For a self-contained deployment:
+
+```bash
+cp production.example.env .env.production
+# Fill every required value, then:
+docker compose --env-file .env.production -f docker-compose.production.yml up --build
+```
+
+This starts PostgreSQL, applies migrations before the API starts, waits for API
+health, and serves the production-mode web application on port 3000.
+
 `getAppMode()` in `packages/config/src/runtime-mode.ts` only returns
 `'production'` when `APP_MODE=production` **and** the required credential
 environment variables (`DATABASE_URL`, `STRIPE_SECRET_KEY`,
