@@ -24,6 +24,7 @@ export const dynamicParams = false
 export function generateStaticParams() {
   return [
     { slug: [] },
+    { slug: ['home'] },
     { slug: ['suites'] },
     { slug: ['workspaces'] },
     { slug: ['test-workspaces'] },
