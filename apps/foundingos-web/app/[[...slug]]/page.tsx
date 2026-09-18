@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { FounderLauncher, type WorkspaceSlug } from '@foundingos/ui'
-import { WorkspaceTestPage, type TestWorkspaceSlug } from '@foundingos/ui/workspace-test-page'
+import { WorkspaceDirectory, WorkspaceTestPage, type TestWorkspaceSlug } from '@foundingos/ui/workspace-test-page'
 import { notFound } from 'next/navigation'
 
 const pages = new Set(['suites', 'workspaces', 'consoles', 'app', 'test-workspaces', 'marketing', 'intelligence', 'about', 'pricing', 'contact'])
@@ -26,6 +26,7 @@ export function generateStaticParams() {
     { slug: [] },
     { slug: ['suites'] },
     { slug: ['workspaces'] },
+    { slug: ['test-workspaces'] },
     { slug: ['app'] },
     { slug: ['workspaces', 'retail'] },
     { slug: ['workspaces', 'logistics'] },
@@ -59,7 +60,8 @@ export default async function Page({ params }: { params: Promise<{ slug?: string
   const page = slug[0] || 'home'
   if (page === 'home') return <FounderLauncher />
   if (!pages.has(page)) notFound()
-  if (page === 'app' && slug.length === 1) return <WorkspaceTestPage workspace="retail" />
+  if (page === 'test-workspaces' && slug.length === 1) return <WorkspaceDirectory />
+  if (page === 'app' && slug.length === 1) return <WorkspaceDirectory basePath="/app" />
   if (page === 'test-workspaces' || page === 'app') {
     const workspace = slug[1] as TestWorkspaceSlug
     const section = slug[2] ?? 'overview'

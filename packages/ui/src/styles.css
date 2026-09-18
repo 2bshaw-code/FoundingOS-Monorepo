@@ -1677,9 +1677,134 @@ a {
 body:has(.complete-workspace-shell) > div > .foundingos-footer,
 body:has(.complete-workspace-shell) .foundingos-footer,
 body:has(.complete-workspace-access) .foundingos-footer,
+body:has(.complete-workspace-directory) .foundingos-footer,
 body:has(.complete-workspace-access) .found-ai-fab,
-body:has(.complete-workspace-access) .found-ai-panel {
+body:has(.complete-workspace-directory) .found-ai-fab,
+body:has(.complete-workspace-access) .found-ai-panel,
+body:has(.complete-workspace-directory) .found-ai-panel {
   display: none;
+}
+
+.complete-workspace-directory {
+  background: radial-gradient(circle at top, #18314c, #07111f 56%);
+  color: #fff;
+  min-height: 100vh;
+  padding: clamp(28px, 5vw, 72px);
+}
+
+.complete-workspace-directory > header {
+  margin: 0 auto 36px;
+  max-width: 1180px;
+}
+
+.complete-workspace-directory .complete-workspace-access-brand {
+  color: #fff;
+  text-decoration: none;
+}
+
+.complete-workspace-directory .complete-workspace-access-brand small,
+.complete-workspace-directory > header > div > p {
+  color: #aebed0;
+}
+
+.complete-workspace-directory h1 {
+  font-size: clamp(34px, 5vw, 62px);
+  letter-spacing: -.045em;
+  margin: 8px 0 12px;
+  max-width: 820px;
+}
+
+.complete-workspace-directory > section {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0 auto;
+  max-width: 1180px;
+}
+
+.complete-workspace-directory > section > a {
+  background: #fff;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 16px;
+  color: #172033;
+  display: grid;
+  gap: 18px;
+  min-height: 280px;
+  padding: 24px;
+  text-decoration: none;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.complete-workspace-directory > section > a:hover {
+  box-shadow: 0 22px 50px rgba(0, 0, 0, .3);
+  transform: translateY(-4px);
+}
+
+.complete-workspace-directory > section > a > span {
+  align-items: center;
+  background: color-mix(in srgb, var(--workspace-accent) 16%, #fff);
+  border-radius: 10px;
+  color: var(--workspace-accent);
+  display: flex;
+  font-size: 13px;
+  font-weight: 900;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.complete-workspace-directory h2 {
+  font-size: 25px;
+  margin: 5px 0 10px;
+}
+
+.complete-workspace-directory section small {
+  color: var(--workspace-accent);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.complete-workspace-directory section p {
+  color: #65748a;
+  font-size: 13px;
+  line-height: 1.65;
+  margin: 0;
+}
+
+.complete-workspace-directory section footer {
+  align-items: center;
+  border-top: 1px solid #e5eaf0;
+  display: flex;
+  font-size: 11px;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.complete-workspace-directory section footer b {
+  color: var(--workspace-accent);
+}
+
+@media (max-width: 900px) {
+  .complete-workspace-directory > section {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .complete-workspace-directory {
+    padding: 24px 18px;
+  }
+
+  .complete-workspace-directory > section {
+    grid-template-columns: 1fr;
+  }
+
+  .complete-workspace-directory > section > a {
+    min-height: 240px;
+  }
 }
 
 .complete-workspace-shell .retail-app-primary,
