@@ -9,6 +9,7 @@ export const roles = {
   businessOwner: 'business_owner',
   businessManager: 'business_manager',
   businessStaff: 'business_staff',
+  businessViewer: 'business_viewer',
   meatSupplier: 'meat_supplier',
   meatBuyer: 'meat_buyer',
   itIntelligence: 'it_intelligence',

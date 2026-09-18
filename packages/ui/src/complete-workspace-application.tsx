@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { bootstrapProduction, getProductionSession, loginToProduction, logoutProduction, productionApiConfigured, productionModeEnabled, productionRecords, productionRequest, type ProductionSession, type ProductionWorkspaceRecord } from './workspace-production-client'
+import { Fragment, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { bootstrapProduction, getProductionSession, loginToProduction, logoutProduction, productionAgentActions, productionApiConfigured, productionModeEnabled, productionPlatform, productionRecords, productionRequest, type AgentAction, type AgentIntelligenceSummary, type ControlSettings, type ProductionInvitation, type ProductionSession, type ProductionWorkspaceRecord } from './workspace-production-client'
 
 const workspaceRoot = productionModeEnabled ? '/app' : '/test-workspaces'
 
@@ -10,7 +10,7 @@ export type BusinessWorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'market
 
 type WorkspaceRecord = { id: string; backendId?: string; version?: number; name: string; secondary: string; value: string; status: string; owner: string; updated: string }
 type WorkspaceModule = { id: string; label: string; group: string; statuses?: string[] }
-type WorkspaceEvent = { id: string; workspace: BusinessWorkspaceSlug; text: string; time: string }
+type WorkspaceEvent = { id: string; workspace: BusinessWorkspaceSlug; text: string; time: string; type?: string; payload?: Record<string, unknown> }
 type WorkspaceState = {
   records: Record<string, WorkspaceRecord[]>
   automations: Array<{ id: string; name: string; enabled: boolean; runs: number }>
@@ -79,7 +79,7 @@ const configs: Record<BusinessWorkspaceSlug, WorkspaceConfig> = {
     label: 'Intelligence', suite: 'Core.Intelligence', accent: '#b77aff', description: 'Monitor the event graph, surface risks, forecast outcomes, and coordinate recommended decisions.',
     subjects: ['Cash runway risk', 'Inventory demand spike', 'Delivery exception cluster', 'Campaign revenue opportunity'],
     metrics: [{ label: 'Live signals', value: '420', change: '+14.6%' }, { label: 'Open risks', value: '8', change: '3 high priority' }, { label: 'Recommendations', value: '17', change: '£24k potential value' }, { label: 'Confidence', value: '91%', change: '+5.1 points' }],
-    modules: [module('overview', 'Command centre', 'Workspace'), module('signals', 'Signals', 'Decisioning', ['Detected', 'Enriched', 'Reviewed', 'Resolved']), module('risks', 'Risks', 'Decisioning', ['Open', 'Investigating', 'Mitigating', 'Resolved']), module('recommendations', 'Recommendations', 'Decisioning', ['Proposed', 'Review', 'Approved', 'Executed']), module('forecasts', 'Forecasts', 'Planning'), module('scenarios', 'Scenarios', 'Planning', standard), module('anomalies', 'Anomalies', 'Monitoring', ['Detected', 'Investigating', 'Recovering', 'Resolved']), module('event-feed', 'Shared Event Feed', 'Monitoring'), module('workflows', 'AI workflows', 'Automation', standard), module('models', 'Models', 'Automation'), module('data-sources', 'Data sources', 'Data'), module('reports', 'Intelligence reports', 'Data'), module('automations', 'Automations', 'Data'), module('team', 'Team & access', 'Administration'), module('integrations', 'Integrations', 'Administration'), module('settings', 'Settings', 'Administration')],
+    modules: [module('overview', 'Command centre', 'Workspace'), module('outcomes', 'Outcomes & value', 'Workspace'), module('strategic-overview', 'Strategic overview', 'Workspace'), module('signals', 'Signals', 'Decisioning', ['Detected', 'Enriched', 'Reviewed', 'Resolved']), module('risks', 'Risks', 'Decisioning', ['Open', 'Investigating', 'Mitigating', 'Resolved']), module('recommendations', 'Recommendations', 'Decisioning', ['Proposed', 'Review', 'Approved', 'Executed']), module('forecasts', 'Forecasts', 'Planning'), module('scenarios', 'Scenarios', 'Planning', standard), module('anomalies', 'Anomalies', 'Monitoring', ['Detected', 'Investigating', 'Recovering', 'Resolved']), module('event-feed', 'Shared Event Feed', 'Monitoring'), module('workflows', 'AI workflows', 'Automation', standard), module('models', 'Models', 'Automation'), module('data-sources', 'Data sources', 'Data'), module('reports', 'Intelligence reports', 'Data'), module('automations', 'Automations', 'Data'), module('team', 'Team & access', 'Administration'), module('integrations', 'Integrations', 'Administration'), module('settings', 'Settings', 'Administration')],
   },
 }
 
@@ -110,7 +110,229 @@ const seedWorkspace = (workspace: BusinessWorkspaceSlug): WorkspaceState => {
 }
 
 const EVENTS_KEY = 'foundingos-shared-workspace-events-v1'
+const AGENT_ACTIONS_KEY = 'foundingos-agent-actions-v1'
+const ACTIVATION_KEY = 'foundingos-intelligence-activation-v1'
+const DEMO_REFERENCE_TIME = '2026-09-18T10:00:00.000Z'
 const storageKey = (workspace: BusinessWorkspaceSlug) => `foundingos-${workspace}-complete-workspace-v1`
+
+const demoAgentAction = (): AgentAction => ({
+  id: 'agent-replenishment-001',
+  kind: 'inventory.replenishment',
+  title: 'Replenish House Blend Coffee',
+  summary: 'House Blend Coffee is at 8 units. Coordinate purchasing, inbound logistics, and finance before stockout.',
+  rationale: 'The Shared Event Feed detected a low-stock signal. Acting now protects four days of expected sales and exposes the cash commitment before approval.',
+  status: 'proposed',
+  riskLevel: 'medium',
+  requiresApproval: true,
+  sourceEventId: 'inventory-low-cof-001',
+  input: { productName: 'House Blend Coffee', sku: 'COF-001', currentStock: 8, reorderQuantity: 120, unitCostPence: 650, unitRetailPricePence: 1_200, supplier: 'Northstar Roasters', deliveryAddress: '1 Market Street, London' },
+  steps: [
+    { id: 'purchase-order', workspace: 'retail', module: 'purchasing', action: 'create', description: 'Create a purchase order for 120 × House Blend Coffee', status: 'pending' },
+    { id: 'inbound-delivery', workspace: 'logistics', module: 'deliveries', action: 'create', description: 'Book inbound delivery from Northstar Roasters', status: 'pending' },
+    { id: 'supplier-bill', workspace: 'finance', module: 'bills', action: 'create', description: 'Record £780.00 committed spend and update cash exposure', status: 'pending' },
+  ],
+  coordinationSummary: {
+    workspaces: ['retail', 'logistics', 'finance'],
+    workspaceCount: 3,
+    inventoryRisk: '8 units remain; replenishment protects four days of forecast demand.',
+    cashImpactPence: 78_000,
+    logisticsLoad: 'One inbound booking for 120 units from Northstar Roasters.',
+    expectedOutcome: 'Approved inventory, inbound delivery, and supplier liability remain synchronized under one action.',
+    tradeoffs: ['Commits £780.00 of cash to reduce stockout exposure.', 'Earlier ordering protects availability but increases short-term working-capital usage.', 'Coordinated execution prevents purchasing, delivery, and bill records from diverging.'],
+    patternConfidence: 78,
+    decisionScore: 97,
+    scoreExplanation: ['3 workspaces coordinated', '£780.00 financial impact', 'medium operating risk', '78% pattern confidence'],
+  },
+  historicalContext: {
+    similarSignals: 3,
+    proposedActions: 2,
+    completedActions: 2,
+    completionRate: 100,
+    lastCompletedAt: '2026-09-06T10:00:00.000Z',
+    lastOutcome: { summary: 'protected availability with no inbound exception' },
+    narrative: '2 similar approved actions completed previously; the latest protected availability with no inbound exception.',
+  },
+  predictiveSignals: {
+    triggerPattern: 'A retail inventory threshold breach followed by a coordinated replenishment proposal.',
+    likelyNext: 'Approval usually leads to synchronized purchasing, inbound delivery, and finance records.',
+    likelyDownstreamEffects: ['Retail receives a governed purchase commitment.', 'Logistics receives a linked inbound booking.', 'Finance receives the matching supplier liability and cash exposure.'],
+    confidence: 78,
+    confidenceLabel: 'strong',
+    evidenceCount: 8,
+    successfulOutcomes: 7,
+    issueOutcomes: 1,
+    highImpactOutcomeRate: 86,
+    assessedOutcomes: 14,
+    averageAccuracy: 92,
+    reliabilityScore: 85,
+    refined: true,
+    cohortEvidenceCount: 5,
+    cohortTenantCount: 3,
+    cohortIncluded: true,
+    basis: ['3 tenant outcomes', '5 anonymized outcomes across 3 tenants', '7 successful and 1 rejected outcome', '86% of successful precedents carried at least £500 of recorded impact', '14 prediction assessments averaged 92% accuracy'],
+  },
+  simulationPreview: {
+    generatedAt: DEMO_REFERENCE_TIME,
+    disclaimer: 'Read-only projection. No workspace records or external actions are created until approval and execution.',
+    workspaces: [
+      { workspace: 'retail', before: '8 units on hand with an active stockout risk.', after: '120 units approved on a linked purchase order.', effect: 'Availability risk moves into a governed replenishment commitment.', secondOrderEffects: ['The next threshold breach is expected later because inbound cover increases.', 'Purchase history becomes available for future reorder-frequency calibration.'] },
+      { workspace: 'logistics', before: 'No inbound delivery is reserved for this replenishment.', after: 'One inbound delivery from Northstar Roasters is booked.', effect: 'The inbound dependency becomes visible and traceable before stock arrives.', secondOrderEffects: ['Inbound capacity is reserved earlier, reducing last-minute routing pressure.', 'Any delivery exception can be correlated back to the purchase commitment.'] },
+      { workspace: 'finance', before: 'No supplier liability is recorded for the proposed stock.', after: '£780.00 is recorded as committed inventory spend.', effect: 'Cash exposure becomes visible with the operating commitment.', secondOrderEffects: ['The commitment moves into short-term cash planning immediately.', 'Future margin analysis can connect supplier cost with replenished units.'] },
+    ],
+    comparison: {
+      approve: ['120 units enter a governed purchase commitment.', 'Inbound capacity and supplier liability are created together.', 'Short-term cash exposure increases by £780.00.'],
+      reject: ['8 units remain with no replenishment commitment.', 'No inbound slot is reserved and no supplier liability is recorded.', 'Cash is preserved now, but stockout exposure remains unresolved.'],
+      predictedDelta: 'Approval trades £780.00 of near-term cash capacity for 120 committed units and coordinated inbound cover.',
+    },
+  },
+  trailEventIds: ['inventory-low-cof-001', 'proposal-cof-001'],
+  estimatedValuePence: 78_000,
+  createdAt: DEMO_REFERENCE_TIME,
+  updatedAt: DEMO_REFERENCE_TIME,
+})
+
+const demoRelatedAgentAction = (): AgentAction => {
+  const base = demoAgentAction()
+  return {
+    ...base,
+    id: 'agent-replenishment-002',
+    title: 'Replenish Espresso Filters',
+    summary: 'Espresso Filters are at 14 units. The same supplier and inbound window overlap with the coffee replenishment.',
+    input: { ...base.input, productName: 'Espresso Filters', sku: 'FLT-002', currentStock: 14, reorderQuantity: 240, unitCostPence: 240, unitRetailPricePence: 450 },
+    estimatedValuePence: 57_600,
+    coordinationSummary: base.coordinationSummary ? {
+      ...base.coordinationSummary,
+      cashImpactPence: 57_600,
+      decisionScore: 88,
+      scoreExplanation: ['3 workspaces coordinated', '£576.00 financial impact', 'medium operating risk', '72% pattern confidence'],
+      patternConfidence: 72,
+    } : null,
+    predictiveSignals: base.predictiveSignals ? { ...base.predictiveSignals, confidence: 72, reliabilityScore: 79, evidenceCount: 6, assessedOutcomes: 9, averageAccuracy: 88, refined: false } : null,
+    simulationPreview: base.simulationPreview ? {
+      ...base.simulationPreview,
+      comparison: {
+        approve: ['240 filter units enter a governed purchase commitment.', 'The shared supplier delivery window gains another inbound requirement.', 'Short-term cash exposure increases by £576.00.'],
+        reject: ['14 filter units remain with no replenishment commitment.', 'Shared inbound demand is lower.', 'Cash is preserved now, but filter stockout exposure remains unresolved.'],
+        predictedDelta: 'Approval adds £576.00 and a second inbound requirement to the same supplier window.',
+      },
+    } : null,
+    createdAt: '2026-09-18T09:15:00.000Z',
+    updatedAt: '2026-09-18T09:15:00.000Z',
+  }
+}
+
+const demoIntelligenceSummary = (actions: AgentAction[]): AgentIntelligenceSummary => {
+  const active = actions.filter((action) => action.status === 'proposed' || action.status === 'approved' || action.status === 'completed')
+  const coffee = active.find((action) => action.id === 'agent-replenishment-001')
+  const filters = active.find((action) => action.id === 'agent-replenishment-002')
+  const bothPending = coffee?.status !== 'completed' && filters?.status !== 'completed'
+  const interactions = coffee && filters ? [{
+    id: `${coffee.id}:${filters.id}`,
+    actionIds: [coffee.id, filters.id] as [string, string],
+    actionTitles: [coffee.title, filters.title] as [string, string],
+    severity: 'watch' as const,
+    dimensions: (bothPending ? ['supplier', 'logistics', 'cash'] : ['supplier', 'logistics']) as Array<'supplier' | 'logistics' | 'cash'>,
+    summary: `${coffee.title} and ${filters.title} may interact across supplier, logistics${bothPending ? ', cash' : ''}.`,
+    evidence: ['Both actions use Northstar Roasters', 'Both actions require inbound logistics capacity', ...(bothPending ? ['Combined pending cash commitment is £1,356.00'] : ['A recent execution may affect the remaining supplier delivery window'])],
+    advisory: 'Review the combined timing and capacity impact before approving either action. This advisory does not block execution.',
+  }] : []
+  const assessed = actions.filter((action) => action.outcomeAssessment)
+  const accuracy = assessed.length ? Math.round(assessed.reduce((total, action) => total + (action.outcomeAssessment?.accuracy ?? 0), 0) / assessed.length) : 92
+  const reliability = Math.round(actions.reduce((total, action) => total + (action.predictiveSignals?.reliabilityScore ?? 0), 0) / Math.max(1, actions.length))
+  const measured = assessed.length ? assessed : [demoAgentAction()]
+  const completed = measured.filter((action) => action.status === 'completed' || assessed.length === 0)
+  const cashGovernedPence = completed.reduce((total, action) => total + Number(action.estimatedValuePence || 0), 0)
+  const inventoryUnitsProtected = completed.reduce((total, action) => total + Number(action.input.reorderQuantity || 0), 0)
+  const actionsWithMarginEvidence = completed.filter((action) => Number.isFinite(Number(action.input.unitRetailPricePence)) && Number(action.input.unitRetailPricePence) >= Number(action.input.unitCostPence))
+  const marginProtectedPence = actionsWithMarginEvidence.reduce((total, action) => {
+    const price = Number(action.input.unitRetailPricePence)
+    const cost = Number(action.input.unitCostPence)
+    return total + (price - cost) * Number(action.input.reorderQuantity || 0)
+  }, 0)
+  const economicValue = {
+    cashGovernedPence,
+    cashPreservedPence: actions.filter((action) => action.status === 'rejected').reduce((total, action) => total + Number(action.estimatedValuePence || 0), 0),
+    marginProtectedPence: actionsWithMarginEvidence.length ? marginProtectedPence : null,
+    inventoryUnitsProtected,
+    riskReducedActions: completed.length,
+    coordinatedHandoffs: completed.reduce((total, action) => total + action.steps.length, 0),
+    estimatedOperatorMinutesSaved: completed.reduce((total, action) => total + action.steps.length * 8, 0),
+    measuredOutcomes: Math.max(14, assessed.length),
+    narrative: `${Math.max(14, assessed.length)} measured outcomes show governed cash, protected inventory, and reduced manual coordination.`,
+    methodology: ['Cash governed uses completed internal commitments.', 'Cash preserved uses rejected commitments.', 'Margin protected uses recorded unit price less cost.', 'Time saved uses eight minutes per completed workspace handoff.', 'Risk reduced requires a measured outcome at or above 75% accuracy.'],
+  }
+  const recurringDeviation = { field: 'logistics.capacity', count: 3, insight: 'Logistics capacity was underestimated in 3 assessed outcomes; review this dimension when evaluating similar proposals.' }
+  const strongAction = [...actions].sort((left, right) => (right.predictiveSignals?.reliabilityScore ?? 0) - (left.predictiveSignals?.reliabilityScore ?? 0))[0]
+  return {
+    interactions,
+    health: {
+      totalAssessedOutcomes: Math.max(14, assessed.length),
+      averagePredictionAccuracy: accuracy,
+      refinedPatterns: actions.some((action) => action.predictiveSignals?.refined) ? 1 : 0,
+      confidenceImprovement: 12,
+      averageReliability: reliability,
+      activePatterns: 1,
+      interactionCount: interactions.length,
+      recurringDeviation,
+      narrative: `${Math.max(14, assessed.length)} measured outcomes average ${accuracy}% accuracy; one replenishment pattern meets the refined evidence threshold.`,
+    },
+    snapshot: {
+      totalAssessedOutcomes: Math.max(14, assessed.length),
+      refinedPatterns: actions.some((action) => action.predictiveSignals?.refined) ? 1 : 0,
+      activeInteractions: interactions.length,
+      recentAccuracyTrend: { current: accuracy, previous: Math.max(0, accuracy - 12), change: 12, assessmentWindow: 20, narrative: 'Prediction accuracy has improved +12% over the last 20 assessments.' },
+      learningMomentum: { score: 86, label: 'compounding', narrative: 'Measured outcomes are strengthening reliable patterns and improving future decision context.' },
+      economicValue,
+    },
+    emergingSignals: [
+      {
+        id: 'deviation:logistics.capacity',
+        kind: 'recurring-deviation',
+        severity: 'watch',
+        title: 'Recurring logistics underestimation',
+        summary: recurringDeviation.insight,
+        reliability,
+        outcomeCount: recurringDeviation.count,
+        evidence: [`${recurringDeviation.count} assessed outcomes share the same deviation`, `${accuracy}% average measured prediction accuracy`, `${reliability}% current pattern reliability`],
+        advisory: 'Review Logistics capacity before approving similar proposals. This signal is advisory and cannot execute or block work.',
+      },
+      ...(interactions[0] ? [{
+        id: `interaction:${interactions[0].id}`,
+        kind: 'cross-action-risk' as const,
+        severity: interactions[0].severity,
+        title: 'Cross-workspace pressure is building',
+        summary: interactions[0].summary,
+        reliability,
+        outcomeCount: Math.max(14, assessed.length),
+        evidence: [...interactions[0].evidence, `${reliability}% supporting pattern reliability`],
+        advisory: interactions[0].advisory,
+      }] : []),
+      ...(strongAction ? [{
+        id: `precedent:${strongAction.kind}`,
+        kind: 'strong-precedent' as const,
+        severity: 'positive' as const,
+        title: 'Historical precedent is strengthening',
+        summary: `${strongAction.title} is supported by an ${strongAction.predictiveSignals?.reliabilityScore ?? reliability}% reliable pattern across ${strongAction.predictiveSignals?.assessedOutcomes ?? 14} assessed outcomes.`,
+        reliability: strongAction.predictiveSignals?.reliabilityScore ?? reliability,
+        outcomeCount: strongAction.predictiveSignals?.assessedOutcomes ?? 14,
+        evidence: [`${strongAction.predictiveSignals?.assessedOutcomes ?? 14} assessed outcomes inform this pattern`, `${strongAction.predictiveSignals?.averageAccuracy ?? accuracy}% average measured accuracy`, `${strongAction.predictiveSignals?.reliabilityScore ?? reliability}% evidence-weighted reliability`],
+        advisory: 'Use this precedent as decision context, not as authorization. Explicit approval remains required.',
+      }] : []),
+    ],
+    auditTrail: actions.flatMap((action) => {
+      const entries: AgentIntelligenceSummary['auditTrail'] = [
+        { id: `${action.id}-proposed`, actionId: action.id, actionTitle: action.title, stage: 'proposed' as const, actor: 'FoundAI', occurredAt: action.createdAt, summary: 'Shared Event Feed signal produced a governed action proposal.', evidence: ['Inventory threshold signal', `Action ${action.id}`] },
+      ]
+      if (action.status !== 'proposed') entries.unshift({ id: `${action.id}-decision`, actionId: action.id, actionTitle: action.title, stage: action.status === 'rejected' ? 'rejected' as const : 'approved' as const, actor: 'Business owner', occurredAt: action.updatedAt, summary: action.status === 'rejected' ? 'Human rejection recorded; no workspace effects were created.' : 'Human approval recorded; execution remained separate.', evidence: ['Explicit human decision', `Action ${action.id}`] })
+      if (action.status === 'completed') entries.unshift(
+        { id: `${action.id}-assessed`, actionId: action.id, actionTitle: action.title, stage: 'assessed' as const, actor: 'FoundAI', occurredAt: action.updatedAt, summary: action.outcomeAssessment?.summary || 'Outcome measured against the original prediction.', evidence: [`${action.outcomeAssessment?.accuracy ?? 100}% measured accuracy`, `Action ${action.id}`] },
+        { id: `${action.id}-executed`, actionId: action.id, actionTitle: action.title, stage: 'executed' as const, actor: 'Business owner', occurredAt: action.updatedAt, summary: action.outcomeSummary || 'Approved internal workspace effects completed.', evidence: ['Retail, Logistics, and Finance effects', 'No external payment moved'] },
+      )
+      if (action.executionReversed) entries.unshift({ id: `${action.id}-reversed`, actionId: action.id, actionTitle: action.title, stage: 'reversed' as const, actor: 'Business owner', occurredAt: action.updatedAt, summary: 'Internal purchase order and inbound booking cancelled; supplier liability voided.', evidence: ['Compensation completed', 'No external payment moved'] })
+      return entries
+    }).sort((left, right) => right.occurredAt.localeCompare(left.occurredAt)),
+  }
+}
 
 const emptyWorkspace = (workspace: BusinessWorkspaceSlug): WorkspaceState => {
   const seeded = seedWorkspace(workspace)
@@ -121,17 +343,30 @@ const displayMoney = (valuePence: number | null | undefined) => valuePence === n
   ? '—'
   : new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(valuePence / 100)
 
-const fromProductionRecord = (record: ProductionWorkspaceRecord): WorkspaceRecord => ({
+const fromProductionRecord = (record: ProductionWorkspaceRecord): WorkspaceRecord => {
+  const data = record?.data ?? {}
+  return {
   id: record.reference,
   backendId: record.id,
   version: record.version,
   name: record.name,
-  secondary: String(record.data.secondary || 'Workspace record'),
-  value: record.valuePence === null || record.valuePence === undefined ? String(record.data.value || '—') : displayMoney(record.valuePence),
+  secondary: String(data.secondary || 'Workspace record'),
+  value: record.valuePence === null || record.valuePence === undefined ? String(data.value || '—') : displayMoney(record.valuePence),
   status: record.status,
-  owner: record.ownerId || String(record.data.owner || 'Unassigned'),
+  owner: record.ownerId || String(data.owner || 'Unassigned'),
   updated: new Date(record.updatedAt).toLocaleString(),
-})
+}}
+
+const describePlatformEvent = (event: { type: string; payload?: Record<string, unknown> }) => {
+  if (event.type === 'inventory.threshold.breached') return `${String(event.payload?.productName || event.payload?.sku || 'Inventory')} crossed its replenishment threshold`
+  if (event.type === 'agent.action.proposed') return 'FoundAI proposed a coordinated cross-workspace action'
+  if (event.type === 'agent.action.approved') return 'An owner approved a FoundAI action for execution'
+  if (event.type === 'agent.action.rejected') return 'An owner dismissed a FoundAI recommendation'
+  if (event.type === 'agent.action.completed') return String(event.payload?.outcomeSummary || 'FoundAI completed an approved cross-workspace action')
+  if (event.type === 'agent.action.outcome.assessed') return String(event.payload?.summary || 'FoundAI assessed prediction accuracy against the completed outcome')
+  if (event.type === 'workspace.record.created' && event.payload?.module) return `${String(event.payload.module).replaceAll('-', ' ')} record created${event.payload.agentActionId || event.payload.actionId ? ' by an approved agent action' : ''}`
+  return event.type.replaceAll('.', ' ')
+}
 
 function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: string, session: ProductionSession | null) {
   const production = productionModeEnabled && productionApiConfigured
@@ -151,7 +386,7 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
       if (!['overview', 'reports', 'forecasting', 'attribution', 'settings', 'integrations', 'automations'].includes(activeModule)) {
         requests.push(
           productionRecords.list(workspace, activeModule)
-            .then((records) => setState((current) => ({ ...current, records: { ...current.records, [activeModule]: records.map(fromProductionRecord) } }))),
+            .then((records) => setState((current) => ({ ...current, records: { ...current.records, [activeModule]: records.filter((record): record is ProductionWorkspaceRecord => Boolean(record && typeof record === 'object')).map(fromProductionRecord) } }))),
         )
       }
       if (activeModule === 'integrations') {
@@ -166,8 +401,8 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
         }))
       }
       requests.push(
-        productionRequest<Array<{ id: string; source: BusinessWorkspaceSlug; type: string; createdAt: string }>>('/platform/events?limit=20')
-          .then((items) => setEvents(items.map((item) => ({ id: item.id, workspace: workspaceOrder.includes(item.source) ? item.source : 'intelligence', text: item.type.replaceAll('.', ' '), time: new Date(item.createdAt).toLocaleString() })))),
+        productionRequest<Array<{ id: string; source: BusinessWorkspaceSlug; type: string; payload?: Record<string, unknown>; createdAt: string }>>('/platform/events?limit=20')
+          .then((items) => setEvents(items.map((item) => ({ id: item.id, workspace: workspaceOrder.includes(item.source) ? item.source : 'intelligence', text: describePlatformEvent(item), type: item.type, payload: item.payload, time: new Date(item.createdAt).toLocaleString() })))),
       )
       void Promise.all(requests).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Workspace data could not be loaded')).finally(() => setLoading(false))
       return
@@ -222,6 +457,148 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
   return { state, events, update, reset, loading, error, production, createRecord, advanceRecord, publishHandoff }
 }
 
+function appendDemoRecord(workspace: BusinessWorkspaceSlug, module: string, record: WorkspaceRecord) {
+  const key = storageKey(workspace)
+  const stored = window.localStorage.getItem(key)
+  const current = stored ? JSON.parse(stored) as WorkspaceState : seedWorkspace(workspace)
+  const next = { ...current, records: { ...current.records, [module]: [record, ...(current.records[module] ?? [])] } }
+  window.localStorage.setItem(key, JSON.stringify(next))
+}
+
+function useAgentActions(production: boolean, session: ProductionSession | null, emit: (text: string) => void) {
+  const [actions, setActions] = useState<AgentAction[]>(() => production ? [] : [demoAgentAction(), demoRelatedAgentAction()])
+  const [intelligence, setIntelligence] = useState<AgentIntelligenceSummary>(() => demoIntelligenceSummary([demoAgentAction(), demoRelatedAgentAction()]))
+  const [busy, setBusy] = useState('')
+  const [error, setError] = useState('')
+  useEffect(() => {
+    if (production) {
+      if (!session) return
+      void Promise.all([productionAgentActions.list(), productionAgentActions.intelligence()])
+        .then(([loadedActions, loadedIntelligence]) => { setActions(loadedActions); setIntelligence(loadedIntelligence) })
+        .catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Agent intelligence could not be loaded'))
+      return
+    }
+    const stored = window.localStorage.getItem(AGENT_ACTIONS_KEY)
+    if (stored) {
+      const storedActions = JSON.parse(stored) as AgentAction[]
+      setActions(storedActions.some((action) => action.id === 'agent-replenishment-002') ? storedActions : [...storedActions, demoRelatedAgentAction()])
+    }
+  }, [production, session])
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('foundingos-agent-context', { detail: actions.find((item) => item.status !== 'rejected') ?? actions[0] ?? null }))
+  }, [actions])
+  useEffect(() => {
+    if (!production) setIntelligence(demoIntelligenceSummary(actions))
+  }, [actions, production])
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('foundingos-system-intelligence', { detail: intelligence }))
+  }, [intelligence])
+  useEffect(() => {
+    const publishIntelligenceContext = () => {
+      window.dispatchEvent(new CustomEvent('foundingos-agent-context', { detail: actions.find((item) => item.status !== 'rejected') ?? actions[0] ?? null }))
+      window.dispatchEvent(new CustomEvent('foundingos-system-intelligence', { detail: intelligence }))
+    }
+    window.addEventListener('foundingos-intelligence-context-request', publishIntelligenceContext)
+    return () => window.removeEventListener('foundingos-intelligence-context-request', publishIntelligenceContext)
+  }, [actions, intelligence])
+  const persist = (next: AgentAction[]) => {
+    setActions(next)
+    if (!production) window.localStorage.setItem(AGENT_ACTIONS_KEY, JSON.stringify(next))
+  }
+  const propose = async (input: Record<string, unknown> = demoAgentAction().input) => {
+    setBusy('propose')
+    setError('')
+    try {
+      const action = production
+        ? await productionAgentActions.proposeReplenishment(input)
+        : { ...demoAgentAction(), input, summary: `${String(input.productName)} is at ${String(input.currentStock)} units. Coordinate purchasing, inbound logistics, and finance before stockout.`, estimatedValuePence: Number(input.reorderQuantity) * Number(input.unitCostPence), id: `agent-replenishment-${Date.now()}`, trailEventIds: [`signal-${Date.now()}`, `proposal-${Date.now()}`], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+      persist([action, ...actions])
+      emit('FoundAI proposed a coordinated replenishment action from a low-stock signal')
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'FoundAI could not create the proposal')
+    } finally {
+      setBusy('')
+    }
+  }
+  const activate = async (input: { businessName: string; supplier: string; productName: string; sku: string; currentStock: number; reorderQuantity: number; unitCostPence: number; unitRetailPricePence?: number; cashPositionPence: number; deliveryAddress: string }) => {
+    setBusy('activate')
+    setError('')
+    try {
+      if (production) {
+        const onboarding = await productionRequest<{ businessName: string; ownerName: string; industry?: string | null; countryCode: string; currency: string; timezone: string }>('/platform/onboarding')
+        await productionRequest('/platform/onboarding', { method: 'PUT', body: JSON.stringify({ ...onboarding, businessName: input.businessName, completedSteps: ['business', 'owner', 'supplier', 'inventory', 'cash', 'intelligence'], goLiveStatus: 'live', acceptTerms: true }) })
+        await productionRecords.create('retail', 'suppliers', { reference: `SUP-${input.sku}`, name: input.supplier, status: 'Active', data: { onboarding: true } }, 'intelligence-activation-supplier-v1')
+        await productionRecords.create('retail', 'inventory', { reference: input.sku, name: input.productName, status: input.currentStock <= 10 ? 'Low stock' : 'Available', valuePence: input.currentStock * input.unitCostPence, data: { currentStock: input.currentStock, supplier: input.supplier, unitCostPence: input.unitCostPence, unitRetailPricePence: input.unitRetailPricePence } }, 'intelligence-activation-inventory-v1')
+        await productionRecords.create('finance', 'cashflow', { reference: `OPEN-${input.sku}`, name: 'Opening cash position', status: 'Current', valuePence: input.cashPositionPence, data: { onboarding: true } }, 'intelligence-activation-cash-v1')
+      } else {
+        appendDemoRecord('retail', 'suppliers', { id: `SUP-${input.sku}`, name: input.supplier, secondary: 'Primary onboarding supplier', value: 'Active', status: 'Active', owner: 'Business owner', updated: 'Now' })
+        appendDemoRecord('retail', 'inventory', { id: input.sku, name: input.productName, secondary: `${input.currentStock} units · ${input.supplier}`, value: displayMoney(input.currentStock * input.unitCostPence), status: input.currentStock <= 10 ? 'Low stock' : 'Available', owner: 'Business owner', updated: 'Now' })
+        appendDemoRecord('finance', 'cashflow', { id: `OPEN-${input.sku}`, name: 'Opening cash position', secondary: input.businessName, value: displayMoney(input.cashPositionPence), status: 'Current', owner: 'Business owner', updated: 'Now' })
+      }
+      await propose(input)
+      window.localStorage.setItem(ACTIVATION_KEY, JSON.stringify({ completedAt: new Date().toISOString(), businessName: input.businessName }))
+      emit('Activation completed and the first intelligence brief is ready for review')
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Activation could not be completed')
+      throw cause
+    } finally {
+      setBusy('')
+    }
+  }
+  const decide = async (action: AgentAction, decision: 'approve' | 'reject') => {
+    setBusy(action.id)
+    setError('')
+    try {
+      const updated = production
+        ? await productionAgentActions.decide(action.id, decision)
+        : { ...action, status: decision === 'approve' ? 'approved' as const : 'rejected' as const, trailEventIds: [...(action.trailEventIds ?? []), `${decision}-${Date.now()}`], updatedAt: new Date().toISOString() }
+      persist(actions.map((item) => item.id === action.id ? updated : item))
+      emit(`Agent action ${decision === 'approve' ? 'approved' : 'rejected'}: ${action.title}`)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'The decision could not be recorded')
+    } finally {
+      setBusy('')
+    }
+  }
+  const execute = async (action: AgentAction) => {
+    setBusy(action.id)
+    setError('')
+    try {
+      let updated: AgentAction
+      if (production) {
+        updated = await productionAgentActions.execute(action.id)
+      } else {
+        const suffix = action.id.slice(-5).toUpperCase()
+        appendDemoRecord('retail', 'purchasing', { id: `PO-${suffix}`, name: String(action.input.productName), secondary: `120 units · ${action.input.supplier}`, value: displayMoney(action.estimatedValuePence), status: 'Approved', owner: 'FoundAI', updated: 'Now' })
+        appendDemoRecord('logistics', 'deliveries', { id: `IN-${suffix}`, name: `Inbound ${action.input.productName}`, secondary: `From ${action.input.supplier}`, value: 'Booked', status: 'Booked', owner: 'FoundAI', updated: 'Now' })
+        appendDemoRecord('finance', 'bills', { id: `BILL-${suffix}`, name: `${action.input.supplier} commitment`, secondary: 'Inventory cash impact', value: displayMoney(action.estimatedValuePence), status: 'Received', owner: 'FoundAI', updated: 'Now' })
+        updated = { ...action, status: 'completed', steps: action.steps.map((step) => ({ ...step, status: 'completed' })), result: { purchaseOrderId: `PO-${suffix}`, deliveryId: `IN-${suffix}`, billId: `BILL-${suffix}` }, outcomeSummary: `Retail: ${String(action.input.reorderQuantity)} units approved for replenishment. Logistics: inbound delivery booked. Finance: ${displayMoney(action.estimatedValuePence)} cash commitment recorded.`, outcomeAssessment: { accuracy: 100, predictedConfidence: action.predictiveSignals?.confidence ?? 50, matched: ['Retail purchase commitment was created', 'Logistics inbound booking was created', 'Finance supplier liability was created', 'Finance cash commitment matched the predicted amount'], deviations: [], financialDeviationPence: 0, economicOutcome: { cashGovernedPence: Number(action.estimatedValuePence || 0), marginProtectedPence: Math.max(0, (Number(action.input.unitRetailPricePence || 0) - Number(action.input.unitCostPence || 0)) * Number(action.input.reorderQuantity || 0)), inventoryUnitsProtected: Number(action.input.reorderQuantity || 0), coordinatedHandoffs: action.steps.length, estimatedOperatorMinutesSaved: action.steps.length * 8, basis: ['Completed internal commitment', 'Recorded replenishment quantity', 'Eight-minute handoff benchmark'] }, summary: 'All 4 predicted effects matched execution; future confidence can strengthen within calibrated limits.' }, trailEventIds: [...(action.trailEventIds ?? []), `retail-${suffix}`, `logistics-${suffix}`, `finance-${suffix}`, `completed-${suffix}`, `assessed-${suffix}`], updatedAt: new Date().toISOString() }
+      }
+      persist(actions.map((item) => item.id === action.id ? updated : item))
+      emit('FoundAI completed replenishment across Retail, Logistics, and Finance')
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'The approved action could not be executed')
+    } finally {
+      setBusy('')
+    }
+  }
+  const reverse = async (action: AgentAction) => {
+    setBusy(action.id)
+    setError('')
+    try {
+      if (production) await productionAgentActions.reverse(action.id)
+      const updated = { ...action, executionReversed: true, trailEventIds: [...(action.trailEventIds ?? []), `reversed-${Date.now()}`], updatedAt: new Date().toISOString() }
+      persist(actions.map((item) => item.id === action.id ? updated : item))
+      emit('FoundAI compensated the internal Retail, Logistics, and Finance records')
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'The internal execution could not be reversed')
+    } finally {
+      setBusy('')
+    }
+  }
+  return { actions, intelligence, busy, error, propose, decide, execute, reverse, activate }
+}
+
 function WorkspaceHeading({ eyebrow, title, copy, action }: { eyebrow: string; title: string; copy: string; action?: React.ReactNode }) {
   return <header className="retail-app-heading"><div><p>{eyebrow}</p><h1>{title}</h1><span>{copy}</span></div>{action}</header>
 }
@@ -255,16 +632,298 @@ const superDashboardWorkspaces: Array<{ workspace: Exclude<BusinessWorkspaceSlug
   { workspace: 'health', health: 88, headline: 'Capacity', value: '86%', trend: '+5pt', risk: '2 priority follow-ups' },
 ]
 
-function SuperDashboardOverview({ events }: { events: WorkspaceEvent[] }) {
+function IntelligenceEvidence({ evidence }: { evidence: string[] }) {
+  return <details className="intelligence-evidence"><summary>Why is this surfaced?</summary><div><strong>Evidence used</strong><ul>{evidence.map((item) => <li key={item}>{item}</li>)}</ul><small>Advisory evidence only. It does not authorize, block, or execute an action.</small></div></details>
+}
+
+type ActivationInput = {
+  businessName: string
+  supplier: string
+  productName: string
+  sku: string
+  currentStock: number
+  reorderQuantity: number
+  unitCostPence: number
+  unitRetailPricePence?: number
+  cashPositionPence: number
+  deliveryAddress: string
+}
+
+function IntelligenceActivation({ busy, onActivate }: { busy: boolean; onActivate: (input: ActivationInput) => Promise<void> }) {
+  const [step, setStep] = useState(0)
+  const [complete, setComplete] = useState(false)
+  const [error, setError] = useState('')
+  const [values, setValues] = useState({
+    businessName: 'FoundingOS Demo Company',
+    supplier: 'Northstar Roasters',
+    productName: 'House Blend Coffee',
+    sku: 'COF-001',
+    currentStock: '8',
+    reorderQuantity: '120',
+    unitCost: '6.50',
+    unitRetailPrice: '12.00',
+    cashPosition: '86400',
+    deliveryAddress: '1 Market Street, London',
+  })
+  useEffect(() => {
+    const stored = window.localStorage.getItem(ACTIVATION_KEY)
+    if (stored) setComplete(true)
+  }, [])
+  const update = (field: keyof typeof values, value: string) => setValues((current) => ({ ...current, [field]: value }))
+  const submit = async () => {
+    setError('')
+    try {
+      await onActivate({
+        businessName: values.businessName.trim(),
+        supplier: values.supplier.trim(),
+        productName: values.productName.trim(),
+        sku: values.sku.trim().toUpperCase(),
+        currentStock: Number(values.currentStock),
+        reorderQuantity: Number(values.reorderQuantity),
+        unitCostPence: Math.round(Number(values.unitCost) * 100),
+        unitRetailPricePence: values.unitRetailPrice ? Math.round(Number(values.unitRetailPrice) * 100) : undefined,
+        cashPositionPence: Math.round(Number(values.cashPosition) * 100),
+        deliveryAddress: values.deliveryAddress.trim(),
+      })
+      setComplete(true)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Setup could not be completed')
+    }
+  }
+  const steps = ['Business', 'Supply', 'Cash', 'First brief']
+  return <section className="intelligence-activation">
+    <div className="retail-app-panel-heading"><div><p>First-value activation</p><h2>{complete ? 'Your intelligence loop is ready' : 'Go from zero to a governed decision in minutes'}</h2></div><span>{complete ? 'Activated' : `Step ${step + 1} of ${steps.length}`}</span></div>
+    {complete ? <div className="activation-complete"><strong>✓ Setup complete</strong><p>Your supplier, starting inventory, and cash position now ground the first replenishment brief. Review the proposal below, ask FoundAI for evidence, then approve and execute separately.</p><button className="retail-app-secondary" onClick={() => { window.localStorage.removeItem(ACTIVATION_KEY); setComplete(false); setStep(0) }} type="button">Review setup again</button></div> : <>
+      <nav>{steps.map((label, index) => <button aria-current={step === index ? 'step' : undefined} data-complete={index < step} key={label} onClick={() => index <= step && setStep(index)} type="button"><b>{index + 1}</b><span>{label}</span></button>)}</nav>
+      <div className="activation-step">
+        {step === 0 ? <><div><small>Why this matters</small><h3>Give FoundAI the operating context it should protect.</h3><p>This name identifies your tenant and keeps every signal, action, and outcome isolated to your business.</p></div><label>Business name<input value={values.businessName} onChange={(event) => update('businessName', event.target.value)} /></label></> : null}
+        {step === 1 ? <><div><small>Why this matters</small><h3>Connect one supplier to one real inventory risk.</h3><p>FoundAI uses cost, stock, and supplier context to explain the cash and availability trade-off before asking for approval.</p></div><div className="activation-fields"><label>Supplier<input value={values.supplier} onChange={(event) => update('supplier', event.target.value)} /></label><label>Product<input value={values.productName} onChange={(event) => update('productName', event.target.value)} /></label><label>SKU<input value={values.sku} onChange={(event) => update('sku', event.target.value)} /></label><label>Units on hand<input min="0" type="number" value={values.currentStock} onChange={(event) => update('currentStock', event.target.value)} /></label><label>Reorder quantity<input min="1" type="number" value={values.reorderQuantity} onChange={(event) => update('reorderQuantity', event.target.value)} /></label><label>Unit cost (£)<input min=".01" step=".01" type="number" value={values.unitCost} onChange={(event) => update('unitCost', event.target.value)} /></label><label>Selling price (£, optional)<input min=".01" step=".01" type="number" value={values.unitRetailPrice} onChange={(event) => update('unitRetailPrice', event.target.value)} /></label><label>Delivery address<input value={values.deliveryAddress} onChange={(event) => update('deliveryAddress', event.target.value)} /></label></div></> : null}
+        {step === 2 ? <><div><small>Why this matters</small><h3>Make the working-capital trade-off visible.</h3><p>The cash position is context only. FoundingOS never moves bank funds during this workflow.</p></div><label>Current cash position (£)<input min="0" step=".01" type="number" value={values.cashPosition} onChange={(event) => update('cashPosition', event.target.value)} /></label></> : null}
+        {step === 3 ? <><div><small>WhatsApp-first expectations</small><h3>Your first brief is concise, explainable, and human-controlled.</h3><p>WhatsApp delivers the decision and evidence. APPROVE records permission only. EXECUTE creates tenant-scoped internal records. UNDO compensates those records. External payments remain disabled.</p></div><div className="activation-review"><span><strong>{values.productName}</strong>{values.currentStock} units on hand</span><span><strong>£{(Number(values.reorderQuantity) * Number(values.unitCost)).toFixed(2)}</strong>proposed commitment</span><span><strong>{values.supplier}</strong>supplier</span></div></> : null}
+      </div>
+      {error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}
+      <footer><button className="retail-app-secondary" disabled={step === 0 || busy} onClick={() => setStep((current) => current - 1)} type="button">Back</button>{step < steps.length - 1 ? <button className="retail-app-primary" onClick={() => setStep((current) => current + 1)} type="button">Continue</button> : <button className="retail-app-primary" disabled={busy} onClick={() => void submit()} type="button">{busy ? 'Creating first brief…' : 'Create my first intelligence brief'}</button>}</footer>
+    </>}
+  </section>
+}
+
+const buyerDemoStages = [
+  { id: 'detected', label: 'Detect', command: 'SIGNAL', message: 'House Blend Coffee has 8 units left. A refined replenishment pattern predicts stockout pressure across Retail, Logistics, and Finance.' },
+  { id: 'briefed', label: 'Brief', command: '/snapshot', message: '£780 internal cash commitment | 120 units protected | 92% measured accuracy | 85% pattern reliability.' },
+  { id: 'approved', label: 'Approve', command: 'APPROVE', message: 'Approved by the owner. No workspace record or external payment has moved. Reply EXECUTE when ready.' },
+  { id: 'executed', label: 'Execute', command: 'EXECUTE', message: 'Purchase order, inbound booking, and supplier liability created atomically. Three handoffs governed; no external payment moved.' },
+  { id: 'reversed', label: 'Undo', command: 'UNDO', message: 'Purchase order and inbound booking cancelled; supplier liability voided. Compensation recorded in the audit trail.' },
+] as const
+
+function BuyerIntelligenceDemo() {
+  const [stageIndex, setStageIndex] = useState(0)
+  const stage = buyerDemoStages[stageIndex]
+  const advance = () => setStageIndex((current) => Math.min(buyerDemoStages.length - 1, current + 1))
+  return <section className="buyer-intelligence-demo">
+    <div className="retail-app-panel-heading"><div><p>Interactive acquisition demo</p><h2>Run the governed WhatsApp loop</h2></div><span>Simulation only · no records created</span></div>
+    <div className="buyer-demo-layout">
+      <div className="buyer-demo-phone">
+        <header><span>WA</span><div><strong>FoundingOS Intelligence</strong><small>Low-bandwidth decision channel</small></div><i>secured</i></header>
+        <div className="buyer-demo-message"><small>{stage.label.toUpperCase()}</small><strong>{stage.command}</strong><p>{stage.message}</p><time>Now · Ref agent-replenishment-001</time></div>
+        <footer>{stageIndex < buyerDemoStages.length - 1 ? <button onClick={advance} type="button">Send {buyerDemoStages[stageIndex + 1].command}</button> : <button onClick={() => setStageIndex(0)} type="button">Replay demo</button>}<span>Every transition is explicit and auditable.</span></footer>
+      </div>
+      <div className="buyer-demo-timeline">{buyerDemoStages.map((item, index) => <button aria-current={index === stageIndex ? 'step' : undefined} data-complete={index <= stageIndex} key={item.id} onClick={() => setStageIndex(index)} type="button"><b>{index + 1}</b><span><strong>{item.label}</strong><small>{index < stageIndex ? 'Recorded' : index === stageIndex ? 'Current state' : 'Awaiting command'}</small></span></button>)}</div>
+    </div>
+    <div className="buyer-demo-proof"><span><strong>&lt; 1 KB</strong> decision brief</span><span><strong>3</strong> coordinated workspaces</span><span><strong>2 gates</strong> approve, then execute</span><span><strong>1 trail</strong> signal to outcome</span></div>
+  </section>
+}
+
+function StrategicOverview({ intelligence }: { intelligence: AgentIntelligenceSummary }) {
+  const coverage = [
+    { title: 'Inventory replenishment', route: 'Retail → Logistics → Finance', boundary: 'Internal purchase, inbound, and liability records. No supplier payment.' },
+    { title: 'Receivables collection', route: 'Finance → Retail CRM → Marketing', boundary: 'Collection case and approved reminder. No customer debit.' },
+    { title: 'Delivery recovery', route: 'Logistics → Retail Service → Finance', boundary: 'Recovery case and remedy ceiling. No refund or external fund movement.' },
+    { title: 'Expense approval', route: 'Finance → Finance → Retail', boundary: 'Approval, budget review, and owner task. No payment is initiated.' },
+    { title: 'Campaign launch', route: 'Marketing → Retail → Finance', boundary: 'Campaign, audience readiness, and budget ceiling. No publication or spend.' },
+    { title: 'Budget reallocation', route: 'Finance → Retail', boundary: 'Internal budget movement and owner review. No funds are transferred.' },
+  ]
+  const exportSummary = () => {
+    const summary = [
+      '# FoundingOS — Strategic Overview',
+      '',
+      'FoundingOS is a WhatsApp-native intelligence control plane with a shared tenant-scoped Event Feed, evidence-backed recommendations, human approval gates, internal-only execution, and measured outcome learning.',
+      '',
+      '## Defensibility',
+      '- Shared operating memory across Operations, Workforce, and Intelligence.',
+      '- Explicit proposal, approval, execution, assessment, compensation, and audit lifecycle.',
+      '- Low-bandwidth WhatsApp delivery without bypassing authorization or replay protection.',
+      '- Aggregate-only cross-tenant evidence with privacy thresholds.',
+      '',
+      '## Execution boundary',
+      'The platform creates and compensates internal workspace records only. It does not autonomously move external money, debit customers, issue refunds, publish campaigns, or mutate supplier systems.',
+      '',
+      `Measured outcomes: ${intelligence.snapshot.totalAssessedOutcomes}`,
+      `Refined patterns: ${intelligence.snapshot.refinedPatterns}`,
+      `Learning momentum: ${intelligence.snapshot.learningMomentum.score}/100`,
+    ].join('\n')
+    const url = URL.createObjectURL(new Blob([summary], { type: 'text/markdown;charset=utf-8' }))
+    const link = window.document.createElement('a')
+    link.href = url
+    link.download = 'foundingos-strategic-overview.md'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+  return <section className="strategic-overview">
+    <div className="strategic-overview__header">
+      <div><span className="eyebrow">Buyer-ready strategic overview</span><h2>WhatsApp-native intelligence with governed execution</h2><p>A shared operational memory detects business signals, explains the economic case, and coordinates approved work across existing systems without surrendering human control.</p><button className="retail-app-secondary" onClick={exportSummary} type="button">Export platform summary</button></div>
+      <div className="strategic-score"><strong>{intelligence.snapshot.totalAssessedOutcomes}</strong><span>measured outcomes</span><small>{intelligence.snapshot.refinedPatterns} refined patterns · {intelligence.snapshot.learningMomentum.score}/100 learning momentum</small></div>
+    </div>
+    <div className="strategic-pillars">
+      <article><strong>Distribution advantage</strong><span>Decisions arrive in a familiar, low-bandwidth WhatsApp loop instead of requiring another daily dashboard habit.</span></article>
+      <article><strong>Compounding data advantage</strong><span>The tenant-scoped Event Feed links signals, decisions, execution effects, reversals, and measured outcomes.</span></article>
+      <article><strong>Governance advantage</strong><span>Approval and execution are separate, role-authorized acts with replay protection and deterministic compensation.</span></article>
+      <article><strong>Privacy boundary</strong><span>Cross-tenant evidence is aggregate-only and suppressed below the existing three-tenant anonymity threshold.</span></article>
+    </div>
+    <div className="decision-coverage">
+      <div className="section-heading"><div><span>Governed decision coverage</span><h3>Three repeatable, compensatable workflows</h3></div><p>Each workflow declares required evidence, simulation, execution effects, outcome assessment, and reversal.</p></div>
+      <div className="decision-coverage__grid">{coverage.map((item) => <article key={item.title}><span className="badge badge--approved">Human approved</span><h4>{item.title}</h4><strong>{item.route}</strong><p>{item.boundary}</p></article>)}</div>
+    </div>
+    <footer className="strategic-boundary"><b aria-hidden="true">✓</b><span><strong>Execution boundary:</strong> FoundingOS never moves external money, pays suppliers, debits customers, or issues refunds autonomously.</span></footer>
+  </section>
+}
+
+function SuperDashboardOverview({ events, agentActions, intelligence, agentBusy, agentError, activateIntelligence, proposeAgentAction, decideAgentAction, executeAgentAction, reverseAgentAction }: { events: WorkspaceEvent[]; agentActions: AgentAction[]; intelligence: AgentIntelligenceSummary; agentBusy: string; agentError: string; activateIntelligence: (input: ActivationInput) => Promise<void>; proposeAgentAction: () => Promise<void>; decideAgentAction: (action: AgentAction, decision: 'approve' | 'reject') => Promise<void>; executeAgentAction: (action: AgentAction) => Promise<void>; reverseAgentAction: (action: AgentAction) => Promise<void> }) {
   const [horizon, setHorizon] = useState<'Today' | '7 days' | '30 days'>('7 days')
   const forecast = horizon === 'Today' ? { revenue: '+0.8%', cash: '£87.1k', confidence: '95%' } : horizon === '7 days' ? { revenue: '+4.6%', cash: '£91.8k', confidence: '91%' } : { revenue: '+13.2%', cash: '£103.5k', confidence: '86%' }
+  const activeAction = agentActions.find((action) => action.status !== 'rejected') ?? agentActions[0]
+  const rankedDecisions = agentActions
+    .filter((action) => action.status === 'proposed' || action.status === 'approved')
+    .map((action) => {
+      const ageHours = Math.max(0, (Date.now() - new Date(action.createdAt).getTime()) / 3_600_000)
+      const urgency = Math.min(10, Math.floor(ageHours / 6))
+      return { action, score: (action.coordinationSummary?.decisionScore ?? 0) + urgency }
+    })
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 3)
   return <>
-    <WorkspaceHeading eyebrow="FoundingOS SuperDashboard" title="Your whole business, in one view." copy="Live operating health, cross-workspace priorities, forecasts, and recommended actions from the shared event graph." action={<Link className="retail-app-primary" href={`${workspaceRoot}/intelligence/recommendations`}>Review AI actions</Link>} />
+    <WorkspaceHeading eyebrow="FoundingOS Intelligence" title="The control plane for your business." copy="FoundAI observes the Shared Event Feed, connects cause and effect across workspaces, and brings coordinated actions here for approval." action={<button className="retail-app-primary" disabled={agentBusy === 'propose'} onClick={() => void proposeAgentAction()} type="button">{agentBusy === 'propose' ? 'Scanning events…' : 'Run replenishment scan'}</button>} />
+    <IntelligenceActivation busy={agentBusy === 'activate'} onActivate={activateIntelligence} />
+    <StrategicOverview intelligence={intelligence} />
+    <section className="agent-action-command" id="agent-actions">
+      <header><div><p>FoundAI orchestration</p><h2>{activeAction?.title ?? 'No active proposals'}</h2></div>{activeAction ? <span data-status={activeAction.status}>{activeAction.status}</span> : null}</header>
+      {agentError ? <div className="complete-workspace-error" role="alert">{agentError}</div> : null}
+      {activeAction ? <>
+        <p className="agent-action-summary">{activeAction.summary}</p>
+        <div className="agent-action-evidence"><span>Triggered by <strong>Shared Event Feed</strong></span><span>Risk <strong>{activeAction.riskLevel}</strong></span><span>Cash impact <strong>{displayMoney(activeAction.estimatedValuePence)}</strong></span>{activeAction.predictiveSignals ? <span className="agent-confidence-badge" data-confidence={activeAction.predictiveSignals.confidenceLabel}><strong>{activeAction.predictiveSignals.confidence}% confidence</strong> · {activeAction.predictiveSignals.evidenceCount} outcomes</span> : null}</div>
+        {activeAction.coordinationSummary ? <div className="agent-coordination-grid">
+          <article><small>Retail risk</small><strong>{activeAction.coordinationSummary.inventoryRisk}</strong></article>
+          <article><small>Logistics load</small><strong>{activeAction.coordinationSummary.logisticsLoad}</strong></article>
+          <article><small>Finance impact</small><strong>{displayMoney(activeAction.coordinationSummary.cashImpactPence)} committed</strong></article>
+        </div> : null}
+        {activeAction.historicalContext ? <div className="agent-history"><div><small>Historical evidence</small><strong>{activeAction.historicalContext.narrative}</strong></div><span>{activeAction.historicalContext.completionRate}% prior completion</span></div> : null}
+        {activeAction.predictiveSignals ? <div className="agent-prediction"><div><small>What usually happens next</small><strong>{activeAction.predictiveSignals.likelyNext}</strong><p>{activeAction.predictiveSignals.triggerPattern} {activeAction.predictiveSignals.basis.join(' · ')}</p></div><span>{activeAction.predictiveSignals.confidenceLabel} pattern</span></div> : null}
+        {activeAction.coordinationSummary ? <ul className="agent-tradeoffs">{activeAction.coordinationSummary.tradeoffs.map((tradeoff) => <li key={tradeoff}>{tradeoff}</li>)}</ul> : null}
+        {activeAction.simulationPreview ? <section className="agent-simulation">
+          <header><div><small>Read-only simulation</small><strong>Before and after approval</strong></div><span>No changes executed</span></header>
+          <div>{activeAction.simulationPreview.workspaces.map((preview) => <article key={preview.workspace}><h3>{configs[preview.workspace].label}</h3><dl><div><dt>Before</dt><dd>{preview.before}</dd></div><div><dt>After</dt><dd>{preview.after}</dd></div></dl><p>{preview.effect}</p>{preview.secondOrderEffects?.length ? <ul>{preview.secondOrderEffects.map((effect) => <li key={effect}>{effect}</li>)}</ul> : null}</article>)}</div>
+          {activeAction.simulationPreview.comparison ? <section className="agent-decision-comparison"><article><small>Approve</small>{activeAction.simulationPreview.comparison.approve.map((effect) => <span key={effect}>+ {effect}</span>)}</article><article><small>Reject / no action</small>{activeAction.simulationPreview.comparison.reject.map((effect) => <span key={effect}>– {effect}</span>)}</article><strong>{activeAction.simulationPreview.comparison.predictedDelta}</strong></section> : null}
+          <footer>{activeAction.simulationPreview.disclaimer}</footer>
+        </section> : null}
+        <div className="agent-action-steps">{activeAction.steps.map((step, index) => <article key={step.id} data-complete={step.status === 'completed'}><b>{index + 1}</b><div><small>{configs[step.workspace].label} · {step.module}</small><strong>{step.description}</strong></div><span>{step.status === 'completed' ? '✓ Done' : 'Pending'}</span></article>)}</div>
+        <footer><p>{activeAction.rationale}</p><div>
+          {activeAction.status === 'proposed' ? <><button className="retail-app-secondary" disabled={agentBusy === activeAction.id} onClick={() => void decideAgentAction(activeAction, 'reject')} type="button">Dismiss</button><button className="retail-app-primary" disabled={agentBusy === activeAction.id} onClick={() => void decideAgentAction(activeAction, 'approve')} type="button">Approve coordinated plan</button></> : null}
+          {activeAction.status === 'approved' ? <button className="retail-app-primary" disabled={agentBusy === activeAction.id} onClick={() => void executeAgentAction(activeAction)} type="button">{agentBusy === activeAction.id ? 'Coordinating workspaces…' : 'Execute approved plan'}</button> : null}
+          {activeAction.status === 'completed' ? activeAction.executionReversed
+            ? <span className="agent-action-complete">Internal execution compensated and audited</span>
+            : <><span className="agent-action-complete">Completed across three workspaces</span><button className="retail-app-secondary" disabled={agentBusy === activeAction.id} onClick={() => void reverseAgentAction(activeAction)} type="button">{agentBusy === activeAction.id ? 'Compensating…' : 'Undo internal execution'}</button></> : null}
+          <Link className="agent-action-trail-link" href={`${workspaceRoot}/intelligence/event-feed?actionId=${encodeURIComponent(activeAction.id)}`}>View {activeAction.trailEventIds?.length ?? 0} trail events →</Link>
+        </div></footer>
+        {activeAction.outcomeSummary ? <div className="agent-outcome-summary"><small>Verified outcome</small><strong>{activeAction.outcomeSummary}</strong></div> : null}
+        {activeAction.outcomeAssessment ? <div className="agent-learning-summary"><div><small>Outcome learning</small><strong>{activeAction.outcomeAssessment.accuracy}% prediction accuracy</strong><p>{activeAction.outcomeAssessment.summary}</p></div><span>{activeAction.outcomeAssessment.deviations.length ? `${activeAction.outcomeAssessment.deviations.length} deviations` : 'No deviations'}</span></div> : null}
+      </> : <p className="agent-action-summary">Run a scan to let FoundAI evaluate the latest inventory signal and prepare a coordinated plan.</p>}
+    </section>
+    <section className="decision-intelligence">
+      <div className="retail-app-panel-heading"><div><p>Coordination intelligence</p><h2>Highest-value pending decisions</h2></div><span>Impact + coverage + risk + pattern confidence + urgency</span></div>
+      {rankedDecisions.length ? <div className="decision-intelligence-list">{rankedDecisions.map(({ action, score }, index) => <article key={action.id}>
+        <a href="#agent-actions"><b>#{index + 1}</b><div><strong>{action.title}</strong><span>{action.coordinationSummary?.scoreExplanation.join(' · ') || action.rationale}</span></div><em>{score} priority · {action.predictiveSignals?.confidence ?? 50}% confidence · {action.predictiveSignals?.evidenceCount ?? 0} outcomes</em></a>
+        <IntelligenceEvidence evidence={[
+          `${action.historicalContext?.similarSignals ?? 0} similar historical signals with ${action.historicalContext?.completionRate ?? 0}% completion`,
+          `${action.predictiveSignals?.reliabilityScore ?? 0}% pattern reliability and ${action.predictiveSignals?.averageAccuracy ?? 0}% measured accuracy`,
+          `${action.coordinationSummary?.workspaceCount ?? action.steps.length} workspaces affected with ${displayMoney(action.estimatedValuePence)} estimated financial impact`,
+          `${intelligence.interactions.filter((interaction) => interaction.actionIds.includes(action.id)).length} active related-decision interaction(s)`,
+        ]} />
+      </article>)}</div> : <p className="agent-action-summary">No decisions are waiting. Completed outcomes remain available in the Shared Event Feed.</p>}
+    </section>
+    <section className="intelligence-snapshot">
+      <div className="retail-app-panel-heading"><div><p>Institutional memory</p><h2>Intelligence Snapshot</h2></div><span data-momentum={intelligence.snapshot.learningMomentum.label}>{intelligence.snapshot.learningMomentum.label} momentum</span></div>
+      <div className="intelligence-snapshot-grid">
+        <article><small>Assessed outcomes</small><strong>{intelligence.snapshot.totalAssessedOutcomes}</strong><span>Measured learning loops</span></article>
+        <article><small>Refined patterns</small><strong>{intelligence.snapshot.refinedPatterns}</strong><span>Evidence thresholds passed</span></article>
+        <article><small>Accuracy trend</small><strong>{intelligence.snapshot.recentAccuracyTrend.change >= 0 ? '+' : ''}{intelligence.snapshot.recentAccuracyTrend.change}%</strong><span>{intelligence.snapshot.recentAccuracyTrend.current}% recent accuracy</span></article>
+        <article><small>Active interactions</small><strong>{intelligence.snapshot.activeInteractions}</strong><span>Cross-action advisories</span></article>
+        <article><small>Learning momentum</small><strong>{intelligence.snapshot.learningMomentum.score}/100</strong><span>{intelligence.snapshot.learningMomentum.label}</span></article>
+      </div>
+      <div className="intelligence-progress"><strong>{intelligence.snapshot.recentAccuracyTrend.narrative}</strong><span>{intelligence.snapshot.learningMomentum.narrative}</span></div>
+      <div className="economic-value-grid">
+        <article><small>Cash governed</small><strong>{displayMoney(intelligence.snapshot.economicValue.cashGovernedPence)}</strong><span>Completed internal commitments</span></article>
+        <article><small>Cash preserved</small><strong>{displayMoney(intelligence.snapshot.economicValue.cashPreservedPence)}</strong><span>Immediate commitments rejected</span></article>
+        <article><small>Margin protected</small><strong>{intelligence.snapshot.economicValue.marginProtectedPence === null ? 'Not measured' : displayMoney(intelligence.snapshot.economicValue.marginProtectedPence)}</strong><span>{intelligence.snapshot.economicValue.marginProtectedPence === null ? 'Needs selling-price evidence' : 'Recorded price less cost'}</span></article>
+        <article><small>Risk reduced</small><strong>{intelligence.snapshot.economicValue.riskReducedActions}</strong><span>{intelligence.snapshot.economicValue.inventoryUnitsProtected} inventory units protected</span></article>
+        <article><small>Time saved</small><strong>~{intelligence.snapshot.economicValue.estimatedOperatorMinutesSaved} min</strong><span>{intelligence.snapshot.economicValue.coordinatedHandoffs} governed handoffs</span></article>
+      </div>
+      <details className="economic-methodology"><summary>How value is measured</summary><p>{intelligence.snapshot.economicValue.narrative}</p><ul>{intelligence.snapshot.economicValue.methodology.map((item) => <li key={item}>{item}</li>)}</ul></details>
+      <div className="messaging-intelligence-preview"><div><small>WhatsApp-first intelligence</small><strong>Low-data briefs show cash, stock, supplier, risk, and the next safe action.</strong></div><code>APPROVE · REJECT · EXECUTE · UNDO · IMPACT</code><span>Approval and execution remain separate. UNDO compensates internal records; no external payment is moved.</span></div>
+    </section>
+    <section className="emerging-signals">
+      <div className="retail-app-panel-heading"><div><p>Proactive foresight</p><h2>Emerging Signals</h2></div><span>Advisory only</span></div>
+      {intelligence.emergingSignals.length ? <div className="emerging-signals-grid">{intelligence.emergingSignals.map((signal) => <article key={signal.id} data-severity={signal.severity}>
+        <header><div><small>{signal.kind.replaceAll('-', ' ')}</small><strong>{signal.title}</strong></div><span>{signal.reliability}% reliable</span></header>
+        <p>{signal.summary}</p>
+        <footer>{signal.outcomeCount} measured outcome{signal.outcomeCount === 1 ? '' : 's'} · {signal.advisory}</footer>
+        <IntelligenceEvidence evidence={signal.evidence} />
+      </article>)}</div> : <p className="agent-action-summary">No emerging signal currently meets the evidence threshold.</p>}
+    </section>
+    <section className="system-intelligence-health">
+      <div className="retail-app-panel-heading"><div><p>Compounding intelligence</p><h2>System Intelligence Health</h2></div><span>{intelligence.health.activePatterns} active pattern{intelligence.health.activePatterns === 1 ? '' : 's'}</span></div>
+      <div className="system-intelligence-health-grid">
+        <article><small>Assessed outcomes</small><strong>{intelligence.health.totalAssessedOutcomes}</strong><span>Measured against original predictions</span></article>
+        <article><small>Prediction accuracy</small><strong>{intelligence.health.averagePredictionAccuracy}%</strong><span>Average verified outcome match</span></article>
+        <article><small>Refined patterns</small><strong>{intelligence.health.refinedPatterns}</strong><span>Passed evidence thresholds</span></article>
+        <article><small>Confidence improvement</small><strong>{intelligence.health.confidenceImprovement >= 0 ? '+' : ''}{intelligence.health.confidenceImprovement} pts</strong><span>Earliest to latest measured action</span></article>
+        <article><small>Pattern reliability</small><strong>{intelligence.health.averageReliability}%</strong><span>Evidence-weighted system memory</span></article>
+      </div>
+      <p>{intelligence.health.narrative}</p>
+      <p className="system-intelligence-memory">{intelligence.health.recurringDeviation?.insight || 'No recurring prediction deviation has met the evidence threshold.'}</p>
+    </section>
+    <section className="related-decisions">
+      <div className="retail-app-panel-heading"><div><p>Cross-action awareness</p><h2>Related decisions</h2></div><span>Read-only advisory</span></div>
+      {intelligence.interactions.length ? <div>{intelligence.interactions.map((interaction) => <article key={interaction.id} data-severity={interaction.severity}>
+        <header><strong>{interaction.actionTitles.join(' ↔ ')}</strong><span>{interaction.severity}</span></header>
+        <p>{interaction.summary}</p>
+        <ul>{interaction.evidence.map((item) => <li key={item}>{item}</li>)}</ul>
+        <footer>{interaction.advisory}</footer>
+        <IntelligenceEvidence evidence={[...interaction.evidence, `${intelligence.health.averageReliability}% average pattern reliability`, `${intelligence.health.averagePredictionAccuracy}% measured prediction accuracy`]} />
+      </article>)}</div> : <p>No material interactions were detected between pending or recently completed actions.</p>}
+    </section>
+    <section className="intelligence-advantage">
+      <div className="retail-app-panel-heading"><div><p>Strategic demo</p><h2>The Intelligence Advantage</h2></div><span>Messaging-native operating system</span></div>
+      <div>
+        <article><small>1 · Detect</small><strong>See risk before it becomes a crisis</strong><p>Event Feed patterns connect inventory, supplier, logistics, and cash pressure using measured tenant-safe evidence.</p></article>
+        <article><small>2 · Decide anywhere</small><strong>Act from a basic smartphone</strong><p>Sub-1KB WhatsApp briefs show economic impact, confidence, alternatives, and the exact next command.</p></article>
+        <article><small>3 · Govern execution</small><strong>Approval is not execution</strong><p>Every internal action is tenant-scoped, replay-protected, audited, and compensatable with no hidden external transfer.</p></article>
+        <article><small>4 · Compound</small><strong>Every outcome improves the next decision</strong><p>Accuracy assessments refine reliability and surface patterns no single isolated workflow can learn alone.</p></article>
+      </div>
+    </section>
+    <BuyerIntelligenceDemo />
+    <section className="execution-audit">
+      <div className="retail-app-panel-heading"><div><p>Governance evidence</p><h2>Execution audit trail</h2></div><span>{intelligence.auditTrail.length} recent lifecycle events</span></div>
+      {intelligence.auditTrail.length ? <div className="execution-audit-list">{intelligence.auditTrail.slice(0, 10).map((entry) => <article key={entry.id} data-stage={entry.stage}>
+        <i />
+        <div><header><strong>{entry.actionTitle}</strong><span>{entry.stage}</span></header><p>{entry.summary}</p><small>{entry.actor} · {new Date(entry.occurredAt).toLocaleString()}</small></div>
+        <details><summary>Evidence</summary><ul>{entry.evidence.map((item) => <li key={item}>{item}</li>)}</ul></details>
+      </article>)}</div> : <p className="agent-action-summary">Lifecycle events will appear here after a signal creates the first governed proposal.</p>}
+      <footer>Append-only Event Feed evidence · tenant scoped · approval separated from execution · compensation retained</footer>
+    </section>
     <section className="retail-app-metrics">
       <Metric label="Operating health" value="91%" change="+3 points this week" />
       <Metric label="Revenue influenced" value="£74.2k" change="+11.8% this month" />
       <Metric label="Active exceptions" value="13" change="4 require a decision" />
-      <Metric label="Automations completed" value="1,284" change="96.7% success rate" />
+      <Metric label="Pattern reliability" value={`${activeAction?.predictiveSignals?.reliabilityScore ?? 0}%`} change={`${activeAction?.predictiveSignals?.assessedOutcomes ?? 0} assessed outcomes${activeAction?.predictiveSignals?.refined ? ' · refined pattern' : ''}`} />
     </section>
     <section className="superdashboard-workspace-grid">
       {superDashboardWorkspaces.map((item) => <Link href={`${workspaceRoot}/${item.workspace}`} key={item.workspace} style={{ ['--workspace-color' as string]: configs[item.workspace].accent }}>
@@ -416,34 +1075,167 @@ function IntegrationsPage({ state, update, production }: { state: WorkspaceState
   return <><WorkspaceHeading eyebrow="Connected platform" title="Integrations" copy="Connect channels and systems through one governed FoundingOS integration layer. Credentials are encrypted before storage and never returned to the browser." /><div className="retail-app-automation-grid">{integrations.map((integration) => <article className="retail-app-panel" key={integration.id}><div className="retail-app-panel-heading"><div><p>{integration.category}</p><h2>{integration.name}</h2></div><span className={`retail-app-status ${integration.connected ? 'status-active' : 'status-draft'}`}>{integration.connected ? 'Connected' : 'Available'}</span></div><p>{integration.connected ? 'Configuration passed the platform readiness check.' : 'Add provider credentials to activate this service.'}</p><button className={integration.connected ? 'retail-app-secondary' : 'retail-app-primary'} onClick={() => production ? setSelectedProvider(providerCatalog.find((item) => item.id === integration.id) || null) : update((current) => ({ ...current, integrations: current.integrations.map((item) => item.id === integration.id ? { ...item, connected: !item.connected } : item) }), `${integration.name} ${integration.connected ? 'disconnected' : 'connected'}`)} type="button">{production ? (integration.connected ? 'Replace credentials' : 'Configure') : (integration.connected ? 'Disconnect demo' : 'Connect demo')}</button></article>)}</div>{selectedProvider ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void connect(event)}><div><p>{selectedProvider.category}</p><h2>Connect {selectedProvider.name}</h2></div>{selectedProvider.fields.map((field) => <label key={field}>{field.replace(/([A-Z])/g, ' $1')}<input autoComplete="off" name={field} required type={field.toLowerCase().includes('secret') || field.toLowerCase().includes('token') || field.toLowerCase().includes('key') ? 'password' : 'text'} /></label>)}{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setSelectedProvider(null)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Checking…' : 'Save and check'}</button></footer></form></div> : null}</>
 }
 
+function OutcomesPage({ intelligence, production }: { intelligence: AgentIntelligenceSummary; production: boolean }) {
+  const { snapshot, health, auditTrail } = intelligence
+  const [range, setRange] = useState<'7' | '30' | '90' | 'all'>('30')
+  const [query, setQuery] = useState('')
+  const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null)
+  const filteredAuditTrail = auditTrail.filter((entry) => {
+    const matchesQuery = !query.trim() || `${entry.actionTitle} ${entry.stage} ${entry.actor} ${entry.summary}`.toLowerCase().includes(query.trim().toLowerCase())
+    if (!matchesQuery || range === 'all') return matchesQuery
+    return Date.now() - new Date(entry.occurredAt).getTime() <= Number(range) * 24 * 60 * 60 * 1000
+  })
+  const exportData = async () => {
+    if (production) {
+      const blob = await productionPlatform.governanceExport()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'foundingos-governance-export.csv'
+      link.click()
+      URL.revokeObjectURL(url)
+      return
+    }
+
+    function StrategicOverviewPage({ intelligence }: { intelligence: AgentIntelligenceSummary }) {
+      const { snapshot, health } = intelligence
+      const exportSummary = () => {
+        const summaryDocument = [
+          '# FoundingOS — Strategic Overview',
+          '',
+          `Generated: ${new Date().toISOString()}`,
+          '',
+          '## The platform',
+          'FoundingOS is a WhatsApp-native intelligence control plane for small-business operations. It connects signals across Operations, Workforce, and Intelligence, then turns them into explainable, human-governed decisions.',
+          '',
+          '## Why it is defensible',
+          '- Shared tenant-scoped Event Feed connecting operational signals across workspaces.',
+          '- Evidence-backed recommendations with historical context, predictive confidence, and simulation.',
+          '- Explicit approval, execution, assessment, compensation, and audit lifecycle.',
+          '- Low-bandwidth WhatsApp delivery without weakening authorization or replay protection.',
+          '- Measured outcomes refine reliability over time instead of claiming autonomous intelligence.',
+          '',
+          '## Buyer-safe execution boundary',
+          'FoundingOS creates and compensates internal workspace records only. It does not move external funds, debit customers, issue refunds, publish campaigns, or mutate supplier and customer systems without an explicitly integrated, separately governed pathway.',
+          '',
+          '## Current measured evidence',
+          `- ${snapshot.totalAssessedOutcomes} assessed outcomes`,
+          `- ${health.averagePredictionAccuracy}% average measured prediction accuracy`,
+          `- ${health.refinedPatterns} refined patterns at ${health.averageReliability}% average reliability`,
+          `- £${(snapshot.economicValue.cashGovernedPence / 100).toFixed(2)} completed internal value governed`,
+          `- ${snapshot.economicValue.coordinatedHandoffs} cross-workspace handoffs`,
+          `- ${snapshot.economicValue.estimatedOperatorMinutesSaved} estimated operator minutes saved`,
+          '',
+          '## Governance model',
+          'Advisory signals never execute by themselves. Approval and execution are separate permissions, actions are tenant-isolated and replay-protected, and each lifecycle stage is auditable and reversible within the internal execution boundary.',
+          '',
+          '## Strategic thesis',
+          'The asset is the compounding decision layer: a durable event substrate, governed action registry, WhatsApp-native operating loop, and outcome memory that becomes more useful as real operating evidence accumulates.',
+        ].join('\n')
+        const url = URL.createObjectURL(new Blob([summaryDocument], { type: 'text/markdown;charset=utf-8' }))
+        const link = window.document.createElement('a')
+        link.href = url
+        link.download = 'foundingos-strategic-overview.md'
+        link.click()
+        URL.revokeObjectURL(url)
+      }
+      return <><WorkspaceHeading eyebrow="Buyer-ready platform summary" title="Strategic overview" copy="A concise view of the platform’s defensibility, measured evidence, governance boundaries, and WhatsApp-native advantage." action={<button className="retail-app-secondary" onClick={exportSummary} type="button">Export platform summary</button>} /><section className="outcomes-hero"><div><span className="eyebrow">The decision layer for daily operations</span><h2>Detect, explain, approve, execute, learn.</h2><p>FoundingOS turns fragmented operating signals into clear decisions that a founder can review from a basic smartphone, while preserving strict human control.</p></div><div><strong>{snapshot.learningMomentum.score}/100</strong><span>learning momentum</span></div></section><section className="retail-app-dashboard-grid lower"><article className="retail-app-panel"><p>Defensibility</p><h2>Compounding operating memory</h2><ul className="outcomes-evidence-list"><li><strong>Shared Event Feed</strong><span>Tenant-scoped signals connect inventory, cash, logistics, marketing, and workforce context.</span></li><li><strong>Governed workflows</strong><span>Every supported action has explicit evidence, simulation, approval, execution, assessment, and compensation rules.</span></li><li><strong>WhatsApp-native</strong><span>Decision briefs stay concise and usable under low bandwidth without bypassing authorization.</span></li></ul></article><article className="retail-app-panel"><p>Trust boundary</p><h2>Internal-only by design</h2><ul className="outcomes-evidence-list"><li><strong>Approval ≠ execution</strong><span>Separate permissions keep recommendations advisory until an authorized operator acts.</span></li><li><strong>Measured, not magical</strong><span>{snapshot.totalAssessedOutcomes ? `${health.averagePredictionAccuracy}% measured accuracy across assessed outcomes.` : 'Predictive confidence remains explicitly labelled until outcomes are assessed.'}</span></li><li><strong>Auditable and reversible</strong><span>Lifecycle events, evidence, and compensation records remain available for operator and buyer review.</span></li></ul></article></section><p className="outcomes-methodology">This summary is buyer-facing. Economic figures are lifecycle-derived from tenant-scoped records; predictive confidence, reliability, and learning momentum are evidence-weighted indicators, not guarantees. No external payment, customer debit, refund, or supplier-side mutation is performed by the internal execution layer.</p></>
+    }
+    const payload = JSON.stringify({ exportedAt: new Date().toISOString(), range, query, snapshot, health, auditTrail: filteredAuditTrail }, null, 2)
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }))
+    link.href = url
+    link.download = 'foundingos-intelligence-outcomes.json'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+  const metricCards = [
+    ['Measured accuracy', `${health.averagePredictionAccuracy}%`, health.totalAssessedOutcomes ? `${health.totalAssessedOutcomes} assessed outcomes` : 'Awaiting first assessment'],
+    ['Learning progress', `${snapshot.recentAccuracyTrend.change >= 0 ? '+' : ''}${snapshot.recentAccuracyTrend.change} pts`, snapshot.recentAccuracyTrend.narrative],
+    ['Cash governed', `£${(snapshot.economicValue.cashGovernedPence / 100).toFixed(2)}`, 'Measured internal exposure'],
+    ['Operator time', `${snapshot.economicValue.estimatedOperatorMinutesSaved} min`, 'Estimated from completed handoffs'],
+    ['Reversals', `${auditTrail.filter((entry) => entry.stage === 'reversed').length}`, 'Compensation events recorded'],
+    ['Learning momentum', `${snapshot.learningMomentum.score}/100`, snapshot.learningMomentum.label],
+  ]
+  return <><WorkspaceHeading eyebrow="Core.Intelligence" title="Outcomes & value" copy="A measured view of what the control plane has learned, governed, and improved. Estimates are labelled separately from execution evidence." action={<button className="retail-app-secondary" onClick={() => void exportData()} type="button">Export governance data</button>} /><section className="outcomes-hero"><div><span className="eyebrow">Compounding intelligence</span><h2>{snapshot.learningMomentum.narrative}</h2><p>{health.narrative}</p></div><div><strong>{snapshot.totalAssessedOutcomes}</strong><span>assessed outcomes</span></div></section><section className="outcomes-metric-grid">{metricCards.map(([label, value, detail]) => <article key={label}><small>{label}</small><strong>{value}</strong><span>{detail}</span></article>)}</section><section className="retail-app-dashboard-grid lower"><article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Measured trend</p><h2>Accuracy over recent assessments</h2></div><span>{snapshot.recentAccuracyTrend.assessmentWindow} outcomes</span></div><div className="outcomes-trend"><i style={{ height: `${Math.max(8, snapshot.recentAccuracyTrend.previous)}%` }} /><i style={{ height: `${Math.max(8, snapshot.recentAccuracyTrend.current)}%` }} /></div><footer><span>Earlier {snapshot.recentAccuracyTrend.previous}%</span><span>Recent {snapshot.recentAccuracyTrend.current}%</span></footer></article><article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Evidence quality</p><h2>What the system knows</h2></div></div><ul className="outcomes-evidence-list"><li><strong>{health.refinedPatterns}</strong><span>refined patterns</span></li><li><strong>{health.averageReliability}%</strong><span>pattern reliability</span></li><li><strong>{health.interactionCount}</strong><span>active decision interactions</span></li><li><strong>{snapshot.economicValue.coordinatedHandoffs}</strong><span>coordinated handoffs</span></li></ul></article></section><section className="retail-app-table-card full"><div className="retail-app-panel-heading"><div><p>Governance transparency</p><h2>Decision audit trail</h2></div><span>{filteredAuditTrail.length} of {auditTrail.length} events</span></div><div className="retail-app-toolbar"><input aria-label="Search audit trail" onChange={(event) => setQuery(event.target.value)} placeholder="Search action, actor, or stage" value={query} /><select aria-label="Audit time range" onChange={(event) => setRange(event.target.value as typeof range)} value={range}><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="all">All recorded time</option></select></div><div className="retail-app-table-scroll"><table><thead><tr><th>When</th><th>Action</th><th>Stage</th><th>Actor</th><th>Summary</th><th /></tr></thead><tbody>{filteredAuditTrail.map((entry) => <Fragment key={entry.id}><tr><td>{new Date(entry.occurredAt).toLocaleString()}</td><td><strong>{entry.actionTitle}</strong></td><td><span className="retail-app-status status-active">{entry.stage}</span></td><td>{entry.actor}</td><td>{entry.summary}</td><td><button className="retail-app-secondary" onClick={() => setExpandedAuditId(expandedAuditId === entry.id ? null : entry.id)} type="button">{expandedAuditId === entry.id ? 'Hide detail' : 'Details'}</button></td></tr>{expandedAuditId === entry.id ? <tr><td colSpan={6}><strong>Evidence</strong><ul>{entry.evidence.length ? entry.evidence.map((item) => <li key={item}>{item}</li>) : <li>No additional evidence recorded.</li>}</ul><small>Action ID: {entry.actionId}</small></td></tr> : null}</Fragment>)}</tbody></table></div></section><p className="outcomes-methodology">Measured accuracy comes only from completed actions with outcome assessments. Pattern reliability and learning momentum are evidence-weighted decision-support indicators. Cash governed and operator time are lifecycle-derived; cash recovery, margin protection, and inventory protection are not claimed without qualifying evidence.</p></>
+}
+
 function ReportsPage({ config }: { config: WorkspaceConfig }) {
   return <><WorkspaceHeading eyebrow="Intelligence" title="Reports & forecasts" copy={`Understand ${config.label.toLowerCase()} performance, trends, risk, and expected outcomes.`} /><section className="retail-app-metrics">{config.metrics.map((metric) => <Metric key={metric.label} {...metric} />)}</section><section className="retail-app-dashboard-grid lower"><article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Performance</p><h2>Operating trend</h2></div><span>Last 12 weeks</span></div><div className="complete-workspace-bars">{[48, 62, 55, 73, 69, 84, 78, 91, 88, 96, 89, 100].map((height, index) => <i key={index} style={{ height: `${height}%` }} />)}</div></article><article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>FoundAI forecast</p><h2>Next best decisions</h2></div></div><div className="retail-app-priorities">{config.subjects.map((subject, index) => <div className="complete-workspace-insight" key={subject}><i data-tone={index === 0 ? 'risk' : 'watch'} /><div><strong>{subject}</strong><span>{index % 2 ? 'Expected upside if actioned this week' : 'Requires owner review today'}</span></div><b>{92 - index * 4}%</b></div>)}</div></article></section></>
 }
 
 function EventFeedPage({ events }: { events: WorkspaceEvent[] }) {
-  const visible = events.length ? events : workspaceOrder.flatMap((workspace, index) => [
+  const [query, setQuery] = useState('')
+  const [workspaceFilter, setWorkspaceFilter] = useState('')
+  const [typeFilter, setTypeFilter] = useState('')
+  const [actionId, setActionId] = useState('')
+  const [trailEvents, setTrailEvents] = useState<WorkspaceEvent[]>([])
+  useEffect(() => {
+    const selectedActionId = new URLSearchParams(window.location.search).get('actionId') || ''
+    setActionId(selectedActionId)
+    if (!selectedActionId) return
+    if (productionModeEnabled) {
+      void productionAgentActions.trail(selectedActionId).then((items) => setTrailEvents(items.map((event) => ({
+        id: event.id,
+        workspace: workspaceOrder.includes(event.source as BusinessWorkspaceSlug) ? event.source as BusinessWorkspaceSlug : 'intelligence',
+        text: describePlatformEvent(event),
+        type: event.type,
+        payload: event.payload,
+        time: new Date(event.createdAt).toLocaleString(),
+      })))).catch(() => setTrailEvents([]))
+      return
+    }
+    const stored = window.localStorage.getItem(AGENT_ACTIONS_KEY)
+    const selected = (stored ? JSON.parse(stored) as AgentAction[] : [demoAgentAction()]).find((action) => action.id === selectedActionId)
+    if (!selected) return
+    const correlated = { actionId: selected.id, sourceEventId: selected.sourceEventId || undefined }
+    const semanticTrail: WorkspaceEvent[] = [
+      { id: selected.sourceEventId || `${selected.id}-signal`, workspace: 'retail', type: 'inventory.threshold.breached', payload: { ...correlated, sku: selected.input.sku, productName: selected.input.productName }, text: `${String(selected.input.productName)} crossed its replenishment threshold`, time: new Date(selected.createdAt).toLocaleString() },
+      { id: `${selected.id}-proposal`, workspace: 'intelligence', type: 'agent.action.proposed', payload: correlated, text: 'FoundAI proposed a coordinated cross-workspace action', time: new Date(selected.createdAt).toLocaleString() },
+    ]
+    if (selected.status !== 'proposed') semanticTrail.push({ id: `${selected.id}-decision`, workspace: 'intelligence', type: `agent.action.${selected.status === 'rejected' ? 'rejected' : 'approved'}`, payload: correlated, text: selected.status === 'rejected' ? 'An owner dismissed a FoundAI recommendation' : 'An owner approved a FoundAI action for execution', time: new Date(selected.updatedAt).toLocaleString() })
+    if (selected.status === 'completed') {
+      semanticTrail.push(
+        { id: `${selected.id}-retail`, workspace: 'retail', type: 'workspace.record.created', payload: { ...correlated, module: 'purchasing' }, text: 'purchasing record created by an approved agent action', time: new Date(selected.updatedAt).toLocaleString() },
+        { id: `${selected.id}-logistics`, workspace: 'logistics', type: 'workspace.record.created', payload: { ...correlated, module: 'deliveries' }, text: 'deliveries record created by an approved agent action', time: new Date(selected.updatedAt).toLocaleString() },
+        { id: `${selected.id}-finance`, workspace: 'finance', type: 'workspace.record.created', payload: { ...correlated, module: 'bills' }, text: 'bills record created by an approved agent action', time: new Date(selected.updatedAt).toLocaleString() },
+        { id: `${selected.id}-completed`, workspace: 'intelligence', type: 'agent.action.completed', payload: { ...correlated, outcomeSummary: selected.outcomeSummary }, text: selected.outcomeSummary || 'FoundAI completed an approved cross-workspace action', time: new Date(selected.updatedAt).toLocaleString() },
+        { id: `${selected.id}-assessed`, workspace: 'intelligence', type: 'agent.action.outcome.assessed', payload: { ...correlated, ...selected.outcomeAssessment }, text: selected.outcomeAssessment?.summary || 'FoundAI assessed prediction accuracy against the completed outcome', time: new Date(selected.updatedAt).toLocaleString() },
+      )
+    }
+    setTrailEvents(semanticTrail)
+  }, [])
+  const recent: WorkspaceEvent[] = events.length ? events : workspaceOrder.flatMap((workspace, index) => [
     { id: `${workspace}-seed`, workspace, text: `${configs[workspace].label} published its latest operating summary`, time: `${index * 9 + 2}m ago` },
   ])
-  return <><WorkspaceHeading eyebrow="Shared backbone" title="Shared Event Feed" copy="Every confirmed action, automation, and cross-workspace handoff appears in one traceable operating timeline." /><div className="retail-app-table-card full"><div className="retail-app-panel-heading"><div><p>Event graph</p><h2>{visible.length} recent events</h2></div><span>Newest first</span></div><div className="complete-workspace-event-feed">{visible.map((event) => <article key={event.id}><i style={{ background: configs[event.workspace].accent }} /><div><strong>{event.text}</strong><span>{configs[event.workspace].label} · {configs[event.workspace].suite}</span></div><time>{event.time}</time></article>)}</div></div></>
+  const visible = actionId && trailEvents.length ? trailEvents : recent
+  const filtered = visible.filter((event) => {
+    const eventActionId = String(event.payload?.actionId || event.payload?.agentActionId || '')
+    return (!query || `${event.text} ${event.type || ''}`.toLowerCase().includes(query.toLowerCase()))
+      && (!workspaceFilter || event.workspace === workspaceFilter)
+      && (!typeFilter || event.type === typeFilter)
+      && (!actionId || eventActionId === actionId || event.id === actionId)
+  })
+  const types = [...new Set(visible.map((event) => event.type).filter((type): type is string => Boolean(type)))]
+  return <><WorkspaceHeading eyebrow="Intelligence substrate" title="Shared Event Feed" copy="Every signal, proposal, approval, workspace mutation, and outcome forms one tenant-scoped timeline that FoundAI can query and reason over." /><div className="event-feed-query"><label>Search<input onChange={(event) => setQuery(event.target.value)} placeholder="Signal, action, outcome…" value={query} /></label><label>Workspace<select onChange={(event) => setWorkspaceFilter(event.target.value)} value={workspaceFilter}><option value="">All workspaces</option>{workspaceOrder.map((workspace) => <option key={workspace} value={workspace}>{configs[workspace].label}</option>)}</select></label><label>Event type<select onChange={(event) => setTypeFilter(event.target.value)} value={typeFilter}><option value="">All event types</option>{types.map((type) => <option key={type} value={type}>{type}</option>)}</select></label>{actionId ? <button onClick={() => { setActionId(''); setTrailEvents([]) }} type="button">Clear action trail</button> : null}</div><div className="retail-app-table-card full"><div className="retail-app-panel-heading"><div><p>{actionId ? 'Correlated action trail' : 'Event graph'}</p><h2>{filtered.length} matching events</h2></div><span>{actionId ? 'Origin to outcome' : 'Newest first'}</span></div><div className="complete-workspace-event-feed">{filtered.map((event) => <article key={event.id}><i style={{ background: configs[event.workspace].accent }} /><div><strong>{event.text}</strong><span>{configs[event.workspace].label} · {event.type || configs[event.workspace].suite}</span></div><time>{event.time}</time></article>)}</div></div></>
 }
 
 type ProductionTeamMember = { id: string; email: string; role: string; active: boolean; permissions?: { workspaces?: string[] }; updatedAt?: string }
 
 function TeamPage({ workspace }: { workspace: BusinessWorkspaceSlug }) {
   const [members, setMembers] = useState<ProductionTeamMember[]>([])
+  const [invitations, setInvitations] = useState<ProductionInvitation[]>([])
   const [inviting, setInviting] = useState(false)
-  const [temporaryPassword, setTemporaryPassword] = useState('')
   const [error, setError] = useState('')
-  const load = () => productionRequest<ProductionTeamMember[]>('/platform/team').then(setMembers)
+  const load = () => Promise.all([productionRequest<ProductionTeamMember[]>('/platform/team'), productionPlatform.teamInvitations()]).then(([team, pending]) => { setMembers(team); setInvitations(pending) })
   useEffect(() => { void load().catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Team could not be loaded')) }, [])
   const invite = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError('')
     const form = new FormData(event.currentTarget)
     try {
-      const result = await productionRequest<{ user: ProductionTeamMember; temporaryPassword: string }>('/platform/team', { method: 'POST', body: JSON.stringify({ email: form.get('email'), role: form.get('role'), workspaces: form.getAll('workspaces') }) })
-      setMembers((current) => [...current, result.user])
-      setTemporaryPassword(result.temporaryPassword)
+      const result = await productionRequest<{ invitation: ProductionInvitation; delivery: { status: string; message: string } }>('/platform/team', { method: 'POST', body: JSON.stringify({ email: form.get('email'), role: form.get('role'), workspaces: form.getAll('workspaces') }) })
+      setInvitations((current) => [result.invitation, ...current])
       setInviting(false)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Invitation could not be created')
@@ -458,12 +1250,40 @@ function TeamPage({ workspace }: { workspace: BusinessWorkspaceSlug }) {
       setError(cause instanceof Error ? cause.message : 'Team member could not be updated')
     }
   }
-  return <><WorkspaceHeading eyebrow="Administration" title="Team & access" copy="Invite operators, assign role-based workspace access, and suspend access without deleting audit history." action={<button className="retail-app-primary" onClick={() => setInviting(true)} type="button">+ Invite team member</button>} />{temporaryPassword ? <div className="retail-product-notice"><span>!</span>One-time temporary password: <strong>{temporaryPassword}</strong>. Share it securely and require the user to change it after sign-in.<button onClick={() => setTemporaryPassword('')} type="button">×</button></div> : null}{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<div className="retail-app-table-card full"><div className="retail-app-panel-heading"><div><p>Access control</p><h2>{members.length} team members</h2></div></div><div className="retail-app-table-scroll"><table><thead><tr><th>Email</th><th>Role</th><th>Workspaces</th><th>Status</th><th>Action</th></tr></thead><tbody>{members.map((member) => <tr key={member.id}><td><strong>{member.email}</strong></td><td>{member.role.replaceAll('_', ' ')}</td><td>{member.permissions?.workspaces?.join(', ') || 'All enabled'}</td><td><span className={`retail-app-status ${member.active ? 'status-active' : 'status-draft'}`}>{member.active ? 'Active' : 'Suspended'}</span></td><td><button className="retail-app-secondary" onClick={() => void toggle(member)} type="button">{member.active ? 'Suspend' : 'Restore'}</button></td></tr>)}</tbody></table></div></div>{inviting ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void invite(event)}><div><p>Team access</p><h2>Invite a team member</h2></div><label>Email<input name="email" required type="email" /></label><label>Role<select name="role"><option value="business_staff">Staff</option><option value="business_manager">Manager</option><option value="business_owner">Owner</option></select></label><fieldset className="complete-workspace-checkboxes"><legend>Workspace access</legend>{workspaceOrder.map((item) => <label key={item}><input defaultChecked={item === workspace} name="workspaces" type="checkbox" value={item} /> {configs[item].label}</label>)}</fieldset>{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setInviting(false)} type="button">Cancel</button><button className="retail-app-primary" type="submit">Create invitation</button></footer></form></div> : null}</>
+  const changeRole = async (member: ProductionTeamMember, role: string) => {
+    try {
+      const updated = await productionRequest<ProductionTeamMember>(`/platform/team/${member.id}`, { method: 'PATCH', body: JSON.stringify({ role }) })
+      setMembers((current) => current.map((item) => item.id === member.id ? { ...item, ...updated } : item))
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Role could not be updated')
+    }
+  }
+  const revokeInvitation = async (id: string) => {
+    try {
+      await productionPlatform.revokeTeamInvitation(id)
+      setInvitations((current) => current.filter((invitation) => invitation.id !== id))
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Invitation could not be revoked')
+    }
+  }
+  const resendInvitation = async (id: string) => {
+    try {
+      const result = await productionPlatform.resendTeamInvitation(id)
+      setInvitations((current) => [result.invitation, ...current.filter((invitation) => invitation.id !== id)])
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Invitation could not be resent')
+    }
+  }
+  return <><WorkspaceHeading eyebrow="Administration" title="Team & access" copy="Invite operators, assign role-based workspace access, and suspend access without deleting audit history." action={<button className="retail-app-primary" onClick={() => setInviting(true)} type="button">+ Invite team member</button>} /><section className="retail-app-dashboard-grid lower team-capabilities"><article className="retail-app-panel"><p>Capability matrix</p><h2>Governance boundaries</h2><ul><li><strong>Founder / Owner</strong><span>Manage team, settings, approve, execute, reverse</span></li><li><strong>Manager</strong><span>Operate assigned workspaces and approve; no execution or reversal</span></li><li><strong>Operator</strong><span>Operate assigned workspaces; no approvals or execution</span></li><li><strong>Viewer</strong><span>Read-only visibility for assigned workspaces and evidence</span></li></ul></article></section>{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}{invitations.length ? <section className="retail-app-table-card full"><div className="retail-app-panel-heading"><div><p>Pending invitations</p><h2>{invitations.length} awaiting acceptance</h2></div><span>Expires after 72 hours</span></div><div className="retail-app-table-scroll"><table><thead><tr><th>Email</th><th>Role</th><th>Expires</th><th>Delivery</th><th>Actions</th></tr></thead><tbody>{invitations.map((invitation) => <tr key={invitation.id}><td><strong>{invitation.email}</strong></td><td>{invitation.role.replaceAll('_', ' ')}</td><td>{new Date(invitation.expiresAt).toLocaleString()}</td><td><span className="retail-app-status status-draft">Simulated email ready</span></td><td><button className="retail-app-secondary" onClick={() => void resendInvitation(invitation.id)} type="button">Resend</button> <button className="retail-app-secondary" onClick={() => void revokeInvitation(invitation.id)} type="button">Revoke</button></td></tr>)}</tbody></table></div></section> : null}<div className="retail-app-table-card full"><div className="retail-app-panel-heading"><div><p>Access control</p><h2>{members.length} team members</h2></div></div><div className="retail-app-table-scroll"><table><thead><tr><th>Email</th><th>Role</th><th>Workspaces</th><th>Status</th><th>Action</th></tr></thead><tbody>{members.map((member) => <tr key={member.id}><td><strong>{member.email}</strong></td><td><select aria-label={`Role for ${member.email}`} onChange={(event) => void changeRole(member, event.target.value)} value={member.role}><option value="business_viewer">Viewer</option><option value="business_staff">Operator</option><option value="business_manager">Manager</option><option value="business_owner">Owner</option></select></td><td>{member.permissions?.workspaces?.join(', ') || 'All enabled'}</td><td><span className={`retail-app-status ${member.active ? 'status-active' : 'status-draft'}`}>{member.active ? 'Active' : 'Suspended'}</span></td><td><button className="retail-app-secondary" onClick={() => void toggle(member)} type="button">{member.active ? 'Suspend' : 'Restore'}</button></td></tr>)}</tbody></table></div></div>{inviting ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void invite(event)}><div><p>Team access</p><h2>Invite a team member</h2></div><label>Email<input name="email" required type="email" /></label><label>Role<select name="role"><option value="business_viewer">Viewer</option><option value="business_staff">Operator</option><option value="business_manager">Manager</option><option value="business_owner">Owner</option></select></label><fieldset className="complete-workspace-checkboxes"><legend>Workspace access</legend>{workspaceOrder.map((item) => <label key={item}><input defaultChecked={item === workspace} name="workspaces" type="checkbox" value={item} /> {configs[item].label}</label>)}</fieldset>{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setInviting(false)} type="button">Cancel</button><button className="retail-app-primary" type="submit">Create invitation</button></footer></form></div> : null}</>
 }
 
 function SettingsPage({ config, state, update, production }: { config: WorkspaceConfig; state: WorkspaceState; update: (mutate: (current: WorkspaceState) => WorkspaceState, eventText?: string) => void; production: boolean }) {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [control, setControl] = useState<ControlSettings>({ notificationChannel: 'whatsapp', notificationEnabled: true, approvalThresholdPence: 0, requireOwnerExecution: true, requireEvidence: true, governanceMode: 'human_approval' })
+  useEffect(() => {
+    if (production) void productionPlatform.controlSettings().then((saved) => { if (saved) setControl(saved) }).catch(() => undefined)
+  }, [production])
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setSaving(true)
@@ -472,6 +1292,9 @@ function SettingsPage({ config, state, update, production }: { config: Workspace
     const settings = { businessName: String(form.get('businessName')), region: String(form.get('region')), notifications: form.get('notifications') === 'on' }
     try {
       if (production) await productionRequest('/platform/onboarding', { method: 'PUT', body: JSON.stringify({ businessName: settings.businessName, countryCode: settings.region, completedSteps: ['business', 'owner', 'workspaces', 'integrations'], goLiveStatus: form.get('goLive') === 'on' ? 'live' : 'setup', acceptTerms: form.get('goLive') === 'on' }) })
+      const nextControl = { ...control, notificationChannel: String(form.get('notificationChannel')) as ControlSettings['notificationChannel'], notificationEnabled: settings.notifications, approvalThresholdPence: Math.round(Number(form.get('approvalThreshold')) * 100), requireOwnerExecution: form.get('requireOwnerExecution') === 'on', requireEvidence: form.get('requireEvidence') === 'on' }
+      if (production) await productionPlatform.saveControlSettings(nextControl)
+      setControl(nextControl)
       update((current) => ({ ...current, settings }), `${config.label} settings updated`)
       setMessage('Settings saved.')
     } catch (cause) {
@@ -480,7 +1303,7 @@ function SettingsPage({ config, state, update, production }: { config: Workspace
       setSaving(false)
     }
   }
-  return <><WorkspaceHeading eyebrow="Administration" title="Settings" copy={`Configure the ${config.label} workspace identity, region, access, and notifications.`} /><form className="retail-app-settings retail-app-panel" onSubmit={(event) => void save(event)}><section><h2>Workspace identity</h2><p>Shared across records, reports, notifications, and integrations.</p><label>Business name<input defaultValue={state.settings.businessName} name="businessName" required /></label><label>Operating region<select defaultValue={state.settings.region} name="region"><option value="GB">United Kingdom</option><option value="NG">Nigeria</option><option value="US">United States</option><option value="EU">European Union</option></select></label></section><section><h2>Event notifications</h2><label className="retail-app-check"><input defaultChecked={state.settings.notifications} name="notifications" type="checkbox" /> Notify owners about high-priority events and required approvals</label>{production ? <label className="retail-app-check"><input name="goLive" type="checkbox" /> Mark onboarding complete and request go-live readiness</label> : null}</section>{message ? <div className="complete-workspace-save-message" role="status">{message}</div> : null}<footer><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Saving…' : 'Save settings'}</button></footer></form></>
+  return <><WorkspaceHeading eyebrow="Administration" title="Settings" copy={`Configure the ${config.label} workspace identity, region, access, and notifications.`} /><form className="retail-app-settings retail-app-panel" onSubmit={(event) => void save(event)}><section><h2>Workspace identity</h2><p>Shared across records, reports, notifications, and integrations.</p><label>Business name<input defaultValue={state.settings.businessName} name="businessName" required /></label><label>Operating region<select defaultValue={state.settings.region} name="region"><option value="GB">United Kingdom</option><option value="NG">Nigeria</option><option value="US">United States</option><option value="EU">European Union</option></select></label></section><section><h2>Notification control</h2><label>Primary channel<select defaultValue={control.notificationChannel} name="notificationChannel"><option value="whatsapp">WhatsApp</option><option value="email">Email</option><option value="both">WhatsApp + email</option></select></label><label className="retail-app-check"><input defaultChecked={control.notificationEnabled} name="notifications" type="checkbox" /> Notify owners about high-priority events and required approvals</label></section><section><h2>Decision governance</h2><p>These controls shape the approval experience; they never enable autonomous execution.</p><label>Approval review threshold (£)<input defaultValue={(control.approvalThresholdPence / 100).toFixed(2)} min="0" name="approvalThreshold" step=".01" type="number" /></label><label className="retail-app-check"><input defaultChecked={control.requireOwnerExecution} name="requireOwnerExecution" type="checkbox" /> Require Founder or Owner for execution and reversal</label><label className="retail-app-check"><input defaultChecked={control.requireEvidence} name="requireEvidence" type="checkbox" /> Require historical evidence before proposal approval</label><div className="settings-governance-note"><strong>Human approval only</strong><span>Governance mode is fixed to human approval. External payments remain disabled.</span></div></section><section><h2>Deployment</h2>{production ? <label className="retail-app-check"><input name="goLive" type="checkbox" /> Mark onboarding complete and request go-live readiness</label> : <p>Simulation mode stores these controls in this browser only.</p>}</section>{message ? <div className="complete-workspace-save-message" role="status">{message}</div> : null}<footer><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Saving…' : 'Save settings'}</button></footer></form></>
 }
 
 function ProductionAccess({ onAuthenticated }: { onAuthenticated: (session: ProductionSession) => void }) {
@@ -529,12 +1352,15 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
     setHydrated(true)
   }, [])
   const { state, events, update, reset, loading, error, production, createRecord, advanceRecord, publishHandoff } = useWorkspaceState(workspace, current.id, session)
+  const agent = useAgentActions(production, session, (text) => update((current) => current, text))
   const groups = useMemo(() => [...new Set(config.modules.map((item) => item.group))], [config.modules])
   if (productionModeEnabled && !productionApiConfigured) return <main className="complete-workspace-access"><section><h1>Production API is not configured</h1><p>Set NEXT_PUBLIC_FOUNDINGOS_API_URL to the deployed API root before publishing this application.</p></section></main>
   if (!hydrated) return <main className="complete-workspace-access"><section><h1>Loading FoundingOS…</h1></section></main>
   if (production && !session) return <ProductionAccess onAuthenticated={setSession} />
   let content: React.ReactNode
-  if (current.id === 'overview' && workspace === 'intelligence') content = <SuperDashboardOverview events={events} />
+  if (current.id === 'overview' && workspace === 'intelligence') content = <SuperDashboardOverview activateIntelligence={agent.activate} agentActions={agent.actions} intelligence={agent.intelligence} agentBusy={agent.busy} agentError={agent.error} decideAgentAction={agent.decide} events={events} executeAgentAction={agent.execute} proposeAgentAction={agent.propose} reverseAgentAction={agent.reverse} />
+  else if (current.id === 'outcomes' && workspace === 'intelligence') content = <OutcomesPage intelligence={agent.intelligence} production={production} />
+  else if (current.id === 'strategic-overview' && workspace === 'intelligence') content = <><WorkspaceHeading eyebrow="Buyer-ready platform summary" title="Strategic overview" copy="A concise view of the platform’s defensibility, measured evidence, governance boundaries, and WhatsApp-native advantage." /><StrategicOverview intelligence={agent.intelligence} /></>
   else if (current.id === 'overview') content = <Overview config={config} events={events} state={state} workspace={workspace} />
   else if (current.id === 'automations') content = <AutomationsPage config={config} state={state} update={update} />
   else if (current.id === 'integrations') content = <IntegrationsPage production={production} state={state} update={update} />

@@ -18,6 +18,7 @@ function routeLabel(pathname: string) {
   if (pathname === '/settings') return 'Settings'
   if (pathname === '/finance') return 'Finance'
   if (pathname === '/intelligence') return 'Intelligence'
+  if (/^\/(?:test-workspaces|app)\/intelligence(?:\/|$)/.test(pathname)) return 'Intelligence'
   if (pathname.startsWith('/console/packages')) return 'Packages'
 
   // foundingos-console-only routes (FounderOS admin/tester/investor surfaces) — safe to
@@ -85,6 +86,7 @@ function suggestedPrompts(brand: FoundAIBrand, context: string) {
   if (brand.name === 'FoundingOS' && context === 'Onboarding') return ['Recommend a package for me', 'What is QuantumOS?', 'What is IntelligenceOS?', 'What is SystemOS?']
   if (brand.name === 'FoundingOS' && context === 'Tester Access') return ['What am I testing?', 'What is the legal acceptance for?', 'What happens after I log in?']
   if (brand.name === 'FoundingOS' && context === 'SuperDash') return ['What is IntelligenceOS?', 'How many brands are active?', 'What is the current drift/safe-fix status?', 'What is Package Model D?']
+  if (brand.name === 'FoundingOS' && context === 'Intelligence') return ['What should we be paying attention to right now?', 'What value has FoundingOS created?', 'How is the system performing overall?', 'What needs my approval?', 'Are any decisions related?']
   if (brand.name === 'FoundingOS' && context === 'Founder Console') return ['Show me all brands', 'What needs my approval?', 'Summarise system stability', 'What is Package Model D?']
   if (brand.name === 'FoundingOS' && context === 'Investor Briefing') return ['What is Package Model D?', 'How does the multi-brand system work together?', 'Is this real customer data?']
   if (brand.name === 'FoundingOS' && context === 'Guardian') return ['What does Guardian actually check?', 'What counts as an anomaly?', 'Is anything flagged right now?']
@@ -271,6 +273,14 @@ function smartActions(brand: FoundAIBrand, context: string): SmartAction[] {
       DASHBOARD_REFRESH_ACTION,
     ]
   }
+  if (brand.name === 'FoundingOS' && context === 'Intelligence') {
+    return [
+      { label: 'Coordinate low-stock response', href: '#agent-actions', answer: 'I ranked the low-stock response using financial impact, operating risk, urgency, and three-workspace coverage. Review the historical evidence and Retail, Logistics, and Finance trade-offs before approval.' },
+      { label: 'Explain the approval', answer: 'Nothing external happens until you approve. The proposal shows cash commitment, inbound load, inventory exposure, and evidence from similar Event Feed outcomes before creating synchronized records.' },
+      { label: 'Explain the event trail', answer: 'Every action has one correlation trail: source signal, proposal, owner decision, each workspace mutation, and completion outcome. Open the trail from the orchestration panel to inspect the evidence.' },
+      { label: 'Show the simulation', href: '#agent-actions', answer: 'The orchestration panel contains a read-only before/after projection for Retail, Logistics, and Finance. It never creates records or contacts external systems before approval and execution.' },
+    ]
+  }
   if (brand.name === 'FoundingOS' && context === 'Founder Console') {
     return [
       { label: 'Show me all brands', answer: 'All 8 brand consoles — Retail, Meat, Logistics, Talent, Crypto, Finance, Health, and FoundThat — are live under All brands and All businesses below.' },
@@ -424,11 +434,90 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
+  const [agentContext, setAgentContext] = useState<{ title?: string; coordinationSummary?: { scoreExplanation?: string[]; tradeoffs?: string[] }; historicalContext?: { narrative?: string }; predictiveSignals?: { triggerPattern?: string; likelyNext?: string; confidence?: number; highImpactOutcomeRate?: number; evidenceCount?: number; assessedOutcomes?: number; averageAccuracy?: number; reliabilityScore?: number; refined?: boolean; basis?: string[] }; simulationPreview?: { disclaimer?: string; comparison?: { predictedDelta?: string } }; outcomeAssessment?: { accuracy?: number; summary?: string } } | null>(null)
+  const [systemIntelligence, setSystemIntelligence] = useState<{
+    health?: { totalAssessedOutcomes?: number; averagePredictionAccuracy?: number; refinedPatterns?: number; confidenceImprovement?: number; averageReliability?: number; narrative?: string; recurringDeviation?: { insight?: string } | null }
+    interactions?: Array<{ summary?: string; evidence?: string[]; advisory?: string }>
+    emergingSignals?: Array<{ title?: string; summary?: string; reliability?: number; outcomeCount?: number; advisory?: string }>
+    snapshot?: {
+      activeInteractions?: number
+      recentAccuracyTrend?: { current?: number; change?: number; assessmentWindow?: number; narrative?: string }
+      learningMomentum?: { score?: number; label?: string; narrative?: string }
+      economicValue?: { cashGovernedPence?: number; cashPreservedPence?: number; marginProtectedPence?: number | null; inventoryUnitsProtected?: number; riskReducedActions?: number; estimatedOperatorMinutesSaved?: number; measuredOutcomes?: number; narrative?: string }
+    }
+    auditTrail?: Array<{ stage?: string; actionTitle?: string; summary?: string; occurredAt?: string }>
+  } | null>(null)
 
   const context = useMemo(() => routeLabel(pathname), [pathname])
   const theme = useMemo(() => foundAITheme(brand), [brand])
   const prompts = useMemo(() => suggestedPrompts(brand, context), [brand, context])
-  const actions = useMemo(() => [...smartActions(brand, context), ...aiAutoActions(brand), FOUNDAI_STORY_ACTION], [brand, context])
+  const actions = useMemo(() => {
+    const contextual = smartActions(brand, context)
+    if (context === 'Intelligence' && agentContext) {
+      contextual.push({
+        label: 'Explain historical evidence',
+        answer: `${agentContext.title || 'The leading proposal'} is supported by the Shared Event Feed: ${agentContext.historicalContext?.narrative || 'no comparable completed action is recorded yet.'} Ranking factors: ${agentContext.coordinationSummary?.scoreExplanation?.join(', ') || 'cross-workspace coverage and operating risk'}. Key trade-off: ${agentContext.coordinationSummary?.tradeoffs?.[0] || 'approval balances operating risk against resource commitment'}.`,
+      })
+      contextual.push({
+        label: 'How has this pattern improved?',
+        answer: agentContext.predictiveSignals?.refined
+          ? `This is a refined pattern. Based on ${agentContext.predictiveSignals.assessedOutcomes} assessed outcomes, predictions averaged ${agentContext.predictiveSignals.averageAccuracy}% accuracy and pattern reliability is ${agentContext.predictiveSignals.reliabilityScore}%. ${agentContext.outcomeAssessment?.summary || ''}`
+          : `This pattern is still accumulating evidence. It has ${agentContext.predictiveSignals?.assessedOutcomes ?? 0} assessed outcomes; FoundAI marks it refined after at least 10 assessed and 10 resolved cases. Reliability is currently ${agentContext.predictiveSignals?.reliabilityScore ?? 0}%.`,
+      })
+      contextual.push({
+        label: 'Compare approve and reject',
+        answer: `${agentContext.simulationPreview?.comparison?.predictedDelta || 'The before/after simulation compares operating cover with cash preservation.'} This is read-only foresight; neither path is executed until you explicitly approve and run the action.`,
+      })
+      contextual.push({
+        label: 'What usually happens next?',
+        answer: `${agentContext.predictiveSignals?.triggerPattern || 'The current operating signal'} usually precedes this outcome: ${agentContext.predictiveSignals?.likelyNext || 'there is not enough history to make a strong forward-looking claim yet.'} Confidence is ${agentContext.predictiveSignals?.confidence ?? 50}%; ${agentContext.predictiveSignals?.highImpactOutcomeRate ?? 0}% of successful precedents were high-impact. Evidence: ${agentContext.predictiveSignals?.basis?.join(', ') || 'currently available tenant history'}. ${agentContext.simulationPreview?.disclaimer || 'Execution remains human-approved.'}`,
+      })
+      if (systemIntelligence) {
+        const economic = systemIntelligence.snapshot?.economicValue
+        const money = (pence?: number | null) => pence === null || pence === undefined ? 'not yet measurable' : new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(pence / 100)
+        const leadingSignal = systemIntelligence.emergingSignals?.[0]
+        const leadingInteraction = systemIntelligence.interactions?.[0]
+        const latestAudit = systemIntelligence.auditTrail?.[0]
+        contextual.push({
+          label: 'How healthy is system intelligence?',
+          answer: `${systemIntelligence.health?.narrative || 'System intelligence is awaiting measured outcomes.'} Evidence-weighted pattern reliability is ${systemIntelligence.health?.averageReliability ?? 0}%; predictive confidence has changed by ${systemIntelligence.health?.confidenceImprovement ?? 0} points. These are decision-support signals, not measured outcome accuracy. ${systemIntelligence.health?.recurringDeviation?.insight || 'No recurring prediction bias has met the evidence threshold.'}`,
+        })
+        contextual.push({
+          label: 'Are any decisions related?',
+          answer: systemIntelligence.interactions?.length
+            ? `${systemIntelligence.interactions[0].summary} Evidence: ${systemIntelligence.interactions[0].evidence?.join(', ')}. ${systemIntelligence.interactions[0].advisory}`
+            : 'No material overlap is currently detected between pending or recently executed actions.',
+        })
+        contextual.push({
+          label: 'What should we be paying attention to right now?',
+          answer: `Priority 1 — ${leadingSignal?.title || 'Protect the measured baseline'}: ${leadingSignal?.summary || 'No emerging signal has crossed its evidence threshold.'} Priority 2 — ${leadingInteraction?.summary || 'No material cross-action conflict is active.'}${leadingInteraction?.evidence?.[0] ? ` Evidence: ${leadingInteraction.evidence[0]}.` : ''} Economic context: ${money(economic?.cashGovernedPence)} governed, ${economic?.inventoryUnitsProtected ?? 0} units protected, and about ${economic?.estimatedOperatorMinutesSaved ?? 0} operator minutes saved across measured outcomes. Recommendation: ${leadingSignal?.advisory || 'Continue collecting outcomes and preserve explicit approval gates.'}`,
+        })
+        contextual.push({
+          label: 'How is the system performing overall?',
+          answer: `Measured performance: ${systemIntelligence.health?.narrative || 'The system is establishing its post-execution baseline.'} Measured accuracy trend: ${systemIntelligence.snapshot?.recentAccuracyTrend?.narrative || 'Not established yet.'} Value: ${economic?.narrative || 'Economic value measurement begins with completed assessed actions.'} Governance: ${systemIntelligence.auditTrail?.length ?? 0} recent lifecycle events are visible; latest is ${latestAudit ? `${latestAudit.stage} for ${latestAudit.actionTitle}` : 'not yet available'}. Learning momentum is an evidence-weighted indicator at ${systemIntelligence.snapshot?.learningMomentum?.score ?? 0}/100, not an outcome-accuracy claim. Watch: ${systemIntelligence.health?.recurringDeviation?.insight || 'No repeatable prediction bias currently meets the evidence threshold.'}`,
+        })
+        contextual.push({
+          label: 'What value has FoundingOS created?',
+          answer: `${money(economic?.cashGovernedPence)} of internal cash commitments have been governed and ${money(economic?.cashPreservedPence)} of immediate commitments were avoided through recorded rejections. ${economic?.inventoryUnitsProtected ?? 0} inventory units were protected across ${economic?.riskReducedActions ?? 0} accurately resolved risks, with about ${economic?.estimatedOperatorMinutesSaved ?? 0} operator minutes saved using the documented handoff benchmark. Margin protected is ${economic?.marginProtectedPence === null ? 'not claimed because selling-price evidence is incomplete' : money(economic?.marginProtectedPence)}. These are evidence-backed operating measures, not projected ROI.`,
+        })
+      }
+    }
+    return [...contextual, ...aiAutoActions(brand), FOUNDAI_STORY_ACTION]
+  }, [agentContext, brand, context, systemIntelligence])
+
+  useEffect(() => {
+    const receiveContext = (event: Event) => setAgentContext((event as CustomEvent).detail ?? null)
+    window.addEventListener('foundingos-agent-context', receiveContext)
+    return () => window.removeEventListener('foundingos-agent-context', receiveContext)
+  }, [])
+  useEffect(() => {
+    const receiveSystemIntelligence = (event: Event) => setSystemIntelligence((event as CustomEvent).detail ?? null)
+    window.addEventListener('foundingos-system-intelligence', receiveSystemIntelligence)
+    return () => window.removeEventListener('foundingos-system-intelligence', receiveSystemIntelligence)
+  }, [])
+  useEffect(() => {
+    if (open) window.dispatchEvent(new Event('foundingos-intelligence-context-request'))
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -451,10 +540,13 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
     // Real, honest keyword match first; otherwise fall back to this context's own real
     // smart-action answer (still a genuine fact about this brand/context) rather than a
     // blank echo of the question.
+    const contextualMatch = [...actions]
+      .reverse()
+      .find((action) => action.label.toLowerCase() === clean.toLowerCase() && action.answer)
     const knowledgeHit = matchKnowledge(clean)
     const contextualFallback = actions.find((action) => action.answer)?.answer
       ?? `Here's what's active in ${brand.name} ${context.toLowerCase()} — ask me about CRM, invoices, marketing, or SuperDash and I'll explain.`
-    const reply = knowledgeHit ?? `For ${brand.name} ${context.toLowerCase()}: ${contextualFallback}`
+    const reply = contextualMatch?.answer ?? knowledgeHit ?? `For ${brand.name} ${context.toLowerCase()}: ${contextualFallback}`
     setMessages((current) => [...current, { role: 'user', text: clean }, { role: 'assistant', text: reply }])
     setInput('')
     setLoading(false)

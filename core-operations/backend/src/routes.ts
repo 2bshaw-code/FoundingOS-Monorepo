@@ -5,17 +5,18 @@
 import { Router, type RequestHandler } from 'express'
 import { createBobRouter } from '@founder-os/bob'
 import { createModuleAccessMiddleware } from '@founder-os/auth'
-import { prisma, requireMerchantAccess, requireOwnerAccess } from './auth.js'
+import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess } from './auth.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
 import { assignDelivery, createCampaign, createDeliveryOperator, createDeliveryVehicle, createDeliveryZone, createInventoryItem, createInvoice, createOrder, createSocialPost, deleteInventoryItem, detectLocation, generateMedia, getBrandProfile, invoiceDocument, operationsSummary, orderDocument, saveBrandProfile, saveLocationProfile, searchInventory, sendInvoice, updateCampaign, updateDeliveryAssignment, updateDeliveryNotification, updateDeliveryOperator, updateDeliveryVehicle, updateDeliveryZone, updateInventoryItem, updateInvoice, updateOrder, updateSocialPost, weatherAt } from './operations.js'
 import { addMerchantStaff, merchantWorkspace, ownerMerchantSummary, removeMerchantStaff, resetMerchantPassword, reviewMerchantChange, submitMerchantChange, updateMerchantStaff } from './merchant.js'
-import { listEvents, publishEvent, registerEventStreamClient } from './event-feed.js'
+import { listEvents, predictEventPattern, publishEvent, queryEvents, registerEventStreamClient, summarizeEventPattern } from './event-feed.js'
 import { generateInsightsFromRecentEvents, listInsights, registerInsightStreamClient } from './insights.js'
-import { listMessagingConnections, listMessagingParticipants, messagingReadiness, processWhatsAppWebhook, saveMessagingConnection, saveMessagingParticipant } from './messaging-core.js'
-import { assertWorkspaceAccess, bootstrapTenant, checkIntegration, completeStripeCheckout, createWorkspaceRecord, deleteWorkspaceRecord, getIntegrationCredentials, getOnboarding, inviteTeamMember, listAuditEvents, listIntegrations, listTeam, listTenantWorkspaces, listWorkspaceRecords, platformReadiness, recordPaymentCheckout, saveIntegration, saveOnboarding, saveTenantWorkspace, updateTeamMember, updateWorkspaceRecord } from './platform.js'
+import { listMessagingConnections, listMessagingParticipants, messagingReadiness, processWhatsAppWebhook, saveMessagingConnection, saveMessagingParticipant, sendMessagingIntelligenceBrief } from './messaging-core.js'
+import { acceptTeamInvitation, assertWorkspaceAccess, bootstrapTenant, checkIntegration, completeStripeCheckout, createWorkspaceRecord, deleteWorkspaceRecord, exportGovernanceCsv, getControlSettings, getIntegrationCredentials, getInvitationDetails, getOnboarding, inviteTeamMember, listAuditEvents, listIntegrations, listPendingInvitations, listTeam, listTenantWorkspaces, listWorkspaceRecords, platformReadiness, recordPaymentCheckout, revokeTeamInvitation, resendTeamInvitation, saveControlSettings, saveIntegration, saveOnboarding, saveTenantWorkspace, updateTeamMember, updateWorkspaceRecord } from './platform.js'
 import { verifyBootstrapToken } from './platform-security.js'
 import { createTenantCheckout, verifyStripeWebhookSignature } from './stripe.js'
+import { decideAgentAction, executeAgentAction, getAgentActionTrail, getAgentIntelligenceSummary, listAgentActions, proposeAgentAction, proposeReplenishmentAction, reverseAgentActionExecution } from './agent-actions.js'
 
 const requireTenant: RequestHandler = (_req, res, next) => {
   if (res.locals.auth?.role === 'founder_master') return next()
@@ -149,6 +150,30 @@ apiRouter.put('/platform/onboarding', requireOwnerAccess, requireTenant, async (
     res.json({ success: true, data: await saveOnboarding(tenantId, res.locals.auth.id, req.body || {}, res.locals.requestId) })
   } catch (error) { next(error) }
 })
+apiRouter.get('/platform/control-settings', requireOwnerAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.json({ success: true, data: await getControlSettings(tenantId) })
+  } catch (error) { next(error) }
+})
+apiRouter.get('/platform/governance/export', requireTenantOwnerAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    const csv = await exportGovernanceCsv(tenantId)
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+    res.setHeader('Content-Disposition', 'attachment; filename="foundingos-governance-export.csv"')
+    res.send(csv)
+  } catch (error) { next(error) }
+})
+apiRouter.put('/platform/control-settings', requireTenantOwnerAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = writeTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.json({ success: true, data: await saveControlSettings(tenantId, res.locals.auth.id, req.body || {}, res.locals.requestId) })
+  } catch (error) { next(error) }
+})
 apiRouter.get('/platform/workspaces', requireMerchantAccess, requireTenant, async (req, res, next) => {
   try {
     const tenantId = readTenant(req, res)
@@ -252,7 +277,20 @@ apiRouter.get('/platform/events', requireMerchantAccess, requireTenant, async (r
   try {
     const tenantId = readTenant(req, res)
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
-    res.json({ success: true, data: await listEvents(tenantId, req.query.source ? String(req.query.source) : undefined) })
+    res.json({ success: true, data: await queryEvents(tenantId, req.query) })
+  } catch (error) { next(error) }
+})
+apiRouter.get('/platform/event-patterns', requireMerchantAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    const kind = String(req.query.kind || '').trim()
+    if (!kind) return res.status(400).json({ success: false, message: 'Agent action kind is required' })
+    const [historicalContext, predictiveSignals] = await Promise.all([
+      summarizeEventPattern(tenantId, kind, typeof req.query.sku === 'string' ? req.query.sku : undefined),
+      predictEventPattern(tenantId, kind),
+    ])
+    res.json({ success: true, data: { historicalContext, predictiveSignals } })
   } catch (error) { next(error) }
 })
 apiRouter.post('/platform/events', requireMerchantAccess, requireTenant, async (req, res, next) => {
@@ -263,21 +301,117 @@ apiRouter.post('/platform/events', requireMerchantAccess, requireTenant, async (
     res.status(201).json({ success: true, data: await publishEvent({ tenantId, type: String(req.body?.type || 'workspace.event'), source: String(req.body?.source || 'system'), payload: req.body?.payload }) })
   } catch (error) { next(error) }
 })
-apiRouter.get('/platform/team', requireOwnerAccess, requireTenant, async (req, res, next) => {
+apiRouter.get('/platform/agent-actions', requireMerchantAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.json({ success: true, data: await listAgentActions(tenantId, typeof req.query.status === 'string' ? req.query.status : undefined) })
+  } catch (error) { next(error) }
+})
+apiRouter.get('/platform/agent-actions-intelligence', requireMerchantAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.json({ success: true, data: await getAgentIntelligenceSummary(tenantId) })
+  } catch (error) { next(error) }
+})
+apiRouter.post('/platform/agent-actions-intelligence/message', requireOwnerAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.json({ success: true, data: await sendMessagingIntelligenceBrief(tenantId, String(req.body?.participantId || ''), req.body?.actionId ? String(req.body.actionId) : undefined) })
+  } catch (error) { next(error) }
+})
+apiRouter.post('/platform/agent-actions/replenishment', requireMerchantAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = writeTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    await assertWorkspaceAccess(tenantId, res.locals.auth.id, res.locals.auth.role, 'retail')
+    res.status(201).json({ success: true, data: await proposeReplenishmentAction(tenantId, res.locals.auth.id, req.body || {}, res.locals.requestId) })
+  } catch (error) { next(error) }
+})
+apiRouter.post('/platform/agent-actions/proposals', requireMerchantAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = writeTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    const kind = String(req.body?.kind || '')
+    const requiredWorkspace = ['finance.receivables.collection', 'finance.expense.approval', 'finance.budget.reallocation'].includes(kind) ? 'finance' : kind === 'logistics.delivery.recovery' ? 'logistics' : kind === 'marketing.campaign.launch' ? 'marketing' : 'retail'
+    await assertWorkspaceAccess(tenantId, res.locals.auth.id, res.locals.auth.role, requiredWorkspace)
+    res.status(201).json({ success: true, data: await proposeAgentAction(tenantId, res.locals.auth.id, kind, req.body?.input || {}, res.locals.requestId) })
+  } catch (error) { next(error) }
+})
+apiRouter.post('/platform/agent-actions/:id/decision', requireDecisionApprovalAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.json({ success: true, data: await decideAgentAction(tenantId, res.locals.auth.id, String(req.params.id), req.body?.decision, res.locals.requestId) })
+  } catch (error) { next(error) }
+})
+apiRouter.post('/platform/agent-actions/:id/execute', requireExecutionAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.json({ success: true, data: await executeAgentAction(tenantId, res.locals.auth.id, String(req.params.id), res.locals.requestId) })
+  } catch (error) { next(error) }
+})
+apiRouter.post('/platform/agent-actions/:id/reverse', requireExecutionAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.json({ success: true, data: await reverseAgentActionExecution(tenantId, res.locals.auth.id, String(req.params.id), res.locals.requestId) })
+  } catch (error) { next(error) }
+})
+apiRouter.get('/platform/agent-actions/:id/trail', requireMerchantAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.json({ success: true, data: await getAgentActionTrail(tenantId, String(req.params.id)) })
+  } catch (error) { next(error) }
+})
+apiRouter.get('/platform/team', requireTenantOwnerAccess, requireTenant, async (req, res, next) => {
   try {
     const tenantId = readTenant(req, res)
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
     res.json({ success: true, data: await listTeam(tenantId) })
   } catch (error) { next(error) }
 })
-apiRouter.post('/platform/team', requireOwnerAccess, requireTenant, async (req, res, next) => {
+apiRouter.get('/platform/team/invitations', requireTenantOwnerAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.json({ success: true, data: await listPendingInvitations(tenantId) })
+  } catch (error) { next(error) }
+})
+apiRouter.post('/platform/team', requireTenantOwnerAccess, requireTenant, async (req, res, next) => {
   try {
     const tenantId = writeTenant(req, res)
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
     res.status(201).json({ success: true, data: await inviteTeamMember(tenantId, res.locals.auth.id, req.body || {}, res.locals.requestId) })
   } catch (error) { next(error) }
 })
-apiRouter.patch('/platform/team/:id', requireOwnerAccess, requireTenant, async (req, res, next) => {
+apiRouter.post('/platform/team/invitations/accept', async (req, res, next) => {
+  try {
+    res.status(201).json({ success: true, data: await acceptTeamInvitation(req.body?.token, req.body?.password) })
+  } catch (error) { next(error) }
+})
+apiRouter.get('/platform/team/invitations/inspect', async (req, res, next) => {
+  try { res.json({ success: true, data: await getInvitationDetails(req.query.token) }) } catch (error) { next(error) }
+})
+apiRouter.post('/platform/team/invitations/:id/revoke', requireTenantOwnerAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.json({ success: true, data: await revokeTeamInvitation(tenantId, res.locals.auth.id, String(req.params.id), res.locals.requestId) })
+  } catch (error) { next(error) }
+})
+apiRouter.post('/platform/team/invitations/:id/resend', requireTenantOwnerAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = writeTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.status(201).json({ success: true, data: await resendTeamInvitation(tenantId, res.locals.auth.id, String(req.params.id), res.locals.requestId) })
+  } catch (error) { next(error) }
+})
+apiRouter.patch('/platform/team/:id', requireTenantOwnerAccess, requireTenant, async (req, res, next) => {
   try {
     const tenantId = readTenant(req, res)
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })

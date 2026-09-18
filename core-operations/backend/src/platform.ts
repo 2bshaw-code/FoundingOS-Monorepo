@@ -2,7 +2,7 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { randomBytes, randomUUID } from 'node:crypto'
+import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import bcrypt from 'bcrypt'
 import { roles } from '@founder-os/auth'
 import { Prisma } from './generated/prisma/index.js'
@@ -109,6 +109,25 @@ export async function saveOnboarding(tenantId: string, actorId: string, input: R
 }
 
 export const listTenantWorkspaces = (tenantId: string) => prisma.tenantWorkspace.findMany({ where: { tenantId }, orderBy: { workspace: 'asc' } })
+
+export const getControlSettings = (tenantId: string) => prisma.tenantControlSettings.findUnique({ where: { tenantId } })
+
+export async function saveControlSettings(tenantId: string, actorId: string, input: Record<string, unknown>, requestId?: string) {
+  const approvalThresholdPence = Math.max(0, Math.min(100_000_000, Math.round(Number(input.approvalThresholdPence ?? 0))))
+  if (!Number.isFinite(approvalThresholdPence)) throw Object.assign(new Error('Approval threshold must be a valid amount'), { status: 400 })
+  const notificationChannel = ['whatsapp', 'email', 'both'].includes(String(input.notificationChannel)) ? String(input.notificationChannel) : 'whatsapp'
+  const data = {
+    notificationChannel,
+    notificationEnabled: input.notificationEnabled !== false,
+    approvalThresholdPence,
+    requireOwnerExecution: input.requireOwnerExecution !== false,
+    requireEvidence: input.requireEvidence !== false,
+    governanceMode: 'human_approval',
+  }
+  const settings = await prisma.tenantControlSettings.upsert({ where: { tenantId }, create: { tenantId, ...data }, update: data })
+  await audit({ tenantId, actorId, action: 'control-settings.updated', requestId, metadata: data })
+  return settings
+}
 
 export async function saveTenantWorkspace(tenantId: string, actorId: string, workspaceValue: unknown, input: Record<string, unknown>, requestId?: string) {
   const workspace = assertWorkspace(workspaceValue)
@@ -322,7 +341,21 @@ export async function checkIntegration(tenantId: string, actorId: string, provid
 
 export const listAuditEvents = (tenantId: string, limitValue: unknown) => prisma.workspaceAuditEvent.findMany({ where: { tenantId }, orderBy: { createdAt: 'desc' }, take: Math.min(200, Math.max(1, Number(limitValue || 100))) })
 
-const teamRoles = new Set<string>([roles.businessOwner, roles.businessManager, roles.businessStaff])
+export async function exportGovernanceCsv(tenantId: string) {
+  const [actions, auditEvents] = await Promise.all([
+    prisma.agentAction.findMany({ where: { tenantId }, orderBy: { createdAt: 'asc' }, take: 1000 }),
+    prisma.workspaceAuditEvent.findMany({ where: { tenantId }, orderBy: { createdAt: 'asc' }, take: 1000 }),
+  ])
+  const quote = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""').replaceAll(/\r?\n/g, ' ')}"`
+  const rows = [
+    ['recordType', 'id', 'action', 'status', 'actorId', 'valuePence', 'createdAt', 'summary'],
+    ...actions.map((action) => ['agent_action', action.id, action.kind, action.status, action.proposedBy, action.estimatedValuePence ?? '', action.createdAt.toISOString(), action.outcomeSummary ?? action.summary]),
+    ...auditEvents.map((event) => ['audit_event', event.id, event.action, '', event.actorId, '', event.createdAt.toISOString(), JSON.stringify(event.metadata ?? {})]),
+  ]
+  return rows.map((row) => row.map(quote).join(',')).join('\n')
+}
+
+const teamRoles = new Set<string>([roles.businessOwner, roles.businessManager, roles.businessStaff, roles.businessViewer])
 
 export const listTeam = (tenantId: string) => prisma.authUser.findMany({
   where: { tenantId, role: { in: [...teamRoles] } },
@@ -330,16 +363,70 @@ export const listTeam = (tenantId: string) => prisma.authUser.findMany({
   orderBy: { email: 'asc' },
 })
 
+export const listPendingInvitations = (tenantId: string) => prisma.tenantInvitation.findMany({
+  where: { tenantId, acceptedAt: null, revokedAt: null, expiresAt: { gt: new Date() } },
+  select: { id: true, email: true, role: true, permissions: true, expiresAt: true, createdAt: true },
+  orderBy: { createdAt: 'desc' },
+})
+
+export async function getInvitationDetails(tokenValue: unknown) {
+  const token = requiredText(tokenValue, 'Invitation token')
+  const tokenHash = createHash('sha256').update(token).digest('hex')
+  const invitation = await prisma.tenantInvitation.findUnique({ where: { tokenHash } })
+  if (!invitation || invitation.revokedAt || invitation.acceptedAt || invitation.expiresAt <= new Date()) throw Object.assign(new Error('Invitation is invalid or expired'), { status: 410 })
+  const onboarding = await prisma.tenantOnboarding.findUnique({ where: { tenantId: invitation.tenantId }, select: { businessName: true } })
+  return { email: invitation.email, role: invitation.role, expiresAt: invitation.expiresAt, tenantName: onboarding?.businessName || 'your FoundingOS workspace' }
+}
+
 export async function inviteTeamMember(tenantId: string, actorId: string, input: Record<string, unknown>, requestId?: string) {
   const email = requiredText(input.email, 'Email').toLowerCase()
   const role = String(input.role || roles.businessStaff)
   if (!teamRoles.has(role)) throw Object.assign(new Error('Unsupported team role'), { status: 400 })
-  const temporaryPassword = optionalText(input.temporaryPassword) || `${randomBytes(12).toString('base64url')}!A1`
-  if (temporaryPassword.length < 12) throw Object.assign(new Error('Temporary password must contain at least 12 characters'), { status: 400 })
   const permissions = { workspaces: Array.isArray(input.workspaces) ? input.workspaces.map(assertWorkspace) : workspaceSlugs }
-  const user = await prisma.authUser.create({ data: { email, passwordHash: await bcrypt.hash(temporaryPassword, 12), role, tenantId, active: true, permissions: json(permissions) } })
-  await audit({ tenantId, actorId, action: 'team.invited', entityId: user.id, requestId, metadata: { email, role, workspaces: permissions.workspaces } })
-  return { user: { id: user.id, email: user.email, role: user.role, permissions: user.permissions, active: user.active }, temporaryPassword }
+  const existing = await prisma.authUser.findUnique({ where: { email }, select: { id: true } })
+  if (existing) throw Object.assign(new Error('A user with this email already exists'), { status: 409 })
+  const pending = await prisma.tenantInvitation.findFirst({ where: { tenantId, email, acceptedAt: null, revokedAt: null, expiresAt: { gt: new Date() } } })
+  if (pending) throw Object.assign(new Error('An active invitation already exists for this email'), { status: 409 })
+  const token = randomBytes(32).toString('base64url')
+  const invitation = await prisma.tenantInvitation.create({
+    data: { tenantId, email, role, permissions: json(permissions), tokenHash: createHash('sha256').update(token).digest('hex'), expiresAt: new Date(Date.now() + 72 * 60 * 60 * 1000), invitedBy: actorId },
+  })
+  await audit({ tenantId, actorId, action: 'team.invitation.created', entityId: invitation.id, requestId, metadata: { email, role, workspaces: permissions.workspaces, expiresAt: invitation.expiresAt.toISOString(), delivery: 'simulated' } })
+  const baseUrl = String(process.env.FOUNDINGOS_WEB_URL || 'http://localhost:3000').replace(/\/$/, '')
+  return { invitation: { id: invitation.id, email, role, permissions, expiresAt: invitation.expiresAt, invitationUrl: `${baseUrl}/invite/${encodeURIComponent(token)}` }, delivery: { status: 'simulated', message: 'Invitation prepared for configured email delivery.' } }
+}
+
+export async function acceptTeamInvitation(tokenValue: unknown, passwordValue: unknown) {
+  const token = requiredText(tokenValue, 'Invitation token')
+  const password = requiredText(passwordValue, 'Password')
+  if (password.length < 12) throw Object.assign(new Error('Password must contain at least 12 characters'), { status: 400 })
+  const tokenHash = createHash('sha256').update(token).digest('hex')
+  return prisma.$transaction(async (tx) => {
+    const invitation = await tx.tenantInvitation.findUnique({ where: { tokenHash } })
+    if (!invitation || invitation.revokedAt || invitation.acceptedAt || invitation.expiresAt <= new Date()) throw Object.assign(new Error('Invitation is invalid or expired'), { status: 410 })
+    const existing = await tx.authUser.findUnique({ where: { email: invitation.email }, select: { id: true } })
+    if (existing) throw Object.assign(new Error('A user with this email already exists'), { status: 409 })
+    const user = await tx.authUser.create({ data: { email: invitation.email, passwordHash: await bcrypt.hash(password, 12), role: invitation.role, tenantId: invitation.tenantId, active: true, permissions: json(invitation.permissions) } })
+    await tx.tenantInvitation.update({ where: { id: invitation.id }, data: { acceptedAt: new Date(), acceptedUserId: user.id } })
+    await tx.workspaceAuditEvent.create({ data: { tenantId: invitation.tenantId, actorId: user.id, action: 'team.invitation.accepted', workspace: 'intelligence', entityId: invitation.id, metadata: json({ userId: user.id, email: user.email }) } })
+    return { user: { id: user.id, email: user.email, role: user.role, tenantId: user.tenantId, permissions: user.permissions }, nextStep: 'Sign in to complete workspace onboarding.' }
+  })
+}
+
+export async function revokeTeamInvitation(tenantId: string, actorId: string, id: string, requestId?: string) {
+  const invitation = await prisma.tenantInvitation.findFirst({ where: { id, tenantId, acceptedAt: null, revokedAt: null } })
+  if (!invitation) throw Object.assign(new Error('Pending invitation not found'), { status: 404 })
+  const updated = await prisma.tenantInvitation.update({ where: { id }, data: { revokedAt: new Date() } })
+  await audit({ tenantId, actorId, action: 'team.invitation.revoked', entityId: id, requestId, metadata: { email: invitation.email } })
+  return { id: updated.id, status: 'revoked' as const }
+}
+
+export async function resendTeamInvitation(tenantId: string, actorId: string, id: string, requestId?: string) {
+  const invitation = await prisma.tenantInvitation.findFirst({ where: { id, tenantId, acceptedAt: null, revokedAt: null } })
+  if (!invitation) throw Object.assign(new Error('Pending invitation not found'), { status: 404 })
+  await prisma.tenantInvitation.update({ where: { id }, data: { revokedAt: new Date() } })
+  const permissions = invitation.permissions && typeof invitation.permissions === 'object' && !Array.isArray(invitation.permissions) ? invitation.permissions as { workspaces?: unknown } : {}
+  return inviteTeamMember(tenantId, actorId, { email: invitation.email, role: invitation.role, workspaces: Array.isArray(permissions.workspaces) ? permissions.workspaces : workspaceSlugs }, requestId)
 }
 
 export async function updateTeamMember(tenantId: string, actorId: string, id: string, input: Record<string, unknown>, requestId?: string) {

@@ -9,20 +9,41 @@ import { classifyMessagingIntent, extractWhatsAppMessages, type MessagingIntent,
 import { createCampaign, createInvoice, createOrder, invoiceDocument, operationsSummary, updateOrder } from './operations.js'
 import { sendWhatsAppText } from './whatsapp.js'
 import { getIntegrationCredentials } from './platform.js'
+import { decideAgentAction, executeAgentAction, getAgentIntelligenceSummary, reverseAgentActionExecution } from './agent-actions.js'
+import { buildIntelligenceBrief, explainActionForMessaging } from './intelligence-messaging.js'
 
 const json = (value: unknown): Prisma.InputJsonValue =>
   JSON.parse(JSON.stringify(value ?? {})) as Prisma.InputJsonValue
 
 const clean = (value: unknown) => String(value ?? '').trim()
+const record = (value: unknown): Record<string, unknown> =>
+  value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}
 const webFallbackUrl = () => clean(process.env.FOUNDINGOS_WEB_URL) || 'https://foundingos.com/workspaces'
+const storedIntentType = (value: unknown): MessagingIntent['type'] => {
+  switch (value) {
+    case 'status':
+    case 'intelligence_snapshot':
+    case 'agent_decision':
+    case 'agent_execution':
+    case 'agent_explanation':
+    case 'create_order':
+    case 'mark_delivered':
+    case 'create_invoice':
+    case 'create_campaign':
+    case 'help':
+      return value
+    default:
+      return 'unknown'
+  }
+}
 
 const allowedIntents: Record<string, MessagingIntent['type'][]> = {
-  founder: ['status', 'create_order', 'mark_delivered', 'create_invoice', 'create_campaign', 'help'],
-  admin: ['status', 'create_order', 'mark_delivered', 'create_invoice', 'create_campaign', 'help'],
-  operator: ['status', 'create_order', 'mark_delivered', 'help'],
-  driver: ['status', 'mark_delivered', 'help'],
-  finance: ['status', 'create_invoice', 'help'],
-  marketing: ['status', 'create_campaign', 'help'],
+  founder: ['status', 'intelligence_snapshot', 'agent_decision', 'agent_execution', 'agent_explanation', 'create_order', 'mark_delivered', 'create_invoice', 'create_campaign', 'help'],
+  admin: ['status', 'intelligence_snapshot', 'agent_decision', 'agent_execution', 'agent_explanation', 'create_order', 'mark_delivered', 'create_invoice', 'create_campaign', 'help'],
+  operator: ['status', 'intelligence_snapshot', 'agent_explanation', 'create_order', 'mark_delivered', 'help'],
+  driver: ['status', 'intelligence_snapshot', 'agent_explanation', 'mark_delivered', 'help'],
+  finance: ['status', 'intelligence_snapshot', 'agent_explanation', 'create_invoice', 'help'],
+  marketing: ['status', 'intelligence_snapshot', 'agent_explanation', 'create_campaign', 'help'],
 }
 
 const assertIntentAllowed = (role: string, intent: MessagingIntent['type']) => {
@@ -35,17 +56,43 @@ const assertIntentAllowed = (role: string, intent: MessagingIntent['type']) => {
 const helpText = [
   'FoundingOS WhatsApp commands:',
   '/status',
+  '/snapshot',
+  'APPROVE or REJECT after an intelligence brief',
+  'EXECUTE after approval; UNDO after internal execution',
+  'WHY, IMPACT, ALTERNATIVES, or MORE for decision evidence',
   '/order Customer | items | total | delivery address',
   '/delivered ORDER-REFERENCE',
   '/invoice ORDER-REFERENCE',
   '/campaign Name | audience | objective',
 ].join('\n')
 
-async function executeIntent(tenantId: string, sender: string, intent: MessagingIntent) {
+async function resolveMessagingAction(tenantId: string, reference: string | undefined, state: unknown) {
+  const stateReference = clean(record(state).lastAgentActionId)
+  const actionId = clean(reference) || stateReference
+  if (!actionId) throw Object.assign(new Error('No decision is selected. Request an intelligence brief or include the action reference.'), { status: 409 })
+  const action = await prisma.agentAction.findFirst({ where: { tenantId, id: actionId } })
+  if (!action) throw Object.assign(new Error('The referenced decision was not found for this business.'), { status: 404 })
+  return action
+}
+
+async function executeIntent(
+  tenantId: string,
+  sender: string,
+  intent: MessagingIntent,
+  context?: { participantUserId?: string | null; conversationState?: unknown },
+) {
   if (intent.type === 'help' || intent.type === 'unknown') {
-    return intent.type === 'help'
-      ? helpText
-      : `I could not safely identify that action.\n\n${helpText}\n\nWeb fallback: ${webFallbackUrl()}`
+    if (intent.type === 'help') return helpText
+    const selectedId = clean(record(context?.conversationState).lastAgentActionId)
+    const selected = selectedId ? await prisma.agentAction.findFirst({ where: { id: selectedId, tenantId } }) : null
+    const next = selected?.status === 'proposed'
+      ? `For ${selected.title}, reply APPROVE, REJECT, WHY, IMPACT, or ALTERNATIVES.`
+      : selected?.status === 'approved'
+        ? `${selected.title} is approved but not executed. Reply EXECUTE, IMPACT, or WHY.`
+        : selected?.status === 'completed'
+          ? `${selected.title} completed internally. Reply UNDO, IMPACT, or MORE.`
+          : 'Reply SNAPSHOT to select the latest decision.'
+    return `I could not safely identify that command, so nothing changed.\n\n${next}\n\nYou can resend the same command after a weak connection; duplicate provider messages are not executed twice.\n\nWeb fallback: ${webFallbackUrl()}`
   }
 
   if (intent.type === 'status') {
@@ -57,6 +104,49 @@ async function executeIntent(tenantId: string, sender: string, intent: Messaging
       `${summary.metrics.unpaidInvoices} unpaid invoices`,
       `${summary.metrics.lowStock} low-stock items`,
     ].join('\n')
+  }
+
+  if (intent.type === 'intelligence_snapshot') {
+    const summary = await getAgentIntelligenceSummary(tenantId)
+    const action = await prisma.agentAction.findFirst({ where: { tenantId, status: { in: ['proposed', 'approved'] } }, orderBy: { createdAt: 'desc' } })
+    return buildIntelligenceBrief(summary, action)
+  }
+
+  if (intent.type === 'agent_decision') {
+    if (!context?.participantUserId) throw Object.assign(new Error('This messaging participant must be linked to an active FoundingOS user before approving decisions.'), { status: 403 })
+    const user = await prisma.authUser.findFirst({ where: { id: context.participantUserId, tenantId, active: true } })
+    if (!user) throw Object.assign(new Error('The linked FoundingOS user is no longer active for this business.'), { status: 403 })
+    if (!['founder_master', 'business_owner', 'business_manager', 'retail_manager'].includes(user.role)) {
+      throw Object.assign(new Error('The linked FoundingOS user is not permitted to approve decisions.'), { status: 403 })
+    }
+    const action = await resolveMessagingAction(tenantId, intent.actionReference, context.conversationState)
+    const updated = await decideAgentAction(tenantId, user.id, action.id, intent.decision, `messaging:${sender}:${crypto.randomUUID()}`)
+    return updated.status === 'approved'
+      ? `${updated.title} approved.\n\nNO EXECUTION YET\nNo workspace record or external payment has moved.\n\nNEXT\nReply EXECUTE to create the governed internal records, or IMPACT to review the evidence again.\nRef: ${updated.id}`
+      : `${updated.title} rejected.\n\nRESULT\nNo workspace action executed. The immediate ${updated.estimatedValuePence ? `£${(updated.estimatedValuePence / 100).toFixed(2)} ` : ''}cash commitment was not created, and the decision remains auditable.\nRef: ${updated.id}`
+  }
+
+  if (intent.type === 'agent_execution') {
+    if (!context?.participantUserId) throw Object.assign(new Error('This messaging participant must be linked to an active FoundingOS user before executing decisions.'), { status: 403 })
+    const user = await prisma.authUser.findFirst({ where: { id: context.participantUserId, tenantId, active: true } })
+    if (!user || !['founder_master', 'business_owner', 'business_manager', 'retail_manager'].includes(user.role)) {
+      throw Object.assign(new Error('The linked FoundingOS user is not permitted to execute decisions.'), { status: 403 })
+    }
+    const action = await resolveMessagingAction(tenantId, intent.actionReference, context.conversationState)
+    if (intent.operation === 'reverse') {
+      if (action.status !== 'completed') throw Object.assign(new Error(`UNDO requires a completed internal execution. ${action.title} is currently ${action.status}.`), { status: 409 })
+      const reversed = await reverseAgentActionExecution(tenantId, user.id, action.id, `messaging:${sender}:${crypto.randomUUID()}`)
+      return `${action.title} reversed.\n\nCOMPENSATED\n${reversed.compensation.summary}\n\nAUDIT\nThe reversal is recorded in the execution ledger, Event Feed, and workspace audit trail.\nRef: ${action.id}`
+    }
+    if (action.status !== 'approved') throw Object.assign(new Error(`EXECUTE requires explicit approval. ${action.title} is currently ${action.status}. Reply APPROVE first or request a new brief.`), { status: 409 })
+    const completed = await executeAgentAction(tenantId, user.id, action.id, `messaging:${sender}:${crypto.randomUUID()}`)
+    return `${completed.title} executed.\n\nINTERNAL EFFECTS\n${completed.outcomeSummary || 'Governed workspace records were created.'}\n\nNEXT\nReply UNDO to compensate these internal records. No external payment was moved.\nRef: ${completed.id}`
+  }
+
+  if (intent.type === 'agent_explanation') {
+    const action = await resolveMessagingAction(tenantId, intent.actionReference, context?.conversationState)
+    const summary = await getAgentIntelligenceSummary(tenantId)
+    return explainActionForMessaging(action, intent.detail, summary)
   }
 
   if (intent.type === 'create_order') {
@@ -169,7 +259,32 @@ async function processInboundMessage(input: WhatsAppInbound) {
   if (!providerMessageId || !sender) throw new Error('WhatsApp message is missing its provider ID or sender.')
 
   const existing = await prisma.messagingMessage.findUnique({ where: { providerMessageId } })
-  if (existing) return { providerMessageId, status: 'duplicate' as const }
+  if (existing) {
+    const delivery = record(existing.raw)
+    const retryReply = clean(delivery.replyBody)
+    if (retryReply && delivery.confirmationSent === false) {
+      const retryConnection = await prisma.messagingChannelConnection.findUnique({
+        where: { channel_externalAccountId: { channel: 'whatsapp', externalAccountId: input.phoneNumberId } },
+      })
+      if (!retryConnection?.active || retryConnection.tenantId !== existing.tenantId) {
+        throw new Error('The original tenant connection is unavailable; the stored command was not re-executed.')
+      }
+      const confirmationSent = await sendAndStoreReply({
+        tenantId: existing.tenantId,
+        conversationId: existing.conversationId,
+        phoneNumberId: input.phoneNumberId,
+        recipient: sender,
+        intent: storedIntentType(existing.intent),
+        text: retryReply,
+      })
+      await prisma.messagingMessage.update({
+        where: { id: existing.id },
+        data: { raw: json({ ...delivery, confirmationSent, replyRetriedAt: new Date().toISOString() }) },
+      })
+      return { providerMessageId, status: confirmationSent ? 'confirmation_retried' as const : 'confirmation_retry_failed' as const }
+    }
+    return { providerMessageId, status: 'duplicate' as const }
+  }
 
   const connection = await prisma.messagingChannelConnection.findUnique({
     where: { channel_externalAccountId: { channel: 'whatsapp', externalAccountId: input.phoneNumberId } },
@@ -220,12 +335,14 @@ async function processInboundMessage(input: WhatsAppInbound) {
     where: { tenantId_channel_address: { tenantId: connection.tenantId, channel: 'whatsapp', address: sender } },
   })
   let reply: string
+  let intentSucceeded = false
   if (!participant?.active) {
     reply = `This number is not authorized to run FoundingOS actions. Ask your account owner to add it in Messaging settings.\n\nWeb fallback: ${webFallbackUrl()}`
   } else {
     try {
       assertIntentAllowed(participant.role, intent.type)
-      reply = await executeIntent(connection.tenantId, sender, intent)
+      reply = await executeIntent(connection.tenantId, sender, intent, { participantUserId: participant.userId, conversationState: conversation.state })
+      intentSucceeded = true
       await publishEvent({
         tenantId: connection.tenantId,
         type: `messaging.intent_${intent.type}`,
@@ -245,7 +362,14 @@ async function processInboundMessage(input: WhatsAppInbound) {
 
   await prisma.messagingConversation.update({
     where: { id: conversation.id },
-    data: { state: json({ lastIntent: intent.type, lastProviderMessageId: providerMessageId }) },
+    data: {
+      state: json({
+        ...record(conversation.state),
+        lastIntent: intent.type,
+        lastProviderMessageId: providerMessageId,
+        ...(intentSucceeded && 'actionReference' in intent && intent.actionReference ? { lastAgentActionId: intent.actionReference } : {}),
+      }),
+    },
   })
   const confirmationSent = await sendAndStoreReply({
     tenantId: connection.tenantId,
@@ -255,6 +379,10 @@ async function processInboundMessage(input: WhatsAppInbound) {
     intent: intent.type,
     text: reply,
   })
+  await prisma.messagingMessage.update({
+    where: { providerMessageId },
+    data: { raw: json({ inbound: input.message, replyBody: reply, confirmationSent }) },
+  })
   return { providerMessageId, status: 'processed' as const, intent: intent.type, confirmationSent }
 }
 
@@ -263,6 +391,43 @@ export async function processWhatsAppWebhook(payload: unknown) {
   const results = []
   for (const message of messages) results.push(await processInboundMessage(message))
   return results
+}
+
+export async function sendMessagingIntelligenceBrief(tenantId: string, participantId: string, actionId?: string) {
+  const participant = await prisma.messagingParticipant.findFirst({ where: { id: participantId, tenantId, active: true } })
+  if (!participant) throw Object.assign(new Error('Active messaging participant not found.'), { status: 404 })
+  if (participant.channel !== 'whatsapp') throw Object.assign(new Error(`Intelligence delivery is not yet available for ${participant.channel}.`), { status: 422 })
+  const connection = await prisma.messagingChannelConnection.findFirst({ where: { tenantId, channel: participant.channel, active: true } })
+  if (!connection) throw Object.assign(new Error('No active WhatsApp connection is configured for this business.'), { status: 409 })
+  const action = actionId
+    ? await prisma.agentAction.findFirst({ where: { id: actionId, tenantId } })
+    : await prisma.agentAction.findFirst({ where: { tenantId, status: { in: ['proposed', 'approved'] } }, orderBy: { createdAt: 'desc' } })
+  if (actionId && !action) throw Object.assign(new Error('Agent action not found.'), { status: 404 })
+  const summary = await getAgentIntelligenceSummary(tenantId)
+  const existingConversation = await prisma.messagingConversation.findUnique({
+    where: { tenantId_channel_externalConversationId: { tenantId, channel: participant.channel, externalConversationId: participant.address } },
+  })
+  const conversation = await prisma.messagingConversation.upsert({
+    where: { tenantId_channel_externalConversationId: { tenantId, channel: participant.channel, externalConversationId: participant.address } },
+    create: { tenantId, channel: participant.channel, externalConversationId: participant.address, participantAddress: participant.address, state: json(action ? { lastAgentActionId: action.id } : {}) },
+    update: { participantAddress: participant.address, lastMessageAt: new Date(), state: json({ ...record(existingConversation?.state), ...(action ? { lastAgentActionId: action.id } : {}) }) },
+  })
+  const text = buildIntelligenceBrief(summary, action)
+  const sent = await sendAndStoreReply({
+    tenantId,
+    conversationId: conversation.id,
+    phoneNumberId: connection.externalAccountId,
+    recipient: participant.address,
+    intent: 'intelligence_snapshot',
+    text,
+  })
+  await publishEvent({
+    tenantId,
+    type: sent ? 'messaging.intelligence_delivered' : 'messaging.intelligence_delivery_failed',
+    source: 'messaging_core',
+    payload: { channel: participant.channel, participantId: participant.id, actionId: action?.id || null, conversationId: conversation.id },
+  })
+  return { sent, channel: participant.channel, participantId: participant.id, actionId: action?.id || null, characters: text.length }
 }
 
 export const listMessagingConnections = (tenantId: string) =>
@@ -305,15 +470,21 @@ export const saveMessagingConnection = (tenantId: string, channel: string, input
 export const listMessagingParticipants = (tenantId: string) =>
   prisma.messagingParticipant.findMany({ where: { tenantId }, orderBy: { createdAt: 'asc' } })
 
-export const saveMessagingParticipant = (tenantId: string, input: Record<string, unknown>) => {
+export const saveMessagingParticipant = async (tenantId: string, input: Record<string, unknown>) => {
   const channel = clean(input.channel) || 'whatsapp'
   const address = clean(input.address)
   if (!address) throw Object.assign(new Error('Participant address is required.'), { status: 400 })
   const role = clean(input.role) || 'operator'
   if (!allowedIntents[role]) throw Object.assign(new Error('Unsupported messaging role.'), { status: 400 })
+  const userIdProvided = Object.prototype.hasOwnProperty.call(input, 'userId')
+  const userId = clean(input.userId) || null
+  if (userId) {
+    const user = await prisma.authUser.findFirst({ where: { id: userId, tenantId, active: true }, select: { id: true } })
+    if (!user) throw Object.assign(new Error('Messaging participant user must be active in this business.'), { status: 400 })
+  }
   return prisma.messagingParticipant.upsert({
     where: { tenantId_channel_address: { tenantId, channel, address } },
-    create: { tenantId, channel, address, role, displayName: clean(input.displayName) || null, active: input.active !== false },
-    update: { role, displayName: clean(input.displayName) || null, active: input.active !== false },
+    create: { tenantId, userId, channel, address, role, displayName: clean(input.displayName) || null, active: input.active !== false },
+    update: { ...(userIdProvided ? { userId } : {}), role, displayName: clean(input.displayName) || null, active: input.active !== false },
   })
 }
