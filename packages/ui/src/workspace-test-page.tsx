@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { CommercialOperationsWorkspace } from './commercial-operations-workspace'
 import { HealthOperationsWorkspace } from './health-operations-workspace'
 import { MarketingOperationsWorkspace } from './marketing-operations-workspace'
-import { RetailOperationsWorkspace } from './retail-operations-workspace'
+import { RetailBusinessApplication, type RetailSection } from './retail-business-application'
 import { WorkforceIntelligenceWorkspace } from './workforce-intelligence-workspaces'
 
 export type TestWorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'marketing' | 'talent' | 'health' | 'intelligence'
@@ -99,19 +99,6 @@ const workspaceOverview: Record<TestWorkspaceSlug, {
 }
 
 function ActiveWorkspace({ workspace }: { workspace: TestWorkspaceSlug }) {
-  const [retailModule, setRetailModule] = useState<'orders' | 'inventory'>('orders')
-
-  if (workspace === 'retail') {
-    return (
-      <>
-        <div className="workspace-test-subnav" role="tablist" aria-label="Retail workspace views">
-          <button aria-selected={retailModule === 'orders'} className={retailModule === 'orders' ? 'active' : ''} onClick={() => setRetailModule('orders')} role="tab" type="button">Orders</button>
-          <button aria-selected={retailModule === 'inventory'} className={retailModule === 'inventory' ? 'active' : ''} onClick={() => setRetailModule('inventory')} role="tab" type="button">Inventory</button>
-        </div>
-        <RetailOperationsWorkspace moduleId={retailModule} />
-      </>
-    )
-  }
   if (workspace === 'logistics') return <CommercialOperationsWorkspace moduleId="logistics" />
   if (workspace === 'finance') return <CommercialOperationsWorkspace moduleId="finance" />
   if (workspace === 'marketing') return <MarketingOperationsWorkspace />
@@ -120,7 +107,8 @@ function ActiveWorkspace({ workspace }: { workspace: TestWorkspaceSlug }) {
   return <WorkforceIntelligenceWorkspace suite="intelligence" moduleId="monitoring" />
 }
 
-export function WorkspaceTestPage({ workspace }: { workspace: TestWorkspaceSlug }) {
+export function WorkspaceTestPage({ workspace, retailSection }: { workspace: TestWorkspaceSlug; retailSection?: RetailSection }) {
+  if (workspace === 'retail') return <RetailBusinessApplication section={retailSection} />
   const current = workspaces.find((item) => item.slug === workspace)
   const overview = workspaceOverview[workspace]
   const [command, setCommand] = useState('')

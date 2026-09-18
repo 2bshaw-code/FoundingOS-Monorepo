@@ -4,11 +4,13 @@
 */
 import { FounderLauncher, type WorkspaceSlug } from '@foundingos/ui'
 import { WorkspaceTestPage, type TestWorkspaceSlug } from '@foundingos/ui/workspace-test-page'
+import type { RetailSection } from '@foundingos/ui/retail-business-application'
 import { notFound } from 'next/navigation'
 
 const pages = new Set(['suites', 'workspaces', 'consoles', 'test-workspaces', 'marketing', 'intelligence', 'about', 'pricing', 'contact'])
 const workspaceSlugs = new Set<WorkspaceSlug>(['retail', 'logistics', 'finance', 'talent', 'health'])
 const testWorkspaceSlugs = new Set<TestWorkspaceSlug>(['retail', 'logistics', 'finance', 'marketing', 'talent', 'health', 'intelligence'])
+const retailSections = new Set<RetailSection>(['overview', 'orders', 'inventory', 'products', 'customers', 'suppliers', 'reports', 'automations', 'team', 'settings'])
 
 export const dynamicParams = false
 
@@ -24,6 +26,7 @@ export function generateStaticParams() {
     { slug: ['workspaces', 'talent'] },
     { slug: ['workspaces', 'health'] },
     { slug: ['test-workspaces', 'retail'] },
+    ...['orders', 'inventory', 'products', 'customers', 'suppliers', 'reports', 'automations', 'team', 'settings'].map((section) => ({ slug: ['test-workspaces', 'retail', section] })),
     { slug: ['test-workspaces', 'logistics'] },
     { slug: ['test-workspaces', 'finance'] },
     { slug: ['test-workspaces', 'marketing'] },
@@ -51,7 +54,13 @@ export default async function Page({ params }: { params: Promise<{ slug?: string
   if (page === 'home') return <FounderLauncher />
   if (!pages.has(page)) notFound()
   if (page === 'test-workspaces') {
-    if (slug.length !== 2 || !testWorkspaceSlugs.has(slug[1] as TestWorkspaceSlug)) notFound()
+    if (!testWorkspaceSlugs.has(slug[1] as TestWorkspaceSlug)) notFound()
+    if (slug[1] === 'retail') {
+      const retailSection = (slug[2] ?? 'overview') as RetailSection
+      if (slug.length > 3 || !retailSections.has(retailSection)) notFound()
+      return <WorkspaceTestPage retailSection={retailSection} workspace="retail" />
+    }
+    if (slug.length !== 2) notFound()
     return <WorkspaceTestPage workspace={slug[1] as TestWorkspaceSlug} />
   }
   if ((page === 'workspaces' || page === 'consoles') && slug[1]) {
