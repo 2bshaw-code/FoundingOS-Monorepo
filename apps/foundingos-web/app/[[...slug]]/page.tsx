@@ -4,13 +4,20 @@
 */
 import { FounderLauncher, type WorkspaceSlug } from '@foundingos/ui'
 import { WorkspaceTestPage, type TestWorkspaceSlug } from '@foundingos/ui/workspace-test-page'
-import type { RetailSection } from '@foundingos/ui/retail-business-application'
 import { notFound } from 'next/navigation'
 
 const pages = new Set(['suites', 'workspaces', 'consoles', 'test-workspaces', 'marketing', 'intelligence', 'about', 'pricing', 'contact'])
 const workspaceSlugs = new Set<WorkspaceSlug>(['retail', 'logistics', 'finance', 'talent', 'health'])
 const testWorkspaceSlugs = new Set<TestWorkspaceSlug>(['retail', 'logistics', 'finance', 'marketing', 'talent', 'health', 'intelligence'])
-const retailSections = new Set<RetailSection>(['overview', 'orders', 'inventory', 'products', 'customers', 'suppliers', 'reports', 'automations', 'team', 'settings'])
+const workspaceSections: Record<TestWorkspaceSlug, string[]> = {
+  retail: ['overview', 'sales-pipeline', 'orders', 'point-of-sale', 'crm', 'segments', 'loyalty', 'inbox', 'campaigns', 'automations', 'content', 'products', 'inventory', 'promotions', 'channels', 'purchasing', 'suppliers', 'fulfilment', 'returns', 'service', 'payments', 'reports', 'team', 'integrations', 'settings'],
+  logistics: ['overview', 'dispatch', 'routes', 'deliveries', 'tracking', 'exceptions', 'fleet', 'drivers', 'warehouses', 'customers', 'quotes', 'billing', 'reports', 'automations', 'team', 'integrations', 'settings'],
+  finance: ['overview', 'cashflow', 'invoices', 'bills', 'banking', 'reconciliation', 'expenses', 'payments', 'budgets', 'forecasting', 'tax', 'approvals', 'reports', 'automations', 'team', 'integrations', 'settings'],
+  marketing: ['overview', 'campaigns', 'calendar', 'audiences', 'segments', 'leads', 'content', 'brand-studio', 'channels', 'journeys', 'inbox', 'attribution', 'reports', 'automations', 'team', 'integrations', 'settings'],
+  talent: ['overview', 'candidates', 'jobs', 'interviews', 'offers', 'onboarding', 'people', 'performance', 'time-off', 'learning', 'payroll', 'engagement', 'reports', 'automations', 'team', 'integrations', 'settings'],
+  health: ['overview', 'appointments', 'patients', 'care-plans', 'triage', 'clinical-inbox', 'follow-ups', 'practitioners', 'locations', 'inventory', 'billing', 'claims', 'compliance', 'reports', 'automations', 'team', 'integrations', 'settings'],
+  intelligence: ['overview', 'signals', 'risks', 'recommendations', 'forecasts', 'scenarios', 'anomalies', 'event-feed', 'workflows', 'models', 'data-sources', 'reports', 'automations', 'team', 'integrations', 'settings'],
+}
 
 export const dynamicParams = false
 
@@ -25,14 +32,10 @@ export function generateStaticParams() {
     { slug: ['workspaces', 'marketing'] },
     { slug: ['workspaces', 'talent'] },
     { slug: ['workspaces', 'health'] },
-    { slug: ['test-workspaces', 'retail'] },
-    ...['orders', 'inventory', 'products', 'customers', 'suppliers', 'reports', 'automations', 'team', 'settings'].map((section) => ({ slug: ['test-workspaces', 'retail', section] })),
-    { slug: ['test-workspaces', 'logistics'] },
-    { slug: ['test-workspaces', 'finance'] },
-    { slug: ['test-workspaces', 'marketing'] },
-    { slug: ['test-workspaces', 'talent'] },
-    { slug: ['test-workspaces', 'health'] },
-    { slug: ['test-workspaces', 'intelligence'] },
+    ...Object.entries(workspaceSections).flatMap(([workspace, sections]) => [
+      { slug: ['test-workspaces', workspace] },
+      ...sections.filter((section) => section !== 'overview').map((section) => ({ slug: ['test-workspaces', workspace, section] })),
+    ]),
     // Compatibility paths for previously published links.
     { slug: ['consoles'] },
     { slug: ['consoles', 'retail'] },
@@ -54,14 +57,10 @@ export default async function Page({ params }: { params: Promise<{ slug?: string
   if (page === 'home') return <FounderLauncher />
   if (!pages.has(page)) notFound()
   if (page === 'test-workspaces') {
-    if (!testWorkspaceSlugs.has(slug[1] as TestWorkspaceSlug)) notFound()
-    if (slug[1] === 'retail') {
-      const retailSection = (slug[2] ?? 'overview') as RetailSection
-      if (slug.length > 3 || !retailSections.has(retailSection)) notFound()
-      return <WorkspaceTestPage retailSection={retailSection} workspace="retail" />
-    }
-    if (slug.length !== 2) notFound()
-    return <WorkspaceTestPage workspace={slug[1] as TestWorkspaceSlug} />
+    const workspace = slug[1] as TestWorkspaceSlug
+    const section = slug[2] ?? 'overview'
+    if (!testWorkspaceSlugs.has(workspace) || slug.length > 3 || !workspaceSections[workspace].includes(section)) notFound()
+    return <WorkspaceTestPage section={section} workspace={workspace} />
   }
   if ((page === 'workspaces' || page === 'consoles') && slug[1]) {
     if (page === 'workspaces' && slug[1] === 'marketing' && slug.length === 2) {
