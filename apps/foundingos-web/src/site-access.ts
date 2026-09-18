@@ -24,6 +24,29 @@ export function signSiteAccess(email: string, now = Date.now()) {
   return `${payload}.${signature}`
 }
 
+export function readSiteAccess(token: string | undefined, now = Date.now()) {
+  if (!token) return null
+  const [payload, provided, extra] = token.split('.')
+  if (!payload || !provided || extra) return null
+  const expected = createHmac('sha256', requiredSecret()).update(payload).digest()
+  let actual: Buffer
+  try {
+    actual = Buffer.from(provided, 'base64url')
+  } catch {
+    return null
+  }
+  if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) return null
+  try {
+    const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { email?: unknown; expiresAt?: unknown }
+    const email = typeof parsed.email === 'string' ? normalizeAccessEmail(parsed.email) : null
+    return email && typeof parsed.expiresAt === 'number' && parsed.expiresAt > now
+      ? { email, expiresAt: parsed.expiresAt }
+      : null
+  } catch {
+    return null
+  }
+}
+
 export function verifySitePassword(candidate: string) {
   const configured = process.env.SITE_ACCESS_PASSWORD_HASH?.trim()
   if (!configured) throw new Error('SITE_ACCESS_PASSWORD_HASH is required')

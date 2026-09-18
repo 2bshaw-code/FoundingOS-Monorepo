@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { randomBytes, scryptSync } from 'node:crypto'
 import test from 'node:test'
-import { normalizeAccessEmail, safeReturnPath, signSiteAccess, verifySitePassword } from './site-access.js'
+import { normalizeAccessEmail, readSiteAccess, safeReturnPath, signSiteAccess, verifySitePassword } from './site-access.js'
 
 test('site password verification uses the configured scrypt hash', () => {
   const salt = randomBytes(16)
@@ -20,6 +20,18 @@ test('site access signatures require a sufficiently strong secret', () => {
 test('access email addresses are normalized and validated', () => {
   assert.equal(normalizeAccessEmail(' Tester@Example.COM '), 'tester@example.com')
   assert.equal(normalizeAccessEmail('not-an-email'), null)
+})
+
+test('signed access identifies the visitor until expiry', () => {
+  process.env.SITE_ACCESS_SECRET = 'a-secure-cookie-signing-secret-with-32-characters'
+  const now = Date.now()
+  const token = signSiteAccess('Tester@Example.com', now)
+  assert.deepEqual(readSiteAccess(token, now), {
+    email: 'tester@example.com',
+    expiresAt: now + 7 * 24 * 60 * 60 * 1000,
+  })
+  assert.equal(readSiteAccess(token, now + 8 * 24 * 60 * 60 * 1000), null)
+  assert.equal(readSiteAccess(`${token}tampered`, now), null)
 })
 
 test('return paths cannot redirect to another host', () => {
