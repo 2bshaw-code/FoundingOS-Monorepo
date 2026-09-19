@@ -472,6 +472,19 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
     const entry = { time: 'Now', note }
     update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? { ...item, log: [entry, ...(item.log ?? [])] } : item) } }), `${module}: ${record.name} note added`)
   }
+  // Edits a record's core fields directly from the detail panel — every module gets inline
+  // editing of name/secondary/value/owner for free, without any module-specific wiring.
+  const updateRecord = async (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner'>>) => {
+    const nextRecord = production && record.backendId
+      ? fromProductionRecord(await productionRecords.update(record.backendId, { name: patch.name ?? record.name, data: { secondary: patch.secondary ?? record.secondary, value: patch.value ?? record.value, owner: patch.owner ?? record.owner }, version: record.version }))
+      : { ...record, ...patch, updated: 'Now' }
+    update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? nextRecord : item) } }), `${module}: ${record.name} details updated`)
+  }
+  // Moves every record in a set to the same next status in one action — powers the bulk-select
+  // toolbar so an operator can advance a whole batch of orders/deals/candidates together.
+  const bulkAdvance = async (module: string, records: WorkspaceRecord[], status: string) => {
+    for (const record of records) await advanceRecord(module, record, status)
+  }
   const publishHandoff = async (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => {
     if (production) await productionRequest('/platform/events', { method: 'POST', body: JSON.stringify({ type: 'workspace.handoff.requested', source: workspace, payload: { module, recordId: record.backendId, reference: record.id, target } }) })
     update((current) => current, `${module}: ${record.name} handed to ${configs[target].label}`)
@@ -481,7 +494,7 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
     window.localStorage.removeItem(storageKey(workspace))
     setState(seedWorkspace(workspace))
   }
-  return { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, adjustStock, logNote, publishHandoff }
+  return { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff }
 }
 
 function appendDemoRecord(workspace: BusinessWorkspaceSlug, module: string, record: WorkspaceRecord) {
@@ -1523,7 +1536,7 @@ function DeliveryMapPanel({ records, selectedId, onSelect }: { records: Workspac
   </div>
 }
 
-function RecordsPage({ workspace, config, item, state, createRecord, advanceRecord, attachRecord, adjustStock, logNote, publishHandoff }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string) => void; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
+function RecordsPage({ workspace, config, item, state, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
   const records = state.records[item.id] ?? []
   const statuses = statusFor(item)
   const [sourceOpen, setSourceOpen] = useState(false)
@@ -1534,8 +1547,50 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const [error, setError] = useState('')
   const [stockCount, setStockCount] = useState('')
   const [noteText, setNoteText] = useState('')
-  const visible = records.filter((record) => `${record.id} ${record.name} ${record.secondary} ${record.status}`.toLowerCase().includes(query.toLowerCase()))
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [sortBy, setSortBy] = useState<'default' | 'name' | 'value' | 'owner'>('default')
+  const [checkedIds, setCheckedIds] = useState<string[]>([])
+  const [editing, setEditing] = useState(false)
+  const [editDraft, setEditDraft] = useState({ name: '', secondary: '', value: '', owner: '' })
+  const matched = records.filter((record) => `${record.id} ${record.name} ${record.secondary} ${record.status}`.toLowerCase().includes(query.toLowerCase()) && (statusFilter === 'all' || record.status === statusFilter))
+  const visible = sortBy === 'default' ? matched : [...matched].sort((a, b) => sortBy === 'value' ? parseCurrency(b.value) - parseCurrency(a.value) : String(a[sortBy]).localeCompare(String(b[sortBy])))
   const selected = records.find((record) => record.id === selectedId) ?? records[0]
+  const checked = checkedIds.filter((id) => visible.some((record) => record.id === id))
+  const toggleChecked = (id: string) => setCheckedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])
+  const bulkAdvanceSelected = async () => {
+    const targets = visible.filter((record) => checked.includes(record.id) && record.status !== statuses.at(-1))
+    if (targets.length === 0) return
+    setSaving(true)
+    try {
+      await Promise.all(targets.map((record) => bulkAdvance(item.id, [record], statuses[Math.min(statuses.indexOf(record.status) + 1, statuses.length - 1)])))
+      setCheckedIds([])
+    } finally {
+      setSaving(false)
+    }
+  }
+  const exportCsv = (rows: WorkspaceRecord[]) => {
+    const header = ['ID', 'Name', 'Detail', 'Value', 'Status', 'Owner', 'Updated']
+    const lines = rows.map((record) => [record.id, record.name, record.secondary, record.value, record.status, record.owner, record.updated].map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(','))
+    downloadTextFile(`${item.id}-export.csv`, [header.join(','), ...lines].join('\n'))
+  }
+  const startEdit = () => {
+    if (!selected) return
+    setEditDraft({ name: selected.name, secondary: selected.secondary, value: selected.value, owner: selected.owner })
+    setEditing(true)
+  }
+  const saveEdit = async () => {
+    if (!selected) return
+    setSaving(true)
+    setError('')
+    try {
+      await updateRecord(item.id, selected, editDraft)
+      setEditing(false)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Record could not be updated')
+    } finally {
+      setSaving(false)
+    }
+  }
   const recordStock = () => {
     if (!selected) return
     const quantity = Number(stockCount)
@@ -1612,6 +1667,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const selectRecord = (id: string) => {
     setSelectedId(id)
     setSourceOpen(false)
+    setEditing(false)
   }
   const origin = selected ? recordOrigin(selected, config) : null
   const isDirectory = !item.statuses
@@ -1633,19 +1689,35 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
     {!isDirectory && !isInbox && !isCalendar && !isContentStudio && !isSalesPipeline && !isInventory && records.length > 0 ? <ValueByStageBar records={records} statuses={statuses} /> : null}
     {!isDirectory && !isInbox && !isCalendar && !isContentStudio && !isSalesPipeline && !isInventory && records.length > 0 ? <ConversionFunnel records={records} statuses={statuses} /> : null}
     {!isInbox && !isCalendar && records.length > 0 ? (isDirectory ? <DirectoryKPIBar metricLabel={metricLabel} records={records} /> : <PipelineKPIBar records={records} statuses={statuses} />) : null}
-    {!isInbox ? <div className="retail-app-toolbar"><input aria-label={`Search ${item.label}`} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${item.label.toLowerCase()}`} value={query} /><span className="retail-app-record-count">{visible.length} matching</span><button onClick={() => window.print()} type="button">Export / print</button></div> : null}
+    {!isInbox ? <div className="retail-app-toolbar">
+      <input aria-label={`Search ${item.label}`} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${item.label.toLowerCase()}`} value={query} />
+      {!isDirectory && !isCalendar ? <select aria-label={`Filter ${item.label} by status`} onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}><option value="all">All stages</option>{statuses.map((status) => <option key={status} value={status}>{status}</option>)}</select> : null}
+      <select aria-label={`Sort ${item.label}`} onChange={(event) => setSortBy(event.target.value as typeof sortBy)} value={sortBy}><option value="default">Sort: default</option><option value="name">Sort: name A–Z</option><option value="value">Sort: value high–low</option><option value="owner">Sort: owner A–Z</option></select>
+      <span className="retail-app-record-count">{visible.length} matching</span>
+      <button onClick={() => exportCsv(visible)} type="button">Export CSV</button>
+      <button onClick={() => window.print()} type="button">Print</button>
+    </div> : null}
+    {!isInbox && !isCalendar && checked.length > 0 ? <div className="retail-app-bulk-bar">
+      <span>{checked.length} selected</span>
+      {!isDirectory ? <button disabled={saving} onClick={() => void bulkAdvanceSelected()} type="button">Advance to next stage</button> : null}
+      <button onClick={() => exportCsv(visible.filter((record) => checked.includes(record.id)))} type="button">Export selected</button>
+      <button onClick={() => setCheckedIds([])} type="button">Clear selection</button>
+    </div> : null}
     {isInbox ? <InboxListView onSelect={selectRecord} records={visible} selectedId={selected?.id} statuses={statuses} /> : <section className="retail-app-record-layout">
       {isCalendar ? <CalendarGridView onSelect={selectRecord} records={visible} selectedId={selected?.id} /> : isDirectory ? <div className="retail-app-directory-card">
         <div className="retail-app-panel-heading"><div><p>{item.group}</p><h2>{visible.length} {item.label.toLowerCase()}</h2></div></div>
         <div className="retail-app-directory-grid">
           {visible.map((record) => {
             const pct = hashPercent(record.id)
-            return <button className={`retail-app-directory-item${selected?.id === record.id ? ' selected' : ''}`} key={record.id} onClick={() => selectRecord(record.id)} type="button">
-              <div className="retail-app-directory-avatar">{initials(record.name)}</div>
-              <div className="retail-app-directory-body"><strong>{record.name}</strong><span>{record.secondary}</span></div>
-              <div className="retail-app-directory-metric"><div className="retail-app-directory-bar"><i style={{ width: `${pct}%` }} /></div><small>{pct}% {metricLabel}</small></div>
-              <div className="retail-app-directory-foot"><b>{record.value}</b><i>{record.owner}</i></div>
-            </button>
+            return <div className="retail-app-check-wrap" key={record.id}>
+              <input aria-label={`Select ${record.name}`} checked={checked.includes(record.id)} className="retail-app-check" onChange={() => toggleChecked(record.id)} type="checkbox" />
+              <button className={`retail-app-directory-item${selected?.id === record.id ? ' selected' : ''}`} onClick={() => selectRecord(record.id)} type="button">
+                <div className="retail-app-directory-avatar">{initials(record.name)}</div>
+                <div className="retail-app-directory-body"><strong>{record.name}</strong><span>{record.secondary}</span></div>
+                <div className="retail-app-directory-metric"><div className="retail-app-directory-bar"><i style={{ width: `${pct}%` }} /></div><small>{pct}% {metricLabel}</small></div>
+                <div className="retail-app-directory-foot"><b>{record.value}</b><i>{record.owner}</i></div>
+              </button>
+            </div>
           })}
           {visible.length === 0 ? <p className="retail-app-board-empty">No records match your search</p> : null}
         </div>
@@ -1657,12 +1729,15 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
             return <div className="retail-app-board-column" data-tone={boardTones[index % boardTones.length]} key={status}>
               <header><span>{status}</span><strong>{columnRecords.length}</strong></header>
               <div className="retail-app-board-column-body">
-                {columnRecords.map((record) => <button className={`retail-app-board-item${selected?.id === record.id ? ' selected' : ''}`} key={record.id} onClick={() => selectRecord(record.id)} type="button">
-                  {record.attachment ? <img alt="" className="retail-app-board-item-thumb" src={record.attachment} /> : null}
-                  <strong>{record.name}</strong>
-                  <span>{record.secondary}</span>
-                  <div className="retail-app-board-item-meta"><b>{record.value}</b><i>{record.owner}</i></div>
-                </button>)}
+                {columnRecords.map((record) => <div className="retail-app-check-wrap" key={record.id}>
+                  <input aria-label={`Select ${record.name}`} checked={checked.includes(record.id)} className="retail-app-check" onChange={() => toggleChecked(record.id)} type="checkbox" />
+                  <button className={`retail-app-board-item${selected?.id === record.id ? ' selected' : ''}`} onClick={() => selectRecord(record.id)} type="button">
+                    {record.attachment ? <img alt="" className="retail-app-board-item-thumb" src={record.attachment} /> : null}
+                    <strong>{record.name}</strong>
+                    <span>{record.secondary}</span>
+                    <div className="retail-app-board-item-meta"><b>{record.value}</b><i>{record.owner}</i></div>
+                  </button>
+                </div>)}
                 {columnRecords.length === 0 ? <p className="retail-app-board-empty">No records in this stage</p> : null}
               </div>
             </div>
@@ -1672,7 +1747,16 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
       {selected && origin ? <aside className="retail-app-detail"><p>Selected record</p><h2>{selected.name}</h2><strong>{selected.id}</strong>
         {isContentStudio ? <ContentPreviewCard body={selected.secondary.includes(' \u00b7 ') ? selected.secondary.slice(selected.secondary.indexOf(' \u00b7 ') + 3) : selected.secondary} cta={selected.value} hashtags={[]} headline={selected.name} image={selected.attachment} type={selected.secondary.split(' \u00b7 ')[0] ?? 'Social post'} /> : <AttachmentBox attachment={selected.attachment} attachmentName={selected.attachmentName ?? ''} onRemove={() => attachRecord(item.id, selected, undefined, '')} onUpload={(file) => void readFileAsDataUrl(file).then((dataUrl) => attachRecord(item.id, selected, dataUrl, file.name))} />}
         {isInventory ? <StockTakePanel count={stockCount} onCountChange={setStockCount} onRecord={recordStock} record={selected} /> : null}
-        <dl><div><dt>{isDirectory ? 'Category' : 'Workflow'}</dt><dd>{item.label}</dd></div><div><dt>Status</dt><dd>{selected.status}</dd></div><div><dt>Owner</dt><dd>{selected.owner}</dd></div><div><dt>Value</dt><dd>{selected.value}</dd></div><div><dt>Updated</dt><dd>{selected.updated}</dd></div></dl>
+        {editing ? <div className="retail-app-edit-form">
+          <label>Name<input onChange={(event) => setEditDraft((current) => ({ ...current, name: event.target.value }))} value={editDraft.name} /></label>
+          <label>{isDirectory ? 'Category' : 'Context'}<input onChange={(event) => setEditDraft((current) => ({ ...current, secondary: event.target.value }))} value={editDraft.secondary} /></label>
+          <div className="retail-app-form-grid">
+            <label>Value<input onChange={(event) => setEditDraft((current) => ({ ...current, value: event.target.value }))} value={editDraft.value} /></label>
+            <label>Owner<input onChange={(event) => setEditDraft((current) => ({ ...current, owner: event.target.value }))} value={editDraft.owner} /></label>
+          </div>
+          <footer><button className="retail-app-secondary" onClick={() => setEditing(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} onClick={() => void saveEdit()} type="button">{saving ? 'Saving…' : 'Save changes'}</button></footer>
+        </div> : <dl><div><dt>{isDirectory ? 'Category' : 'Workflow'}</dt><dd>{item.label}</dd></div><div><dt>Status</dt><dd>{selected.status}</dd></div><div><dt>Owner</dt><dd>{selected.owner}</dd></div><div><dt>Value</dt><dd>{selected.value}</dd></div><div><dt>Updated</dt><dd>{selected.updated}</dd></div></dl>}
+        {!editing ? <button className="retail-app-secondary retail-app-edit-toggle" onClick={startEdit} type="button">Edit details</button> : null}
         {!isContentStudio ? <ActivityLog entries={selected.log ?? []} note={noteText} onAdd={addNote} onNoteChange={setNoteText} placeholder={isInventory ? 'Add a note about this stock' : 'Add an activity note'} /> : null}
         <button aria-expanded={sourceOpen} className="retail-app-source-toggle" onClick={() => setSourceOpen((open) => !open)} type="button"><span>Source: {origin.label}</span><b>{sourceOpen ? '−' : '+'}</b></button>
         {sourceOpen ? <p className="retail-app-source-detail">{origin.detail}</p> : null}
@@ -2004,7 +2088,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
     setSession(getProductionSession())
     setHydrated(true)
   }, [])
-  const { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, adjustStock, logNote, publishHandoff } = useWorkspaceState(workspace, current.id, session)
+  const { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff } = useWorkspaceState(workspace, current.id, session)
   const agent = useAgentActions(production, session, (text) => update((current) => current, text))
   const groups = useMemo(() => [...new Set(config.modules.map((item) => item.group))], [config.modules])
   if (productionModeEnabled && !productionApiConfigured) return <main className="complete-workspace-access"><section><h1>Production API is not configured</h1><p>Set NEXT_PUBLIC_FOUNDINGOS_API_URL to the deployed API root before publishing this application.</p></section></main>
@@ -2021,7 +2105,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
   else if (['reports', 'forecasting', 'attribution'].includes(current.id)) content = <ReportsPage config={config} />
   else if (current.id === 'event-feed') content = <EventFeedPage events={events} />
   else if (current.id === 'settings') content = <SettingsPage config={config} production={production} state={state} update={update} />
-  else content = <RecordsPage adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} workspace={workspace} />
+  else content = <RecordsPage adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} />
   return <main className="retail-product-shell complete-workspace-shell" style={{ ['--retail-accent' as string]: config.accent }}>
     <aside className="retail-product-sidebar"><Link className="retail-product-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{config.suite}</small></div></Link><div className="retail-product-store"><span>{config.label.slice(0, 2).toUpperCase()}</span><div><strong>{state.settings.businessName}</strong><small>{config.label} Workspace</small></div><b>⌄</b></div><nav aria-label={`${config.label} workspace navigation`}>{groups.map((group) => <div key={group}><p>{group}</p>{config.modules.filter((item) => item.group === group).map((item) => <Link className={item.id === current.id ? 'active' : ''} href={`${workspaceRoot}/${workspace}${item.id === 'overview' ? '' : `/${item.id}`}`} key={item.id}><i>{item.id === 'overview' ? '⌂' : '◇'}</i><span>{item.label}</span>{state.records[item.id]?.length ? <em>{state.records[item.id].length}</em> : null}</Link>)}</div>)}</nav><Link className="retail-product-switcher" href={workspaceRoot}><span>Switch workspace</span><b>↗</b></Link></aside>
     <section className="retail-product-main"><header className="retail-product-topbar"><form onSubmit={(event) => event.preventDefault()}><span>⌕</span><input aria-label="Global workspace search" placeholder={`Search ${config.label}, or ask FoundAI…`} /></form><div><span className="complete-workspace-live">● {production ? 'PRODUCTION' : 'SIMULATION'} LIVE</span>{production ? <button className="complete-workspace-signout" onClick={() => void logoutProduction().then(() => setSession(null))} type="button">Sign out</button> : null}<span className="retail-product-user">{session?.user.email.slice(0, 2).toUpperCase() || 'BS'}</span></div></header><div className="retail-product-content"><div className="retail-product-notice"><span>{loading ? '…' : error ? '!' : '✓'}</span>{loading ? 'Loading tenant data…' : error ? error : production ? 'Tenant data is secured in PostgreSQL and every action is audited' : 'Interactive simulation · actions persist in this browser'}</div>{content}</div><footer className="retail-product-footer"><span>{config.label} Workspace · {production ? 'tenant-isolated production data' : 'browser-persistent shared simulation'}</span>{!production ? <button onClick={reset} type="button">Reset {config.label} data</button> : null}</footer></section>
