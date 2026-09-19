@@ -13743,6 +13743,133 @@ html[data-accessibility-simplified='true'] .btn {
   padding-top: 10px;
 }
 
+/* Finance: Invoices aging summary panel (Sage/Xero-style accounts receivable) */
+.retail-app-invoice-aging-panel {
+  background: #fff;
+  border: 1px solid #e5e9f0;
+  border-radius: 14px;
+  color: #172033;
+  margin-top: 16px;
+  padding: 18px 20px;
+}
+
+.retail-app-aging-chart {
+  align-items: flex-end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-top: 14px;
+  text-align: center;
+}
+
+.retail-app-aging-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.retail-app-aging-bar {
+  background: #3b82f6;
+  border-radius: 6px 6px 0 0;
+  width: 28px;
+}
+
+.retail-app-aging-col[data-risk="true"] .retail-app-aging-bar {
+  background: #ef4444;
+}
+
+.retail-app-aging-col b {
+  color: #172033;
+  font-size: 12px;
+}
+
+.retail-app-aging-col span {
+  color: #8a97a6;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.retail-app-aging-worst {
+  border-top: 1px solid #e5e9f0;
+  margin-top: 14px;
+  padding-top: 12px;
+}
+
+.retail-app-aging-worst-row {
+  align-items: center;
+  color: #172033;
+  display: grid;
+  font-size: 12px;
+  gap: 8px;
+  grid-template-columns: minmax(0, 2fr) auto auto;
+  padding: 4px 0;
+}
+
+.retail-app-aging-worst-row i {
+  color: #8a97a6;
+  font-style: normal;
+  text-align: right;
+}
+
+.retail-app-aging-worst-row i[data-risk="true"] {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.retail-app-aging-worst-row b {
+  text-align: right;
+}
+
+/* Talent: Candidate profile panel */
+.retail-app-candidate-panel {
+  border-top: 1px solid #e5e9f0;
+  color: #172033;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.retail-app-candidate-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.retail-app-candidate-rail span {
+  border-radius: 999px;
+  border: 1px solid #e5e9f0;
+  color: #8a97a6;
+  font-size: 10px;
+  padding: 4px 10px;
+  text-transform: uppercase;
+}
+
+.retail-app-candidate-rail span[data-state="active"] {
+  background: var(--retail-accent, #22c55e);
+  border-color: transparent;
+  color: #fff;
+}
+
+.retail-app-candidate-rail span[data-state="done"] {
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+/* Health: Patient snapshot panel */
+.retail-app-patient-panel {
+  border-top: 1px solid #e5e9f0;
+  color: #172033;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.retail-app-patient-panel .retail-app-crm-fields dd[data-alert="true"] {
+  color: #dc2626;
+  font-weight: 600;
+}
+
 @media (max-width: 720px) {
   .retail-app-budget-row {
     grid-template-columns: 1fr;
