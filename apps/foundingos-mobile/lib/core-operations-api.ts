@@ -556,3 +556,69 @@ export const generateMarketingMedia = (input: { format?: string; brief: string }
     method: 'POST',
     body: JSON.stringify(input),
   })
+
+// --- Team, roles & onboarding -----------------------------------------
+// Real, live endpoints backed by AuthUser/TenantInvitation/TenantOnboarding
+// Prisma models (see core-operations/backend/src/platform.ts). No demo data.
+
+export type TeamRole = 'business_owner' | 'business_manager' | 'business_staff' | 'business_viewer'
+
+export type TeamMember = {
+  id: string
+  email: string
+  role: TeamRole
+  permissions: unknown
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type PendingInvitation = {
+  id: string
+  email: string
+  role: TeamRole
+  permissions: unknown
+  expiresAt: string
+  createdAt: string
+}
+
+export const fetchTeam = () => authedRequest<TeamMember[]>('/api/v1/ops/platform/team')
+
+export const fetchPendingInvitations = () => authedRequest<PendingInvitation[]>('/api/v1/ops/platform/team/invitations')
+
+export const inviteTeamMember = (input: { email: string; role: TeamRole; workspaces?: string[] }) =>
+  authedRequest<{ invitation: PendingInvitation & { invitationUrl: string }; delivery: { status: string; message: string } }>(
+    '/api/v1/ops/platform/team',
+    { method: 'POST', body: JSON.stringify(input) },
+  )
+
+export const updateTeamMember = (id: string, input: { role?: TeamRole; active?: boolean; workspaces?: string[] }) =>
+  authedRequest<TeamMember>(`/api/v1/ops/platform/team/${id}`, { method: 'PATCH', body: JSON.stringify(input) })
+
+export const revokeTeamInvitation = (id: string) =>
+  authedRequest<{ id: string; status: 'revoked' }>(`/api/v1/ops/platform/team/invitations/${id}/revoke`, { method: 'POST' })
+
+export const resendTeamInvitation = (id: string) =>
+  authedRequest<{ invitation: PendingInvitation & { invitationUrl: string }; delivery: { status: string; message: string } }>(
+    `/api/v1/ops/platform/team/invitations/${id}/resend`,
+    { method: 'POST' },
+  )
+
+export type TenantOnboarding = {
+  tenantId: string
+  businessName: string
+  ownerName: string
+  industry: string | null
+  countryCode: string
+  currency: string
+  timezone: string
+  completedSteps: string[]
+  goLiveStatus: 'setup' | 'live'
+  acceptedTermsAt: string | null
+  completedAt: string | null
+}
+
+export const fetchOnboarding = () => authedRequest<TenantOnboarding | null>('/api/v1/ops/platform/onboarding')
+
+export const saveOnboarding = (input: Partial<TenantOnboarding> & { acceptTerms?: boolean }) =>
+  authedRequest<TenantOnboarding>('/api/v1/ops/platform/onboarding', { method: 'PUT', body: JSON.stringify(input) })

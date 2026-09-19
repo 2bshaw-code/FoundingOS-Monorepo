@@ -23,6 +23,7 @@ const FOUNDINGOS_HOME_MODULE_ROUTES: Record<string, string> = {
   approvals: '/(app)/workflows',
   messaging: '/(app)/automation',
   'event-feed': '/(app)/activity',
+  team: '/(app)/team',
 }
 
 export default function BrandDetailScreen() {

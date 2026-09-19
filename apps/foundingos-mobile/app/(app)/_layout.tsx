@@ -140,6 +140,7 @@ export default function AppTabsLayout() {
         <Tabs.Screen name="activity" options={{ href: null }} />
         <Tabs.Screen name="superdash" options={{ href: null }} />
         <Tabs.Screen name="guardian" options={{ href: null }} />
+        <Tabs.Screen name="team" options={{ href: null, headerTitle: () => renderHeaderTitle('Team & Roles') }} />
         <Tabs.Screen name="about" options={{ href: null, headerTitle: () => renderHeaderTitle('About FoundingOS') }} />
       </Tabs>
       <QuantumWheelModal />
