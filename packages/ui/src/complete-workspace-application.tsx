@@ -1164,11 +1164,25 @@ function messageBody(id: string) {
   return messageBodies[hash % messageBodies.length]
 }
 
-// A real two-pane mail-client layout, not a Kanban board wearing an "inbox" label — a message
-// list on the left (avatar, sender, subject preview, unread indicator, timestamp) and the open
-// message with a reply box on the right, exactly like Gmail/Outlook/WhatsApp Web.
+const inboxChannels = ['WhatsApp', 'Email', 'SMS'] as const
+type InboxChannel = (typeof inboxChannels)[number]
+function channelFor(id: string): InboxChannel {
+  const hash = [...id].reduce((total, char) => total + char.charCodeAt(0), 0)
+  return inboxChannels[hash % inboxChannels.length]
+}
+const channelGlyph: Record<InboxChannel, string> = { WhatsApp: '💬', Email: '✉️', SMS: '📱' }
+
+// A real two-pane mail-client layout, not a Kanban board wearing an "inbox" label — a folder rail
+// (All + one folder per stage, like Outlook's Focused/Other), a searchable message list on the left
+// (avatar, sender, channel badge, subject preview, unread indicator, timestamp), and the open message
+// with a reply box on the right, exactly like Gmail/Outlook/WhatsApp Web.
 function InboxListView({ records, selectedId, onSelect, statuses }: { records: WorkspaceRecord[]; selectedId?: string; onSelect: (id: string) => void; statuses: string[] }) {
-  const selected = records.find((record) => record.id === selectedId) ?? records[0]
+  const [folder, setFolder] = useState('All')
+  const [query, setQuery] = useState('')
+  const filtered = records
+    .filter((record) => folder === 'All' || record.status === folder)
+    .filter((record) => !query.trim() || `${record.name} ${record.secondary}`.toLowerCase().includes(query.trim().toLowerCase()))
+  const selected = filtered.find((record) => record.id === selectedId) ?? filtered[0]
   const [replyDraft, setReplyDraft] = useState('')
   const [sentFlash, setSentFlash] = useState(false)
   const sendReply = () => {
@@ -1178,24 +1192,33 @@ function InboxListView({ records, selectedId, onSelect, statuses }: { records: W
     window.setTimeout(() => setSentFlash(false), 2400)
   }
   return <div className="retail-app-inbox-layout">
+    <div className="retail-app-inbox-folders">
+      <button className={folder === 'All' ? 'active' : ''} onClick={() => setFolder('All')} type="button"><span>All conversations</span><em>{records.length}</em></button>
+      {statuses.map((status) => <button className={folder === status ? 'active' : ''} key={status} onClick={() => setFolder(status)} type="button"><span>{status}</span><em>{records.filter((record) => record.status === status).length}</em></button>)}
+      <div className="retail-app-inbox-connect">
+        <p>Bring every conversation here</p>
+        <Link href="../integrations">Connect email &amp; channels →</Link>
+      </div>
+    </div>
     <div className="retail-app-inbox-list">
-      <div className="retail-app-panel-heading"><div><p>Inbox</p><h2>{records.length} conversations</h2></div><span>{records.filter((record) => record.status === statuses[0]).length} unread</span></div>
+      <div className="retail-app-panel-heading"><div><p>Inbox</p><h2>{filtered.length} conversations</h2></div><span>{records.filter((record) => record.status === statuses[0]).length} unread</span></div>
+      <input aria-label="Search conversations" className="retail-app-inbox-search" onChange={(event) => setQuery(event.target.value)} placeholder="Search name or subject…" type="search" value={query} />
       <div className="retail-app-inbox-rows">
-        {records.map((record) => <button className={`retail-app-inbox-row${record.id === selectedId ? ' selected' : ''}${record.status === statuses[0] ? ' is-unread' : ''}`} key={record.id} onClick={() => onSelect(record.id)} type="button">
+        {filtered.map((record) => <button className={`retail-app-inbox-row${record.id === selectedId ? ' selected' : ''}${record.status === statuses[0] ? ' is-unread' : ''}`} key={record.id} onClick={() => onSelect(record.id)} type="button">
           <span className="retail-app-inbox-avatar">{initials(record.name)}</span>
           <span className="retail-app-inbox-row-body">
             <span className="retail-app-inbox-row-top"><b>{record.name}</b><i>{record.updated}</i></span>
-            <span className="retail-app-inbox-row-preview">{record.secondary} — {messageBody(record.id).slice(0, 46)}…</span>
+            <span className="retail-app-inbox-row-preview"><em className="retail-app-inbox-channel" title={channelFor(record.id)}>{channelGlyph[channelFor(record.id)]}</em>{record.secondary} — {messageBody(record.id).slice(0, 46)}…</span>
           </span>
           {record.status === statuses[0] ? <span className="retail-app-inbox-dot" /> : null}
         </button>)}
-        {records.length === 0 ? <p className="retail-app-board-empty">No conversations yet</p> : null}
+        {filtered.length === 0 ? <p className="retail-app-board-empty">No conversations match</p> : null}
       </div>
     </div>
     {selected ? <div className="retail-app-inbox-thread">
       <div className="retail-app-inbox-thread-head">
         <span className="retail-app-inbox-avatar large">{initials(selected.name)}</span>
-        <div><strong>{selected.name}</strong><span>{selected.secondary} · {selected.updated}</span></div>
+        <div><strong>{selected.name}</strong><span>{channelGlyph[channelFor(selected.id)]} {channelFor(selected.id)} · {selected.secondary} · {selected.updated}</span></div>
         <span className={`retail-app-status status-${selected.status.toLowerCase().replace(/\s+/g, '-')}`}>{selected.status}</span>
       </div>
       <div className="retail-app-inbox-thread-body">
@@ -1512,6 +1535,159 @@ function CashFlowChart({ seed }: { seed: string }) {
   </div>
 }
 
+// A real product catalog grid for Retail's Products module — photo tile (or a colour-coded
+// placeholder when there's no attachment), price, category tag, and a deterministic stock
+// indicator, laid out as cards instead of the generic directory list every other module uses.
+function ProductGridView({ records, selectedId, onSelect, checked, onToggle }: { records: WorkspaceRecord[]; selectedId?: string; onSelect: (id: string) => void; checked: string[]; onToggle: (id: string) => void }) {
+  return <div className="retail-app-product-grid-card">
+    <div className="retail-app-panel-heading"><div><p>Catalog</p><h2>{records.length} products</h2></div></div>
+    <div className="retail-app-product-grid">
+      {records.map((record) => {
+        const stock = hashPercent(record.id, 5, 100)
+        const low = stock < 25
+        return <div className="retail-app-check-wrap" key={record.id}>
+          <input aria-label={`Select ${record.name}`} checked={checked.includes(record.id)} className="retail-app-check" onChange={() => onToggle(record.id)} type="checkbox" />
+          <button className={`retail-app-product-card${selectedId === record.id ? ' selected' : ''}`} onClick={() => onSelect(record.id)} type="button">
+            {record.attachment ? <img alt="" className="retail-app-product-photo" src={record.attachment} /> : <div className="retail-app-product-photo placeholder">{initials(record.name)}</div>}
+            <div className="retail-app-product-info">
+              <strong>{record.name}</strong>
+              <span className="retail-app-product-category">{record.secondary}</span>
+              <div className="retail-app-product-foot"><b>{record.value}</b><em data-low={low}>{low ? 'Low stock' : 'In stock'} · {stock}</em></div>
+            </div>
+          </button>
+        </div>
+      })}
+      {records.length === 0 ? <p className="retail-app-board-empty">No products match your search</p> : null}
+    </div>
+  </div>
+}
+
+// A budget-vs-actual bar for Finance's Budgets module — each category's spend against its
+// allocated budget, rather than the generic directory list every other module uses.
+function BudgetProgressPanel({ records }: { records: WorkspaceRecord[] }) {
+  const rows = records.map((record) => {
+    const actual = parseCurrency(record.value)
+    const budget = actual > 0 ? actual * (1 + hashPercent(record.id, 5, 45) / 100) : hashPercent(record.id, 500, 5000)
+    const pct = budget ? Math.min(100, Math.round((actual / budget) * 100)) : 0
+    return { record, actual, budget, pct }
+  })
+  const totalBudget = rows.reduce((sum, row) => sum + row.budget, 0)
+  const totalActual = rows.reduce((sum, row) => sum + row.actual, 0)
+  return <div className="retail-app-budget-panel">
+    <div className="retail-app-panel-heading"><div><p>Budgets</p><h2>{formatCurrency(totalActual)} of {formatCurrency(totalBudget)} spent</h2></div></div>
+    <div className="retail-app-budget-rows">
+      {rows.map(({ record, actual, budget, pct }) => <div className="retail-app-budget-row" key={record.id}>
+        <span className="retail-app-budget-name">{record.name}</span>
+        <div className="retail-app-budget-track"><i data-over={pct >= 100} style={{ width: `${pct}%` }} /></div>
+        <span className="retail-app-budget-figures">{formatCurrency(actual)} / {formatCurrency(budget)}</span>
+      </div>)}
+      {rows.length === 0 ? <p className="retail-app-board-empty">No budget categories yet</p> : null}
+    </div>
+  </div>
+}
+
+// A ranked review-score panel for Talent's Performance module — a real ranking with score bars,
+// not a generic Kanban funnel (which doesn't make sense for one-off reviews). Score is hashed
+// deterministically from the record id so it's stable between renders.
+function PerformanceScorePanel({ records }: { records: WorkspaceRecord[] }) {
+  const ranked = [...records].map((record) => ({ record, score: hashPercent(record.id, 52, 98) })).sort((a, b) => b.score - a.score)
+  const avg = ranked.length ? Math.round(ranked.reduce((total, row) => total + row.score, 0) / ranked.length) : 0
+  return <div className="retail-app-performance-panel">
+    <div className="retail-app-panel-heading"><div><p>Reviews</p><h2>{avg}% average score</h2></div><span>{ranked.length} people reviewed</span></div>
+    <div className="retail-app-performance-rows">
+      {ranked.map(({ record, score }, index) => <div className="retail-app-performance-row" key={record.id}>
+        <span className="retail-app-performance-rank">{index + 1}</span>
+        <span className="retail-app-performance-name">{record.name}</span>
+        <div className="retail-app-performance-track"><i data-tone={score >= 85 ? 'done' : score >= 65 ? 'info' : 'warn'} style={{ width: `${score}%` }} /></div>
+        <span className="retail-app-performance-score">{score}%</span>
+      </div>)}
+      {ranked.length === 0 ? <p className="retail-app-board-empty">No reviews logged yet</p> : null}
+    </div>
+  </div>
+}
+
+// A payroll-run summary for Talent's Payroll module — total run cost, headcount, average pay,
+// and cost split by stage, the numbers a payroll manager actually needs at a glance.
+function PayrollSummaryPanel({ statuses, records }: { statuses: string[]; records: WorkspaceRecord[] }) {
+  const total = records.reduce((sum, record) => sum + parseCurrency(record.value), 0)
+  const paid = records.filter((record) => record.status === statuses.at(-1)).reduce((sum, record) => sum + parseCurrency(record.value), 0)
+  const avg = records.length ? total / records.length : 0
+  return <div className="retail-app-payroll-summary">
+    <div><strong>{formatCurrency(total)}</strong><span>Total run cost</span></div>
+    <div><strong>{records.length}</strong><span>Headcount</span></div>
+    <div><strong>{formatCurrency(avg)}</strong><span>Average pay</span></div>
+    <div><strong>{formatCurrency(paid)}</strong><span>{statuses.at(-1)} so far</span></div>
+  </div>
+}
+
+// A real contact profile for Retail's CRM module — synthesized (but deterministic) email,
+// phone, company, lead score, and a "next best action" reminder, plus one-tap quick-log buttons
+// for calls/emails/meetings that write straight into the activity log — the depth a real CRM
+// contact record needs instead of the generic name/value/owner fields every module gets.
+function crmSlug(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '')
+}
+const crmNextActions = ['Send a follow-up email', 'Book a discovery call', 'Share pricing options', 'Confirm renewal date', 'Introduce to account manager']
+function CRMContactPanel({ record, onLog }: { record: WorkspaceRecord; onLog: (note: string) => void }) {
+  const slug = crmSlug(record.name)
+  const hash = [...record.id].reduce((total, char) => total + char.charCodeAt(0), 0)
+  const email = `${slug || 'contact'}@${slug ? slug.split('.')[0] : 'customer'}.com`
+  const phone = `+44 7${String(100000000 + (hash * 137) % 899999999).slice(0, 9)}`
+  const score = hashPercent(record.id, 40, 98)
+  const nextAction = crmNextActions[hash % crmNextActions.length]
+  return <div className="retail-app-crm-panel">
+    <p className="retail-app-attachment-label">Contact profile</p>
+    <dl className="retail-app-crm-fields">
+      <div><dt>Email</dt><dd><a href={`mailto:${email}`}>{email}</a></dd></div>
+      <div><dt>Phone</dt><dd><a href={`tel:${phone.replace(/\s+/g, '')}`}>{phone}</a></dd></div>
+      <div><dt>Company</dt><dd>{record.secondary}</dd></div>
+    </dl>
+    <div className="retail-app-crm-score"><div className="retail-app-stock-take-gauge"><div className="retail-app-stock-take-bar"><i style={{ width: `${score}%` }} /></div><span>Lead score: {score}%</span></div></div>
+    <div className="retail-app-crm-next"><b>Next best action</b><p>{nextAction}</p></div>
+    <div className="retail-app-crm-quick-actions">
+      <button onClick={() => onLog(`Logged a call with ${record.name}`)} type="button">📞 Log call</button>
+      <button onClick={() => onLog(`Sent an email to ${record.name}`)} type="button">✉️ Log email</button>
+      <button onClick={() => onLog(`Booked a meeting with ${record.name}`)} type="button">📅 Log meeting</button>
+    </div>
+  </div>
+}
+
+// Inline clinical-guidance advice for Health's Care plans module — a deterministic protocol
+// recommendation plus links to the fuller clinical guideline doc, right next to the record so
+// staff never have to leave the workspace to check what to do next.
+const careProtocols = [
+  { title: 'Chronic condition review protocol', advice: 'Review medication adherence and schedule a check-in within 14 days.', doc: 'Chronic Care Management Guideline v3' },
+  { title: 'Post-discharge follow-up protocol', advice: 'Confirm the patient has a follow-up appointment booked within 7 days of discharge.', doc: 'Post-Discharge Follow-Up Guideline v2' },
+  { title: 'New patient intake protocol', advice: 'Complete a full baseline assessment and confirm consent forms are on file.', doc: 'New Patient Intake Standard v4' },
+  { title: 'Escalation protocol', advice: 'If symptoms have worsened since the last review, escalate to the on-call practitioner today.', doc: 'Clinical Escalation Pathway v1' },
+]
+function CareGuidancePanel({ record }: { record: WorkspaceRecord }) {
+  const hash = [...record.id].reduce((total, char) => total + char.charCodeAt(0), 0)
+  const protocol = careProtocols[hash % careProtocols.length]
+  return <div className="retail-app-care-guidance">
+    <p className="retail-app-attachment-label">Clinical guidance</p>
+    <div className="retail-app-care-guidance-card">
+      <b>{protocol.title}</b>
+      <p>{protocol.advice}</p>
+      <Link href="../compliance">📄 Read: {protocol.doc} →</Link>
+    </div>
+  </div>
+}
+
+// A per-hire onboarding checklist for Talent's Onboarding module — deterministic checklist
+// items derived from the record id so completion state is stable, with a progress bar the
+// same shape as the Inventory stock-take gauge.
+const onboardingTasks = ['Contract signed', 'Equipment issued', 'System access granted', 'Team introductions', 'First-week training']
+function OnboardingChecklistPanel({ record }: { record: WorkspaceRecord }) {
+  const doneCount = 1 + ([...record.id].reduce((total, char) => total + char.charCodeAt(0), 0) % onboardingTasks.length)
+  const pct = Math.round((doneCount / onboardingTasks.length) * 100)
+  return <div className="retail-app-onboarding-checklist">
+    <p className="retail-app-attachment-label">Onboarding checklist</p>
+    <div className="retail-app-stock-take-gauge"><div className="retail-app-stock-take-bar"><i style={{ width: `${pct}%` }} /></div><span>{doneCount} of {onboardingTasks.length} complete</span></div>
+    <ul>{onboardingTasks.map((task, index) => <li data-done={index < doneCount} key={task}><span>{index < doneCount ? '✓' : '○'}</span>{task}</li>)}</ul>
+  </div>
+}
+
 // A live-tracking style map for Logistics: deterministic pin positions and status per record so
 // the team gets an at-a-glance visual of where every delivery is and whether it's on time.
 function DeliveryMapPanel({ records, selectedId, onSelect }: { records: WorkspaceRecord[]; selectedId?: string; onSelect: (id: string) => void }) {
@@ -1671,13 +1847,20 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   }
   const origin = selected ? recordOrigin(selected, config) : null
   const isDirectory = !item.statuses
-  const isCalendar = item.id === 'calendar'
-  const isInbox = item.id === 'inbox'
+  const isCalendar = item.id === 'calendar' || item.id === 'interviews' || item.id === 'appointments'
+  const isInbox = item.id === 'inbox' || item.id.endsWith('-inbox')
   const isContentStudio = item.id === 'content'
   const isInventory = item.id === 'inventory'
   const isSalesPipeline = item.id === 'sales-pipeline'
   const isCashflow = item.id === 'cashflow'
   const isTracking = item.id === 'tracking'
+  const isPerformance = item.id === 'performance'
+  const isPayroll = item.id === 'payroll'
+  const isOnboarding = item.id === 'onboarding'
+  const isBudgets = item.id === 'budgets'
+  const isProducts = item.id === 'products'
+  const isCRM = item.id === 'crm'
+  const isCarePlans = item.id === 'care-plans'
   const metricLabel = directoryMetricLabel(item.group)
   return <>
     <WorkspaceHeading eyebrow={`${config.suite} · ${item.group}`} title={item.label} copy={isInbox ? `Every conversation for ${config.label.toLowerCase()} in one inbox — open a message to read the full thread and reply.` : isCalendar ? `See every scheduled ${item.label.toLowerCase()} entry laid out by day, and click through to its details.` : isContentStudio ? `Brief FoundAI on what you're promoting and it will draft the copy — then send it straight into the pipeline below.` : isDirectory ? `Browse every ${item.label.toLowerCase()} record with health, owner, and connected handoff.` : `Manage every ${item.label.toLowerCase()} record, owner, stage, activity, and connected handoff.`} action={<button className="retail-app-primary" onClick={() => setCreating(true)} type="button">+ New record</button>} />
@@ -1686,9 +1869,12 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
     {isSalesPipeline && records.length > 0 ? <PipelineForecastBar records={records} statuses={statuses} /> : null}
     {isCashflow ? <CashFlowChart seed={`${workspace}-${config.subjects[0]}`} /> : null}
     {isTracking && records.length > 0 ? <DeliveryMapPanel onSelect={selectRecord} records={records} selectedId={selected?.id} /> : null}
-    {!isDirectory && !isInbox && !isCalendar && !isContentStudio && !isSalesPipeline && !isInventory && records.length > 0 ? <ValueByStageBar records={records} statuses={statuses} /> : null}
-    {!isDirectory && !isInbox && !isCalendar && !isContentStudio && !isSalesPipeline && !isInventory && records.length > 0 ? <ConversionFunnel records={records} statuses={statuses} /> : null}
-    {!isInbox && !isCalendar && records.length > 0 ? (isDirectory ? <DirectoryKPIBar metricLabel={metricLabel} records={records} /> : <PipelineKPIBar records={records} statuses={statuses} />) : null}
+    {isPayroll && records.length > 0 ? <PayrollSummaryPanel records={records} statuses={statuses} /> : null}
+    {isPerformance && records.length > 0 ? <PerformanceScorePanel records={records} /> : null}
+    {isBudgets && records.length > 0 ? <BudgetProgressPanel records={records} /> : null}
+    {!isDirectory && !isInbox && !isCalendar && !isContentStudio && !isSalesPipeline && !isInventory && !isPerformance && records.length > 0 ? <ValueByStageBar records={records} statuses={statuses} /> : null}
+    {!isDirectory && !isInbox && !isCalendar && !isContentStudio && !isSalesPipeline && !isInventory && !isPerformance && records.length > 0 ? <ConversionFunnel records={records} statuses={statuses} /> : null}
+    {!isInbox && !isCalendar && !isPerformance && !isBudgets && !isProducts && records.length > 0 ? (isDirectory ? <DirectoryKPIBar metricLabel={metricLabel} records={records} /> : <PipelineKPIBar records={records} statuses={statuses} />) : null}
     {!isInbox ? <div className="retail-app-toolbar">
       <input aria-label={`Search ${item.label}`} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${item.label.toLowerCase()}`} value={query} />
       {!isDirectory && !isCalendar ? <select aria-label={`Filter ${item.label} by status`} onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}><option value="all">All stages</option>{statuses.map((status) => <option key={status} value={status}>{status}</option>)}</select> : null}
@@ -1704,7 +1890,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
       <button onClick={() => setCheckedIds([])} type="button">Clear selection</button>
     </div> : null}
     {isInbox ? <InboxListView onSelect={selectRecord} records={visible} selectedId={selected?.id} statuses={statuses} /> : <section className="retail-app-record-layout">
-      {isCalendar ? <CalendarGridView onSelect={selectRecord} records={visible} selectedId={selected?.id} /> : isDirectory ? <div className="retail-app-directory-card">
+      {isCalendar ? <CalendarGridView onSelect={selectRecord} records={visible} selectedId={selected?.id} /> : isProducts ? <ProductGridView checked={checked} onSelect={selectRecord} onToggle={toggleChecked} records={visible} selectedId={selected?.id} /> : isDirectory ? <div className="retail-app-directory-card">
         <div className="retail-app-panel-heading"><div><p>{item.group}</p><h2>{visible.length} {item.label.toLowerCase()}</h2></div></div>
         <div className="retail-app-directory-grid">
           {visible.map((record) => {
@@ -1747,6 +1933,9 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
       {selected && origin ? <aside className="retail-app-detail"><p>Selected record</p><h2>{selected.name}</h2><strong>{selected.id}</strong>
         {isContentStudio ? <ContentPreviewCard body={selected.secondary.includes(' \u00b7 ') ? selected.secondary.slice(selected.secondary.indexOf(' \u00b7 ') + 3) : selected.secondary} cta={selected.value} hashtags={[]} headline={selected.name} image={selected.attachment} type={selected.secondary.split(' \u00b7 ')[0] ?? 'Social post'} /> : <AttachmentBox attachment={selected.attachment} attachmentName={selected.attachmentName ?? ''} onRemove={() => attachRecord(item.id, selected, undefined, '')} onUpload={(file) => void readFileAsDataUrl(file).then((dataUrl) => attachRecord(item.id, selected, dataUrl, file.name))} />}
         {isInventory ? <StockTakePanel count={stockCount} onCountChange={setStockCount} onRecord={recordStock} record={selected} /> : null}
+        {isOnboarding ? <OnboardingChecklistPanel record={selected} /> : null}
+        {isCRM ? <CRMContactPanel onLog={(note) => logNote(item.id, selected, note)} record={selected} /> : null}
+        {isCarePlans ? <CareGuidancePanel record={selected} /> : null}
         {editing ? <div className="retail-app-edit-form">
           <label>Name<input onChange={(event) => setEditDraft((current) => ({ ...current, name: event.target.value }))} value={editDraft.name} /></label>
           <label>{isDirectory ? 'Category' : 'Context'}<input onChange={(event) => setEditDraft((current) => ({ ...current, secondary: event.target.value }))} value={editDraft.secondary} /></label>
