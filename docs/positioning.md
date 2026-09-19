@@ -20,25 +20,30 @@
   and intelligence. Instead of stitching together point tools per department,
   operators run the business from a single system of record."
 - **Category claim:** "The founder operating system category" (not "a CRM", not
+  "a scheduling tool", not "another dashboard").
 
 ## What FoundingOS is (in scope)
 
 - A single multi-tenant platform (**FoundingOS Core**) with three product
   suites, sold modularly or bundled:
   - **Core.Operations** — customers, orders, inventory, billing, delivery,
-    messaging-first commerce workflows (successor to CoreOperations).
+    messaging-first commerce workflows (successor to FoundRetail,
+    FoundFinance, FoundHealth, and FoundLogistics).
   - **Core.Workforce** — applicants, recruiters, jobs, workforce intelligence
-    (successor to CoreWorkforce).
+    (successor to FoundTalent).
   - **Core.Intelligence** — founder/owner analytics, KPIs, funnels, reporting,
     and decision support built on first-party operational data (successor to
+    FoundThat, rebuilt without third-party scraping).
 - One brand, one console shell, one auth system, one shared schema.
 
 ## What FoundingOS is not (out of scope / deprecated)
 
-- **Not** a meat/food-trade vertical product (**CoreOperations** — deprecated, see
-  ).
-- **Not** a crypto trading/signals product (**CoreOperations** — deprecated).
-  first-party data only, and lives inside Core.Intelligence if kept at all).
+- **Not** a meat/food-trade vertical product (**FoundMeat** — deprecated, see
+  [deprecations.md](./deprecations.md)).
+- **Not** a crypto trading/signals product (**FoundCrypto** — deprecated).
+- **Not** a scraping-based intelligence product — FoundThat's third-party
+  scraping is disabled and removed; Core.Intelligence runs on
+  first-party data only, and lives inside Core.Intelligence if kept at all.
 - **Not** nine separate brands, nine separate consoles, or nine separate
   databases. There is one brand: **FoundingOS**.
 

@@ -85,7 +85,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "tickets",
       "label": "Tickets",
-      "description": "CoreIntelligence tickets workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Intelligence tickets workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Uptime",
@@ -124,7 +124,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "monitoring",
       "label": "Monitoring",
-      "description": "CoreIntelligence monitoring workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Intelligence monitoring workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Uptime",
@@ -163,7 +163,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "alerts",
       "label": "Alerts",
-      "description": "CoreIntelligence alerts workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Intelligence alerts workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Uptime",
@@ -202,7 +202,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "assets",
       "label": "Assets",
-      "description": "CoreIntelligence assets workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Intelligence assets workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Uptime",
@@ -241,7 +241,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "systems",
       "label": "Systems",
-      "description": "CoreIntelligence systems workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Intelligence systems workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Uptime",
@@ -280,7 +280,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "uptime",
       "label": "Uptime",
-      "description": "CoreIntelligence uptime workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Intelligence uptime workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Uptime",
@@ -319,7 +319,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "incidents",
       "label": "Incidents",
-      "description": "CoreIntelligence incidents workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Intelligence incidents workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Uptime",
@@ -358,7 +358,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "reports",
       "label": "Reports",
-      "description": "CoreIntelligence reports workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Intelligence reports workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Uptime",
@@ -592,8 +592,8 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "crm": {
-    "title": "CoreIntelligence CRM",
-    "summary": "CoreIntelligence CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
+    "title": "Core.Intelligence CRM",
+    "summary": "Core.Intelligence CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
     "records": [
       {
         "name": "API Gateway",

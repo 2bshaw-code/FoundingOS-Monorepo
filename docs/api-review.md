@@ -21,9 +21,13 @@
   No changes recommended to that layer.
 
 
-():
+### 2. FoundMeat/FoundCrypto marketplace routes — deletion candidates
+
+`founder-os/backend/src/routes.ts` also aggregates FoundMeat/FoundCrypto
+data via the following endpoints:
 
 - `GET /merchants`, `GET /products`, `GET /listings` — all backed by
+  FoundMeat models. Not yet
   deleted, not renamed.
   endpoints. Delete.
   source CRUD and scheduler control. Delete along with
@@ -41,10 +45,13 @@ delete the implementation files and Prisma models in a dedicated change.
 ### 3. Founder platform routes — mostly fine, needs suite renaming
 
 `founder-os/backend/src/routes.ts` aggregates brand data (including a
-`core_intelligenceFeed.ts` import) for founder-level dashboards. Once CoreIntelligence
+`core_intelligenceFeed.ts` import) for founder-level dashboards. Once
+Core.Intelligence absorbs this feed directly, the founder-level
+aggregation shim can be retired.
 
-### 4. CoreWorkforce routes — rename only
+### 4. FoundTalent routes — rename only
 
+`core_workforce/backend/src/routes.ts` has no FoundMeat/FoundCrypto
 dependencies in this review; it's a rename-and-move candidate to
 Core.Workforce with no functional risk identified.
 

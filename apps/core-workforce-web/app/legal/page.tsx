@@ -33,7 +33,7 @@ export default function Page() {
           <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: '#fffaf0' }}>
             <div style={{ width: 42, height: 42, borderRadius: 12, background: '#FFB300', color: '#071014', display: 'grid', placeItems: 'center', fontWeight: 900 }}>⬢</div>
             <div>
-              <strong style={{ display: 'block', fontSize: 22, lineHeight: 1.1 }}>CoreWorkforce</strong>
+              <strong style={{ display: 'block', fontSize: 22, lineHeight: 1.1 }}>Core.Workforce</strong>
               <small style={{ color: '#f6ddab', fontSize: 12 }}>{'Workforce Intelligence OS'}</small>
             </div>
           </a>
@@ -59,8 +59,8 @@ export default function Page() {
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px 80px' }}>
         <div style={{ display: 'grid', gap: 10, marginBottom: 28 }}>
           <p style={{ margin: 0, color: '#FFB300', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>Legal</p>
-          <h1 style={{ margin: 0, fontSize: 'clamp(38px, 5vw, 62px)', lineHeight: 1.06 }}>{'CoreWorkforce'} Legal & Compliance</h1>
-          <p style={{ margin: 0, maxWidth: 760, color: '#f6ddab', lineHeight: 1.8 }}>This legal hub sets out how CoreWorkforce handles customer, partner, operational, and platform data across the channels and systems inside the CoreWorkforce environment.</p>
+          <h1 style={{ margin: 0, fontSize: 'clamp(38px, 5vw, 62px)', lineHeight: 1.06 }}>{'Core.Workforce'} Legal & Compliance</h1>
+          <p style={{ margin: 0, maxWidth: 760, color: '#f6ddab', lineHeight: 1.8 }}>This legal hub sets out how Core.Workforce handles customer, partner, operational, and platform data across the channels and systems inside the Core.Workforce environment.</p>
         </div>
 
         <div style={{ display: 'grid', gap: 18 }}>
@@ -76,10 +76,10 @@ export default function Page() {
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.08)', background: '#070c14', marginTop: 0 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px 40px', display: 'flex', flexWrap: 'wrap', gap: 20, justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <strong style={{ fontSize: 22 }}>{'CoreWorkforce'}</strong>
+            <strong style={{ fontSize: 22 }}>{'Core.Workforce'}</strong>
             <p style={{ margin: '10px 0 0', color: '#f6ddab' }}>Registered address: 24 Founder Way, London, UK</p>
           </div>
-          <div style={{ color: '#f6ddab' }}>© 2026 CoreWorkforce • All rights reserved</div>
+          <div style={{ color: '#f6ddab' }}>© 2026 Core.Workforce • All rights reserved</div>
         </div>
       </footer>
 

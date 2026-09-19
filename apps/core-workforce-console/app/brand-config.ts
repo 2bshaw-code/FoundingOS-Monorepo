@@ -85,7 +85,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "ats",
       "label": "Ats",
-      "description": "CoreWorkforce ats workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Workforce ats workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Candidates",
@@ -124,7 +124,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "crm",
       "label": "CRM",
-      "description": "CoreWorkforce crm workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Workforce crm workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Candidates",
@@ -163,7 +163,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "onboarding",
       "label": "Onboarding",
-      "description": "CoreWorkforce onboarding workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Workforce onboarding workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Candidates",
@@ -202,7 +202,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "candidates",
       "label": "Candidates",
-      "description": "CoreWorkforce candidates workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Workforce candidates workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Candidates",
@@ -241,7 +241,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "jobs",
       "label": "Jobs",
-      "description": "CoreWorkforce jobs workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Workforce jobs workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Candidates",
@@ -280,7 +280,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "pipelines",
       "label": "Pipelines",
-      "description": "CoreWorkforce pipelines workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Workforce pipelines workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Candidates",
@@ -319,7 +319,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "interviews",
       "label": "Interviews",
-      "description": "CoreWorkforce interviews workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Workforce interviews workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Candidates",
@@ -358,7 +358,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "offers",
       "label": "Offers",
-      "description": "CoreWorkforce offers workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Workforce offers workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Candidates",
@@ -592,8 +592,8 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "crm": {
-    "title": "CoreWorkforce CRM",
-    "summary": "CoreWorkforce CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
+    "title": "Core.Workforce CRM",
+    "summary": "Core.Workforce CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
     "records": [
       {
         "name": "Store Manager",
