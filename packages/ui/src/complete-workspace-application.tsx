@@ -33,7 +33,7 @@ const standard = ['New', 'In progress', 'Review', 'Complete']
 const configs: Record<BusinessWorkspaceSlug, WorkspaceConfig> = {
   retail: {
     label: 'Retail', suite: 'Core.Operations', accent: '#24c47a', description: 'Run sales, customer relationships, marketing, commerce, service, and finance from one connected workspace.',
-    subjects: ['Harbour Cafe', 'Amina Yusuf', 'North & Co', 'Sofia Martins'],
+    subjects: ['Harbour Cafe', 'Amina Yusuf', 'North & Co', 'Sofia Martins', 'Willowbrook Bakery', 'Deacon & Rye', 'Priya Anand', 'The Corner Deli'],
     metrics: [{ label: 'Revenue', value: '£18.6k', change: '+12.4% this week' }, { label: 'Pipeline', value: '£42.8k', change: '14 open opportunities' }, { label: 'Customers', value: '1,284', change: '+38 this month' }, { label: 'Conversion', value: '8.7%', change: '+1.3 points' }],
     modules: [
       module('overview', 'Home', 'Workspace'), module('sales-pipeline', 'Sales pipeline', 'Sales', ['Lead', 'Qualified', 'Proposal', 'Won']), module('orders', 'Orders', 'Sales', ['New', 'Picking', 'Ready', 'Delivered']), module('point-of-sale', 'Point of sale', 'Sales', ['Open basket', 'Payment due', 'Paid', 'Closed']),
@@ -47,37 +47,37 @@ const configs: Record<BusinessWorkspaceSlug, WorkspaceConfig> = {
   },
   logistics: {
     label: 'Logistics', suite: 'Core.Operations', accent: '#ff496e', description: 'Coordinate dispatch, routes, drivers, fleet, warehouses, tracking, and customer delivery promises.',
-    subjects: ['Route North 14', 'Harbour Cafe delivery', 'Driver Maya Chen', 'Depot West'],
+    subjects: ['Route North 14', 'Harbour Cafe delivery', 'Driver Maya Chen', 'Depot West', 'Route South 22', 'Willowbrook Bakery run', 'Driver Leo Osei', 'Depot East'],
     metrics: [{ label: 'On-time delivery', value: '94.8%', change: '+2.1 points' }, { label: 'Active routes', value: '24', change: '3 reporting now' }, { label: 'Exceptions', value: '3', change: '-4 today' }, { label: 'Fleet utilisation', value: '87%', change: '+5.2%' }],
     modules: [module('overview', 'Control tower', 'Workspace'), module('dispatch', 'Dispatch board', 'Delivery', ['Unassigned', 'Assigned', 'Loaded', 'Departed']), module('routes', 'Routes', 'Delivery', ['Planned', 'Optimised', 'Active', 'Complete']), module('deliveries', 'Deliveries', 'Delivery', ['Booked', 'Out for delivery', 'Attempted', 'Delivered']), module('tracking', 'Live tracking', 'Delivery'), module('exceptions', 'Exceptions', 'Delivery', ['Open', 'Investigating', 'Recovering', 'Resolved']), module('fleet', 'Fleet', 'Resources'), module('drivers', 'Drivers', 'Resources'), module('warehouses', 'Warehouses', 'Resources'), module('customers', 'Customers', 'Commercial'), module('quotes', 'Quotes', 'Commercial', standard), module('billing', 'Billing', 'Commercial', ['Draft', 'Issued', 'Paid', 'Reconciled']), module('reports', 'Performance', 'Intelligence'), module('automations', 'Automations', 'Intelligence'), module('team', 'Team & access', 'Administration'), module('integrations', 'Integrations', 'Administration'), module('settings', 'Settings', 'Administration')],
   },
   finance: {
     label: 'Finance', suite: 'Core.Operations', accent: '#ffb33e', description: 'Control cash, invoices, bills, banking, reconciliation, budgets, tax, and financial approvals.',
-    subjects: ['North & Co invoice', 'September payroll', 'Stripe settlement', 'Northstar Textiles bill'],
+    subjects: ['North & Co invoice', 'September payroll', 'Stripe settlement', 'Northstar Textiles bill', 'Willowbrook Bakery invoice', 'HMRC VAT return', 'Office lease payment', 'Deacon & Rye refund'],
     metrics: [{ label: 'Cash position', value: '£86.4k', change: '+9.7% this month' }, { label: 'Receivables', value: '£24.3k', change: '£8.1k due this week' }, { label: 'Payables', value: '£17.8k', change: '12 open bills' }, { label: 'Runway', value: '11.4 mo', change: '+0.8 months' }],
     modules: [module('overview', 'Finance home', 'Workspace'), module('cashflow', 'Cash flow', 'Money'), module('invoices', 'Invoices', 'Money', ['Draft', 'Sent', 'Overdue', 'Paid']), module('bills', 'Bills', 'Money', ['Received', 'Approved', 'Scheduled', 'Paid']), module('banking', 'Banking', 'Money'), module('reconciliation', 'Reconciliation', 'Money', ['Unmatched', 'Suggested', 'Matched', 'Verified']), module('expenses', 'Expenses', 'Spend', ['Submitted', 'Review', 'Approved', 'Reimbursed']), module('payments', 'Payments', 'Spend', ['Pending', 'Authorised', 'Paid', 'Reconciled']), module('budgets', 'Budgets', 'Planning'), module('forecasting', 'Forecasting', 'Planning'), module('tax', 'Tax', 'Compliance', standard), module('approvals', 'Approvals', 'Compliance', ['Requested', 'Review', 'Approved', 'Complete']), module('reports', 'Financial reports', 'Intelligence'), module('automations', 'Automations', 'Intelligence'), module('team', 'Team & access', 'Administration'), module('integrations', 'Integrations', 'Administration'), module('settings', 'Settings', 'Administration')],
   },
   marketing: {
     label: 'Marketing', suite: 'Core.Operations', accent: '#f56fc2', description: 'Plan campaigns, build audiences, create content, nurture leads, and prove attributed revenue.',
-    subjects: ['Summer launch', 'Lapsed VIP audience', 'WhatsApp welcome journey', 'Founder story campaign'],
+    subjects: ['Summer launch', 'Lapsed VIP audience', 'WhatsApp welcome journey', 'Founder story campaign', 'Autumn restock push', 'Loyalty win-back', 'Referral spotlight', 'Weekend flash sale'],
     metrics: [{ label: 'Attributed revenue', value: '£11.2k', change: '+18.5%' }, { label: 'Pipeline influenced', value: '£31.6k', change: '22 opportunities' }, { label: 'Reach', value: '23.1k', change: '+16.2%' }, { label: 'Return on spend', value: '4.8x', change: '+0.6x' }],
     modules: [module('overview', 'Marketing home', 'Workspace'), module('campaigns', 'Campaigns', 'Campaigns', ['Draft', 'Scheduled', 'Live', 'Complete']), module('calendar', 'Calendar', 'Campaigns'), module('audiences', 'Audiences', 'Audience'), module('segments', 'Segments', 'Audience'), module('leads', 'Leads', 'Audience', ['New', 'Nurturing', 'Qualified', 'Converted']), module('content', 'Content studio', 'Creative', ['Idea', 'Draft', 'Approved', 'Published']), module('brand-studio', 'Brand Studio', 'Creative'), module('channels', 'Channels', 'Distribution'), module('journeys', 'Customer journeys', 'Distribution', ['Draft', 'Active', 'Paused', 'Complete']), module('inbox', 'Campaign inbox', 'Distribution', ['Unread', 'Assigned', 'Waiting', 'Resolved']), module('attribution', 'Attribution', 'Intelligence'), module('reports', 'Analytics', 'Intelligence'), module('automations', 'Automations', 'Intelligence'), module('team', 'Team & access', 'Administration'), module('integrations', 'Integrations', 'Administration'), module('settings', 'Settings', 'Administration')],
   },
   talent: {
     label: 'Talent', suite: 'Core.Workforce', accent: '#ff8a33', description: 'Recruit, onboard, develop, support, and retain the team in one workforce system.',
-    subjects: ['Amara Johnson', 'Senior operator role', 'Noah Williams review', 'September onboarding'],
+    subjects: ['Amara Johnson', 'Senior operator role', 'Noah Williams review', 'September onboarding', 'Leo Osei', 'Warehouse lead role', 'Priya Anand review', 'October onboarding'],
     metrics: [{ label: 'Open roles', value: '12', change: '4 priority hires' }, { label: 'Candidates', value: '184', change: '+28 this week' }, { label: 'Time to hire', value: '24d', change: '-3 days' }, { label: 'Engagement', value: '82%', change: '+4 points' }],
     modules: [module('overview', 'People home', 'Workspace'), module('candidates', 'Candidates', 'Recruiting', ['Applied', 'Screening', 'Interview', 'Offer']), module('jobs', 'Jobs', 'Recruiting', ['Draft', 'Open', 'Interviewing', 'Filled']), module('interviews', 'Interviews', 'Recruiting', ['Planned', 'Confirmed', 'Complete', 'Decision']), module('offers', 'Offers', 'Recruiting', ['Draft', 'Sent', 'Accepted', 'Onboarding']), module('onboarding', 'Onboarding', 'People', standard), module('people', 'People directory', 'People'), module('performance', 'Performance', 'People', standard), module('time-off', 'Time off', 'People', ['Requested', 'Review', 'Approved', 'Complete']), module('learning', 'Learning', 'Development', standard), module('payroll', 'Payroll', 'Reward', ['Preparing', 'Review', 'Approved', 'Paid']), module('engagement', 'Engagement', 'Intelligence'), module('reports', 'Workforce reports', 'Intelligence'), module('automations', 'Automations', 'Intelligence'), module('team', 'Team & access', 'Administration'), module('integrations', 'Integrations', 'Administration'), module('settings', 'Settings', 'Administration')],
   },
   health: {
     label: 'Health', suite: 'Core.Operations', accent: '#4cc9ff', description: 'Coordinate patients, appointments, care plans, practitioners, follow-ups, billing, and compliance.',
-    subjects: ['Amina Yusuf', 'Morning clinic', 'Care plan CP-204', 'Dr Maya Chen'],
+    subjects: ['Amina Yusuf', 'Morning clinic', 'Care plan CP-204', 'Dr Maya Chen', 'Leo Osei', 'Afternoon clinic', 'Care plan CP-219', 'Dr Priya Anand'],
     metrics: [{ label: 'Appointments', value: '42', change: '+6 today' }, { label: 'Checked in', value: '31', change: '74% arrival' }, { label: 'Follow-ups', value: '7', change: '2 priority' }, { label: 'Capacity', value: '86%', change: '+5 points' }],
     modules: [module('overview', 'Care operations', 'Workspace'), module('appointments', 'Appointments', 'Care', ['Booked', 'Confirmed', 'Checked in', 'Complete']), module('patients', 'Patients', 'Care'), module('care-plans', 'Care plans', 'Care', standard), module('triage', 'Triage', 'Care', ['New', 'Assessed', 'Assigned', 'Complete']), module('clinical-inbox', 'Clinical inbox', 'Care', ['Unread', 'Assigned', 'Waiting', 'Resolved']), module('follow-ups', 'Follow-ups', 'Care', standard), module('practitioners', 'Practitioners', 'Resources'), module('locations', 'Locations', 'Resources'), module('inventory', 'Clinical inventory', 'Resources', ['Low stock', 'Available', 'Reserved', 'Replenished']), module('billing', 'Billing', 'Finance', ['Draft', 'Issued', 'Paid', 'Reconciled']), module('claims', 'Claims', 'Finance', ['Prepared', 'Submitted', 'Review', 'Settled']), module('compliance', 'Compliance', 'Governance', standard), module('reports', 'Care reports', 'Intelligence'), module('automations', 'Automations', 'Intelligence'), module('team', 'Team & access', 'Administration'), module('integrations', 'Integrations', 'Administration'), module('settings', 'Settings', 'Administration')],
   },
   intelligence: {
     label: 'Intelligence', suite: 'Core.Intelligence', accent: '#b77aff', description: 'Monitor the event graph, surface risks, forecast outcomes, and coordinate recommended decisions.',
-    subjects: ['Cash runway risk', 'Inventory demand spike', 'Delivery exception cluster', 'Campaign revenue opportunity'],
+    subjects: ['Cash runway risk', 'Inventory demand spike', 'Delivery exception cluster', 'Campaign revenue opportunity', 'Payroll cost drift', 'Churn risk cohort', 'Route delay pattern', 'Upsell opportunity'],
     metrics: [{ label: 'Live signals', value: '420', change: '+14.6%' }, { label: 'Open risks', value: '8', change: '3 high priority' }, { label: 'Recommendations', value: '17', change: '£24k potential value' }, { label: 'Confidence', value: '91%', change: '+5.1 points' }],
     modules: [module('overview', 'Command centre', 'Workspace'), module('outcomes', 'Outcomes & value', 'Workspace'), module('strategic-overview', 'Strategic overview', 'Workspace'), module('signals', 'Signals', 'Decisioning', ['Detected', 'Enriched', 'Reviewed', 'Resolved']), module('risks', 'Risks', 'Decisioning', ['Open', 'Investigating', 'Mitigating', 'Resolved']), module('recommendations', 'Recommendations', 'Decisioning', ['Proposed', 'Review', 'Approved', 'Executed']), module('forecasts', 'Forecasts', 'Planning'), module('scenarios', 'Scenarios', 'Planning', standard), module('anomalies', 'Anomalies', 'Monitoring', ['Detected', 'Investigating', 'Recovering', 'Resolved']), module('event-feed', 'Shared Event Feed', 'Monitoring'), module('workflows', 'AI workflows', 'Automation', standard), module('models', 'Models', 'Automation'), module('data-sources', 'Data sources', 'Data'), module('reports', 'Intelligence reports', 'Data'), module('automations', 'Automations', 'Data'), module('team', 'Team & access', 'Administration'), module('integrations', 'Integrations', 'Administration'), module('settings', 'Settings', 'Administration')],
   },
@@ -85,18 +85,32 @@ const configs: Record<BusinessWorkspaceSlug, WorkspaceConfig> = {
 
 const workspaceOrder: BusinessWorkspaceSlug[] = ['retail', 'logistics', 'finance', 'marketing', 'talent', 'health', 'intelligence']
 const statusFor = (item: WorkspaceModule) => item.statuses ?? standard
+const hashSeed = (value: string): number => {
+  let hash = 0
+  for (let i = 0; i < value.length; i++) hash = (hash * 31 + value.charCodeAt(i)) >>> 0
+  return hash
+}
+const ownerPool = ['Maya', 'Noah', 'Ava', 'Bobby', 'Leo', 'Priya']
 const seedWorkspace = (workspace: BusinessWorkspaceSlug): WorkspaceState => {
   const config = configs[workspace]
-  const records = Object.fromEntries(config.modules.filter((item) => item.id !== 'overview').map((item) => [
-    item.id,
-    config.subjects.map((subject, index) => {
-      const isStockModule = item.id === 'inventory'
-      const quantity = isStockModule ? [6, 34, 18, 52][index % 4] : undefined
-      const reorderPoint = isStockModule ? 20 : undefined
-      const status = isStockModule ? (quantity! <= reorderPoint! ? 'Low stock' : statusFor(item)[(index % (statusFor(item).length - 1)) + 1]) : statusFor(item)[index % statusFor(item).length]
-      return { id: `${item.id.slice(0, 3).toUpperCase()}-${101 + index}`, name: subject, secondary: `${item.label} workflow`, value: isStockModule ? `${quantity} units` : index % 2 ? '£4,280' : 'High priority', status, owner: ['Maya', 'Noah', 'Ava', 'Bobby'][index], updated: `${index * 18 + 4}m ago`, quantity, reorderPoint, log: isStockModule ? [{ time: `${index * 18 + 40}m ago`, note: `Counted ${quantity} units on hand` }] : undefined }
-    }),
-  ]))
+  const records = Object.fromEntries(config.modules.filter((item) => item.id !== 'overview').map((item) => {
+    const moduleHash = hashSeed(`${workspace}:${item.id}`)
+    // Rotate the starting subject and vary the record count per module so every module in a
+    // workspace shows different names/counts instead of repeating the same seed data everywhere.
+    const offset = moduleHash % config.subjects.length
+    const count = 3 + (moduleHash % 4)
+    const moduleSubjects = Array.from({ length: count }, (_, i) => config.subjects[(offset + i) % config.subjects.length])
+    return [
+      item.id,
+      moduleSubjects.map((subject, index) => {
+        const isStockModule = item.id === 'inventory'
+        const quantity = isStockModule ? [6, 34, 18, 52][index % 4] : undefined
+        const reorderPoint = isStockModule ? 20 : undefined
+        const status = isStockModule ? (quantity! <= reorderPoint! ? 'Low stock' : statusFor(item)[(index % (statusFor(item).length - 1)) + 1]) : statusFor(item)[index % statusFor(item).length]
+        return { id: `${item.id.slice(0, 3).toUpperCase()}-${101 + index}`, name: subject, secondary: `${item.label} workflow`, value: isStockModule ? `${quantity} units` : index % 2 ? '£4,280' : 'High priority', status, owner: ownerPool[(moduleHash + index) % ownerPool.length], updated: `${index * 18 + 4}m ago`, quantity, reorderPoint, log: isStockModule ? [{ time: `${index * 18 + 40}m ago`, note: `Counted ${quantity} units on hand` }] : undefined }
+      }),
+    ]
+  }))
   return {
     records,
     automations: [
