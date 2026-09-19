@@ -23,6 +23,7 @@ import { recommendQuantumOS, type BusinessProfile } from '@foundingos/config/qua
 import { RecommendationBadge } from './onboarding/RecommendationBadge'
 import { ImportDataButton } from './import-data'
 import { CoreOperationsDashboard, CoreOperationsLoginPage, CoreOperationsMarketingWorkspace, CoreOperationsModulePage } from './core-operations-live-console'
+import { MarketingShowcase, FinanceShowcase } from './module-showcases'
 
 export type BrandMetric = { label: string; value: string; trend?: string; icon?: string; tone?: 'good' | 'watch' | 'risk' }
 export type BrandModule = { id: string; label: string; description: string; metrics: BrandMetric[]; actions: string[]; workflow?: string[] }
@@ -1706,6 +1707,35 @@ export function BrandModulePage({ config, moduleId }: { config: BrandConsoleConf
   // the generic module workbench below rather than being swallowed by the suite-specific
   // workspace (which previously showed unrelated hiring/risk content for these ids).
   const sharedCrossSuiteModuleIds = new Set(['marketing-suite', 'marketing', 'accounting', 'messaging', 'customer-service', 'ai-demo'])
+
+  // Marketing and Accounting get a real visual dashboard (campaign gallery / cashflow +
+  // aging picture) ahead of the generic form+table below, on every suite that reaches this
+  // shared fallback path (Core.Workforce, Core.Intelligence, and any suite without its own
+  // dedicated live module for these ids).
+  if (module.id === 'marketing-suite' || module.id === 'marketing') {
+    return (
+      <section className="manager-shell" style={accentStyle}>
+        <header className="module-header">
+          <p>{module.label}</p>
+          <h1>{module.label}</h1>
+          <span>{module.description}</span>
+        </header>
+        <MarketingShowcase title={config.name} />
+      </section>
+    )
+  }
+  if (module.id === 'accounting') {
+    return (
+      <section className="manager-shell" style={accentStyle}>
+        <header className="module-header">
+          <p>{module.label}</p>
+          <h1>{module.label}</h1>
+          <span>{module.description}</span>
+        </header>
+        <FinanceShowcase title={config.name} />
+      </section>
+    )
+  }
 
   if (config.name === 'Core.Workforce' && !sharedCrossSuiteModuleIds.has(module.id)) {
     return <WorkforceIntelligenceWorkspace suite="workforce" moduleId={module.id} />

@@ -8,6 +8,7 @@ import { DataWorkbench, consoleStyle, type BrandConsoleConfig, type DataField, t
 import { ModuleTabs, type ModuleTab } from '../module-tabs'
 import { RealInvoicesPanel } from '../real-monetary-panels'
 import { resolveBrandSlugFromName } from '../real-monetary'
+import { FinanceShowcase } from '../module-showcases'
 
 // Real, tabbed Accounting — replaces the previous single generic table. Invoices is the one
 // tab backed by a real, Prisma-persisted model (RealInvoicesPanel, wired earlier this session)
@@ -82,6 +83,13 @@ export function AccountingModule({ config }: { config: BrandConsoleConfig }) {
   const brandSlug = resolveBrandSlugFromName(config.name)
 
   const tabs: ModuleTab[] = [
+    {
+      id: 'overview',
+      label: 'Overview',
+      icon: '📊',
+      guide: 'A real cashflow and invoice-aging picture, styled the way a proper finance product (Sage, Xero) shows it — not just a flat table.',
+      render: () => <FinanceShowcase title={config.name} />,
+    },
     {
       id: 'invoices',
       label: 'Invoices',
