@@ -1,5 +1,52 @@
 # FoundingOS Restructure — Summary & Remaining Blockers
 
+## Update (third pass — legacy directory removal)
+
+A further pass completed the physical removal of the remaining legacy
+per-brand app directories, after confirming (via a full-repo grep of
+`apps/`, `packages/`, and the three active `core-operations/`,
+`core-workforce/`, `core-intelligence/` trees) that no shipped source
+file imports from them — the only matches were compiled `.next/` build
+caches, not live source:
+
+- **Deleted** `foundmeat/`, `foundcrypto/`, `foundit/`, `foundretail/`,
+  `foundtalent/` (287 tracked files) via `git rm`. `founder-os/` was
+  **not** touched — it remains the active founder-platform aggregator
+  service (see finding 3 in [api-review.md](./api-review.md)) — nor were
+  `core-operations/`, `core-workforce/`, `core-intelligence/`, which are
+  the real, currently-shipped suite backends (distinct from, and
+  unrelated to, the underscored `core_operations`/`core_workforce`
+  shorthand used elsewhere in this document).
+- **Updated `scripts/verify-brand-assets.mjs`** (a CI `verify` job step)
+  to stop reading from the five deleted directories; it now only checks
+  `founder-os/frontend/src`, `shared/ui/src`, and
+  `shared/brand-assets/src` for forbidden legacy logo/colour usage.
+- **Cleaned root `package.json` workspaces** — removed five dead glob
+  entries (`apps/foundretail-mobile`, `apps/foundtalent-mobile`,
+  `apps/foundfinance-mobile`, `apps/foundhealth-mobile`,
+  `apps/foundlogistics-mobile`) that pointed at directories that never
+  existed on disk. `apps/foundthat-mobile` was left in place — it exists,
+  typechecks, and is the subject of active work on another branch; its
+  disposition (keep vs. retire per FoundThat's "deprecated" positioning)
+  is a product decision left open.
+- **Updated [ROUTING.md](../ROUTING.md)** to remove the stale
+  `/foundretail/*`, `/foundmeat/*`, `/foundtalent/*`, `/foundcrypto/*`
+  route list and replace it with the actual current suite-console routes
+  (`/console`, `/crm`, `/intelligence`, `/modules/[moduleId]`, etc.).
+- **Not touched, intentionally**: the `founder-os/backend/src/routes.ts`
+  `/foundcrypto/*`, `/foundit/*`, `/foundmeat/*` API route registrations
+  and the `shared/brand-assets` package (protected SVGs, unused
+  `*BrandMark` components). Both are flagged in
+  [api-review.md](./api-review.md) as deletion candidates that need a
+  dedicated, coordinated change (route de-registration before
+  implementation deletion, confirming no external integration depends on
+  them) — deliberately out of scope for this directory-removal pass.
+- **Re-validated after deletion**: `npm run typecheck` (all workspaces,
+  zero errors), all 4 `verify-*.mjs` scripts, `npm run test:tester-system`
+  (20/20 pass), and full production builds of all 8 shipped apps
+  (`foundingos-web`, `foundingos-console`, and the three suite
+  web/console pairs) — all green.
+
 ## Update (second pass — execution)
 
 A follow-up pass **executed** the highest-impact, lowest-risk items left
@@ -159,7 +206,10 @@ this pass.
    corresponding `Upgrade-and-Additional-Companies/Consoles/FoundMeat-*`/
    `FoundCrypto-*` consoles are deleted, and all live code references in
    the remaining active suites are cleaned up (see "Update (second pass)"
-   above). **Not yet done:** exporting their Postgres schemas per
+   above). ~~**Physical removal of FoundRetail, FoundTalent, FoundThis**~~
+   — **done in the third pass**: `foundit/`, `foundretail/`,
+   `foundtalent/` are also now deleted from the repo root. **Not yet
+   done:** exporting any of their Postgres schemas per
    [shared-schema.md](./shared-schema.md) before any production database
    drops those schemas — this repo pass only touched source code, no
    database exists to export from in this environment.

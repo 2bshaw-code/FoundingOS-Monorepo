@@ -5,19 +5,20 @@ All frontends use React Router with these conventions:
 - `/` public or application home
 - `/login` authentication entry
 - `/dashboard` authenticated landing page
-- `/foundretail/retail-manager-console` retail manager console
-- `/foundretail/staff-console` staff console
-- `/foundmeat/supplier-console` supplier console
-- `/foundmeat/buyer-console/*` buyer console
-- `/foundthis/intelligence-console` intelligence console
-- `/foundthis/data-operations-console/*` data operations console
-- `/foundtalent/workforce-intelligence-console` workforce intelligence console
-- `/foundtalent/recruiter-console/*` recruiter console
-- `/foundcrypto/chart-intelligence-dashboard` chart intelligence dashboard
-- `/foundcrypto/trader-console` trader console
+- `/console` suite console home (Core.Operations, Core.Workforce, Core.Intelligence)
+- `/console/packages/[package]` suite package console
+- `/crm` shared CRM surface
+- `/intelligence` Core.Intelligence activation and strategic overview
+- `/modules/[moduleId]` module surfaces
+- `/settings` workspace settings
 - `/system/*` operational routes
 
-Legacy aliases remain in place as redirects during the transition.
+The legacy per-brand routes (`/foundretail/*`, `/foundmeat/*`, `/foundtalent/*`,
+`/foundcrypto/*`, `/foundit/*`) and their backing app directories have been
+removed as part of the FoundingOS consolidation into
+Core.Operations/Core.Workforce/Core.Intelligence. See
+[restructure-summary.md](./docs/restructure-summary.md) and
+[migration-map.md](./docs/migration-map.md).
 
 All backends expose:
 
