@@ -10,7 +10,7 @@ const pages = new Set(['suites', 'workspaces', 'consoles', 'app', 'test-workspac
 const workspaceSlugs = new Set<WorkspaceSlug>(['retail', 'logistics', 'finance', 'talent', 'health'])
 const testWorkspaceSlugs = new Set<TestWorkspaceSlug>(['retail', 'logistics', 'finance', 'marketing', 'talent', 'health', 'intelligence'])
 const workspaceSections: Record<TestWorkspaceSlug, string[]> = {
-  retail: ['overview', 'sales-pipeline', 'orders', 'point-of-sale', 'crm', 'segments', 'loyalty', 'inbox', 'campaigns', 'automations', 'content', 'products', 'inventory', 'promotions', 'channels', 'purchasing', 'suppliers', 'fulfilment', 'returns', 'service', 'payments', 'reports', 'team', 'integrations', 'settings'],
+  retail: ['overview', 'sales-pipeline', 'orders', 'point-of-sale', 'crm', 'segments', 'loyalty', 'inbox', 'campaigns', 'automations', 'content', 'products', 'inventory', 'promotions', 'channels', 'production-orders', 'boms', 'purchasing', 'suppliers', 'fulfilment', 'returns', 'service', 'payments', 'reports', 'team', 'integrations', 'settings'],
   logistics: ['overview', 'dispatch', 'routes', 'deliveries', 'tracking', 'exceptions', 'fleet', 'drivers', 'warehouses', 'customers', 'quotes', 'billing', 'reports', 'automations', 'team', 'integrations', 'settings'],
   finance: ['overview', 'cashflow', 'invoices', 'bills', 'banking', 'reconciliation', 'expenses', 'payments', 'budgets', 'forecasting', 'tax', 'approvals', 'reports', 'automations', 'team', 'integrations', 'settings'],
   marketing: ['overview', 'campaigns', 'calendar', 'audiences', 'segments', 'leads', 'content', 'brand-studio', 'channels', 'journeys', 'inbox', 'attribution', 'reports', 'automations', 'team', 'integrations', 'settings'],
