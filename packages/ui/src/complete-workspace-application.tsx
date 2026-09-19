@@ -961,9 +961,21 @@ function SuperDashboardOverview({ events, agentActions, intelligence, agentBusy,
   </>
 }
 
+const boardTones = ['neutral', 'info', 'warn', 'done'] as const
+
+function recordOrigin(record: WorkspaceRecord, config: WorkspaceConfig): { label: string; detail: string } {
+  const seedCount = config.subjects.length
+  const numberMatch = record.id.match(/(\d+)$/)
+  const seedNumber = numberMatch ? Number(numberMatch[1]) - 101 : -1
+  if (record.backendId) return { label: 'Synced record', detail: `Live record ${record.id} synced from the FoundingOS platform backend (version ${record.version ?? 1}).` }
+  if (seedNumber >= 0 && seedNumber < seedCount) return { label: 'Demo data', detail: `Auto-generated sample record ${record.id}, seeded so this workspace has realistic data to explore.` }
+  return { label: 'Manually created', detail: `Added by ${record.owner} directly in this workspace (${record.id}), not from an import or integration.` }
+}
+
 function RecordsPage({ workspace, config, item, state, createRecord, advanceRecord, publishHandoff }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
   const records = state.records[item.id] ?? []
   const statuses = statusFor(item)
+  const [sourceOpen, setSourceOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState(records[0]?.id)
   const [creating, setCreating] = useState(false)
@@ -1017,13 +1029,39 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
     }
   }
   const handoffTarget = workspaceOrder[(workspaceOrder.indexOf(workspace) + 1) % workspaceOrder.length]
+  const selectRecord = (id: string) => {
+    setSelectedId(id)
+    setSourceOpen(false)
+  }
+  const origin = selected ? recordOrigin(selected, config) : null
   return <>
     <WorkspaceHeading eyebrow={`${config.suite} · ${item.group}`} title={item.label} copy={`Manage every ${item.label.toLowerCase()} record, owner, stage, activity, and connected handoff.`} action={<button className="retail-app-primary" onClick={() => setCreating(true)} type="button">+ New record</button>} />
     {item.statuses ? <div className="complete-workspace-stage-summary">{statuses.map((status) => <article key={status}><strong>{records.filter((record) => record.status === status).length}</strong><span>{status}</span></article>)}</div> : null}
     <div className="retail-app-toolbar"><input aria-label={`Search ${item.label}`} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${item.label.toLowerCase()}`} value={query} /><span className="retail-app-record-count">{visible.length} matching</span><button onClick={() => window.print()} type="button">Export / print</button></div>
     <section className="retail-app-record-layout">
-      <div className="retail-app-table-card"><div className="retail-app-panel-heading"><div><p>{item.group}</p><h2>{visible.length} records</h2></div></div><div className="retail-app-table-scroll"><table><thead><tr><th>Record</th><th>Context</th><th>Value</th><th>Status</th><th>Owner</th><th>Updated</th></tr></thead><tbody>{visible.map((record) => <tr className={selected?.id === record.id ? 'selected' : ''} key={record.id} onClick={() => setSelectedId(record.id)}><td><strong>{record.name}</strong><small>{record.id}</small></td><td>{record.secondary}</td><td>{record.value}</td><td><span className={`retail-app-status status-${record.status.toLowerCase().replaceAll(' ', '-')}`}>{record.status}</span></td><td>{record.owner}</td><td>{record.updated}</td></tr>)}</tbody></table></div></div>
-      {selected ? <aside className="retail-app-detail"><p>Selected record</p><h2>{selected.name}</h2><strong>{selected.id}</strong><dl><div><dt>Workflow</dt><dd>{item.label}</dd></div><div><dt>Status</dt><dd>{selected.status}</dd></div><div><dt>Owner</dt><dd>{selected.owner}</dd></div><div><dt>Value</dt><dd>{selected.value}</dd></div><div><dt>Updated</dt><dd>{selected.updated}</dd></div></dl><div className="retail-app-stage">{statuses.map((status) => <span className={status === selected.status ? 'active' : ''} key={status}>{status}</span>)}</div>{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}{productionModeEnabled && item.id === 'payments' && selected.status !== 'Paid' ? <button className="retail-app-primary" disabled={saving || !selected.backendId} onClick={() => void collectPayment()} type="button">Collect with Stripe</button> : selected.status !== statuses.at(-1) ? <button className="retail-app-primary" disabled={saving} onClick={() => void advance()} type="button">Move to {statuses[Math.min(statuses.indexOf(selected.status) + 1, statuses.length - 1)]}</button> : null}<button className="retail-app-secondary" disabled={saving} onClick={() => void publishHandoff(item.id, selected, handoffTarget).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Handoff could not be published'))} type="button">Handoff to {configs[handoffTarget].label}</button></aside> : null}
+      <div className="retail-app-board-card">
+        <div className="retail-app-panel-heading"><div><p>{item.group}</p><h2>{visible.length} records across {statuses.length} stages</h2></div></div>
+        <div className="retail-app-board">
+          {statuses.map((status, index) => {
+            const columnRecords = visible.filter((record) => record.status === status)
+            return <div className="retail-app-board-column" data-tone={boardTones[index % boardTones.length]} key={status}>
+              <header><span>{status}</span><strong>{columnRecords.length}</strong></header>
+              <div className="retail-app-board-column-body">
+                {columnRecords.map((record) => <button className={`retail-app-board-item${selected?.id === record.id ? ' selected' : ''}`} key={record.id} onClick={() => selectRecord(record.id)} type="button">
+                  <strong>{record.name}</strong>
+                  <span>{record.secondary}</span>
+                  <div className="retail-app-board-item-meta"><b>{record.value}</b><i>{record.owner}</i></div>
+                </button>)}
+                {columnRecords.length === 0 ? <p className="retail-app-board-empty">No records in this stage</p> : null}
+              </div>
+            </div>
+          })}
+        </div>
+      </div>
+      {selected && origin ? <aside className="retail-app-detail"><p>Selected record</p><h2>{selected.name}</h2><strong>{selected.id}</strong><dl><div><dt>Workflow</dt><dd>{item.label}</dd></div><div><dt>Status</dt><dd>{selected.status}</dd></div><div><dt>Owner</dt><dd>{selected.owner}</dd></div><div><dt>Value</dt><dd>{selected.value}</dd></div><div><dt>Updated</dt><dd>{selected.updated}</dd></div></dl>
+        <button aria-expanded={sourceOpen} className="retail-app-source-toggle" onClick={() => setSourceOpen((open) => !open)} type="button"><span>Source: {origin.label}</span><b>{sourceOpen ? '−' : '+'}</b></button>
+        {sourceOpen ? <p className="retail-app-source-detail">{origin.detail}</p> : null}
+        <div className="retail-app-stage">{statuses.map((status) => <span className={status === selected.status ? 'active' : ''} key={status}>{status}</span>)}</div>{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}{productionModeEnabled && item.id === 'payments' && selected.status !== 'Paid' ? <button className="retail-app-primary" disabled={saving || !selected.backendId} onClick={() => void collectPayment()} type="button">Collect with Stripe</button> : selected.status !== statuses.at(-1) ? <button className="retail-app-primary" disabled={saving} onClick={() => void advance()} type="button">Move to {statuses[Math.min(statuses.indexOf(selected.status) + 1, statuses.length - 1)]}</button> : null}<button className="retail-app-secondary" disabled={saving} onClick={() => void publishHandoff(item.id, selected, handoffTarget).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Handoff could not be published'))} type="button">Handoff to {configs[handoffTarget].label}</button></aside> : null}
     </section>
     {creating ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void create(event)}><div><p>{item.label}</p><h2>Create a record</h2></div><label>Name<input name="name" required /></label><label>Context<input name="secondary" required /></label><div className="retail-app-form-grid"><label>Value<input name="value" placeholder="£0 or priority" required /></label><label>Owner<select name="owner"><option>Maya</option><option>Noah</option><option>Ava</option><option>Bobby</option></select></label></div>{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setCreating(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Saving…' : 'Create record'}</button></footer></form></div> : null}
   </>
