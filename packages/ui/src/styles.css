@@ -6387,12 +6387,6 @@ body[data-sidebar-collapsed='true'] .nav-card {
     padding: 16px 16px 0;
   }
 
-  .retail-ops-workspace {
-    display: grid;
-    gap: 20px;
-    color: var(--text);
-  }
-
   .console-shell-page .topbar {
     gap: 8px;
   }
@@ -6410,9 +6404,25 @@ body[data-sidebar-collapsed='true'] .nav-card {
   .console-shell-page .topbar-nav {
     justify-content: flex-end;
   }
+}
 
-  .retail-workspace-header {
-    display: flex;
+/* Core.Workforce/Core.Intelligence/Health workspace base styling — this entire block (header,
+   CEO briefing, KPI stat grid, toolbar, table panel, detail panel, status pills, modal) was
+   previously trapped inside a single `@media (max-width: 900px)` wrapper with no unconditional
+   base rule anywhere else in the file. That meant every one of these components rendered
+   completely unstyled on any desktop-width viewport — no card borders, no background panels, no
+   spacing, no colour — which is the real reason those consoles' module pages all looked like
+   bare, cheap, unstyled tables regardless of which module was open. Making these rules
+   unconditional (base, not mobile-only) is the actual fix; the narrower breakpoint tweaks below
+   remain in their own smaller media queries as genuine responsive overrides. */
+.retail-ops-workspace {
+  display: grid;
+  gap: 20px;
+  color: var(--text);
+}
+
+.retail-workspace-header {
+  display: flex;
     align-items: flex-end;
     justify-content: space-between;
     gap: 24px;
@@ -6636,6 +6646,65 @@ body[data-sidebar-collapsed='true'] .nav-card {
 
   .retail-stat-grid strong {
     font-size: 24px;
+  }
+
+  /* Real, currently-used class names for the Workforce/Intelligence/Health workspace shell —
+     WorkforceWorkspace, IntelligenceWorkspace and HealthOperationsWorkspace all render
+     `<section className="retail-workspace">`, a `.retail-metric-strip` KPI row, and a
+     `.retail-data-layout` table+detail grid, none of which had ANY rule anywhere in this file
+     (the similarly-named .retail-ops-workspace/.retail-stat-grid/.retail-record-layout above are
+     dead legacy names no component still renders). Without these three, the whole workspace body
+     rendered with zero layout/spacing/card styling — this is the actual fix for those consoles.  */
+  .retail-workspace {
+    display: grid;
+    gap: 20px;
+    color: var(--text);
+  }
+
+  .retail-metric-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+
+  .retail-metric-strip article {
+    display: grid;
+    gap: 6px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface);
+  }
+
+  .retail-metric-strip span {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .retail-metric-strip strong {
+    font-size: 24px;
+    color: var(--text);
+  }
+
+  .retail-metric-strip small {
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .retail-data-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  @media (max-width: 900px) {
+    .retail-data-layout {
+      grid-template-columns: 1fr;
+    }
   }
 
   .retail-toolbar {
@@ -6933,7 +7002,6 @@ body[data-sidebar-collapsed='true'] .nav-card {
       grid-template-columns: 1fr;
     }
   }
-}
 
 @media (max-width: 900px) {
   .tester-shell-content {
@@ -7084,6 +7152,42 @@ body[data-sidebar-collapsed='true'] .nav-card {
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--text);
+}
+
+/* Denser, product-grade table treatment shared by every module's DataWorkbench table — sticky
+   header, zebra striping, and a hover highlight so scanning rows feels like a real data product
+   rather than a flat static list stamped out for every module. */
+.manager-table--dense thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-strong);
+  backdrop-filter: blur(10px);
+  padding: 10px 8px;
+}
+
+.manager-table--dense tbody tr {
+  transition: background-color 120ms ease;
+}
+
+.manager-table--dense tbody tr:nth-child(even) {
+  background: var(--surface-soft);
+}
+
+.manager-table--dense tbody tr:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-soft));
+}
+
+.manager-table--dense td,
+.manager-table--dense th {
+  padding: 9px 10px;
+  font-size: 13px;
+}
+
+.manager-table--dense td.is-numeric,
+.manager-table--dense th.is-numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .manager-pagination {
@@ -8112,7 +8216,24 @@ body[data-sidebar-collapsed='true'] .nav-card {
   text-align: center;
   gap: 10px;
   transition: background-color 250ms ease, border-color 250ms ease, box-shadow 250ms ease, color 250ms ease;
+  position: relative;
 }
+
+/* Thin coloured top edge that reflects whether the metric's trend reads as good/watch/risk —
+   a small, cheap signal that breaks up the "every KPI card is an identical grey box" look
+   without introducing a new card layout. */
+.dashboard-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--accent);
+}
+
+.dashboard-card[data-tone='good']::before { background: #0f9d58; }
+.dashboard-card[data-tone='watch']::before { background: #f2a600; }
+.dashboard-card[data-tone='risk']::before { background: #e53935; }
+.dashboard-card[data-tone='neutral']::before { background: color-mix(in srgb, var(--accent) 60%, var(--line)); }
 
 .dashboard-card span {
   color: var(--muted);
