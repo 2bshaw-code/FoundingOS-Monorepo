@@ -11,7 +11,9 @@ import { QuantumConsoleEntry } from '@foundingos/ui/quantum-console-modal'
 import { PackageModal } from '@foundingos/ui/package-modal'
 import { DemoMessageBoard } from '@foundingos/ui/demo-message-board'
 import { CORE_MODULES } from '@foundingos/config/modules'
-import { PremiumSocialLinks, QuantumBrandUpliftPanel, QuantumSphereLogo } from '@foundingos/ui'
+import { PremiumSocialLinks } from '@foundingos/ui/social-links'
+import { QuantumBrandUpliftPanel } from '@foundingos/ui/quantum-brand-uplift'
+import { QuantumSphereLogo } from '@foundingos/ui/QuantumSphereLogo'
 
 const features = [
   { title: 'Operational clarity', description: 'Keep every workflow, message, and update connected across the teams and channels your business uses.', icon: '◉' },
