@@ -362,15 +362,11 @@ export function CRMBoard({ config }: { config: BrandConsoleConfig }) {
 
   const automationRules = useMemo(() => {
     switch (config.name) {
-      case 'CoreOperations':
-        return ['Auto-create reorder task when a store account is marked In Progress.', 'Flag VIP customers when tags include priority or wholesale.', 'Route supplier notes to the operations owner.']
-      case 'CoreOperations':
-        return ['Create a compliance task for every supplier marked Qualified.', 'Link cold-chain notes to batch follow-up tasks.', 'Escalate audit-risk records automatically.']
-      case 'CoreOperations':
-        return ['Create a risk review task when investor exposure exceeds threshold.', 'Push wallet updates into the activity timeline.', 'Tag high-priority portfolio records for analyst follow-up.']
-      case 'CoreIntelligence':
+      case 'Core.Operations':
+        return ['Auto-create reorder task when a store account is marked In Progress.', 'Flag VIP customers when tags include priority or wholesale.', 'Route supplier notes to the operations owner.', 'Create a compliance task for every supplier marked Qualified.', 'Escalate audit-risk records automatically.']
+      case 'Core.Intelligence':
         return ['Open an incident task when a ticket moves to In Progress.', 'Link device-owner notes to each resolved ticket.', 'Escalate urgent alerts to the top of the queue.']
-      case 'CoreWorkforce':
+      case 'Core.Workforce':
         return ['Create interview tasks for candidates marked Qualified.', 'Attach employer client notes to the active job pipeline.', 'Promote hot candidates into the priority filter.']
       default:
         return ['Create project tasks when a stakeholder is added.', 'Attach system notes to the active rollout timeline.', 'Escalate dependencies marked In Progress.']

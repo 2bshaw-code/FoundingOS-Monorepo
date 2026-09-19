@@ -11,17 +11,19 @@ FoundingOS collapses the previous nine-brand structure into **one brand**
 
 | Suite | Replaces (legacy brand) | Domain |
 | --- | --- | --- |
-| **Core.Operations** | CoreOperations | Customers, orders, inventory, billing, delivery, messaging commerce |
-| **Core.Workforce** | CoreWorkforce | Applicants, recruiters, jobs, workforce intelligence |
+| **Core.Operations** | FoundRetail, FoundFinance, FoundHealth, FoundLogistics | Customers, orders, inventory, billing, delivery, messaging commerce |
+| **Core.Workforce** | FoundTalent | Applicants, recruiters, jobs, workforce intelligence |
+| **Core.Intelligence** | FoundThat (scraping-based) | Founder/owner analytics, KPIs, funnels, reporting, decision support — rebuilt on first-party data |
 
 Legacy brands **removed/deprecated** entirely (not migrated into a suite):
 
-- **CoreOperations** — vertical meat-trade product. Deprecated.
-- **CoreOperations** — crypto trading/signals product. Deprecated.
-  Deprecated. Only first-party analytics survive, folded into
+- **FoundMeat** — vertical meat-trade product. Deprecated.
+- **FoundCrypto** — crypto trading/signals product. Deprecated.
+- **FoundThat's scraping engine** — third-party scraping is disabled and
+  removed. Only first-party analytics survive, folded into
   Core.Intelligence.
 
-See  for the full removal list and
+See [deprecations.md](./deprecations.md) for the full removal list and
 [migration-map.md](./migration-map.md) for path/route/table renames.
 
 ## 2. Shared backbone components
@@ -341,9 +343,9 @@ local, visibly marked as simulation-only, and cannot call execution APIs.
 
 - Product/brand name in all copy, routes, env vars, and table prefixes is
   **FoundingOS**, plus suite name (**Core.Operations**, **Core.Workforce**,
-  **Core.Intelligence**). Legacy brand words (CoreOperations, CoreOperations,
-  CoreIntelligence, CoreWorkforce, CoreOperations, CoreOperations, CoreOperations,
-  CoreOperations, CoreIntelligence) must not appear in new copy, new routes, new env
+  **Core.Intelligence**). Legacy brand words (FoundRetail, FoundMeat,
+  FoundThat, FoundTalent, FoundCrypto, FoundFinance, FoundHealth,
+  FoundLogistics) must not appear in new copy, new routes, new env
   vars, or new table names. Existing references are tracked for cleanup in
   [migration-map.md](./migration-map.md).
 - Env vars: `FOUNDINGOS_<SUITE>_<PURPOSE>`, e.g.

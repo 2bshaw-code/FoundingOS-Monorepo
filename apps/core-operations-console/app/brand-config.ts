@@ -85,7 +85,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "pos",
       "label": "Pos",
-      "description": "CoreOperations pos workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Operations pos workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Sales",
@@ -124,7 +124,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "inventory",
       "label": "Inventory",
-      "description": "CoreOperations inventory workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Operations inventory workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Sales",
@@ -163,7 +163,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "suppliers",
       "label": "Suppliers",
-      "description": "CoreOperations suppliers workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Operations suppliers workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Sales",
@@ -202,7 +202,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "sales",
       "label": "Sales",
-      "description": "CoreOperations sales workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Operations sales workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Sales",
@@ -241,7 +241,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "customers",
       "label": "Customers",
-      "description": "CoreOperations customers workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Operations customers workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Sales",
@@ -280,7 +280,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "orders",
       "label": "Orders",
-      "description": "CoreOperations orders workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Operations orders workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Sales",
@@ -319,7 +319,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "products",
       "label": "Products",
-      "description": "CoreOperations products workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Operations products workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Sales",
@@ -358,7 +358,7 @@ export const brandConfig: BrandConsoleConfig = {
     {
       "id": "stores",
       "label": "Stores",
-      "description": "CoreOperations stores workspace for daily operations, reporting, approvals, and team execution.",
+      "description": "Core.Operations stores workspace for daily operations, reporting, approvals, and team execution.",
       "metrics": [
         {
           "label": "Sales",
@@ -629,8 +629,8 @@ export const brandConfig: BrandConsoleConfig = {
     }
   ],
   "crm": {
-    "title": "CoreOperations CRM",
-    "summary": "CoreOperations CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
+    "title": "Core.Operations CRM",
+    "summary": "Core.Operations CRM connects contacts, companies, deals, notes, tasks, and activity for the brand workflow.",
     "records": [
       {
         "name": "Manchester",

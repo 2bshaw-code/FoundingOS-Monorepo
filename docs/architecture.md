@@ -15,7 +15,10 @@
 │                                                                           │
 │   ┌───────────────────┐ ┌───────────────────┐ ┌───────────────────┐    │
 │   │  Core.Operations  │ │  Core.Workforce   │ │ Core.Intelligence │    │
-│   │  (was CoreOperations)│ │  (was CoreWorkforce)│ │ (was CoreIntelligence,   │    │
+│   │  (was FoundRetail, │ │  (was FoundTalent)│ │ (was FoundThat,   │    │
+│   │  FoundFinance,     │ │                   │ │  scraping removed)│    │
+│   │  FoundHealth,      │ │                   │ │                   │    │
+│   │  FoundLogistics)   │ │                   │ │                   │    │
 │   │  Customers         │ │  Applicants       │ │  KPI dashboards   │    │
 │   │  Orders            │ │  Jobs             │ │  Funnels          │    │
 │   │  Inventory         │ │  Recruiters       │ │  Reports          │    │
@@ -46,8 +49,8 @@
                     └───────────────────────────────┘
 
    ✗ Removed from architecture:
-     - CoreOperations suite (frontend, backend, schema)
-     - CoreOperations suite (frontend, backend, schema)
+     - FoundMeat suite (frontend, backend, schema)
+     - FoundCrypto suite (frontend, backend, schema)
 ```
 
 ## Request flow (single suite example: Core.Operations)

@@ -14,9 +14,9 @@ derived from this registry, not hardcoded per app.
 
 | Suite | Former brand(s) | Route prefix | Table prefix | Modules |
 |---|---|---|---|---|
-| **Core.Operations** | CoreOperations (retail), CoreOperations (finance), CoreOperations (health), CoreOperations (logistics) | `/api/v1/ops` | `core_ops_` | Customers, Inventory, Orders, Billing, Delivery |
-| **Core.Workforce** | CoreWorkforce (talent) | `/api/v1/work` | `core_workforce_` | Applicants, Recruiters, Jobs, Workforce Intel |
-| **Core.Intelligence** | CoreIntelligence (it/that) | `/api/v1/int` | `core_intel_` | KPI Dashboards, Funnels, Reports |
+| **Core.Operations** | FoundRetail (retail), FoundFinance (finance), FoundHealth (health), FoundLogistics (logistics) | `/api/v1/ops` | `core_ops_` | Customers, Inventory, Orders, Billing, Delivery |
+| **Core.Workforce** | FoundTalent (talent) | `/api/v1/work` | `core_workforce_` | Applicants, Recruiters, Jobs, Workforce Intel |
+| **Core.Intelligence** | FoundThat (intelligence) | `/api/v1/int` | `core_intel_` | KPI Dashboards, Funnels, Reports |
 
 A tenant's access to a suite is governed by a `TenantSuiteLicense` (see
 `packages/config/src/suites.ts`): console navigation only renders modules for

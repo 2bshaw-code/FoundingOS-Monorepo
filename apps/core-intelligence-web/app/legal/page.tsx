@@ -12,7 +12,7 @@ const coreIntelligenceWebUrl = process.env.NEXT_PUBLIC_CORE_INTELLIGENCE_WEB_URL
 const legalSections = [
 
     { name: 'Privacy Policy', copy: 'We handle prospect, lead, and enquiry data with strict access controls and privacy-first operational safeguards.' },
-    { name: 'Terms & Conditions', copy: 'These terms govern lead capture, discovery workflows, data usage, and service access across the CoreIntelligence environment.' },
+    { name: 'Terms & Conditions', copy: 'These terms govern lead capture, discovery workflows, data usage, and service access across the Core.Intelligence environment.' },
     { name: 'Cookie Policy', copy: 'Cookies support marketing analytics, discovery tracking, and the stability of lead and reporting experiences.' },
     { name: 'Compliance & Data Handling', copy: 'We apply lawful retention, account controls, and operational governance to protect lead and market intelligence data.' },
     { name: 'Market Data Compliance', copy: 'Lead and market data use is governed by lawful sources, policy controls, and compliance-safe automation.' }
@@ -33,7 +33,7 @@ export default function Page() {
           <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: '#f8fafc' }}>
             <div style={{ width: 42, height: 42, borderRadius: 12, background: '#FFD600', color: '#071014', display: 'grid', placeItems: 'center', fontWeight: 900 }}>✦</div>
             <div>
-              <strong style={{ display: 'block', fontSize: 22, lineHeight: 1.1 }}>CoreIntelligence</strong>
+              <strong style={{ display: 'block', fontSize: 22, lineHeight: 1.1 }}>Core.Intelligence</strong>
               <small style={{ color: '#dfeaf8', fontSize: 12 }}>{'Local Discovery OS'}</small>
             </div>
           </a>
@@ -59,8 +59,8 @@ export default function Page() {
       <main style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px 80px' }}>
         <div style={{ display: 'grid', gap: 10, marginBottom: 28 }}>
           <p style={{ margin: 0, color: '#FFD600', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>Legal</p>
-          <h1 style={{ margin: 0, fontSize: 'clamp(38px, 5vw, 62px)', lineHeight: 1.06 }}>{'CoreIntelligence'} Legal & Compliance</h1>
-          <p style={{ margin: 0, maxWidth: 760, color: '#dfeaf8', lineHeight: 1.8 }}>This legal hub sets out how CoreIntelligence handles customer, partner, operational, and platform data across the channels and systems inside the CoreIntelligence environment.</p>
+          <h1 style={{ margin: 0, fontSize: 'clamp(38px, 5vw, 62px)', lineHeight: 1.06 }}>{'Core.Intelligence'} Legal & Compliance</h1>
+          <p style={{ margin: 0, maxWidth: 760, color: '#dfeaf8', lineHeight: 1.8 }}>This legal hub sets out how Core.Intelligence handles customer, partner, operational, and platform data across the channels and systems inside the Core.Intelligence environment.</p>
         </div>
 
         <div style={{ display: 'grid', gap: 18 }}>
@@ -76,10 +76,10 @@ export default function Page() {
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.08)', background: '#070c14', marginTop: 0 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px 40px', display: 'flex', flexWrap: 'wrap', gap: 20, justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <strong style={{ fontSize: 22 }}>{'CoreIntelligence'}</strong>
+            <strong style={{ fontSize: 22 }}>{'Core.Intelligence'}</strong>
             <p style={{ margin: '10px 0 0', color: '#dfeaf8' }}>Registered address: 24 Founder Way, London, UK</p>
           </div>
-          <div style={{ color: '#dfeaf8' }}>© 2026 CoreIntelligence • All rights reserved</div>
+          <div style={{ color: '#dfeaf8' }}>© 2026 Core.Intelligence • All rights reserved</div>
         </div>
       </footer>
 

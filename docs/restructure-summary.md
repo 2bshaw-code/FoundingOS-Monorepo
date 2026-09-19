@@ -7,38 +7,40 @@ open after the first (docs-only) pass, after confirming via
 `git diff main..<branch> --stat -- foundmeat foundcrypto` that none of the
 4 active `agents/*` branches touch these directories:
 
-- **Deleted CoreOperations and CoreOperations entirely**: `foundmeat/`,
+- **Deleted FoundMeat and FoundCrypto entirely**: `foundmeat/`,
   `foundcrypto/`, `apps/foundmeat-*`, `apps/foundcrypto-*`, `apps/meat-web`,
-  `foundingos/FoundingOs/CoreOperations*`, `foundingos/FoundingOs/CoreOperations*`,
+  `foundingos/FoundingOs/FoundMeat*`, `foundingos/FoundingOs/FoundCrypto*`,
   and their consoles under
   `Upgrade-and-Additional-Companies/Consoles/`. Tracked files removed via
-  `git rm`; untracked build artifacts removed via `rm -rf`.
-  **not** deleted — every route in that service still depends on those
+  `git rm`; untracked build artifacts removed via `rm -rf`. The
+  `founder-os` backend's lead-sync integration (`core_operationsLeadSync.ts`)
+  was **not** deleted — every route in that service still depends on those
   models, so removal requires a schema migration and a product decision
-  on the `core_operationsLeadSync.ts` lead pipeline (see blockers, unchanged).
-- **Cleaned all live code references** to CoreOperations/CoreOperations across the
+  on the lead pipeline (see blockers, unchanged).
+- **Cleaned all live code references** to FoundMeat/FoundCrypto across the
   four remaining active suite trees (`founder-os`, `core_operations`,
   `core_workforce`, `core_intelligence`): `ecosystemFeed.ts`, `routes.ts`, `auth.ts`
   (`ecosystemRoles`), `server.ts` (CORS `defaultOrigins`, 4 backends),
   `.env.example` (4 backends), and frontend files `FounderSite.tsx`,
   `PremiumFounderConsole.tsx`, `CompanyManagement.tsx`,
-  `FounderHome.tsx`, `pages/Home.tsx`, `CoreOperationsSite.tsx`. Only
+  `FounderHome.tsx`, `pages/Home.tsx`. Only
   intentional "deprecated, see docs" comments remain — verified by a
   final `grep` sweep across those four trees.
 - **Renamed suite copy** in the above frontend files from brand names to
   Core.Operations / Core.Workforce / Core.Intelligence per
   [positioning.md](./positioning.md), including fixing a pre-existing
   label bug in `CompanyManagement.tsx` where the module-label
-  fallthrough always resolved to "CoreOperations".
+  fallthrough always resolved to the legacy brand name instead of the
+  correct suite name.
 - **Validated every edited file** by transpiling it directly through the
   TypeScript compiler API (`ts.transpileModule`, since a project-wide
   `tsc`/`npx` invocation did not complete in this environment — see
   environment note below) — zero diagnostics across all ~15 edited
   files.
 - Did **not** touch: `shared/brand-assets` and `shared/ui` component
-  exports (`CoreOperationsBrandMark`, `CoreOperationsLogo` still exist, unused —
-  low-risk dead code, left as-is since deleting a shared package export
-  directory/route/table renames from [migration-map.md](./migration-map.md);
+  exports (legacy per-brand mark/logo component exports still exist,
+  unused — low-risk dead code, left as-is since deleting a shared package
+  export directory/route/table renames from [migration-map.md](./migration-map.md);
   and the DB migration.
 
 ## Environment note (first pass)
@@ -75,8 +77,8 @@ without a reliable way to verify a clean result in this session.
    `core_intel_`), tenant-scoped rows, deprecated-table list.
 4. **Architecture diagram** — [docs/architecture.md](./architecture.md):
    ASCII system diagram, request flow, target deployment topology.
-5. **Deprecations** — [docs/deprecations.md](./deprecations.md): CoreOperations,
-   files, Prisma models, routes) with rationale and status.
+5. **Deprecations** — [docs/deprecations.md](./deprecations.md): FoundMeat,
+   FoundCrypto, and FoundThat's scraping engine (removed apps, dead config
 6. **Migration map** — [docs/migration-map.md](./migration-map.md):
    directory, route, env var, table-prefix, and package rename tables.
 7. **Feature flags / buyer config** —
@@ -128,7 +130,7 @@ without a reliable way to verify a clean result in this session.
   unaffected.
   this is the authoritative removal list for the next phase.
 
-## Zero-legacy-reference validation: CoreOperations/CoreOperations clean in active suites; broader rename still pending
+## Zero-legacy-reference validation: FoundMeat/FoundCrypto clean in active suites; broader rename still pending
 
 A full "zero legacy brand references" grep across the **entire** repo was
 still **not** run to completion (tree-wide search across
@@ -137,32 +139,34 @@ slow given the filesystem constraints noted above). However, a scoped
 `grep -i "foundmeat|foundcrypto"` across the four **actively maintained**
 suite trees (`founder-os`, `core_operations`, `core_workforce`, `core_intelligence`) now
 returns **zero code matches** — only intentional "deprecated, see
-docs/deprecations.md" comments remain. CoreOperations/CoreWorkforce/CoreIntelligence/
-CoreIntelligence naming (the brand names being renamed *to* suites, not removed)
+docs/deprecations.md" comments remain. FoundRetail/FoundTalent/FoundThat/
+FoundFinance/FoundHealth/FoundLogistics naming (the brand names being renamed *to* suites, not removed)
 still appears throughout as expected — that rename is tracked separately
-in [migration-map.md](./migration-map.md) blocker 3. CoreOperations,
-CoreOperations, and CoreOperations (parked, not deprecated) were not touched.
-**Zero legacy references is true for CoreOperations/CoreOperations in the active
-suites; it is not yet true for the CoreOperations→Core.Operations-style suite
+in [migration-map.md](./migration-map.md) blocker 3. FoundFinance,
+FoundHealth, and FoundLogistics (parked, not deprecated) were not touched.
+**Zero legacy references is true for FoundMeat/FoundCrypto in the active
+suites; it is not yet true for the FoundRetail/FoundTalent-style suite
 renames, nor for `Upgrade-and-Additional-Companies/` and
 `foundingos/FoundingOs/` duplicate app trees**, which were not swept in
 this pass.
 
 ## Remaining blockers (in priority order)
 
-1. ~~**Physical removal of CoreOperations and CoreOperations**~~ — **Done in the
+1. ~~**Physical removal of FoundMeat and FoundCrypto**~~ — **Done in the
    second pass.** `foundmeat/`, `foundcrypto/`, their
    `apps/*-web`/`apps/*-console` variants, `apps/meat-web`,
-   `foundingos/FoundingOs/CoreOperations*`/`CoreOperations*`, and the
-   corresponding `Upgrade-and-Additional-Companies/Consoles/CoreOperations-*`/
-   `CoreOperations-*` consoles are deleted, and all live code references in
+   `foundingos/FoundingOs/FoundMeat*`/`FoundCrypto*`, and the
+   corresponding `Upgrade-and-Additional-Companies/Consoles/FoundMeat-*`/
+   `FoundCrypto-*` consoles are deleted, and all live code references in
    the remaining active suites are cleaned up (see "Update (second pass)"
    above). **Not yet done:** exporting their Postgres schemas per
    [shared-schema.md](./shared-schema.md) before any production database
    drops those schemas — this repo pass only touched source code, no
    database exists to export from in this environment.
-   models, per [api-review.md](./api-review.md) and
-   . The founder-os aggregator's
+2. **`founder-os` lead-sync integration removal** — the
+   `core_operationsLeadSync.ts` module still references FoundMeat/FoundCrypto
+   models, per [api-review.md](./api-review.md) and the schema-migration
+   note above. The founder-os aggregator's routing still depends on that
    model — removing it without a schema migration would break the
    service entirely.
 3. **Directory/package renames** — execute
