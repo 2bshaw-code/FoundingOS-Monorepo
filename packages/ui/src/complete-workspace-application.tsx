@@ -92,6 +92,10 @@ const hashSeed = (value: string): number => {
   return hash
 }
 const ownerPool = ['Maya', 'Noah', 'Ava', 'Bobby', 'Leo', 'Priya']
+// Groups that represent real money movement (invoices, bills, payroll runs, billing, deals) —
+// these should always carry a varied currency value, never the "High priority" text label,
+// so downstream aggregation (aging, budgets, forecasting) has real numbers to work with.
+const moneyGroups = new Set(['Money', 'Spend', 'Reward', 'Commercial'])
 const seedWorkspace = (workspace: BusinessWorkspaceSlug): WorkspaceState => {
   const config = configs[workspace]
   const records = Object.fromEntries(config.modules.filter((item) => item.id !== 'overview').map((item) => {
@@ -101,6 +105,7 @@ const seedWorkspace = (workspace: BusinessWorkspaceSlug): WorkspaceState => {
     const offset = moduleHash % config.subjects.length
     const count = 3 + (moduleHash % 4)
     const moduleSubjects = Array.from({ length: count }, (_, i) => config.subjects[(offset + i) % config.subjects.length])
+    const isMoneyGroup = moneyGroups.has(item.group)
     return [
       item.id,
       moduleSubjects.map((subject, index) => {
@@ -108,7 +113,13 @@ const seedWorkspace = (workspace: BusinessWorkspaceSlug): WorkspaceState => {
         const quantity = isStockModule ? [6, 34, 18, 52][index % 4] : undefined
         const reorderPoint = isStockModule ? 20 : undefined
         const status = isStockModule ? (quantity! <= reorderPoint! ? 'Low stock' : statusFor(item)[(index % (statusFor(item).length - 1)) + 1]) : statusFor(item)[index % statusFor(item).length]
-        return { id: `${item.id.slice(0, 3).toUpperCase()}-${101 + index}`, name: subject, secondary: `${item.label} workflow`, value: isStockModule ? `${quantity} units` : index % 2 ? '£4,280' : 'High priority', status, owner: ownerPool[(moduleHash + index) % ownerPool.length], updated: `${index * 18 + 4}m ago`, quantity, reorderPoint, log: isStockModule ? [{ time: `${index * 18 + 40}m ago`, note: `Counted ${quantity} units on hand` }] : undefined }
+        // Every record gets its own varied, deterministic currency figure instead of a single
+        // fixed "£4,280" repeated everywhere — real businesses never have every invoice be the
+        // exact same amount.
+        const amount = 45 + (hashSeed(`${workspace}:${item.id}:${subject}:${index}`) % 18455)
+        const currencyValue = `£${amount.toLocaleString('en-GB')}`
+        const value = isStockModule ? `${quantity} units` : isMoneyGroup || index % 2 ? currencyValue : 'High priority'
+        return { id: `${item.id.slice(0, 3).toUpperCase()}-${101 + index}`, name: subject, secondary: `${item.label} workflow`, value, status, owner: ownerPool[(moduleHash + index) % ownerPool.length], updated: `${index * 18 + 4}m ago`, quantity, reorderPoint, log: isStockModule ? [{ time: `${index * 18 + 40}m ago`, note: `Counted ${quantity} units on hand` }] : undefined }
       }),
     ]
   }))
@@ -1646,6 +1657,78 @@ function BOMComponentsPanel({ record }: { record: WorkspaceRecord }) {
   </div>
 }
 
+// A Sage/Xero-style aging summary for Finance's Invoices module — a real accounts-receivable
+// view (current / 30 / 60 / 90+ buckets, worst-offender list) instead of a generic value bar,
+// which is what any professional finance team expects to see first.
+const invoiceAgingBuckets = ['Current', '1-30 days', '31-60 days', '61-90 days', '90+ days'] as const
+function InvoiceAgingPanel({ records }: { records: WorkspaceRecord[] }) {
+  const rows = records.filter((record) => record.status !== 'Paid').map((record) => {
+    const daysOverdue = hashSpread(`${record.id}-aging`, 0, 120)
+    const bucket = daysOverdue === 0 ? invoiceAgingBuckets[0] : daysOverdue <= 30 ? invoiceAgingBuckets[1] : daysOverdue <= 60 ? invoiceAgingBuckets[2] : daysOverdue <= 90 ? invoiceAgingBuckets[3] : invoiceAgingBuckets[4]
+    return { record, daysOverdue, bucket, amount: parseCurrency(record.value) }
+  })
+  const totals = invoiceAgingBuckets.map((bucket) => ({ bucket, amount: rows.filter((row) => row.bucket === bucket).reduce((sum, row) => sum + row.amount, 0) }))
+  const totalOutstanding = totals.reduce((sum, row) => sum + row.amount, 0)
+  const maxBucket = Math.max(1, ...totals.map((row) => row.amount))
+  const worst = [...rows].sort((a, b) => b.daysOverdue - a.daysOverdue).slice(0, 3)
+  return <div className="retail-app-invoice-aging-panel">
+    <div className="retail-app-panel-heading"><div><p>Accounts receivable</p><h2>{formatCurrency(totalOutstanding)} outstanding</h2></div></div>
+    <div className="retail-app-aging-chart">
+      {totals.map(({ bucket, amount }) => <div className="retail-app-aging-col" data-risk={bucket === '61-90 days' || bucket === '90+ days'} key={bucket}>
+        <div className="retail-app-aging-bar" style={{ height: `${Math.max(6, Math.round((amount / maxBucket) * 100))}px` }} />
+        <b>{formatCurrency(amount)}</b>
+        <span>{bucket}</span>
+      </div>)}
+    </div>
+    {worst.length > 0 ? <div className="retail-app-aging-worst">
+      <p className="retail-app-attachment-label">Most overdue</p>
+      {worst.map(({ record, daysOverdue, amount }) => <div className="retail-app-aging-worst-row" key={record.id}>
+        <span>{record.name}</span>
+        <i data-risk={daysOverdue > 60}>{daysOverdue}d overdue</i>
+        <b>{formatCurrency(amount)}</b>
+      </div>)}
+    </div> : null}
+  </div>
+}
+
+// A recruiting-profile card for Talent's Candidates module — role applied for, years of
+// experience, source channel, and a stage-progress rail, the depth a real ATS candidate
+// record needs instead of the generic name/value/owner fields every module gets.
+const candidateRoles = ['Senior operator', 'Warehouse lead', 'Account manager', 'Support specialist', 'Finance analyst']
+const candidateSources = ['Referral', 'LinkedIn', 'Job board', 'Careers page', 'Agency']
+function CandidateProfilePanel({ record, statuses }: { record: WorkspaceRecord; statuses: string[] }) {
+  const role = candidateRoles[hashSpread(record.id, 0, candidateRoles.length)]
+  const source = candidateSources[hashSpread(`${record.id}-src`, 0, candidateSources.length)]
+  const experience = 1 + hashSpread(`${record.id}-exp`, 0, 11)
+  const currentIndex = Math.max(0, statuses.indexOf(record.status))
+  return <div className="retail-app-candidate-panel">
+    <p className="retail-app-attachment-label">Candidate profile</p>
+    <dl className="retail-app-crm-fields">
+      <div><dt>Applying for</dt><dd>{role}</dd></div>
+      <div><dt>Experience</dt><dd>{experience} years</dd></div>
+      <div><dt>Source</dt><dd>{source}</dd></div>
+    </dl>
+    <div className="retail-app-candidate-rail">{statuses.map((status, index) => <span data-state={index < currentIndex ? 'done' : index === currentIndex ? 'active' : 'pending'} key={status}>{status}</span>)}</div>
+  </div>
+}
+
+// A clinical patient snapshot for Health's Patients module — last visit, next appointment, and
+// allergy flags, the at-a-glance clinical context a directory record on its own can't show.
+const patientAllergies = ['No known allergies', 'Penicillin allergy', 'Latex allergy', 'Nut allergy', 'Seasonal pollen allergy']
+function PatientSnapshotPanel({ record }: { record: WorkspaceRecord }) {
+  const allergy = patientAllergies[hashSpread(record.id, 0, patientAllergies.length)]
+  const daysSinceVisit = 1 + hashSpread(`${record.id}-visit`, 0, 89)
+  const daysToNext = hashSpread(`${record.id}-next`, 2, 45)
+  return <div className="retail-app-patient-panel">
+    <p className="retail-app-attachment-label">Patient snapshot</p>
+    <dl className="retail-app-crm-fields">
+      <div><dt>Last visit</dt><dd>{daysSinceVisit} days ago</dd></div>
+      <div><dt>Next appointment</dt><dd>in {daysToNext} days</dd></div>
+      <div><dt>Allergies</dt><dd data-alert={allergy !== 'No known allergies'}>{allergy}</dd></div>
+    </dl>
+  </div>
+}
+
 // A ranked review-score panel for Talent's Performance module — a real ranking with score bars,
 // not a generic Kanban funnel (which doesn't make sense for one-off reviews). Score is hashed
 // deterministically from the record id so it's stable between renders.
@@ -1923,6 +2006,9 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const isCarePlans = item.id === 'care-plans'
   const isProductionOrders = item.id === 'production-orders'
   const isBOM = item.id === 'boms'
+  const isInvoices = item.id === 'invoices'
+  const isCandidates = item.id === 'candidates'
+  const isPatients = item.id === 'patients'
   const metricLabel = directoryMetricLabel(item.group)
   return <>
     <WorkspaceHeading eyebrow={`${config.suite} · ${item.group}`} title={item.label} copy={isInbox ? `Every conversation for ${config.label.toLowerCase()} in one inbox — open a message to read the full thread and reply.` : isCalendar ? `See every scheduled ${item.label.toLowerCase()} entry laid out by day, and click through to its details.` : isContentStudio ? `Brief FoundAI on what you're promoting and it will draft the copy — then send it straight into the pipeline below.` : isDirectory ? `Browse every ${item.label.toLowerCase()} record with health, owner, and connected handoff.` : `Manage every ${item.label.toLowerCase()} record, owner, stage, activity, and connected handoff.`} action={<button className="retail-app-primary" onClick={() => setCreating(true)} type="button">+ New record</button>} />
@@ -1934,6 +2020,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
     {isPayroll && records.length > 0 ? <PayrollSummaryPanel records={records} statuses={statuses} /> : null}
     {isPerformance && records.length > 0 ? <PerformanceScorePanel records={records} /> : null}
     {isBudgets && records.length > 0 ? <BudgetProgressPanel records={records} /> : null}
+    {isInvoices && records.length > 0 ? <InvoiceAgingPanel records={records} /> : null}
     {!isDirectory && !isInbox && !isCalendar && !isContentStudio && !isSalesPipeline && !isInventory && !isPerformance && records.length > 0 ? <ValueByStageBar records={records} statuses={statuses} /> : null}
     {!isDirectory && !isInbox && !isCalendar && !isContentStudio && !isSalesPipeline && !isInventory && !isPerformance && records.length > 0 ? <ConversionFunnel records={records} statuses={statuses} /> : null}
     {!isInbox && !isCalendar && !isPerformance && !isBudgets && !isProducts && records.length > 0 ? (isDirectory ? <DirectoryKPIBar metricLabel={metricLabel} records={records} /> : <PipelineKPIBar records={records} statuses={statuses} />) : null}
@@ -2000,6 +2087,8 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
         {isCarePlans ? <CareGuidancePanel record={selected} /> : null}
         {isProductionOrders ? <ProductionOrderPanel record={selected} /> : null}
         {isBOM ? <BOMComponentsPanel record={selected} /> : null}
+        {isCandidates ? <CandidateProfilePanel record={selected} statuses={statuses} /> : null}
+        {isPatients ? <PatientSnapshotPanel record={selected} /> : null}
         {editing ? <div className="retail-app-edit-form">
           <label>Name<input onChange={(event) => setEditDraft((current) => ({ ...current, name: event.target.value }))} value={editDraft.name} /></label>
           <label>{isDirectory ? 'Category' : 'Context'}<input onChange={(event) => setEditDraft((current) => ({ ...current, secondary: event.target.value }))} value={editDraft.secondary} /></label>
