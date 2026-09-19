@@ -327,6 +327,25 @@ function workbenchFilterOptions(rows: DataRow[], fields: DataField[]) {
   return { filterField, options }
 }
 
+// Every module's table used to render every cell as flat plain text, which is a big part of
+// why the tables all "looked the same" regardless of what data they held. Status/stage/pipeline
+// style columns are the most common source of that flatness, so those columns now render as a
+// colour-coded StatusBadge pill instead — same data, but immediately scannable and far less
+// generic. Fields not recognised as status-like keep rendering as plain text.
+const STATUS_LIKE_FIELD_KEYS = new Set(['status', 'stage', 'pipeline', 'tier', 'priority'])
+
+function statusTone(value: string): StatusBadgeTone {
+  const normalized = value.toLowerCase()
+  if (/(active|won|approved|complete|live|good|on track|resolved|paid)/.test(normalized)) return 'good'
+  if (/(risk|blocked|late|overdue|escalate|failed|critical|churn)/.test(normalized)) return 'risk'
+  if (/(pending|review|working|new|qualified|draft|processing)/.test(normalized)) return 'watch'
+  return 'neutral'
+}
+
+function isNumericLikeField(field: DataField) {
+  return /(price|value|stock|amount|total|qty|quantity|cost)/i.test(field.key)
+}
+
 // A select field's dropdown always includes its originally-configured options, PLUS any
 // distinct value already present in the real records (including freshly imported ones) — the
 // real fix behind "auto-create missing categories": importing a Products sheet with a
@@ -438,7 +457,7 @@ export function DataWorkbench({ title, description, fields, rows, cards, accentS
 
       <div className="kpi-grid">
         {summaryCards.map((card) => (
-          <article key={card.label} className="dashboard-card">
+          <article key={card.label} className="dashboard-card" data-tone={card.trend ? statusTone(card.trend) : 'neutral'}>
             <span>{card.icon ?? '◌'} {card.label}</span>
             <strong>{card.value}</strong>
             {card.trend && <small>{card.trend}</small>}
@@ -518,17 +537,29 @@ export function DataWorkbench({ title, description, fields, rows, cards, accentS
       </div>
 
       <div className="panel">
-        <table className="manager-table">
+        <table className="manager-table manager-table--dense">
           <thead>
             <tr>
-              {fields.map((field) => <th key={field.key}>{field.label}</th>)}
+              {fields.map((field) => <th key={field.key} className={isNumericLikeField(field) ? 'is-numeric' : undefined}>{field.label}</th>)}
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {visible.map((row) => (
               <tr key={row.id}>
-                {fields.map((field) => <td key={field.key}>{row.values[field.key] || '—'}</td>)}
+                {fields.map((field) => {
+                  const value = row.values[field.key] || ''
+                  const isStatusLike = STATUS_LIKE_FIELD_KEYS.has(field.key)
+                  return (
+                    <td key={field.key} className={isNumericLikeField(field) ? 'is-numeric' : undefined}>
+                      {value === ''
+                        ? '—'
+                        : isStatusLike
+                          ? <StatusBadge label={value} tone={statusTone(value)} />
+                          : value}
+                    </td>
+                  )
+                })}
                 <td>
                   <div className="action-list">
                     <button type="button" onClick={() => beginEdit(row)}>Edit</button>
