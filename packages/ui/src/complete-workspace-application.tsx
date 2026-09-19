@@ -40,6 +40,7 @@ const configs: Record<BusinessWorkspaceSlug, WorkspaceConfig> = {
       module('crm', 'CRM', 'Customers', ['New', 'Engaged', 'Active', 'VIP']), module('segments', 'Segments', 'Customers'), module('loyalty', 'Loyalty', 'Customers'), module('inbox', 'Omnichannel inbox', 'Customers', ['Unread', 'Assigned', 'Waiting', 'Resolved']),
       module('campaigns', 'Campaigns', 'Marketing', ['Draft', 'Scheduled', 'Live', 'Complete']), module('automations', 'Automations', 'Marketing'), module('content', 'Content studio', 'Marketing', ['Idea', 'Draft', 'Approved', 'Published']),
       module('products', 'Products', 'Commerce'), module('inventory', 'Inventory', 'Commerce', ['Low stock', 'Available', 'Reserved', 'Replenished']), module('promotions', 'Promotions', 'Commerce', ['Draft', 'Scheduled', 'Live', 'Ended']), module('channels', 'Sales channels', 'Commerce'),
+      module('production-orders', 'Production orders', 'Commerce', ['Planned', 'In production', 'Quality check', 'Complete']), module('boms', 'Bills of materials', 'Commerce'),
       module('purchasing', 'Purchasing', 'Operations', ['Draft', 'Approved', 'Ordered', 'Received']), module('suppliers', 'Suppliers', 'Operations'), module('fulfilment', 'Fulfilment', 'Operations', ['Queued', 'Picking', 'Packed', 'Dispatched']), module('returns', 'Returns', 'Operations', ['Requested', 'Approved', 'Received', 'Refunded']),
       module('service', 'Customer service', 'Service', ['Open', 'Assigned', 'Waiting', 'Resolved']), module('payments', 'Payments', 'Finance', ['Pending', 'Authorised', 'Paid', 'Reconciled']), module('reports', 'Reports & forecasts', 'Intelligence'),
       module('team', 'Team & access', 'Administration'), module('integrations', 'Integrations', 'Administration'), module('settings', 'Settings', 'Administration'),
@@ -1600,6 +1601,51 @@ function BudgetProgressPanel({ records }: { records: WorkspaceRecord[] }) {
   </div>
 }
 
+// A production-run progress view for Retail's Production orders module — manufacturers need to
+// see units produced against units ordered and which BOM a run is built from, not a generic
+// funnel/value bar which doesn't make sense for a manufacturing run.
+const productionStageProgress: Record<string, number> = { Planned: 0, 'In production': 55, 'Quality check': 90, Complete: 100 }
+function ProductionOrderPanel({ record }: { record: WorkspaceRecord }) {
+  const ordered = hashSpread(record.id, 40, 480)
+  const pct = productionStageProgress[record.status] ?? 0
+  const produced = Math.round((ordered * pct) / 100)
+  const bomRef = `BOM-${100 + (hashSpread(record.id, 0, 40))}`
+  return <div className="retail-app-production-panel">
+    <p className="retail-app-attachment-label">Production run</p>
+    <div className="retail-app-stock-take-gauge"><div className="retail-app-stock-take-bar"><i style={{ width: `${pct}%` }} /></div><span>{produced} of {ordered} units produced</span></div>
+    <dl className="retail-app-crm-fields">
+      <div><dt>Bill of materials</dt><dd><Link href="../boms">{bomRef} →</Link></dd></div>
+      <div><dt>Stage</dt><dd>{record.status}</dd></div>
+      <div><dt>Owner</dt><dd>{record.owner}</dd></div>
+    </dl>
+  </div>
+}
+
+// A materials/cost breakdown for Retail's Bills of materials module — manufacturers need to see
+// what components make up a build and the rolled-up unit cost, not the generic directory metric.
+const bomComponentNames = ['Raw material A', 'Sub-assembly B', 'Fastener kit', 'Packaging unit', 'Finishing material']
+function BOMComponentsPanel({ record }: { record: WorkspaceRecord }) {
+  const componentCount = 2 + (hashSpread(record.id, 0, 3))
+  const components = Array.from({ length: componentCount }, (_, index) => {
+    const name = bomComponentNames[(hashSpread(`${record.id}-${index}`, 0, bomComponentNames.length))]
+    const qty = 1 + hashSpread(`${record.id}-qty-${index}`, 0, 12)
+    const unitCost = 1 + hashSpread(`${record.id}-cost-${index}`, 0, 40)
+    return { name, qty, unitCost, lineCost: qty * unitCost }
+  })
+  const totalCost = components.reduce((sum, row) => sum + row.lineCost, 0)
+  return <div className="retail-app-bom-panel">
+    <p className="retail-app-attachment-label">Bill of materials</p>
+    <div className="retail-app-bom-rows">
+      {components.map((row, index) => <div className="retail-app-bom-row" key={`${row.name}-${index}`}>
+        <span className="retail-app-bom-name">{row.name}</span>
+        <span className="retail-app-bom-qty">×{row.qty}</span>
+        <span className="retail-app-bom-cost">{formatCurrency(row.lineCost)}</span>
+      </div>)}
+    </div>
+    <div className="retail-app-bom-total"><span>Total build cost</span><b>{formatCurrency(totalCost)}</b></div>
+  </div>
+}
+
 // A ranked review-score panel for Talent's Performance module — a real ranking with score bars,
 // not a generic Kanban funnel (which doesn't make sense for one-off reviews). Score is hashed
 // deterministically from the record id so it's stable between renders.
@@ -1875,6 +1921,8 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const isProducts = item.id === 'products'
   const isCRM = item.id === 'crm'
   const isCarePlans = item.id === 'care-plans'
+  const isProductionOrders = item.id === 'production-orders'
+  const isBOM = item.id === 'boms'
   const metricLabel = directoryMetricLabel(item.group)
   return <>
     <WorkspaceHeading eyebrow={`${config.suite} · ${item.group}`} title={item.label} copy={isInbox ? `Every conversation for ${config.label.toLowerCase()} in one inbox — open a message to read the full thread and reply.` : isCalendar ? `See every scheduled ${item.label.toLowerCase()} entry laid out by day, and click through to its details.` : isContentStudio ? `Brief FoundAI on what you're promoting and it will draft the copy — then send it straight into the pipeline below.` : isDirectory ? `Browse every ${item.label.toLowerCase()} record with health, owner, and connected handoff.` : `Manage every ${item.label.toLowerCase()} record, owner, stage, activity, and connected handoff.`} action={<button className="retail-app-primary" onClick={() => setCreating(true)} type="button">+ New record</button>} />
@@ -1950,6 +1998,8 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
         {isOnboarding ? <OnboardingChecklistPanel record={selected} /> : null}
         {isCRM ? <CRMContactPanel onLog={(note) => logNote(item.id, selected, note)} record={selected} /> : null}
         {isCarePlans ? <CareGuidancePanel record={selected} /> : null}
+        {isProductionOrders ? <ProductionOrderPanel record={selected} /> : null}
+        {isBOM ? <BOMComponentsPanel record={selected} /> : null}
         {editing ? <div className="retail-app-edit-form">
           <label>Name<input onChange={(event) => setEditDraft((current) => ({ ...current, name: event.target.value }))} value={editDraft.name} /></label>
           <label>{isDirectory ? 'Category' : 'Context'}<input onChange={(event) => setEditDraft((current) => ({ ...current, secondary: event.target.value }))} value={editDraft.secondary} /></label>

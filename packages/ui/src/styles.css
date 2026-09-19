@@ -13683,6 +13683,66 @@ html[data-accessibility-simplified='true'] .btn {
   font-weight: 600;
 }
 
+/* Retail: Production orders progress panel */
+.retail-app-production-panel {
+  border-top: 1px solid #e5e9f0;
+  color: #172033;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.retail-app-production-panel .retail-app-crm-fields {
+  margin-top: 12px;
+}
+
+/* Retail: Bill of materials cost breakdown panel */
+.retail-app-bom-panel {
+  border-top: 1px solid #e5e9f0;
+  color: #172033;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.retail-app-bom-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.retail-app-bom-row {
+  align-items: center;
+  display: grid;
+  font-size: 12px;
+  gap: 8px;
+  grid-template-columns: minmax(0, 2fr) auto auto;
+}
+
+.retail-app-bom-name {
+  color: #172033;
+}
+
+.retail-app-bom-qty {
+  color: #8a97a6;
+  text-align: right;
+}
+
+.retail-app-bom-cost {
+  color: #172033;
+  font-weight: 600;
+  text-align: right;
+}
+
+.retail-app-bom-total {
+  align-items: center;
+  border-top: 1px solid #e5e9f0;
+  color: #172033;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
 @media (max-width: 720px) {
   .retail-app-budget-row {
     grid-template-columns: 1fr;
