@@ -3,6 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import { commercialAddOns, commercialPlans, marketingPlanFeatures } from '@foundingos/config/commercial'
 import { GlobalisationControls, GlobalisationProvider, LocalizedGbp } from './globalisation'
 import { ThemeToggle } from './theme'
@@ -205,7 +206,14 @@ const packagePlans = [
   },
 ] as const
 
-function SiteNav() {
+// Matches SITE_ACCESS_COOKIE in apps/foundingos-web/src/site-access.ts — duplicated here
+// (rather than imported) because packages/ui must not depend on an individual app's
+// source tree. Presence is enough to decide whether to show "Log out": an expired or
+// tampered cookie just redirects back to /access harmlessly on submit.
+const SITE_ACCESS_COOKIE_NAME = 'foundingos_site_access'
+
+async function SiteNav() {
+  const signedIn = Boolean((await cookies()).get(SITE_ACCESS_COOKIE_NAME)?.value)
   return (
     <nav>
       <Link href="/">FoundingOS</Link>
@@ -221,6 +229,7 @@ function SiteNav() {
         <Link href="/contact">Contact</Link>
         <GlobalisationControls />
         <ThemeToggle />
+        {signedIn ? <form action="/api/access/logout" method="post" className="site-nav-logout"><button type="submit">Log out</button></form> : null}
       </div>
     </nav>
   )

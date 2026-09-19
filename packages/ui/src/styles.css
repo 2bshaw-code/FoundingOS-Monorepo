@@ -1628,6 +1628,26 @@ a {
   padding: 7px 12px;
 }
 
+.site-nav-logout {
+  display: inline-flex;
+  margin: 0;
+}
+
+.site-nav-logout button {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 7px 12px;
+}
+
+.site-nav-logout button:hover {
+  border-color: var(--accent, #24c47a);
+  color: var(--accent, #24c47a);
+}
+
 @media (max-width: 700px) {
   .workspace-app-shell {
     display: block;
