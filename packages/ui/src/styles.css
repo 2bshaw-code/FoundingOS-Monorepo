@@ -4486,6 +4486,89 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   padding: 6px 2px;
 }
 
+.retail-app-check-wrap {
+  position: relative;
+}
+
+.retail-app-check-wrap .retail-app-check {
+  cursor: pointer;
+  left: 8px;
+  position: absolute;
+  top: 8px;
+  z-index: 2;
+}
+
+.retail-app-check-wrap .retail-app-board-item,
+.retail-app-check-wrap .retail-app-directory-item {
+  padding-left: 26px;
+}
+
+.retail-app-bulk-bar {
+  align-items: center;
+  background: color-mix(in srgb, var(--retail-accent) 10%, #fff);
+  border: 1px solid var(--retail-accent);
+  border-radius: 9px;
+  display: flex;
+  gap: 9px;
+  margin-bottom: 14px;
+  padding: 9px 10px;
+}
+
+.retail-app-bulk-bar span {
+  color: #172033;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.retail-app-bulk-bar button {
+  background: #fff;
+  border: 1px solid #d8e0e9;
+  border-radius: 6px;
+  color: #3f4f64;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  margin-left: auto;
+  padding: 7px 10px;
+}
+
+.retail-app-bulk-bar button:first-of-type {
+  margin-left: 0;
+}
+
+.retail-app-edit-form {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.retail-app-edit-form label {
+  color: #718096;
+  display: grid;
+  font-size: 10px;
+  gap: 4px;
+}
+
+.retail-app-edit-form input {
+  background: #fff;
+  border: 1px solid #dfe5ed;
+  border-radius: 6px;
+  color: #172033;
+  font: inherit;
+  padding: 7px 9px;
+}
+
+.retail-app-edit-form footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.retail-app-edit-toggle {
+  margin: 4px 0 10px;
+  width: fit-content;
+}
+
 .retail-app-source-toggle {
   align-items: center;
   background: #f5f7fa;
