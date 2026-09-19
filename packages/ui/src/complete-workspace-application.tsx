@@ -1,14 +1,14 @@
 'use client'
 
 import Link from 'next/link'
-import { Fragment, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { Fragment, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
 import { bootstrapProduction, getProductionSession, loginToProduction, logoutProduction, productionAgentActions, productionApiConfigured, productionModeEnabled, productionPlatform, productionRecords, productionRequest, type AgentAction, type AgentIntelligenceSummary, type ControlSettings, type ProductionInvitation, type ProductionSession, type ProductionWorkspaceRecord } from './workspace-production-client'
 
 const workspaceRoot = productionModeEnabled ? '/app' : '/test-workspaces'
 
 export type BusinessWorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'marketing' | 'talent' | 'health' | 'intelligence'
 
-type WorkspaceRecord = { id: string; backendId?: string; version?: number; name: string; secondary: string; value: string; status: string; owner: string; updated: string }
+type WorkspaceRecord = { id: string; backendId?: string; version?: number; name: string; secondary: string; value: string; status: string; owner: string; updated: string; attachment?: string; attachmentName?: string }
 type WorkspaceModule = { id: string; label: string; group: string; statuses?: string[] }
 type WorkspaceEvent = { id: string; workspace: BusinessWorkspaceSlug; text: string; time: string; type?: string; payload?: Record<string, unknown> }
 type WorkspaceState = {
@@ -445,6 +445,12 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
       : { ...record, status, updated: 'Now' }
     update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? nextRecord : item) } }), `${module}: ${record.name} moved to ${status}`)
   }
+  // Attaches (or replaces) a file on any record, in any module, board or directory alike — the
+  // system-wide upload/preview/download capability isn't backend-persisted yet, so this always
+  // updates local session state directly rather than branching on production mode.
+  const attachRecord = (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => {
+    update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? { ...item, attachment, attachmentName: attachment ? attachmentName : undefined, updated: 'Now' } : item) } }), `${module}: ${record.name} ${attachment ? `attachment updated (${attachmentName})` : 'attachment removed'}`)
+  }
   const publishHandoff = async (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => {
     if (production) await productionRequest('/platform/events', { method: 'POST', body: JSON.stringify({ type: 'workspace.handoff.requested', source: workspace, payload: { module, recordId: record.backendId, reference: record.id, target } }) })
     update((current) => current, `${module}: ${record.name} handed to ${configs[target].label}`)
@@ -454,7 +460,7 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
     window.localStorage.removeItem(storageKey(workspace))
     setState(seedWorkspace(workspace))
   }
-  return { state, events, update, reset, loading, error, production, createRecord, advanceRecord, publishHandoff }
+  return { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, publishHandoff }
 }
 
 function appendDemoRecord(workspace: BusinessWorkspaceSlug, module: string, record: WorkspaceRecord) {
@@ -1156,7 +1162,7 @@ function InboxListView({ records, selectedId, onSelect, statuses }: { records: W
   </div>
 }
 
-type ContentDraft = { headline: string; body: string; hashtags: string[]; cta: string; type: string }
+type ContentDraft = { headline: string; body: string; hashtags: string[]; cta: string; type: string; image?: string }
 
 const STUDIO_TYPES = ['Social post', 'Email', 'Blog intro', 'Ad copy'] as const
 const STUDIO_TONES = ['Professional', 'Playful', 'Bold', 'Minimal'] as const
@@ -1191,22 +1197,74 @@ function pickRandom<T>(list: readonly T[]): T {
   return list[Math.floor(Math.random() * list.length)]
 }
 
-function generateContentDraft(topic: string, type: (typeof STUDIO_TYPES)[number], tone: (typeof STUDIO_TONES)[number]): ContentDraft {
+function generateContentDraft(topic: string, type: (typeof STUDIO_TYPES)[number], tone: (typeof STUDIO_TONES)[number], image?: string): ContentDraft {
   const safeTopic = topic.trim() || 'your latest launch'
   const headline = pickRandom(STUDIO_HOOKS[type]).replaceAll('{topic}', safeTopic)
   const body = pickRandom(STUDIO_BODIES[tone]).replaceAll('{topic}', safeTopic)
   const hashtags = [...STUDIO_HASHTAGS].sort(() => Math.random() - 0.5).slice(0, 3)
-  return { headline, body, hashtags, cta: pickRandom(STUDIO_CTAS), type }
+  return { headline, body, hashtags, cta: pickRandom(STUDIO_CTAS), type, image }
+}
+
+function downloadTextFile(filename: string, content: string) {
+  const blob = new Blob([content], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+function downloadDataUrl(filename: string, dataUrl: string) {
+  const link = document.createElement('a')
+  link.href = dataUrl
+  link.download = filename
+  link.click()
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '')
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
+
+// The visual "where do I actually see this" box — a real rendered mockup of the post/email/ad,
+// not just the raw text fields. Adapts its chrome slightly per format (email gets a subject-line
+// header, everything else gets a social-style card) but always shows the image (uploaded, or a
+// placeholder) so it looks like finished creative, not a form.
+function ContentPreviewCard({ headline, body, hashtags, cta, type, image }: { headline: string; body: string; hashtags: string[]; cta: string; type: string; image?: string }) {
+  const isEmail = type === 'Email'
+  return <div className="retail-app-preview-box">
+    <div className="retail-app-preview-chrome"><span>{isEmail ? 'Email preview' : `${type} preview`}</span></div>
+    {isEmail ? <div className="retail-app-preview-email">
+      <div className="retail-app-preview-email-head"><b>Subject:</b> {headline}</div>
+      {image ? <img alt="Attached creative" className="retail-app-preview-image" src={image} /> : null}
+      <p>{body}</p>
+      <span className="retail-app-preview-cta">{cta}</span>
+    </div> : <div className="retail-app-preview-post">
+      <div className="retail-app-preview-post-head"><span className="retail-app-preview-avatar">FO</span><div><b>Your business</b><i>Just now</i></div></div>
+      {image ? <img alt="Attached creative" className="retail-app-preview-image" src={image} /> : <div className="retail-app-preview-image retail-app-preview-image-placeholder">{'\u{1F5BC}\uFE0F'}</div>}
+      <div className="retail-app-preview-post-body"><strong>{headline}</strong><p>{body}</p></div>
+      <div className="retail-app-preview-post-tags">{hashtags.map((tag) => <span key={tag}>{tag}</span>)}</div>
+      <span className="retail-app-preview-cta">{cta}</span>
+    </div>}
+  </div>
 }
 
 // A real AI content studio, not another board wearing a "Content studio" label: a compose
 // panel (topic, format, tone) that asks FoundAI to draft a headline/body/hashtags/CTA, with a
-// "try another version" regenerate loop, and a one-click save straight into the pipeline below
-// at its first stage.
+// "try another version" regenerate loop, an image upload for the creative, a rendered preview
+// box showing exactly what gets published, one-click downloads, and a save straight into the
+// pipeline below.
 function ContentStudioPanel({ onSave, saving }: { onSave: (draft: ContentDraft) => void; saving: boolean }) {
   const [topic, setTopic] = useState('')
   const [type, setType] = useState<(typeof STUDIO_TYPES)[number]>(STUDIO_TYPES[0])
   const [tone, setTone] = useState<(typeof STUDIO_TONES)[number]>(STUDIO_TONES[0])
+  const [image, setImage] = useState<string | undefined>(undefined)
+  const [imageName, setImageName] = useState('')
   const [draft, setDraft] = useState<ContentDraft | null>(null)
   const [thinking, setThinking] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -1214,9 +1272,21 @@ function ContentStudioPanel({ onSave, saving }: { onSave: (draft: ContentDraft) 
     setThinking(true)
     setSaved(false)
     window.setTimeout(() => {
-      setDraft(generateContentDraft(topic, type, tone))
+      setDraft(generateContentDraft(topic, type, tone, image))
       setThinking(false)
     }, 500)
+  }
+  const upload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setImageName(file.name)
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = typeof reader.result === 'string' ? reader.result : undefined
+      setImage(result)
+      setDraft((current) => current ? { ...current, image: result } : current)
+    }
+    reader.readAsDataURL(file)
   }
   const save = () => {
     if (!draft) return
@@ -1231,19 +1301,54 @@ function ContentStudioPanel({ onSave, saving }: { onSave: (draft: ContentDraft) 
       <label>Tone<select onChange={(event) => setTone(event.target.value as (typeof STUDIO_TONES)[number])} value={tone}>{STUDIO_TONES.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
       <button className="retail-app-primary" disabled={thinking} onClick={generate} type="button">{thinking ? 'Generating\u2026' : draft ? 'Regenerate with AI' : '\u2728 Generate with AI'}</button>
     </div>
-    {draft ? <div className="retail-app-studio-draft">
-      <h3>{draft.headline}</h3>
-      <p>{draft.body}</p>
-      <div className="retail-app-studio-tags">{draft.hashtags.map((tag) => <span key={tag}>{tag}</span>)}<span className="retail-app-studio-cta">{draft.cta}</span></div>
-      <div className="retail-app-studio-actions">
-        <button className="retail-app-secondary" onClick={generate} type="button">{'\u21bb'} Try another version</button>
-        <button className="retail-app-primary" disabled={saving} onClick={save} type="button">{saved ? 'Saved \u2713' : 'Save draft to pipeline'}</button>
+    <label className="retail-app-studio-upload">
+      <input accept="image/*" hidden onChange={upload} type="file" />
+      <span>{'\u2B06\uFE0F'} {imageName || 'Upload image'}</span>
+    </label>
+    {draft ? <div className="retail-app-studio-layout">
+      <div className="retail-app-studio-draft">
+        <h3>{draft.headline}</h3>
+        <p>{draft.body}</p>
+        <div className="retail-app-studio-tags">{draft.hashtags.map((tag) => <span key={tag}>{tag}</span>)}<span className="retail-app-studio-cta">{draft.cta}</span></div>
+        <div className="retail-app-studio-actions">
+          <button className="retail-app-secondary" onClick={generate} type="button">{'\u21bb'} Try another version</button>
+          <button className="retail-app-secondary" onClick={() => downloadTextFile(`${draft.headline.slice(0, 30).replace(/[^a-z0-9]+/gi, '-')}.txt`, `${draft.headline}\n\n${draft.body}\n\n${draft.hashtags.join(' ')}\n\n${draft.cta}`)} type="button">{'\u2B07\uFE0F'} Download text</button>
+          {draft.image ? <button className="retail-app-secondary" onClick={() => downloadDataUrl(imageName || 'creative.png', draft.image!)} type="button">{'\u2B07\uFE0F'} Download image</button> : null}
+          <button className="retail-app-primary" disabled={saving} onClick={save} type="button">{saved ? 'Saved \u2713' : 'Save draft to pipeline'}</button>
+        </div>
       </div>
+      <ContentPreviewCard body={draft.body} cta={draft.cta} hashtags={draft.hashtags} headline={draft.headline} image={draft.image} type={draft.type} />
     </div> : <p className="retail-app-studio-empty">Describe what you're promoting and FoundAI will draft the copy, hashtags, and a call to action — ready to send straight into the pipeline below.</p>}
   </div>
 }
 
-function RecordsPage({ workspace, config, item, state, createRecord, advanceRecord, publishHandoff }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
+function isImageAttachment(dataUrl: string) {
+  return dataUrl.startsWith('data:image/')
+}
+
+// The system-wide "where do I see this, and how do I get it in or out" box — every record in
+// every module (board or directory) gets one, not just Content studio. Shows an image preview
+// or a generic file chip when an attachment exists, with a one-click download, plus an
+// upload/replace control that works the same way everywhere.
+function AttachmentBox({ attachment, attachmentName, onUpload, onRemove }: { attachment?: string; attachmentName: string; onUpload: (file: File) => void; onRemove: () => void }) {
+  const upload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) onUpload(file)
+  }
+  return <div className="retail-app-attachment-box">
+    <p className="retail-app-attachment-label">Attachment</p>
+    {attachment ? <div className="retail-app-attachment-preview">
+      {isImageAttachment(attachment) ? <img alt={attachmentName || 'Attachment'} className="retail-app-attachment-image" src={attachment} /> : <div className="retail-app-attachment-file"><span>{'\u{1F4CE}'}</span><small>{attachmentName || 'Attached file'}</small></div>}
+      <div className="retail-app-attachment-actions">
+        <button className="retail-app-secondary" onClick={() => downloadDataUrl(attachmentName || 'attachment', attachment)} type="button">{'\u2B07\uFE0F'} Download</button>
+        <label className="retail-app-secondary retail-app-attachment-replace"><input hidden onChange={upload} type="file" /><span>Replace</span></label>
+        <button className="retail-app-secondary" onClick={onRemove} type="button">Remove</button>
+      </div>
+    </div> : <label className="retail-app-attachment-upload"><input hidden onChange={upload} type="file" /><span>{'\u2B06\uFE0F'} Upload a file or image</span></label>}
+  </div>
+}
+
+function RecordsPage({ workspace, config, item, state, createRecord, advanceRecord, attachRecord, publishHandoff }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
   const records = state.records[item.id] ?? []
   const statuses = statusFor(item)
   const [sourceOpen, setSourceOpen] = useState(false)
@@ -1259,7 +1364,9 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
     setSaving(true)
     setError('')
     const form = new FormData(event.currentTarget)
-    const record: WorkspaceRecord = { id: `${item.id.slice(0, 3).toUpperCase()}-${100 + records.length + 1}`, name: String(form.get('name')), secondary: String(form.get('secondary')), value: String(form.get('value')), status: statuses[0], owner: String(form.get('owner')), updated: 'Now' }
+    const file = form.get('attachment') as File | null
+    const attachment = file && file.size > 0 ? await readFileAsDataUrl(file) : undefined
+    const record: WorkspaceRecord = { id: `${item.id.slice(0, 3).toUpperCase()}-${100 + records.length + 1}`, name: String(form.get('name')), secondary: String(form.get('secondary')), value: String(form.get('value')), status: statuses[0], owner: String(form.get('owner')), updated: 'Now', attachment, attachmentName: file?.name }
     try {
       const created = await createRecord(item.id, record)
       setSelectedId(created.id)
@@ -1286,7 +1393,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const saveContentDraft = async (draft: ContentDraft) => {
     setSaving(true)
     setError('')
-    const record: WorkspaceRecord = { id: `${item.id.slice(0, 3).toUpperCase()}-${100 + records.length + 1}`, name: draft.headline, secondary: `${draft.type} \u00b7 ${draft.body}`, value: draft.cta, status: statuses[0], owner: 'You', updated: 'Just now' }
+    const record: WorkspaceRecord = { id: `${item.id.slice(0, 3).toUpperCase()}-${100 + records.length + 1}`, name: draft.headline, secondary: `${draft.type} \u00b7 ${draft.body}`, value: draft.cta, status: statuses[0], owner: 'You', updated: 'Just now', attachment: draft.image }
     try {
       const created = await createRecord(item.id, record)
       setSelectedId(created.id)
@@ -1353,6 +1460,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
               <header><span>{status}</span><strong>{columnRecords.length}</strong></header>
               <div className="retail-app-board-column-body">
                 {columnRecords.map((record) => <button className={`retail-app-board-item${selected?.id === record.id ? ' selected' : ''}`} key={record.id} onClick={() => selectRecord(record.id)} type="button">
+                  {record.attachment ? <img alt="" className="retail-app-board-item-thumb" src={record.attachment} /> : null}
                   <strong>{record.name}</strong>
                   <span>{record.secondary}</span>
                   <div className="retail-app-board-item-meta"><b>{record.value}</b><i>{record.owner}</i></div>
@@ -1363,12 +1471,14 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
           })}
         </div>
       </div>}
-      {selected && origin ? <aside className="retail-app-detail"><p>Selected record</p><h2>{selected.name}</h2><strong>{selected.id}</strong><dl><div><dt>{isDirectory ? 'Category' : 'Workflow'}</dt><dd>{item.label}</dd></div><div><dt>Status</dt><dd>{selected.status}</dd></div><div><dt>Owner</dt><dd>{selected.owner}</dd></div><div><dt>Value</dt><dd>{selected.value}</dd></div><div><dt>Updated</dt><dd>{selected.updated}</dd></div></dl>
+      {selected && origin ? <aside className="retail-app-detail"><p>Selected record</p><h2>{selected.name}</h2><strong>{selected.id}</strong>
+        {isContentStudio ? <ContentPreviewCard body={selected.secondary.includes(' \u00b7 ') ? selected.secondary.slice(selected.secondary.indexOf(' \u00b7 ') + 3) : selected.secondary} cta={selected.value} hashtags={[]} headline={selected.name} image={selected.attachment} type={selected.secondary.split(' \u00b7 ')[0] ?? 'Social post'} /> : <AttachmentBox attachment={selected.attachment} attachmentName={selected.attachmentName ?? ''} onRemove={() => attachRecord(item.id, selected, undefined, '')} onUpload={(file) => void readFileAsDataUrl(file).then((dataUrl) => attachRecord(item.id, selected, dataUrl, file.name))} />}
+        <dl><div><dt>{isDirectory ? 'Category' : 'Workflow'}</dt><dd>{item.label}</dd></div><div><dt>Status</dt><dd>{selected.status}</dd></div><div><dt>Owner</dt><dd>{selected.owner}</dd></div><div><dt>Value</dt><dd>{selected.value}</dd></div><div><dt>Updated</dt><dd>{selected.updated}</dd></div></dl>
         <button aria-expanded={sourceOpen} className="retail-app-source-toggle" onClick={() => setSourceOpen((open) => !open)} type="button"><span>Source: {origin.label}</span><b>{sourceOpen ? '−' : '+'}</b></button>
         {sourceOpen ? <p className="retail-app-source-detail">{origin.detail}</p> : null}
         {!isDirectory ? <div className="retail-app-stage">{statuses.map((status) => <span className={status === selected.status ? 'active' : ''} key={status}>{status}</span>)}</div> : null}{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}{productionModeEnabled && item.id === 'payments' && selected.status !== 'Paid' ? <button className="retail-app-primary" disabled={saving || !selected.backendId} onClick={() => void collectPayment()} type="button">Collect with Stripe</button> : !isDirectory && selected.status !== statuses.at(-1) ? <button className="retail-app-primary" disabled={saving} onClick={() => void advance()} type="button">Move to {statuses[Math.min(statuses.indexOf(selected.status) + 1, statuses.length - 1)]}</button> : null}<button className="retail-app-secondary" disabled={saving} onClick={() => void publishHandoff(item.id, selected, handoffTarget).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Handoff could not be published'))} type="button">Handoff to {configs[handoffTarget].label}</button></aside> : null}
     </section>}
-    {creating ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void create(event)}><div><p>{item.label}</p><h2>Create a record</h2></div><label>Name<input name="name" required /></label><label>Context<input name="secondary" required /></label><div className="retail-app-form-grid"><label>Value<input name="value" placeholder="£0 or priority" required /></label><label>Owner<select name="owner"><option>Maya</option><option>Noah</option><option>Ava</option><option>Bobby</option></select></label></div>{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setCreating(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Saving…' : 'Create record'}</button></footer></form></div> : null}
+    {creating ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void create(event)}><div><p>{item.label}</p><h2>Create a record</h2></div><label>Name<input name="name" required /></label><label>Context<input name="secondary" required /></label><div className="retail-app-form-grid"><label>Value<input name="value" placeholder="£0 or priority" required /></label><label>Owner<select name="owner"><option>Maya</option><option>Noah</option><option>Ava</option><option>Bobby</option></select></label></div><label>Attachment (optional)<input accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv" name="attachment" type="file" /></label>{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setCreating(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Saving…' : 'Create record'}</button></footer></form></div> : null}
   </>
 }
 
@@ -1694,7 +1804,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
     setSession(getProductionSession())
     setHydrated(true)
   }, [])
-  const { state, events, update, reset, loading, error, production, createRecord, advanceRecord, publishHandoff } = useWorkspaceState(workspace, current.id, session)
+  const { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, publishHandoff } = useWorkspaceState(workspace, current.id, session)
   const agent = useAgentActions(production, session, (text) => update((current) => current, text))
   const groups = useMemo(() => [...new Set(config.modules.map((item) => item.group))], [config.modules])
   if (productionModeEnabled && !productionApiConfigured) return <main className="complete-workspace-access"><section><h1>Production API is not configured</h1><p>Set NEXT_PUBLIC_FOUNDINGOS_API_URL to the deployed API root before publishing this application.</p></section></main>
@@ -1711,7 +1821,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
   else if (['reports', 'forecasting', 'attribution'].includes(current.id)) content = <ReportsPage config={config} />
   else if (current.id === 'event-feed') content = <EventFeedPage events={events} />
   else if (current.id === 'settings') content = <SettingsPage config={config} production={production} state={state} update={update} />
-  else content = <RecordsPage advanceRecord={advanceRecord} config={config} createRecord={createRecord} item={current} publishHandoff={publishHandoff} state={state} workspace={workspace} />
+  else content = <RecordsPage advanceRecord={advanceRecord} attachRecord={attachRecord} config={config} createRecord={createRecord} item={current} publishHandoff={publishHandoff} state={state} workspace={workspace} />
   return <main className="retail-product-shell complete-workspace-shell" style={{ ['--retail-accent' as string]: config.accent }}>
     <aside className="retail-product-sidebar"><Link className="retail-product-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{config.suite}</small></div></Link><div className="retail-product-store"><span>{config.label.slice(0, 2).toUpperCase()}</span><div><strong>{state.settings.businessName}</strong><small>{config.label} Workspace</small></div><b>⌄</b></div><nav aria-label={`${config.label} workspace navigation`}>{groups.map((group) => <div key={group}><p>{group}</p>{config.modules.filter((item) => item.group === group).map((item) => <Link className={item.id === current.id ? 'active' : ''} href={`${workspaceRoot}/${workspace}${item.id === 'overview' ? '' : `/${item.id}`}`} key={item.id}><i>{item.id === 'overview' ? '⌂' : '◇'}</i><span>{item.label}</span>{state.records[item.id]?.length ? <em>{state.records[item.id].length}</em> : null}</Link>)}</div>)}</nav><Link className="retail-product-switcher" href={workspaceRoot}><span>Switch workspace</span><b>↗</b></Link></aside>
     <section className="retail-product-main"><header className="retail-product-topbar"><form onSubmit={(event) => event.preventDefault()}><span>⌕</span><input aria-label="Global workspace search" placeholder={`Search ${config.label}, or ask FoundAI…`} /></form><div><span className="complete-workspace-live">● {production ? 'PRODUCTION' : 'SIMULATION'} LIVE</span>{production ? <button className="complete-workspace-signout" onClick={() => void logoutProduction().then(() => setSession(null))} type="button">Sign out</button> : null}<span className="retail-product-user">{session?.user.email.slice(0, 2).toUpperCase() || 'BS'}</span></div></header><div className="retail-product-content"><div className="retail-product-notice"><span>{loading ? '…' : error ? '!' : '✓'}</span>{loading ? 'Loading tenant data…' : error ? error : production ? 'Tenant data is secured in PostgreSQL and every action is audited' : 'Interactive simulation · actions persist in this browser'}</div>{content}</div><footer className="retail-product-footer"><span>{config.label} Workspace · {production ? 'tenant-isolated production data' : 'browser-persistent shared simulation'}</span>{!production ? <button onClick={reset} type="button">Reset {config.label} data</button> : null}</footer></section>
