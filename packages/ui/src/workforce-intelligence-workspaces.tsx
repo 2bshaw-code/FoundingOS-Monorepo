@@ -1,7 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { ActivityToast, CEOBriefing, WorkspaceHeader, usePersistentRecords } from './retail-operations-workspace'
+import { SourceBadge, SourceDetailRow, StatusDistributionBar, statusTone } from './console'
 
 type CandidateStage = 'Applied' | 'Qualified' | 'Interview' | 'Offer' | 'Hired'
 type Candidate = { id: string; name: string; role: string; source: string; owner: string; score: number; stage: CandidateStage; nextStep: string }
@@ -72,6 +73,7 @@ function WorkforceWorkspace({ moduleId }: { moduleId: string }) {
   const [query, setQuery] = useState('')
   const [stage, setStage] = useState<'All' | CandidateStage>('All')
   const [activity, setActivity] = useState<{ id: string; label: string; detail: string; time: string } | null>(null)
+  const [sourceOpenId, setSourceOpenId] = useState<string | null>(null)
   const selected = candidates.find((candidate) => candidate.id === selectedId) ?? candidates[0]
   const filtered = useMemo(() => candidates.filter((candidate) => {
     const matchesQuery = `${candidate.name} ${candidate.role} ${candidate.owner}`.toLowerCase().includes(query.toLowerCase())
@@ -80,6 +82,11 @@ function WorkforceWorkspace({ moduleId }: { moduleId: string }) {
   const interviewing = candidates.filter((candidate) => candidate.stage === 'Interview').length
   const offers = candidates.filter((candidate) => candidate.stage === 'Offer').length
   const ready = candidates.filter((candidate) => candidate.score >= 85 && ['Applied', 'Qualified'].includes(candidate.stage)).length
+  const stageDistribution = useMemo(() => candidateFlow.map((stageName) => ({
+    label: stageName,
+    count: candidates.filter((candidate) => candidate.stage === stageName).length,
+    tone: stageName === 'Hired' ? 'good' as const : stageName === 'Applied' ? 'neutral' as const : stageName === 'Offer' ? 'watch' as const : 'watch' as const,
+  })), [candidates])
 
   const advance = () => {
     const currentIndex = candidateFlow.indexOf(selected.stage)
@@ -116,6 +123,10 @@ function WorkforceWorkspace({ moduleId }: { moduleId: string }) {
       { label: 'Interviews', value: String(interviewing), detail: 'Needs time' },
       { label: 'Offers', value: String(offers), detail: 'Near completion' },
     ]} />
+    <div className="panel">
+      <h2>Pipeline by stage</h2>
+      <StatusDistributionBar segments={stageDistribution} totalLabel={`${candidates.length} total`} />
+    </div>
     <div className="retail-toolbar">
       <label><span>Search people</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, role, or owner…" /></label>
       <label><span>Stage</span><select value={stage} onChange={(event) => setStage(event.target.value as 'All' | CandidateStage)}>{['All', ...candidateFlow].map((value) => <option key={value}>{value}</option>)}</select></label>
@@ -123,7 +134,7 @@ function WorkforceWorkspace({ moduleId }: { moduleId: string }) {
     </div>
     <div className="retail-data-layout">
       <div className="retail-table-panel"><div className="retail-table-heading"><div><strong>Candidate control</strong><span>{filtered.length} matching people</span></div><span>Browser-persisted demo data</span></div>
-        <div className="retail-table-scroll"><table><thead><tr><th>Candidate</th><th>Role</th><th>Score</th><th>Owner</th><th>Next step</th><th>Stage</th></tr></thead><tbody>{filtered.map((candidate) => <tr key={candidate.id} onClick={() => setSelectedId(candidate.id)}><td><strong>{candidate.name}</strong><small>{candidate.id} · {candidate.source}</small></td><td>{candidate.role}</td><td>{candidate.score}%</td><td>{candidate.owner}</td><td>{candidate.nextStep}</td><td><span className={`retail-status status-${candidate.stage.toLowerCase()}`}>{candidate.stage}</span></td></tr>)}</tbody></table></div>
+        <div className="retail-table-scroll"><table><thead><tr><th>Candidate</th><th>Role</th><th>Score</th><th>Owner</th><th>Next step</th><th>Stage</th><th>Source</th></tr></thead><tbody>{filtered.map((candidate) => { const isSourceOpen = sourceOpenId === candidate.id; return <Fragment key={candidate.id}><tr onClick={() => setSelectedId(candidate.id)}><td><strong>{candidate.name}</strong><small>{candidate.id}</small></td><td>{candidate.role}</td><td>{candidate.score}%</td><td>{candidate.owner}</td><td>{candidate.nextStep}</td><td><span className={`retail-status status-${candidate.stage.toLowerCase()}`}>{candidate.stage}</span></td><td><SourceBadge label={candidate.source} active={isSourceOpen} onClick={() => setSourceOpenId(isSourceOpen ? null : candidate.id)} /></td></tr>{isSourceOpen && <SourceDetailRow colSpan={7} detail={`This candidate was captured via ${candidate.source}. Click a candidate row to see full profile details in the panel on the right.`} />}</Fragment> })}</tbody></table></div>
       </div>
       {selected && <aside className="retail-detail-panel"><p>Selected candidate</p><h2>{selected.name}</h2><strong>{selected.role}</strong><dl><div><dt>Match</dt><dd>{selected.score}%</dd></div><div><dt>Owner</dt><dd>{selected.owner}</dd></div><div><dt>Stage</dt><dd>{selected.stage}</dd></div><div><dt>Next</dt><dd>{selected.nextStep}</dd></div></dl>{selected.stage !== 'Hired' && <button className="retail-primary-action" type="button" onClick={advance}>Move to {candidateFlow[Math.min(candidateFlow.indexOf(selected.stage) + 1, candidateFlow.length - 1)]}</button>}<button type="button" onClick={() => setActivity({ id: `candidate-${Date.now()}`, label: 'WhatsApp message prepared', detail: `Candidate update prepared for ${selected.name}`, time: now() })}>Send WhatsApp update</button></aside>}
     </div>
@@ -135,11 +146,17 @@ function IntelligenceWorkspace({ moduleId }: { moduleId: string }) {
   const [selectedId, setSelectedId] = useState(seedRisks[0].id)
   const [filter, setFilter] = useState<'All' | RiskStatus>('All')
   const [activity, setActivity] = useState<{ id: string; label: string; detail: string; time: string } | null>(null)
+  const [sourceOpenId, setSourceOpenId] = useState<string | null>(null)
   const selected = risks.find((risk) => risk.id === selectedId) ?? risks[0]
   const filtered = filter === 'All' ? risks : risks.filter((risk) => risk.status === filter)
   const open = risks.filter((risk) => risk.status === 'Open').length
   const reviewing = risks.filter((risk) => risk.status === 'Reviewing').length
   const resolved = risks.filter((risk) => risk.status === 'Resolved').length
+  const statusDistribution = useMemo(() => ([
+    { label: 'Open', count: open, tone: 'risk' as const },
+    { label: 'Reviewing', count: reviewing, tone: 'watch' as const },
+    { label: 'Resolved', count: resolved, tone: 'good' as const },
+  ]), [open, reviewing, resolved])
 
   const updateStatus = (status: RiskStatus) => {
     setRisks((current) => current.map((risk) => risk.id === selected.id ? { ...risk, status } : risk))
@@ -171,9 +188,13 @@ function IntelligenceWorkspace({ moduleId }: { moduleId: string }) {
       { label: 'Coverage', value: '6', detail: 'Workspaces connected' },
     ]} />
     <div className="retail-toolbar"><label><span>Status</span><select value={filter} onChange={(event) => setFilter(event.target.value as 'All' | RiskStatus)}>{['All', 'Open', 'Reviewing', 'Resolved'].map((value) => <option key={value}>{value}</option>)}</select></label><button type="button" onClick={() => setRisks(seedRisks)}>Reset demo data</button></div>
+    <div className="panel">
+      <h2>Decisions by status</h2>
+      <StatusDistributionBar segments={statusDistribution} totalLabel={`${risks.length} total`} />
+    </div>
     <div className="retail-data-layout">
       <div className="retail-table-panel"><div className="retail-table-heading"><div><strong>Decision queue</strong><span>{filtered.length} visible signals</span></div><span>Shared Event Feed evidence</span></div>
-        <div className="retail-table-scroll"><table><thead><tr><th>Signal</th><th>Area</th><th>Impact</th><th>Confidence</th><th>Owner</th><th>Status</th></tr></thead><tbody>{filtered.map((risk) => <tr key={risk.id} onClick={() => setSelectedId(risk.id)}><td><strong>{risk.signal}</strong><small>{risk.id}</small></td><td>{risk.area}</td><td>{risk.impact}</td><td>{risk.confidence}%</td><td>{risk.owner}</td><td><span className={`retail-status status-${risk.status.toLowerCase()}`}>{risk.status}</span></td></tr>)}</tbody></table></div>
+        <div className="retail-table-scroll"><table><thead><tr><th>Signal</th><th>Area</th><th>Impact</th><th>Confidence</th><th>Owner</th><th>Status</th><th>Source</th></tr></thead><tbody>{filtered.map((risk) => { const isSourceOpen = sourceOpenId === risk.id; return <Fragment key={risk.id}><tr onClick={() => setSelectedId(risk.id)}><td><strong>{risk.signal}</strong><small>{risk.id}</small></td><td>{risk.area}</td><td>{risk.impact}</td><td>{risk.confidence}%</td><td>{risk.owner}</td><td><span className={`retail-status status-${risk.status.toLowerCase()}`}>{risk.status}</span></td><td><SourceBadge label={risk.area} active={isSourceOpen} onClick={() => setSourceOpenId(isSourceOpen ? null : risk.id)} /></td></tr>{isSourceOpen && <SourceDetailRow colSpan={7} detail={`Surfaced from ${risk.area} workspace activity via the shared cross-suite Event Feed, at ${risk.confidence}% confidence.`} />}</Fragment> })}</tbody></table></div>
       </div>
       {selected && <aside className="retail-detail-panel"><p>Selected decision</p><h2>{selected.id}</h2><strong>{selected.signal}</strong><dl><div><dt>Area</dt><dd>{selected.area}</dd></div><div><dt>Impact</dt><dd>{selected.impact}</dd></div><div><dt>Confidence</dt><dd>{selected.confidence}%</dd></div><div><dt>Owner</dt><dd>{selected.owner}</dd></div></dl><p className="retail-detail-note">{selected.recommendation}</p>{selected.status === 'Open' && <button className="retail-primary-action" type="button" onClick={() => updateStatus('Reviewing')}>Accept and review</button>}{selected.status !== 'Resolved' && <button type="button" onClick={() => updateStatus('Resolved')}>Mark resolved</button>}</aside>}
     </div>

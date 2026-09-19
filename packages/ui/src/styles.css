@@ -8089,6 +8089,101 @@ body[data-sidebar-collapsed='true'] .nav-card {
 .status-badge--risk { color: #e53935; background: color-mix(in srgb, #e53935 14%, transparent); border-color: color-mix(in srgb, #e53935 30%, transparent); }
 .status-badge--neutral { color: var(--muted); background: var(--surface); }
 
+/* Horizontal stacked-bar chart showing how the visible records break down by status/stage —
+   a real, data-driven visual (not decorative) so each module page shows an at-a-glance summary
+   of its own records rather than only ever presenting a flat list. */
+.status-distribution {
+  display: grid;
+  gap: 10px;
+}
+
+.status-distribution-track {
+  display: flex;
+  width: 100%;
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+}
+
+.status-distribution-segment {
+  height: 100%;
+  min-width: 3px;
+  transition: width 300ms ease;
+}
+
+.status-distribution-segment--good { background: #0f9d58; }
+.status-distribution-segment--watch { background: #f2a600; }
+.status-distribution-segment--risk { background: #e53935; }
+.status-distribution-segment--neutral { background: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+
+.status-distribution-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.status-distribution-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-distribution-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.status-distribution-dot--good { background: #0f9d58; }
+.status-distribution-dot--watch { background: #f2a600; }
+.status-distribution-dot--risk { background: #e53935; }
+.status-distribution-dot--neutral { background: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+
+.status-distribution-total {
+  margin-left: auto;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Clickable "where did this come from" pill shown on every record — clicking reveals its
+   provenance (manual entry, imported file, connected channel, or demo data) in an expandable
+   row directly beneath it. Genuine traceability, not just a static label. */
+.source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--text);
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.source-badge.is-open {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  border-style: solid;
+}
+
+.source-detail-row td {
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface-soft));
+  color: var(--muted);
+  font-size: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.source-detail-icon {
+  color: var(--accent);
+}
+
 /* Premium inline alert/banner — purely additive, uses existing design tokens. */
 .premium-alert {
   display: flex;

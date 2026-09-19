@@ -102,7 +102,7 @@ async function parseWorkbook(buffer: ArrayBuffer): Promise<ParsedTable> {
   return { headers: (headers ?? []).map(String), rows: body.filter((r) => r.some((cell) => String(cell ?? '').length > 0)).map((r) => r.map(String)) }
 }
 
-export function ImportDataButton({ fields, onImport, idPrefix }: { fields: DataField[]; onImport: (rows: DataRow[]) => void; idPrefix: string }) {
+export function ImportDataButton({ fields, onImport, idPrefix }: { fields: DataField[]; onImport: (rows: DataRow[], fileName: string) => void; idPrefix: string }) {
   const [open, setOpen] = useState(false)
   const [table, setTable] = useState<ParsedTable | null>(null)
   const [mapping, setMapping] = useState<Record<string, string>>({})
@@ -161,7 +161,7 @@ export function ImportDataButton({ fields, onImport, idPrefix }: { fields: DataF
       }
       return { id: `${idPrefix}-import-${Date.now()}-${index}`, values }
     })
-    onImport(newRows)
+    onImport(newRows, fileName)
     setImported(newRows.length)
     setTable(null)
     setMapping({})
