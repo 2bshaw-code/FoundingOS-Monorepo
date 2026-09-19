@@ -1501,12 +1501,17 @@ export function BrandModulePage({ config, moduleId }: { config: BrandConsoleConf
   const module = config.modules.find((item) => item.id === moduleId) ?? { id: moduleId, label: `Module: ${moduleId}`, description: 'This module is active.', metrics: [], actions: ['Review activity', 'Configure module'] }
   const accentStyle = consoleStyle(config)
   const brandSlug = resolveBrandSlugFromName(config.name)
+  // These module ids are shared boilerplate offered across every suite (marketing, accounting,
+  // messaging, etc.) — they are not part of a suite's own core workflow, so they should render
+  // the generic module workbench below rather than being swallowed by the suite-specific
+  // workspace (which previously showed unrelated hiring/risk content for these ids).
+  const sharedCrossSuiteModuleIds = new Set(['marketing-suite', 'marketing', 'accounting', 'messaging', 'customer-service', 'ai-demo'])
 
-  if (config.name === 'Core.Workforce') {
+  if (config.name === 'Core.Workforce' && !sharedCrossSuiteModuleIds.has(module.id)) {
     return <WorkforceIntelligenceWorkspace suite="workforce" moduleId={module.id} />
   }
 
-  if (config.name === 'Core.Intelligence') {
+  if (config.name === 'Core.Intelligence' && !sharedCrossSuiteModuleIds.has(module.id)) {
     return <WorkforceIntelligenceWorkspace suite="intelligence" moduleId={module.id} />
   }
 
