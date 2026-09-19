@@ -8,7 +8,7 @@ const workspaceRoot = productionModeEnabled ? '/app' : '/test-workspaces'
 
 export type BusinessWorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'marketing' | 'talent' | 'health' | 'intelligence'
 
-type WorkspaceRecord = { id: string; backendId?: string; version?: number; name: string; secondary: string; value: string; status: string; owner: string; updated: string; attachment?: string; attachmentName?: string }
+type WorkspaceRecord = { id: string; backendId?: string; version?: number; name: string; secondary: string; value: string; status: string; owner: string; updated: string; attachment?: string; attachmentName?: string; quantity?: number; reorderPoint?: number; log?: Array<{ time: string; note: string }> }
 type WorkspaceModule = { id: string; label: string; group: string; statuses?: string[] }
 type WorkspaceEvent = { id: string; workspace: BusinessWorkspaceSlug; text: string; time: string; type?: string; payload?: Record<string, unknown> }
 type WorkspaceState = {
@@ -89,7 +89,13 @@ const seedWorkspace = (workspace: BusinessWorkspaceSlug): WorkspaceState => {
   const config = configs[workspace]
   const records = Object.fromEntries(config.modules.filter((item) => item.id !== 'overview').map((item) => [
     item.id,
-    config.subjects.map((subject, index) => ({ id: `${item.id.slice(0, 3).toUpperCase()}-${101 + index}`, name: subject, secondary: `${item.label} workflow`, value: index % 2 ? '£4,280' : 'High priority', status: statusFor(item)[index % statusFor(item).length], owner: ['Maya', 'Noah', 'Ava', 'Bobby'][index], updated: `${index * 18 + 4}m ago` })),
+    config.subjects.map((subject, index) => {
+      const isStockModule = item.id === 'inventory'
+      const quantity = isStockModule ? [6, 34, 18, 52][index % 4] : undefined
+      const reorderPoint = isStockModule ? 20 : undefined
+      const status = isStockModule ? (quantity! <= reorderPoint! ? 'Low stock' : statusFor(item)[(index % (statusFor(item).length - 1)) + 1]) : statusFor(item)[index % statusFor(item).length]
+      return { id: `${item.id.slice(0, 3).toUpperCase()}-${101 + index}`, name: subject, secondary: `${item.label} workflow`, value: isStockModule ? `${quantity} units` : index % 2 ? '£4,280' : 'High priority', status, owner: ['Maya', 'Noah', 'Ava', 'Bobby'][index], updated: `${index * 18 + 4}m ago`, quantity, reorderPoint, log: isStockModule ? [{ time: `${index * 18 + 40}m ago`, note: `Counted ${quantity} units on hand` }] : undefined }
+    }),
   ]))
   return {
     records,
@@ -451,6 +457,21 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
   const attachRecord = (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => {
     update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? { ...item, attachment, attachmentName: attachment ? attachmentName : undefined, updated: 'Now' } : item) } }), `${module}: ${record.name} ${attachment ? `attachment updated (${attachmentName})` : 'attachment removed'}`)
   }
+  // Records a fresh stock count for an inventory record: updates the on-hand quantity, flips the
+  // stage between Low stock and its previous stage against the reorder point, and appends the
+  // count to the record's activity log so every count is auditable.
+  const adjustStock = (module: string, record: WorkspaceRecord, quantity: number, note: string) => {
+    const reorderPoint = record.reorderPoint ?? 20
+    const status = quantity <= reorderPoint ? 'Low stock' : record.status === 'Low stock' ? 'Available' : record.status
+    const entry = { time: 'Now', note }
+    update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? { ...item, quantity, status, value: `${quantity} units`, updated: 'Now', log: [entry, ...(item.log ?? [])] } : item) } }), `${module}: ${record.name} stock count set to ${quantity}`)
+  }
+  // Appends a free-text note to a record's activity log — used for the pipeline deal timeline
+  // and anywhere else a running history of activity is useful, not just inventory counts.
+  const logNote = (module: string, record: WorkspaceRecord, note: string) => {
+    const entry = { time: 'Now', note }
+    update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? { ...item, log: [entry, ...(item.log ?? [])] } : item) } }), `${module}: ${record.name} note added`)
+  }
   const publishHandoff = async (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => {
     if (production) await productionRequest('/platform/events', { method: 'POST', body: JSON.stringify({ type: 'workspace.handoff.requested', source: workspace, payload: { module, recordId: record.backendId, reference: record.id, target } }) })
     update((current) => current, `${module}: ${record.name} handed to ${configs[target].label}`)
@@ -460,7 +481,7 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
     window.localStorage.removeItem(storageKey(workspace))
     setState(seedWorkspace(workspace))
   }
-  return { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, publishHandoff }
+  return { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, adjustStock, logNote, publishHandoff }
 }
 
 function appendDemoRecord(workspace: BusinessWorkspaceSlug, module: string, record: WorkspaceRecord) {
@@ -985,6 +1006,15 @@ function hashPercent(id: string, min = 38, max = 97) {
   return min + (hash % (max - min))
 }
 
+// A wider-dispersion hash (djb2) for cases where sequential IDs like "TRA-101"/"TRA-102" need to
+// scatter far apart (e.g. map pin placement) — the plain char-sum hash above clusters those too
+// tightly since adjacent IDs only differ by one digit.
+function hashSpread(id: string, min: number, max: number) {
+  let hash = 5381
+  for (const char of id) hash = (hash * 33) ^ char.charCodeAt(0)
+  return min + (Math.abs(hash) % (max - min))
+}
+
 const directoryMetricLabel = (group: string): string => {
   if (group === 'Resources') return 'capacity'
   if (group === 'Commerce' || group === 'Distribution') return 'stock health'
@@ -1348,7 +1378,103 @@ function AttachmentBox({ attachment, attachmentName, onUpload, onRemove }: { att
   </div>
 }
 
-function RecordsPage({ workspace, config, item, state, createRecord, advanceRecord, attachRecord, publishHandoff }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
+// A running history of activity on any record — stock counts, notes, deal progress. Generic and
+// reused across inventory (stock take log) and sales pipeline (deal timeline) alike.
+function ActivityLog({ entries, note, onNoteChange, onAdd, placeholder }: { entries: Array<{ time: string; note: string }>; note: string; onNoteChange: (value: string) => void; onAdd: () => void; placeholder: string }) {
+  return <div className="retail-app-activity-log">
+    <p className="retail-app-attachment-label">Activity</p>
+    <div className="retail-app-activity-add"><input onChange={(event) => onNoteChange(event.target.value)} onKeyDown={(event) => event.key === 'Enter' ? onAdd() : undefined} placeholder={placeholder} value={note} /><button className="retail-app-secondary" onClick={onAdd} type="button">Add</button></div>
+    {entries.length ? <ul className="retail-app-activity-list">{entries.slice(0, 6).map((entry, index) => <li key={`${entry.time}-${index}`}><span>{entry.note}</span><small>{entry.time}</small></li>)}</ul> : <p className="retail-app-activity-empty">No activity logged yet.</p>}
+  </div>
+}
+
+// A dedicated stock-take control for the Inventory module: shows on-hand quantity against the
+// reorder point with a visual gauge, and lets the team record a fresh physical count that
+// updates stage (Low stock vs Available) and the audit log in one action.
+function StockTakePanel({ record, count, onCountChange, onRecord }: { record: WorkspaceRecord; count: string; onCountChange: (value: string) => void; onRecord: () => void }) {
+  const quantity = record.quantity ?? 0
+  const reorderPoint = record.reorderPoint ?? 20
+  const pct = Math.max(4, Math.min(100, Math.round((quantity / (reorderPoint * 3)) * 100)))
+  const low = quantity <= reorderPoint
+  return <div className="retail-app-stock-take" data-low={low}>
+    <p className="retail-app-attachment-label">Stock take</p>
+    <div className="retail-app-stock-take-gauge"><div className="retail-app-stock-take-bar"><i style={{ width: `${pct}%` }} /><b style={{ left: `${Math.min(96, Math.round((reorderPoint / (reorderPoint * 3)) * 100))}%` }} /></div><span>{quantity} on hand · reorder at {reorderPoint}</span></div>
+    {low ? <p className="retail-app-stock-take-alert">{'\u26A0\uFE0F'} Below reorder point — raise a purchase order</p> : null}
+    <div className="retail-app-stock-take-form"><input inputMode="numeric" onChange={(event) => onCountChange(event.target.value)} placeholder="New physical count" value={count} /><button className="retail-app-primary" onClick={onRecord} type="button">Record count</button></div>
+  </div>
+}
+
+// Weighted revenue forecast for the sales pipeline: probability-weights each open deal by how
+// far along the stage it's in (later stages count for more), so the number reflects likely
+// close value, not just the raw sum of everything in the funnel.
+function PipelineForecastBar({ statuses, records }: { statuses: string[]; records: WorkspaceRecord[] }) {
+  const parseValue = (value: string) => Number(value.replace(/[^0-9.]/g, '')) || 0
+  const open = records.filter((record) => record.status !== statuses.at(-1))
+  const total = open.reduce((sum, record) => sum + parseValue(record.value), 0)
+  const weighted = open.reduce((sum, record) => {
+    const stageIndex = statuses.indexOf(record.status)
+    const probability = statuses.length > 1 ? (stageIndex + 1) / statuses.length : 1
+    return sum + parseValue(record.value) * probability
+  }, 0)
+  const won = records.filter((record) => record.status === statuses.at(-1)).reduce((sum, record) => sum + parseValue(record.value), 0)
+  const format = (value: number) => value >= 1000 ? `£${(value / 1000).toFixed(1)}k` : `£${Math.round(value)}`
+  return <div className="retail-app-forecast-bar">
+    <div><strong>{format(total)}</strong><span>Open pipeline</span></div>
+    <div><strong>{format(weighted)}</strong><span>Weighted forecast</span></div>
+    <div><strong>{format(won)}</strong><span>Won this period</span></div>
+    <div><strong>{total ? Math.round((won / (total + won)) * 100) : 0}%</strong><span>Win rate</span></div>
+  </div>
+}
+
+// A Sage-style cash flow chart for Finance's Cash flow module — deterministic per-business bars
+// (no randomness, so it stays hydration-safe) showing six recent periods of inflow vs outflow.
+function CashFlowChart({ seed }: { seed: string }) {
+  const periods = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep']
+  const rows = periods.map((label, index) => {
+    const inflow = hashPercent(`${seed}-in-${index}`, 40, 96) * 180
+    const outflow = hashPercent(`${seed}-out-${index}`, 30, 80) * 150
+    return { label, inflow, outflow, net: inflow - outflow }
+  })
+  const max = Math.max(...rows.map((row) => Math.max(row.inflow, row.outflow)))
+  const format = (value: number) => `£${Math.round(value).toLocaleString('en-GB')}`
+  return <div className="retail-app-cashflow-chart">
+    <div className="retail-app-panel-heading"><div><p>Money</p><h2>Cash flow, last 6 months</h2></div><div className="retail-app-cashflow-legend"><span><i data-tone="in" />Inflow</span><span><i data-tone="out" />Outflow</span></div></div>
+    <div className="retail-app-cashflow-bars">{rows.map((row) => <div className="retail-app-cashflow-column" key={row.label}>
+      <div className="retail-app-cashflow-pair">
+        <i data-tone="in" style={{ height: `${(row.inflow / max) * 100}%` }} title={`Inflow ${format(row.inflow)}`} />
+        <i data-tone="out" style={{ height: `${(row.outflow / max) * 100}%` }} title={`Outflow ${format(row.outflow)}`} />
+      </div>
+      <span>{row.label}</span>
+      <small data-negative={row.net < 0}>{row.net >= 0 ? '+' : ''}{format(row.net)}</small>
+    </div>)}</div>
+  </div>
+}
+
+// A live-tracking style map for Logistics: deterministic pin positions and status per record so
+// the team gets an at-a-glance visual of where every delivery is and whether it's on time.
+function DeliveryMapPanel({ records, selectedId, onSelect }: { records: WorkspaceRecord[]; selectedId?: string; onSelect: (id: string) => void }) {
+  const tones = ['on-time', 'delayed', 'at-risk'] as const
+  return <div className="retail-app-map-panel">
+    <div className="retail-app-panel-heading"><div><p>Delivery</p><h2>Live tracking map</h2></div></div>
+    <div className="retail-app-map-canvas">
+      <svg height="220" role="presentation" viewBox="0 0 400 220" width="100%">
+        <rect fill="#eef3f8" height="220" width="400" />
+        <path d="M0 60 H400 M0 140 H400 M90 0 V220 M280 0 V220" stroke="#d8e1ea" strokeWidth="2" />
+        {records.map((record) => {
+          const x = hashSpread(`${record.id}-x`, 20, 380)
+          const y = hashSpread(`${record.id}-y`, 20, 200)
+          const tone = tones[hashSpread(record.id, 0, 3)]
+          return <g cursor="pointer" key={record.id} onClick={() => onSelect(record.id)} transform={`translate(${x} ${y})`}>
+            <circle fill={tone === 'on-time' ? '#22c55e' : tone === 'delayed' ? '#ffb33e' : '#ff496e'} r={record.id === selectedId ? 9 : 6} stroke="#fff" strokeWidth="2" />
+          </g>
+        })}
+      </svg>
+    </div>
+    <div className="retail-app-map-legend"><span><i data-tone="on-time" />On time</span><span><i data-tone="delayed" />Delayed</span><span><i data-tone="at-risk" />At risk</span></div>
+  </div>
+}
+
+function RecordsPage({ workspace, config, item, state, createRecord, advanceRecord, attachRecord, adjustStock, logNote, publishHandoff }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string) => void; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
   const records = state.records[item.id] ?? []
   const statuses = statusFor(item)
   const [sourceOpen, setSourceOpen] = useState(false)
@@ -1357,8 +1483,22 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const [creating, setCreating] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [stockCount, setStockCount] = useState('')
+  const [noteText, setNoteText] = useState('')
   const visible = records.filter((record) => `${record.id} ${record.name} ${record.secondary} ${record.status}`.toLowerCase().includes(query.toLowerCase()))
   const selected = records.find((record) => record.id === selectedId) ?? records[0]
+  const recordStock = () => {
+    if (!selected) return
+    const quantity = Number(stockCount)
+    if (!Number.isFinite(quantity) || quantity < 0) return
+    adjustStock(item.id, selected, quantity, `Stock take: counted ${quantity} units (was ${selected.quantity ?? 0})`)
+    setStockCount('')
+  }
+  const addNote = () => {
+    if (!selected || !noteText.trim()) return
+    logNote(item.id, selected, noteText.trim())
+    setNoteText('')
+  }
   const create = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setSaving(true)
@@ -1429,11 +1569,18 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const isCalendar = item.id === 'calendar'
   const isInbox = item.id === 'inbox'
   const isContentStudio = item.id === 'content'
+  const isInventory = item.id === 'inventory'
+  const isSalesPipeline = item.id === 'sales-pipeline'
+  const isCashflow = item.id === 'cashflow'
+  const isTracking = item.id === 'tracking'
   const metricLabel = directoryMetricLabel(item.group)
   return <>
     <WorkspaceHeading eyebrow={`${config.suite} · ${item.group}`} title={item.label} copy={isInbox ? `Every conversation for ${config.label.toLowerCase()} in one inbox — open a message to read the full thread and reply.` : isCalendar ? `See every scheduled ${item.label.toLowerCase()} entry laid out by day, and click through to its details.` : isContentStudio ? `Brief FoundAI on what you're promoting and it will draft the copy — then send it straight into the pipeline below.` : isDirectory ? `Browse every ${item.label.toLowerCase()} record with health, owner, and connected handoff.` : `Manage every ${item.label.toLowerCase()} record, owner, stage, activity, and connected handoff.`} action={<button className="retail-app-primary" onClick={() => setCreating(true)} type="button">+ New record</button>} />
     {isContentStudio ? <ContentStudioPanel onSave={(draft) => void saveContentDraft(draft)} saving={saving} /> : null}
     {!isDirectory && !isInbox ? <div className="complete-workspace-stage-summary">{statuses.map((status) => <article key={status}><strong>{records.filter((record) => record.status === status).length}</strong><span>{status}</span></article>)}</div> : null}
+    {isSalesPipeline && records.length > 0 ? <PipelineForecastBar records={records} statuses={statuses} /> : null}
+    {isCashflow ? <CashFlowChart seed={`${workspace}-${config.subjects[0]}`} /> : null}
+    {isTracking && records.length > 0 ? <DeliveryMapPanel onSelect={selectRecord} records={records} selectedId={selected?.id} /> : null}
     {!isInbox && !isCalendar && records.length > 0 ? (isDirectory ? <DirectoryKPIBar metricLabel={metricLabel} records={records} /> : <PipelineKPIBar records={records} statuses={statuses} />) : null}
     {!isInbox ? <div className="retail-app-toolbar"><input aria-label={`Search ${item.label}`} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${item.label.toLowerCase()}`} value={query} /><span className="retail-app-record-count">{visible.length} matching</span><button onClick={() => window.print()} type="button">Export / print</button></div> : null}
     {isInbox ? <InboxListView onSelect={selectRecord} records={visible} selectedId={selected?.id} statuses={statuses} /> : <section className="retail-app-record-layout">
@@ -1473,7 +1620,9 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
       </div>}
       {selected && origin ? <aside className="retail-app-detail"><p>Selected record</p><h2>{selected.name}</h2><strong>{selected.id}</strong>
         {isContentStudio ? <ContentPreviewCard body={selected.secondary.includes(' \u00b7 ') ? selected.secondary.slice(selected.secondary.indexOf(' \u00b7 ') + 3) : selected.secondary} cta={selected.value} hashtags={[]} headline={selected.name} image={selected.attachment} type={selected.secondary.split(' \u00b7 ')[0] ?? 'Social post'} /> : <AttachmentBox attachment={selected.attachment} attachmentName={selected.attachmentName ?? ''} onRemove={() => attachRecord(item.id, selected, undefined, '')} onUpload={(file) => void readFileAsDataUrl(file).then((dataUrl) => attachRecord(item.id, selected, dataUrl, file.name))} />}
+        {isInventory ? <StockTakePanel count={stockCount} onCountChange={setStockCount} onRecord={recordStock} record={selected} /> : null}
         <dl><div><dt>{isDirectory ? 'Category' : 'Workflow'}</dt><dd>{item.label}</dd></div><div><dt>Status</dt><dd>{selected.status}</dd></div><div><dt>Owner</dt><dd>{selected.owner}</dd></div><div><dt>Value</dt><dd>{selected.value}</dd></div><div><dt>Updated</dt><dd>{selected.updated}</dd></div></dl>
+        {!isContentStudio ? <ActivityLog entries={selected.log ?? []} note={noteText} onAdd={addNote} onNoteChange={setNoteText} placeholder={isInventory ? 'Add a note about this stock' : 'Add an activity note'} /> : null}
         <button aria-expanded={sourceOpen} className="retail-app-source-toggle" onClick={() => setSourceOpen((open) => !open)} type="button"><span>Source: {origin.label}</span><b>{sourceOpen ? '−' : '+'}</b></button>
         {sourceOpen ? <p className="retail-app-source-detail">{origin.detail}</p> : null}
         {!isDirectory ? <div className="retail-app-stage">{statuses.map((status) => <span className={status === selected.status ? 'active' : ''} key={status}>{status}</span>)}</div> : null}{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}{productionModeEnabled && item.id === 'payments' && selected.status !== 'Paid' ? <button className="retail-app-primary" disabled={saving || !selected.backendId} onClick={() => void collectPayment()} type="button">Collect with Stripe</button> : !isDirectory && selected.status !== statuses.at(-1) ? <button className="retail-app-primary" disabled={saving} onClick={() => void advance()} type="button">Move to {statuses[Math.min(statuses.indexOf(selected.status) + 1, statuses.length - 1)]}</button> : null}<button className="retail-app-secondary" disabled={saving} onClick={() => void publishHandoff(item.id, selected, handoffTarget).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Handoff could not be published'))} type="button">Handoff to {configs[handoffTarget].label}</button></aside> : null}
@@ -1804,7 +1953,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
     setSession(getProductionSession())
     setHydrated(true)
   }, [])
-  const { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, publishHandoff } = useWorkspaceState(workspace, current.id, session)
+  const { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, adjustStock, logNote, publishHandoff } = useWorkspaceState(workspace, current.id, session)
   const agent = useAgentActions(production, session, (text) => update((current) => current, text))
   const groups = useMemo(() => [...new Set(config.modules.map((item) => item.group))], [config.modules])
   if (productionModeEnabled && !productionApiConfigured) return <main className="complete-workspace-access"><section><h1>Production API is not configured</h1><p>Set NEXT_PUBLIC_FOUNDINGOS_API_URL to the deployed API root before publishing this application.</p></section></main>
@@ -1821,7 +1970,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
   else if (['reports', 'forecasting', 'attribution'].includes(current.id)) content = <ReportsPage config={config} />
   else if (current.id === 'event-feed') content = <EventFeedPage events={events} />
   else if (current.id === 'settings') content = <SettingsPage config={config} production={production} state={state} update={update} />
-  else content = <RecordsPage advanceRecord={advanceRecord} attachRecord={attachRecord} config={config} createRecord={createRecord} item={current} publishHandoff={publishHandoff} state={state} workspace={workspace} />
+  else content = <RecordsPage adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} workspace={workspace} />
   return <main className="retail-product-shell complete-workspace-shell" style={{ ['--retail-accent' as string]: config.accent }}>
     <aside className="retail-product-sidebar"><Link className="retail-product-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{config.suite}</small></div></Link><div className="retail-product-store"><span>{config.label.slice(0, 2).toUpperCase()}</span><div><strong>{state.settings.businessName}</strong><small>{config.label} Workspace</small></div><b>⌄</b></div><nav aria-label={`${config.label} workspace navigation`}>{groups.map((group) => <div key={group}><p>{group}</p>{config.modules.filter((item) => item.group === group).map((item) => <Link className={item.id === current.id ? 'active' : ''} href={`${workspaceRoot}/${workspace}${item.id === 'overview' ? '' : `/${item.id}`}`} key={item.id}><i>{item.id === 'overview' ? '⌂' : '◇'}</i><span>{item.label}</span>{state.records[item.id]?.length ? <em>{state.records[item.id].length}</em> : null}</Link>)}</div>)}</nav><Link className="retail-product-switcher" href={workspaceRoot}><span>Switch workspace</span><b>↗</b></Link></aside>
     <section className="retail-product-main"><header className="retail-product-topbar"><form onSubmit={(event) => event.preventDefault()}><span>⌕</span><input aria-label="Global workspace search" placeholder={`Search ${config.label}, or ask FoundAI…`} /></form><div><span className="complete-workspace-live">● {production ? 'PRODUCTION' : 'SIMULATION'} LIVE</span>{production ? <button className="complete-workspace-signout" onClick={() => void logoutProduction().then(() => setSession(null))} type="button">Sign out</button> : null}<span className="retail-product-user">{session?.user.email.slice(0, 2).toUpperCase() || 'BS'}</span></div></header><div className="retail-product-content"><div className="retail-product-notice"><span>{loading ? '…' : error ? '!' : '✓'}</span>{loading ? 'Loading tenant data…' : error ? error : production ? 'Tenant data is secured in PostgreSQL and every action is audited' : 'Interactive simulation · actions persist in this browser'}</div>{content}</div><footer className="retail-product-footer"><span>{config.label} Workspace · {production ? 'tenant-isolated production data' : 'browser-persistent shared simulation'}</span>{!production ? <button onClick={reset} type="button">Reset {config.label} data</button> : null}</footer></section>
