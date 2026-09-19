@@ -11166,12 +11166,19 @@ html[data-accessibility-simplified='true'] .btn {
 }
 
 /* Intelligence activation and buyer-ready strategic overview */
+/* These panels render on var(--surface-strong), which is a dark glass surface by
+   default. The surrounding .retail-product-shell always forces a dark navy text
+   colour (#172033) for its always-light card layout, so without an explicit
+   `color` here these panels would inherit that dark navy text on a dark
+   background and become unreadable. Pairing `color: var(--text)` with
+   `var(--surface-strong)` keeps both in sync across the dark/day themes. */
 .intelligence-activation,
 .strategic-overview {
   margin: 20px 0;
   border: 1px solid var(--line);
   border-radius: 22px;
   background: var(--surface-strong);
+  color: var(--text);
   box-shadow: 0 20px 48px var(--shadow);
 }
 .intelligence-activation { padding: 24px; }
@@ -11181,6 +11188,11 @@ html[data-accessibility-simplified='true'] .btn {
 .strategic-overview__header h2 { margin: 5px 0 8px; }
 .intelligence-activation__header p,
 .strategic-overview__header p { max-width: 720px; margin: 0; color: var(--muted); }
+/* .retail-app-panel-heading h2/span are hardcoded dark-navy/grey for the always-light
+   workspace card layout; re-pair them with this panel's dark glass background so the
+   "First-value activation" heading doesn't render as invisible dark-on-dark text. */
+.intelligence-activation .retail-app-panel-heading h2 { color: var(--text); }
+.intelligence-activation .retail-app-panel-heading > span { color: var(--muted); }
 .intelligence-activation__steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 22px 0; }
 .intelligence-activation__steps button { display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: transparent; color: var(--muted); text-align: left; }
 .intelligence-activation__steps button b { display: grid; place-items: center; width: 26px; height: 26px; flex: 0 0 auto; border-radius: 50%; background: var(--surface-soft); }
