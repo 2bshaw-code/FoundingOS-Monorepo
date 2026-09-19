@@ -12,7 +12,10 @@ for (const [path, expected] of Object.entries(protectedAssets)) {
   if (actual !== expected) throw new Error(`Protected brand asset changed: ${path}`)
 }
 
-const applicationRoots = ['founder-os/frontend/src', 'foundretail/frontend/src', 'foundcrypto/frontend/src', 'foundit/frontend/src', 'foundmeat/frontend/src', 'foundtalent/frontend/src']
+// The legacy per-brand app roots (foundretail/, foundcrypto/, foundit/, foundmeat/, foundtalent/)
+// were removed as part of the FoundingOS consolidation into Core.Operations/Core.Workforce/Core.Intelligence.
+// founder-os/ remains as the active founder-platform aggregator service.
+const applicationRoots = ['founder-os/frontend/src']
 const colorRoots = [...applicationRoots, 'shared/ui/src', 'shared/brand-assets/src']
 const sourceFiles = async (path) => (await readdir(new URL(`../${path}`, import.meta.url), { withFileTypes: true })).flatMap((entry) => entry.isDirectory() ? [] : entry.name.endsWith('.tsx') || entry.name.endsWith('.ts') ? [`${path}/${entry.name}`] : [])
 const walk = async (path) => {
@@ -31,9 +34,9 @@ for (const path of (await Promise.all(colorRoots.map(walk))).flat()) {
   if (/#FF6A00|FoundThis orange/i.test(source)) throw new Error(`Retired FoundThis orange is forbidden: ${path}`)
 }
 
-for (const path of ['foundit/frontend/tailwind.config.js', 'shared/brand-assets/PROTECTED_BRAND_ASSETS.md']) {
+for (const path of ['shared/brand-assets/PROTECTED_BRAND_ASSETS.md']) {
   const source = await readFile(new URL(`../${path}`, import.meta.url), 'utf8')
   if (/#FF6A00|FoundThis orange/i.test(source)) throw new Error(`Retired FoundThis orange is forbidden: ${path}`)
 }
 
-console.log('Protected FoundThat, FoundMeat, FoundTalent, FoundRetail, and FoundCrypto brand assets verified.')
+console.log('Protected brand assets verified; retired FoundThis orange and legacy logos remain forbidden.')
