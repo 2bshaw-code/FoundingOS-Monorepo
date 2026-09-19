@@ -4706,6 +4706,113 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   }
 }
 
+.retail-app-studio-card {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--retail-accent, #22c55e) 6%, #fff), #fff);
+  border: 1px solid #e5eaf0;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  padding: 20px;
+}
+
+.retail-app-studio-card .retail-app-panel-heading span {
+  background: color-mix(in srgb, var(--retail-accent, #22c55e) 14%, #fff);
+  border-radius: 999px;
+  color: var(--retail-accent-text, #147d48);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+}
+
+.retail-app-studio-form {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  margin-top: 14px;
+}
+
+.retail-app-studio-form label {
+  color: #5b6675;
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  font-weight: 700;
+  gap: 6px;
+  text-transform: uppercase;
+}
+
+.retail-app-studio-form input,
+.retail-app-studio-form select {
+  border: 1px solid #e5eaf0;
+  border-radius: 8px;
+  font: inherit;
+  padding: 10px;
+  text-transform: none;
+}
+
+.retail-app-studio-form button {
+  align-self: end;
+  white-space: nowrap;
+}
+
+.retail-app-studio-empty {
+  color: #8795a7;
+  font-size: 13px;
+  margin-top: 16px;
+}
+
+.retail-app-studio-draft {
+  background: #fff;
+  border: 1px solid #e5eaf0;
+  border-radius: 12px;
+  margin-top: 16px;
+  padding: 16px;
+}
+
+.retail-app-studio-draft h3 {
+  font-size: 16px;
+  margin: 0 0 8px;
+}
+
+.retail-app-studio-draft p {
+  color: #43505f;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.retail-app-studio-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.retail-app-studio-tags span {
+  background: #f3f5f8;
+  border-radius: 999px;
+  color: #5b6675;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+}
+
+.retail-app-studio-tags .retail-app-studio-cta {
+  background: color-mix(in srgb, var(--retail-accent, #22c55e) 16%, #fff);
+  color: var(--retail-accent-text, #147d48);
+}
+
+.retail-app-studio-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+@media (max-width: 780px) {
+  .retail-app-studio-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .retail-app-calendar-weekdays {
   display: grid;
   gap: 6px;
