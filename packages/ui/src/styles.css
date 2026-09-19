@@ -4405,6 +4405,199 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   padding: 17px;
 }
 
+.retail-app-inbox-layout {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+  margin-top: 14px;
+}
+
+.retail-app-inbox-list {
+  background: #fff;
+  border: 1px solid #e5eaf0;
+  border-radius: 12px;
+  min-width: 0;
+  padding: 17px;
+}
+
+.retail-app-inbox-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+  max-height: 560px;
+  overflow-y: auto;
+}
+
+.retail-app-inbox-row {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  padding: 9px 8px;
+  position: relative;
+  text-align: left;
+}
+
+.retail-app-inbox-row:hover {
+  background: #f7f9fb;
+}
+
+.retail-app-inbox-row.selected {
+  background: #f0fbf6;
+  border-color: var(--retail-accent, #22c55e);
+}
+
+.retail-app-inbox-row-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.retail-app-inbox-row-top {
+  display: flex;
+  justify-content: space-between;
+}
+
+.retail-app-inbox-row-top b {
+  color: #172033;
+  font-size: 12px;
+}
+
+.retail-app-inbox-row.is-unread .retail-app-inbox-row-top b {
+  font-weight: 800;
+}
+
+.retail-app-inbox-row-top i {
+  color: #a3b0c2;
+  font-size: 9px;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.retail-app-inbox-row-preview {
+  color: #718096;
+  font-size: 10.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.retail-app-inbox-row.is-unread .retail-app-inbox-row-preview {
+  color: #49586c;
+  font-weight: 600;
+}
+
+.retail-app-inbox-dot {
+  background: var(--retail-accent, #22c55e);
+  border-radius: 999px;
+  flex-shrink: 0;
+  height: 8px;
+  width: 8px;
+}
+
+.retail-app-inbox-avatar {
+  align-items: center;
+  background: #eef2f7;
+  border-radius: 999px;
+  color: #49586c;
+  display: flex;
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 800;
+  height: 30px;
+  justify-content: center;
+  width: 30px;
+}
+
+.retail-app-inbox-avatar.large {
+  font-size: 13px;
+  height: 42px;
+  width: 42px;
+}
+
+.retail-app-inbox-thread {
+  background: #fff;
+  border: 1px solid #e5eaf0;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 17px;
+}
+
+.retail-app-inbox-thread-head {
+  align-items: center;
+  border-bottom: 1px solid #eef1f5;
+  display: flex;
+  gap: 10px;
+  padding-bottom: 14px;
+}
+
+.retail-app-inbox-thread-head div {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.retail-app-inbox-thread-head strong {
+  color: #172033;
+  font-size: 14px;
+}
+
+.retail-app-inbox-thread-head span {
+  color: #8795a7;
+  font-size: 11px;
+}
+
+.retail-app-inbox-thread-body {
+  color: #33415c;
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 16px 2px;
+}
+
+.retail-app-inbox-reply {
+  border-top: 1px solid #eef1f5;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.retail-app-inbox-reply textarea {
+  border: 1px solid #e5eaf0;
+  border-radius: 8px;
+  font: inherit;
+  padding: 10px;
+  resize: vertical;
+  width: 100%;
+}
+
+.retail-app-inbox-reply button {
+  align-self: flex-end;
+}
+
+.retail-app-inbox-sent {
+  align-self: flex-end;
+  color: var(--retail-accent-text, #147d48);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (max-width: 780px) {
+  .retail-app-inbox-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .retail-app-calendar-weekdays {
   display: grid;
   gap: 6px;
