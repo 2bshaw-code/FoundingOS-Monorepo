@@ -81,7 +81,7 @@ export default function Page() {
           <a href="#top" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: '#fffaf0' }}>
             <div style={{ width: 42, height: 42, borderRadius: 12, background: '#FFB300', color: '#071014', display: 'grid', placeItems: 'center', fontWeight: 900, boxShadow: '0 10px 25px rgba(0,0,0,0.15)' }}>⬢</div>
             <div>
-              <strong style={{ display: 'block', fontSize: 22, lineHeight: 1.1 }}>CoreWorkforce</strong>
+              <strong style={{ display: 'block', fontSize: 22, lineHeight: 1.1 }}>Core.Workforce</strong>
               <small style={{ color: '#f6ddab', fontSize: 12 }}>{'Workforce Intelligence OS'}</small>
             </div>
           </a>
@@ -107,9 +107,9 @@ export default function Page() {
       <section id="top" style={{ position: 'relative', overflow: 'hidden', background: 'radial-gradient(circle at top left, rgba(255,179,0,0.12), transparent 30%), #120f0d' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '72px 20px 52px', display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 28, alignItems: 'center' }}>
           <div>
-            <p style={{ margin: 0, color: '#ffd166', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>CoreWorkforce brand ecosystem</p>
+            <p style={{ margin: 0, color: '#ffd166', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>Core.Workforce brand ecosystem</p>
             <h1 style={{ margin: '22px 0 0', fontSize: 'clamp(48px, 7vw, 92px)', lineHeight: 0.96, letterSpacing: '-0.05em', maxWidth: 700 }}>{'Hiring with clarity. Growth with context.'}</h1>
-            <p style={{ marginTop: 22, maxWidth: 620, color: '#f6ddab', fontSize: 20, lineHeight: 1.8 }}>{'CoreWorkforce connects recruitment, applicants, jobs, and operational insight across all the conversations that matter.'}</p>
+            <p style={{ marginTop: 22, maxWidth: 620, color: '#f6ddab', fontSize: 20, lineHeight: 1.8 }}>{'Core.Workforce connects recruitment, applicants, jobs, and operational insight across all the conversations that matter.'}</p>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 18, marginTop: 28 }}>
               <a href={talentPackageUrl('recruiteros')} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 50, padding: '0 22px', borderRadius: 12, background: '#FFB300', color: '#061018', textDecoration: 'none', fontWeight: 900 }}>Choose your package</a>
@@ -241,24 +241,24 @@ export default function Page() {
       <section id="contact" style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px 12px' }}>
         <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 22, background: 'rgba(255,255,255,0.03)', padding: 22, display: 'grid', gap: 14 }}>
           <p style={{ margin: 0, color: '#FFB300', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>Contact</p>
-          <h3 style={{ margin: 0, fontSize: 'clamp(26px, 3.4vw, 38px)' }}>Connect with CoreWorkforce on every channel.</h3>
+          <h3 style={{ margin: 0, fontSize: 'clamp(26px, 3.4vw, 38px)' }}>Connect with Core.Workforce on every channel.</h3>
         </div>
       </section>
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.08)', background: '#070c14', marginTop: 60 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px 40px', display: 'flex', flexWrap: 'wrap', gap: 20, justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <strong style={{ fontSize: 22 }}>{'CoreWorkforce'}</strong>
+            <strong style={{ fontSize: 22 }}>{'Core.Workforce'}</strong>
             <p style={{ margin: '10px 0 0', maxWidth: 480, color: '#f6ddab', lineHeight: 1.7 }}>{'Workforce intelligence and hiring operations for fast, fair recruitment teams.'}</p>
             <p style={{ margin: '10px 0 0', color: '#f6ddab' }}>Registered address: 24 Founder Way, London, UK</p>
           </div>
           <div style={{ display: 'grid', gap: 10, justifyItems: 'start' }}>
-            <div style={{ color: '#f6ddab' }}>hello@CoreWorkforce.com</div>
+            <div style={{ color: '#f6ddab' }}>hello@Core.Workforce.com</div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <a href="/legal" style={{ color: '#FFB300', textDecoration: 'none', fontWeight: 700 }}>Privacy Policy</a>
               <a href="/legal" style={{ color: '#FFB300', textDecoration: 'none', fontWeight: 700 }}>Terms</a>
               <a href="/legal" style={{ color: '#FFB300', textDecoration: 'none', fontWeight: 700 }}>Cookies</a>
             </div>
-            <div style={{ color: '#f6ddab', fontSize: 14 }}>© 2026 CoreWorkforce • All rights reserved</div>
+            <div style={{ color: '#f6ddab', fontSize: 14 }}>© 2026 Core.Workforce • All rights reserved</div>
           </div>
           <div style={{ width: '100%', marginTop: 8 }}>
             <PremiumSocialLinks accent="#FFB300" mode="full" label="Social & messaging" />

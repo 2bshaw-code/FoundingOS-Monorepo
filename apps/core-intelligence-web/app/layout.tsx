@@ -4,5 +4,5 @@
 */
 import { FoundingOSFooter } from '@foundingos/ui/footer'
 import '@foundingos/ui/styles.css'
-export const metadata = { title: 'CoreIntelligence', description: 'CoreIntelligence public website.' }
+export const metadata = { title: 'Core.Intelligence', description: 'Core.Intelligence public website.' }
 export default function RootLayout({ children }: { children: React.ReactNode }) { return <html lang="en"><body>{children}<FoundingOSFooter /></body></html> }

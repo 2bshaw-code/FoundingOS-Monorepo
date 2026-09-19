@@ -78,7 +78,7 @@ export default function Page() {
           <a href="#top" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: '#edf7ff' }}>
             <div style={{ width: 42, height: 42, borderRadius: 12, background: '#00E676', color: '#071014', display: 'grid', placeItems: 'center', fontWeight: 900, boxShadow: '0 10px 25px rgba(0,0,0,0.15)' }}>◉</div>
             <div>
-              <strong style={{ display: 'block', fontSize: 22, lineHeight: 1.1 }}>CoreOperations</strong>
+              <strong style={{ display: 'block', fontSize: 22, lineHeight: 1.1 }}>Core.Operations</strong>
               <small style={{ color: '#bfd8ee', fontSize: 12 }}>{'WhatsApp Retail OS'}</small>
             </div>
           </a>
@@ -104,9 +104,9 @@ export default function Page() {
       <section id="top" style={{ position: 'relative', overflow: 'hidden', background: 'radial-gradient(circle at top left, rgba(0,230,118,0.12), transparent 30%), #07131d' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '72px 20px 52px', display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 28, alignItems: 'center' }}>
           <div>
-            <p style={{ margin: 0, color: '#8ef0ad', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>CoreOperations brand ecosystem</p>
+            <p style={{ margin: 0, color: '#8ef0ad', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>Core.Operations brand ecosystem</p>
             <h1 style={{ margin: '22px 0 0', fontSize: 'clamp(48px, 7vw, 92px)', lineHeight: 0.96, letterSpacing: '-0.05em', maxWidth: 700 }}>{'A calmer way to run conversational retail.'}</h1>
-            <p style={{ marginTop: 22, maxWidth: 620, color: '#bfd8ee', fontSize: 20, lineHeight: 1.8 }}>{'CoreOperations connects catalogue, stock, orders, and service journeys across the channels customers already use.'}</p>
+            <p style={{ marginTop: 22, maxWidth: 620, color: '#bfd8ee', fontSize: 20, lineHeight: 1.8 }}>{'Core.Operations connects catalogue, stock, orders, and service journeys across the channels customers already use.'}</p>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 18, marginTop: 28 }}>
               <a href={retailPackageUrl('standard')} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 50, padding: '0 22px', borderRadius: 12, background: '#00E676', color: '#061018', textDecoration: 'none', fontWeight: 900 }}>Choose your package</a>
@@ -238,24 +238,24 @@ export default function Page() {
       <section id="contact" style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 20px 12px' }}>
         <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 22, background: 'rgba(255,255,255,0.03)', padding: 22, display: 'grid', gap: 14 }}>
           <p style={{ margin: 0, color: '#00E676', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 800 }}>Contact</p>
-          <h3 style={{ margin: 0, fontSize: 'clamp(26px, 3.4vw, 38px)' }}>Connect with CoreOperations on every channel.</h3>
+          <h3 style={{ margin: 0, fontSize: 'clamp(26px, 3.4vw, 38px)' }}>Connect with Core.Operations on every channel.</h3>
         </div>
       </section>
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.08)', background: '#070c14', marginTop: 60 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 20px 40px', display: 'flex', flexWrap: 'wrap', gap: 20, justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <strong style={{ fontSize: 22 }}>{'CoreOperations'}</strong>
+            <strong style={{ fontSize: 22 }}>{'Core.Operations'}</strong>
             <p style={{ margin: '10px 0 0', maxWidth: 480, color: '#bfd8ee', lineHeight: 1.7 }}>{'Modern retail operations for customer journeys and storefront confidence.'}</p>
             <p style={{ margin: '10px 0 0', color: '#bfd8ee' }}>Registered address: 24 Founder Way, London, UK</p>
           </div>
           <div style={{ display: 'grid', gap: 10, justifyItems: 'start' }}>
-            <div style={{ color: '#bfd8ee' }}>hello@CoreOperations.com</div>
+            <div style={{ color: '#bfd8ee' }}>hello@Core.Operations.com</div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <a href="/legal" style={{ color: '#00E676', textDecoration: 'none', fontWeight: 700 }}>Privacy Policy</a>
               <a href="/legal" style={{ color: '#00E676', textDecoration: 'none', fontWeight: 700 }}>Terms</a>
               <a href="/legal" style={{ color: '#00E676', textDecoration: 'none', fontWeight: 700 }}>Cookies</a>
             </div>
-            <div style={{ color: '#bfd8ee', fontSize: 14 }}>© 2026 CoreOperations • All rights reserved</div>
+            <div style={{ color: '#bfd8ee', fontSize: 14 }}>© 2026 Core.Operations • All rights reserved</div>
           </div>
           <div style={{ width: '100%', marginTop: 8 }}>
             <PremiumSocialLinks accent="#00E676" mode="full" label="Social & messaging" />
