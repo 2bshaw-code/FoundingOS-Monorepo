@@ -987,6 +987,70 @@ const directoryMetricLabel = (group: string): string => {
   return 'health score'
 }
 
+// A real KPI strip for board (pipeline/stage) modules — a % complete gauge (records in the
+// final stage vs total) plus a proportional stacked bar showing exactly how the pipeline is
+// distributed across every stage, colour-matched to the board columns below it. Every module
+// with statuses (sales-pipeline, orders, campaigns, invoices, tickets, etc.) gets this for
+// free since it's driven purely by `statuses`/`records`, not any per-module bespoke code.
+function PipelineKPIBar({ statuses, records }: { statuses: string[]; records: WorkspaceRecord[] }) {
+  const total = records.length
+  const finalStage = statuses.at(-1)
+  const completePct = total ? Math.round((records.filter((record) => record.status === finalStage).length / total) * 100) : 0
+  const segments = statuses.map((status, index) => ({
+    status,
+    tone: boardTones[index % boardTones.length],
+    count: records.filter((record) => record.status === status).length,
+  }))
+  return <div className="retail-app-kpi-strip">
+    <div className="retail-app-kpi-gauge">
+      <svg height="72" viewBox="0 0 72 72" width="72">
+        <circle cx="36" cy="36" fill="none" r="30" stroke="#e5eaf0" strokeWidth="8" />
+        <circle cx="36" cy="36" fill="none" r="30" stroke="var(--retail-accent, #22c55e)" strokeDasharray={`${(completePct / 100) * 188.5} 188.5`} strokeLinecap="round" strokeWidth="8" transform="rotate(-90 36 36)" />
+      </svg>
+      <div className="retail-app-kpi-gauge-label"><strong>{completePct}%</strong><span>at {finalStage}</span></div>
+    </div>
+    <div className="retail-app-kpi-distribution">
+      <div className="retail-app-kpi-distribution-bar">
+        {segments.map((segment) => segment.count ? <i data-tone={segment.tone} key={segment.status} style={{ flexGrow: segment.count }} title={`${segment.status}: ${segment.count}`} /> : null)}
+      </div>
+      <div className="retail-app-kpi-distribution-legend">
+        {segments.map((segment) => <span key={segment.status}><i data-tone={segment.tone} />{segment.status} · {segment.count}</span>)}
+      </div>
+    </div>
+  </div>
+}
+
+// The directory equivalent of PipelineKPIBar — directory modules don't have stages, but every
+// record does have a hashed health/engagement score (the same one shown per-card below), so
+// this rolls that up into an average gauge plus a quick low/mid/high distribution, giving the
+// same "quick visual read" every board module gets.
+function DirectoryKPIBar({ records, metricLabel }: { records: WorkspaceRecord[]; metricLabel: string }) {
+  const scores = records.map((record) => hashPercent(record.id))
+  const avg = scores.length ? Math.round(scores.reduce((total, value) => total + value, 0) / scores.length) : 0
+  const buckets = { low: scores.filter((value) => value < 60).length, mid: scores.filter((value) => value >= 60 && value < 85).length, high: scores.filter((value) => value >= 85).length }
+  return <div className="retail-app-kpi-strip">
+    <div className="retail-app-kpi-gauge">
+      <svg height="72" viewBox="0 0 72 72" width="72">
+        <circle cx="36" cy="36" fill="none" r="30" stroke="#e5eaf0" strokeWidth="8" />
+        <circle cx="36" cy="36" fill="none" r="30" stroke="var(--retail-accent, #22c55e)" strokeDasharray={`${(avg / 100) * 188.5} 188.5`} strokeLinecap="round" strokeWidth="8" transform="rotate(-90 36 36)" />
+      </svg>
+      <div className="retail-app-kpi-gauge-label"><strong>{avg}%</strong><span>avg {metricLabel}</span></div>
+    </div>
+    <div className="retail-app-kpi-distribution">
+      <div className="retail-app-kpi-distribution-bar">
+        {buckets.high ? <i data-tone="done" style={{ flexGrow: buckets.high }} title={`High: ${buckets.high}`} /> : null}
+        {buckets.mid ? <i data-tone="info" style={{ flexGrow: buckets.mid }} title={`Mid: ${buckets.mid}`} /> : null}
+        {buckets.low ? <i data-tone="warn" style={{ flexGrow: buckets.low }} title={`Low: ${buckets.low}`} /> : null}
+      </div>
+      <div className="retail-app-kpi-distribution-legend">
+        <span><i data-tone="done" />High (85%+) · {buckets.high}</span>
+        <span><i data-tone="info" />Mid (60–84%) · {buckets.mid}</span>
+        <span><i data-tone="warn" />Low (&lt;60%) · {buckets.low}</span>
+      </div>
+    </div>
+  </div>
+}
+
 function assignCalendarDay(id: string, totalDays: number) {
   const hash = [...id].reduce((total, char) => total + char.charCodeAt(0), 0)
   return 1 + (hash % Math.max(totalDays, 1))
@@ -1161,6 +1225,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   return <>
     <WorkspaceHeading eyebrow={`${config.suite} · ${item.group}`} title={item.label} copy={isInbox ? `Every conversation for ${config.label.toLowerCase()} in one inbox — open a message to read the full thread and reply.` : isCalendar ? `See every scheduled ${item.label.toLowerCase()} entry laid out by day, and click through to its details.` : isDirectory ? `Browse every ${item.label.toLowerCase()} record with health, owner, and connected handoff.` : `Manage every ${item.label.toLowerCase()} record, owner, stage, activity, and connected handoff.`} action={<button className="retail-app-primary" onClick={() => setCreating(true)} type="button">+ New record</button>} />
     {!isDirectory && !isInbox ? <div className="complete-workspace-stage-summary">{statuses.map((status) => <article key={status}><strong>{records.filter((record) => record.status === status).length}</strong><span>{status}</span></article>)}</div> : null}
+    {!isInbox && !isCalendar && records.length > 0 ? (isDirectory ? <DirectoryKPIBar metricLabel={metricLabel} records={records} /> : <PipelineKPIBar records={records} statuses={statuses} />) : null}
     {!isInbox ? <div className="retail-app-toolbar"><input aria-label={`Search ${item.label}`} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${item.label.toLowerCase()}`} value={query} /><span className="retail-app-record-count">{visible.length} matching</span><button onClick={() => window.print()} type="button">Export / print</button></div> : null}
     {isInbox ? <InboxListView onSelect={selectRecord} records={visible} selectedId={selected?.id} statuses={statuses} /> : <section className="retail-app-record-layout">
       {isCalendar ? <CalendarGridView onSelect={selectRecord} records={visible} selectedId={selected?.id} /> : isDirectory ? <div className="retail-app-directory-card">
