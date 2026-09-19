@@ -24,6 +24,9 @@ import { RecommendationBadge } from './onboarding/RecommendationBadge'
 import { ImportDataButton } from './import-data'
 import { CoreOperationsDashboard, CoreOperationsLoginPage, CoreOperationsMarketingWorkspace, CoreOperationsModulePage } from './core-operations-live-console'
 import { MarketingShowcase, FinanceShowcase } from './module-showcases'
+import { CustomerServiceModule } from './modules/CustomerServiceModule'
+import { MessagingModule } from './modules/MessagingModule'
+import { FoundAIDemoModule } from './modules/FoundAIDemoModule'
 
 export type BrandMetric = { label: string; value: string; trend?: string; icon?: string; tone?: 'good' | 'watch' | 'risk' }
 export type BrandModule = { id: string; label: string; description: string; metrics: BrandMetric[]; actions: string[]; workflow?: string[] }
@@ -1735,6 +1738,20 @@ export function BrandModulePage({ config, moduleId }: { config: BrandConsoleConf
         <FinanceShowcase title={config.name} />
       </section>
     )
+  }
+
+  // Messaging, Customer Service, and AI Automation already have real, tabbed, multi-view
+  // components (inbox/tickets/workflows + live chat preview + charts) built for
+  // foundingos-console/legacy consoles — reuse those here instead of the flat generic
+  // workbench so every suite reaching this shared fallback gets the same rich experience.
+  if (module.id === 'messaging') {
+    return <MessagingModule config={config} />
+  }
+  if (module.id === 'customer-service') {
+    return <CustomerServiceModule config={config} />
+  }
+  if (module.id === 'ai-demo') {
+    return <FoundAIDemoModule brand={config} />
   }
 
   if (config.name === 'Core.Workforce' && !sharedCrossSuiteModuleIds.has(module.id)) {
