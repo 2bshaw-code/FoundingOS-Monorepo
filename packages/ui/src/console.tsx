@@ -5,7 +5,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { DemoMessageBoard } from './demo-message-board'
 import { GetStartedChecklist } from './get-started-checklist'
@@ -334,15 +334,13 @@ function workbenchFilterOptions(rows: DataRow[], fields: DataField[]) {
 // generic. Fields not recognised as status-like keep rendering as plain text.
 const STATUS_LIKE_FIELD_KEYS = new Set(['status', 'stage', 'pipeline', 'tier', 'priority'])
 
-function statusTone(value: string): StatusBadgeTone {
+export function statusTone(value: string): StatusBadgeTone {
   const normalized = value.toLowerCase()
   if (/(active|won|approved|complete|live|good|on track|resolved|paid)/.test(normalized)) return 'good'
   if (/(risk|blocked|late|overdue|escalate|failed|critical|churn)/.test(normalized)) return 'risk'
   if (/(pending|review|working|new|qualified|draft|processing)/.test(normalized)) return 'watch'
   return 'neutral'
-}
-
-function isNumericLikeField(field: DataField) {
+}function isNumericLikeField(field: DataField) {
   return /(price|value|stock|amount|total|qty|quantity|cost)/i.test(field.key)
 }
 
@@ -386,9 +384,33 @@ export function DataWorkbench({ title, description, fields, rows, cards, accentS
   const [page, setPage] = useState(1)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft] = useState<Record<string, string>>(() => seedDraft(fields))
+  const [sourceOpenId, setSourceOpenId] = useState<string | null>(null)
   const formRef = useRef<HTMLElement>(null)
+  // The ids the module started with (before any create/edit/import this session) — used to
+  // label a record's source as "Demo data" vs "Manual entry"/"Imported" further down.
+  const seedIdsRef = useRef<Set<string>>(new Set(rows.map((row) => row.id)))
+  const [originMeta, setOriginMeta] = useState<Record<string, RecordOrigin>>({})
+
+  function recordOrigin(row: DataRow): RecordOrigin {
+    if (originMeta[row.id]) return originMeta[row.id]
+    if (seedIdsRef.current.has(row.id)) {
+      return { label: 'Demo data', detail: 'Pre-loaded demonstration record — safe to edit or delete, and replaceable with your real data at any time.' }
+    }
+    return { label: 'Manual entry', detail: 'Added directly in this workspace.' }
+  }
 
   const { filterField, options } = useMemo(() => workbenchFilterOptions(records, fields), [records, fields])
+
+  const distributionSegments = useMemo(() => {
+    if (!filterField) return []
+    const counts = new Map<string, number>()
+    for (const row of records) {
+      const value = row.values[filterField.key]
+      if (!value) continue
+      counts.set(value, (counts.get(value) ?? 0) + 1)
+    }
+    return Array.from(counts.entries()).map(([label, count]) => ({ label, count, tone: statusTone(label) }))
+  }, [records, filterField])
 
   useEffect(() => {
     setPage(1)
@@ -419,17 +441,22 @@ export function DataWorkbench({ title, description, fields, rows, cards, accentS
 
   const saveRow = () => {
     const next = draft
+    const isNew = !editingId
     const record: DataRow = { id: editingId ?? `${title.toLowerCase().replaceAll(' ', '-')}-${Date.now()}`, values: { ...next } }
     setRecords((current) => {
       if (editingId) return current.map((row) => (row.id === editingId ? record : row))
       return [record, ...current]
     })
+    if (isNew) {
+      setOriginMeta((current) => ({ ...current, [record.id]: { label: 'Manual entry', detail: `Added manually in this workspace on ${new Date().toLocaleString('en-GB', { timeZone: 'UTC' })} UTC.` } }))
+    }
     beginCreate()
   }
 
   const removeRow = (id: string) => {
     setRecords((current) => current.filter((row) => row.id !== id))
     if (editingId === id) beginCreate()
+    if (sourceOpenId === id) setSourceOpenId(null)
   }
 
   const summaryCards = cards.length > 0 ? cards : [
@@ -464,6 +491,13 @@ export function DataWorkbench({ title, description, fields, rows, cards, accentS
           </article>
         ))}
       </div>
+
+      {distributionSegments.length > 0 && (
+        <div className="panel">
+          <h2>{filterField?.label ?? 'Status'} breakdown</h2>
+          <StatusDistributionBar segments={distributionSegments} totalLabel={`${records.length} total`} />
+        </div>
+      )}
 
       <div className="module-card-grid">
         <article className="panel" ref={formRef}>
@@ -531,7 +565,16 @@ export function DataWorkbench({ title, description, fields, rows, cards, accentS
           <ImportDataButton
             fields={fields}
             idPrefix={title.toLowerCase().replaceAll(' ', '-')}
-            onImport={(newRows) => setRecords((current) => [...newRows, ...current])}
+            onImport={(newRows, fileName) => {
+              setRecords((current) => [...newRows, ...current])
+              setOriginMeta((current) => {
+                const next = { ...current }
+                for (const row of newRows) {
+                  next[row.id] = { label: 'Imported', detail: `Imported from "${fileName}" on ${new Date().toLocaleString('en-GB', { timeZone: 'UTC' })} UTC.` }
+                }
+                return next
+              })
+            }}
           />
         </article>
       </div>
@@ -541,33 +584,44 @@ export function DataWorkbench({ title, description, fields, rows, cards, accentS
           <thead>
             <tr>
               {fields.map((field) => <th key={field.key} className={isNumericLikeField(field) ? 'is-numeric' : undefined}>{field.label}</th>)}
+              <th>Source</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {visible.map((row) => (
-              <tr key={row.id}>
-                {fields.map((field) => {
-                  const value = row.values[field.key] || ''
-                  const isStatusLike = STATUS_LIKE_FIELD_KEYS.has(field.key)
-                  return (
-                    <td key={field.key} className={isNumericLikeField(field) ? 'is-numeric' : undefined}>
-                      {value === ''
-                        ? '—'
-                        : isStatusLike
-                          ? <StatusBadge label={value} tone={statusTone(value)} />
-                          : value}
+            {visible.map((row) => {
+              const origin = recordOrigin(row)
+              const isSourceOpen = sourceOpenId === row.id
+              return (
+                <Fragment key={row.id}>
+                  <tr>
+                    {fields.map((field) => {
+                      const value = row.values[field.key] || ''
+                      const isStatusLike = STATUS_LIKE_FIELD_KEYS.has(field.key)
+                      return (
+                        <td key={field.key} className={isNumericLikeField(field) ? 'is-numeric' : undefined}>
+                          {value === ''
+                            ? '—'
+                            : isStatusLike
+                              ? <StatusBadge label={value} tone={statusTone(value)} />
+                              : value}
+                        </td>
+                      )
+                    })}
+                    <td>
+                      <SourceBadge label={origin.label} active={isSourceOpen} onClick={() => setSourceOpenId(isSourceOpen ? null : row.id)} />
                     </td>
-                  )
-                })}
-                <td>
-                  <div className="action-list">
-                    <button type="button" onClick={() => beginEdit(row)}>Edit</button>
-                    <button type="button" onClick={() => removeRow(row.id)}>Delete</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                    <td>
+                      <div className="action-list">
+                        <button type="button" onClick={() => beginEdit(row)}>Edit</button>
+                        <button type="button" onClick={() => removeRow(row.id)}>Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                  {isSourceOpen && <SourceDetailRow colSpan={fields.length + 2} detail={origin.detail} />}
+                </Fragment>
+              )
+            })}
           </tbody>
         </table>
         <div className="manager-pagination">
@@ -623,6 +677,68 @@ export type StatusBadgeTone = 'good' | 'watch' | 'risk' | 'neutral'
 // existing routing, layout, or component.
 export function StatusBadge({ label, tone = 'neutral' }: { label: string; tone?: StatusBadgeTone }) {
   return <span className={`status-badge status-badge--${tone}`}>{label}</span>
+}
+
+// A small horizontal stacked-bar chart showing how records break down across a status-like
+// field (e.g. how many candidates are Applied vs Interview vs Hired). Used across every module
+// table so each module page shows a real, at-a-glance visual summary of its own data instead of
+// only a flat list — genuinely reflects the records currently loaded, not a static illustration.
+export function StatusDistributionBar({ segments, totalLabel }: { segments: Array<{ label: string; count: number; tone: StatusBadgeTone }>; totalLabel?: string }) {
+  const visible = segments.filter((segment) => segment.count > 0)
+  const total = visible.reduce((sum, segment) => sum + segment.count, 0)
+  if (total === 0) return null
+  return (
+    <div className="status-distribution">
+      <div className="status-distribution-track" role="img" aria-label={`Distribution: ${visible.map((segment) => `${segment.label} ${segment.count}`).join(', ')}`}>
+        {visible.map((segment) => (
+          <span
+            key={segment.label}
+            className={`status-distribution-segment status-distribution-segment--${segment.tone}`}
+            style={{ width: `${(segment.count / total) * 100}%` }}
+            title={`${segment.label}: ${segment.count}`}
+          />
+        ))}
+      </div>
+      <div className="status-distribution-legend">
+        {visible.map((segment) => (
+          <span key={segment.label}>
+            <i className={`status-distribution-dot status-distribution-dot--${segment.tone}`} />
+            {segment.label} · {segment.count}
+          </span>
+        ))}
+        {totalLabel && <span className="status-distribution-total">{totalLabel}</span>}
+      </div>
+    </div>
+  )
+}
+
+export type RecordOrigin = { label: string; detail: string }
+
+// A small clickable pill shown next to any record — clicking it reveals exactly where that
+// record's data came from (manual entry, an imported file, a connected channel like WhatsApp,
+// or pre-loaded demo data). This is the "click through to where the info is coming from"
+// affordance: every record can be traced back to its source, not just displayed as an opaque row.
+export function SourceBadge({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      className={`source-badge${active ? ' is-open' : ''}`}
+      onClick={(event) => { event.stopPropagation(); onClick() }}
+    >
+      {label} <span aria-hidden="true">{active ? '▲' : '↗'}</span>
+    </button>
+  )
+}
+
+// The expandable row revealed under a record when its SourceBadge is clicked.
+export function SourceDetailRow({ colSpan, detail }: { colSpan: number; detail: string }) {
+  return (
+    <tr className="source-detail-row">
+      <td colSpan={colSpan}>
+        <span className="source-detail-icon" aria-hidden="true">◈</span> {detail}
+      </td>
+    </tr>
+  )
 }
 
 export type AlertTone = 'info' | 'success' | 'warning' | 'danger'
