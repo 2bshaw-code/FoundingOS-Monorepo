@@ -14,6 +14,10 @@ jobs:
           # 22+ is required for --experimental-strip-types (used below to run the real
           # tester-system test suite directly against the TypeScript sources, no build step).
           node-version: 22
+      # test:tester-system runs via `node --import tsx`, a devDependency — install it before
+      # any step needs it. This was previously masked because an earlier verify step always
+      # failed first; fixing those exposed that `npm ci` was never actually run in this job.
+      - run: npm ci
       - run: node scripts/verify-topology.mjs
       - run: node scripts/verify-superdashboard-isolation.mjs
       - run: node scripts/verify-brand-assets.mjs
