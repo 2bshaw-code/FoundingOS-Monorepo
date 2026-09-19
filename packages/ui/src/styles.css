@@ -4400,6 +4400,113 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   padding: 17px;
 }
 
+.retail-app-calendar-card {
+  min-width: 0;
+  padding: 17px;
+}
+
+.retail-app-calendar-weekdays {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(7, 1fr);
+  margin-top: 14px;
+}
+
+.retail-app-calendar-weekdays span {
+  color: #8795a7;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.retail-app-calendar-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.retail-app-calendar-row {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.retail-app-calendar-cell {
+  background: #f7f9fb;
+  border: 1px solid #e5eaf0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 76px;
+  padding: 6px;
+}
+
+.retail-app-calendar-cell.is-empty {
+  background: transparent;
+  border-color: transparent;
+}
+
+.retail-app-calendar-cell.is-today {
+  background: #f0fbf6;
+  border-color: var(--retail-accent, #22c55e);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--retail-accent) 35%, transparent);
+}
+
+.retail-app-calendar-daynum {
+  color: #49586c;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.retail-app-calendar-cell.is-today .retail-app-calendar-daynum {
+  color: var(--retail-accent-text, #147d48);
+}
+
+.retail-app-calendar-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.retail-app-calendar-chip {
+  background: #fff;
+  border: 1px solid #e5eaf0;
+  border-radius: 6px;
+  color: #172033;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 700;
+  overflow: hidden;
+  padding: 3px 5px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.retail-app-calendar-chip:hover {
+  border-color: color-mix(in srgb, var(--retail-accent) 45%, #e5eaf0);
+}
+
+.retail-app-calendar-chip.selected {
+  background: var(--retail-accent);
+  border-color: var(--retail-accent);
+  color: #fff;
+}
+
+@media (max-width: 720px) {
+  .retail-app-calendar-weekdays span:nth-child(n) {
+    font-size: 8px;
+  }
+
+  .retail-app-calendar-cell {
+    min-height: 56px;
+  }
+}
+
 .retail-app-directory-grid {
   display: grid;
   gap: 10px;
