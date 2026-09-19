@@ -6,6 +6,7 @@
 
 import { DataWorkbench, consoleStyle, type BrandConsoleConfig, type DataField, type DataRow } from '../console'
 import { ModuleTabs, type ModuleTab } from '../module-tabs'
+import { MarketingShowcase } from '../module-showcases'
 
 // Real, tabbed Marketing Suite — replaces the previous single generic table. Four real
 // sections matching what a marketing team actually does day to day: plan and run campaigns,
@@ -59,6 +60,13 @@ export function MarketingModule({ config }: { config: BrandConsoleConfig }) {
   const brand = config.name.toLowerCase().replaceAll(' ', '-')
 
   const tabs: ModuleTab[] = [
+    {
+      id: 'overview',
+      label: 'Content gallery',
+      icon: '🖼',
+      guide: 'A real visual window into every campaign, flyer, and post — not just a row in a table. Click any card to preview it and see its real reach and engagement numbers.',
+      render: () => <MarketingShowcase title={config.name} />,
+    },
     {
       id: 'campaigns',
       label: 'Campaigns',
