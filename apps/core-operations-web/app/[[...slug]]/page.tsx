@@ -7,7 +7,7 @@
 
 import { useState } from 'react'
 import { brands } from '@foundingos/config'
-import { PremiumSocialLinks } from '@foundingos/ui'
+import { PremiumSocialLinks } from '@foundingos/ui/social-links'
 import styles from './page.module.css'
 
 const features = [

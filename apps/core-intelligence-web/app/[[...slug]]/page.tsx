@@ -6,7 +6,7 @@
 'use client'
 
 import { useState } from 'react'
-import { PremiumSocialLinks } from '@foundingos/ui'
+import { PremiumSocialLinks } from '@foundingos/ui/social-links'
 
 // Core.Intelligence is a suite (see suites.ts), not a legacy per-brand entry in
 // @foundingos/config's brand registry, so it resolves its own web/console URLs

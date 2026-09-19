@@ -7,7 +7,7 @@
 
 import { useState } from 'react'
 import { brands } from '@foundingos/config'
-import { PremiumSocialLinks } from '@foundingos/ui'
+import { PremiumSocialLinks } from '@foundingos/ui/social-links'
 
 const features = [
   { title: 'Operational clarity', description: 'Keep every workflow, message, and update connected across the teams and channels your business uses.', icon: '◉' },

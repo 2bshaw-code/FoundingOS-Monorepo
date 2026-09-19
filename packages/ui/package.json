@@ -5,6 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.tsx",
+    "./QuantumSphereLogo": "./src/QuantumSphereLogo.tsx",
+    "./social-links": "./src/social-links.tsx",
     "./console": "./src/console.tsx",
     "./module-tabs": "./src/module-tabs.tsx",
     "./modules/marketing": "./src/modules/MarketingModule.tsx",

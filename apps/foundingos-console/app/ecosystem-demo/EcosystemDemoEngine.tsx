@@ -13,7 +13,7 @@
 // honest current state, exactly like everywhere else they're used.
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { QuantumSphereLogo } from '@foundingos/ui'
+import { QuantumSphereLogo } from '@foundingos/ui/QuantumSphereLogo'
 import { RealDealsPanel, RealInvoicesPanel, RealBrandFinancePanel } from '@foundingos/ui/real-monetary-panels'
 import { RealPipelineValuePanel } from '@foundingos/ui/real-pipeline-value-panel'
 import { AnimatedMessageFlow } from '@foundingos/ui/animated-message-flow'
