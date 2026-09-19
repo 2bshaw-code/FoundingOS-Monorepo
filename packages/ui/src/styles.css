@@ -5643,6 +5643,143 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   background: #ff496e;
 }
 
+.retail-app-funnel,
+.retail-app-value-bar {
+  background: #fff;
+  border: 1px solid #e5eaf0;
+  border-radius: 12px;
+  margin: 18px 0;
+  padding: 20px;
+}
+
+.retail-app-funnel-rows {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.retail-app-funnel-row {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 100px 1fr 34px 54px;
+}
+
+.retail-app-funnel-label {
+  color: #43505f;
+  font-size: 11px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.retail-app-funnel-track {
+  background: #eef1f5;
+  border-radius: 999px;
+  height: 14px;
+  overflow: hidden;
+}
+
+.retail-app-funnel-track i {
+  border-radius: 999px;
+  display: block;
+  height: 100%;
+}
+
+.retail-app-funnel-track i[data-tone="neutral"] {
+  background: #94a3b8;
+}
+
+.retail-app-funnel-track i[data-tone="info"] {
+  background: #4cc9ff;
+}
+
+.retail-app-funnel-track i[data-tone="warn"] {
+  background: #ffb33e;
+}
+
+.retail-app-funnel-track i[data-tone="done"] {
+  background: #22c55e;
+}
+
+.retail-app-funnel-count {
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.retail-app-funnel-drop {
+  color: #8795a7;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.retail-app-funnel-drop[data-high="true"] {
+  color: #ff496e;
+}
+
+.retail-app-value-columns {
+  align-items: end;
+  display: flex;
+  gap: 14px;
+  height: 150px;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.retail-app-value-column {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.retail-app-value-column-track {
+  align-items: end;
+  display: flex;
+  flex: 1;
+  width: 100%;
+}
+
+.retail-app-value-column-track i {
+  border-radius: 4px 4px 0 0;
+  display: block;
+  margin: 0 auto;
+  width: 60%;
+}
+
+.retail-app-value-column-track i[data-tone="neutral"] {
+  background: #94a3b8;
+}
+
+.retail-app-value-column-track i[data-tone="info"] {
+  background: #4cc9ff;
+}
+
+.retail-app-value-column-track i[data-tone="warn"] {
+  background: #ffb33e;
+}
+
+.retail-app-value-column-track i[data-tone="done"] {
+  background: #22c55e;
+}
+
+.retail-app-value-column strong {
+  font-size: 11px;
+}
+
+.retail-app-value-column span {
+  color: #8795a7;
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+}
+
 .retail-app-detail dl {
   display: grid;
   gap: 8px;
