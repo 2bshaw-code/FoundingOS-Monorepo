@@ -107,6 +107,7 @@ interface QuantumState {
   quantumWheelOpen: boolean
   isOnline: boolean
   pendingSyncCount: number
+  licensedSuites: { core_workforce: boolean; core_intelligence: boolean }
   setActiveBrand: (slug: string) => void
   setActiveConsoleModule: (moduleName: string | null) => void
   setRole: (role: UserRole) => void
@@ -117,8 +118,10 @@ interface QuantumState {
   setQuantumWheelOpen: (open: boolean) => void
   setIsOnline: (online: boolean) => void
   setPendingSyncCount: (count: number) => void
+  setLicensedSuites: (suites: { core_workforce: boolean; core_intelligence: boolean }) => void
   getActiveBrand: () => Brand | undefined
   getActiveTheme: () => QuantumTheme
+  getVisibleBrands: () => Brand[]
 }
 
 export const useQuantumStore = create<QuantumState>((set, get) => ({
@@ -131,6 +134,9 @@ export const useQuantumStore = create<QuantumState>((set, get) => ({
   quantumWheelOpen: false,
   isOnline: true,
   pendingSyncCount: 0,
+  // Defaults to visible so the shell renders instantly; corrected once the real
+  // TenantSuiteLicense-backed /module-access check resolves (see _layout.tsx).
+  licensedSuites: { core_workforce: true, core_intelligence: true },
 
   setActiveBrand: (slug: string) => set({ activeBrandSlug: getValidBrandSlug(slug) }),
   setActiveConsoleModule: (moduleName: string | null) => set({ activeConsoleModule: moduleName }),
@@ -142,7 +148,16 @@ export const useQuantumStore = create<QuantumState>((set, get) => ({
   setQuantumWheelOpen: (open: boolean) => set({ quantumWheelOpen: open }),
   setIsOnline: (online: boolean) => set({ isOnline: online }),
   setPendingSyncCount: (count: number) => set({ pendingSyncCount: count }),
+  setLicensedSuites: (suites) => set({ licensedSuites: suites }),
 
   getActiveBrand: () => BRANDS.find((b) => b.slug === getValidBrandSlug(get().activeBrandSlug)),
   getActiveTheme: () => getShellSafeTheme(get().activeBrandSlug),
+  getVisibleBrands: () => {
+    const { licensedSuites } = get()
+    return BRANDS.filter((brand) => {
+      if (brand.slug === 'core_workforce') return licensedSuites.core_workforce
+      if (brand.slug === 'core_intelligence') return licensedSuites.core_intelligence
+      return true
+    })
+  },
 }))

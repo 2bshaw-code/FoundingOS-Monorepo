@@ -418,6 +418,26 @@ export type AgentActionIntelligence = {
   auditTrail: ExecutionAuditEntry[]
 }
 
+export type LicensedSuites = { core_workforce: boolean; core_intelligence: boolean }
+
+/**
+ * Real, backend-checked suite visibility — calls the TenantSuiteLicense-backed
+ * /module-access endpoint for the two optional suites (Core.Operations is the
+ * suite this client itself authenticates against, so it is always available).
+ * Falls back to allowed on network failure so a transient outage never hides
+ * a suite a tenant is actually licensed for.
+ */
+export async function fetchLicensedSuites(): Promise<LicensedSuites> {
+  const session = await getSession()
+  if (!session?.tenantId) return { core_workforce: true, core_intelligence: true }
+  const check = (suite: string) =>
+    authedRequest<{ success: boolean; allowed: boolean }>(`/api/v1/ops/module-access/${session.tenantId}/${suite}`)
+      .then((res) => res.allowed)
+      .catch(() => true)
+  const [core_workforce, core_intelligence] = await Promise.all([check('core_workforce'), check('core_intelligence')])
+  return { core_workforce, core_intelligence }
+}
+
 export const listAgentActions = (status?: AgentActionStatus) =>
   authedRequest<AgentAction[]>(`/api/v1/ops/platform/agent-actions${status ? `?status=${status}` : ''}`)
 

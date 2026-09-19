@@ -2,53 +2,40 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { useCallback, useEffect, useState } from 'react'
-import { Image, RefreshControl, StyleSheet, View } from 'react-native'
+import { Image, Pressable, StyleSheet, View } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
+import { useState } from 'react'
 import { BRANDS } from '../../lib/brands'
-import { fetchBrandMetrics, type BrandMetric } from '../../lib/api'
 import { QuantumBackButton } from '../../components/QuantumBackButton'
-import { CustomerJourneySection } from '../../components/CustomerJourneySection'
-import { UsedCarShopSection } from '../../components/UsedCarShopSection'
-import { QuantumButton, QuantumCard, QuantumLoadingScreen, QuantumMetric, QuantumNotice, QuantumScreen, QuantumSectionHeader, QuantumText, quantumSpace } from '../../components/QuantumUI'
+import { QuantumButton, QuantumCard, QuantumScreen, QuantumSectionHeader, QuantumText, quantumSpace } from '../../components/QuantumUI'
+
+const SUITE_ROUTES: Record<string, string> = {
+  core_operations: '/(app)/home',
+  core_workforce: '/(app)/workforce',
+  core_intelligence: '/(app)/intelligence',
+  foundingos: '/(app)/home',
+}
+
+// The FoundingOS Home overview brand's "modules" are already real, dedicated
+// screens (not generic module-detail lists) — route straight there.
+const FOUNDINGOS_HOME_MODULE_ROUTES: Record<string, string> = {
+  'business-pulse': '/(app)/home',
+  approvals: '/(app)/workflows',
+  messaging: '/(app)/automation',
+  'event-feed': '/(app)/activity',
+}
 
 export default function BrandDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>()
   const brand = BRANDS.find((entry) => entry.slug === slug)
-  const [metric, setMetric] = useState<BrandMetric | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [error, setError] = useState('')
   const [logoUnavailable, setLogoUnavailable] = useState(false)
 
-  const load = useCallback(async (isRefresh = false) => {
-    if (!brand) return
-    if (isRefresh) setRefreshing(true)
-    setError('')
-    try {
-      const rows = await fetchBrandMetrics()
-      const match = rows.find((row) => row.brandName.toLowerCase().includes(brand.slug)) ?? null
-      setMetric(match)
-    } catch {
-      setError('Could not load live activity. Pull down to try again.')
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [brand])
-
-  useEffect(() => {
-    load()
-  }, [load])
-
   if (!brand) return null
-  if (loading) return <QuantumLoadingScreen />
+
+  const suiteRoute = SUITE_ROUTES[brand.slug] ?? '/(app)/home'
 
   return (
-    <QuantumScreen
-      style={{ backgroundColor: brand.accent }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={brand.accent} />}
-    >
+    <QuantumScreen style={{ backgroundColor: brand.accent }}>
       <QuantumBackButton label="‹ Workspaces" />
       <QuantumCard accent={brand.accent}>
         <View style={styles.brandHero}>
@@ -62,40 +49,31 @@ export default function BrandDetailScreen() {
             <Image source={brand.logo} resizeMode="contain" style={styles.logo} onError={() => setLogoUnavailable(true)} />
           )}
           <View style={styles.brandCopy}>
-            <QuantumText variant="overline" color={brand.accent}>FoundingOS workspace</QuantumText>
+            <QuantumText variant="overline" color={brand.accent}>FoundingOS suite</QuantumText>
             <QuantumText variant="h1">{brand.name}</QuantumText>
             <QuantumText color="#D8D8D8">{brand.tagline}</QuantumText>
           </View>
         </View>
       </QuantumCard>
 
-      <QuantumSectionHeader label="Modules" />
+      <QuantumSectionHeader label="What this suite covers" />
       <View style={styles.grid}>
-        {brand.modules.map((module) => (
-          <QuantumButton key={module} tone="secondary" onPress={() => router.push(`/module-detail/${brand.slug}/${module.toLowerCase().replaceAll(' ', '-')}`)}>
-            {module}
-          </QuantumButton>
-        ))}
+        {brand.modules.map((module) => {
+          const moduleId = module.toLowerCase().replaceAll(' ', '-')
+          const target = brand.slug === 'foundingos' ? FOUNDINGOS_HOME_MODULE_ROUTES[moduleId] : `/module-detail/${brand.slug}/${moduleId}`
+          return (
+            <Pressable key={module} onPress={() => target && router.push(target as never)}>
+              <QuantumCard accent={brand.accent} style={styles.moduleChip}>
+                <QuantumText>{module}</QuantumText>
+              </QuantumCard>
+            </Pressable>
+          )
+        })}
       </View>
 
-      <QuantumSectionHeader label="Live activity" />
-      {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : metric ? (
-        <QuantumCard accent={brand.accent}>
-          <View style={styles.metricRow}>
-            <QuantumMetric label="Engagement" value={metric.totalEngagement} tone="info" />
-            <QuantumMetric label="Anomaly" value={metric.anomalyScore.toFixed(2)} tone={metric.anomalyScore > 0.55 ? 'watch' : 'good'} />
-          </View>
-          <QuantumText variant="caption" color="#D8D8D8">
-            {Object.entries(metric.categoryBreakdown).map(([key, value]) => `${key}: ${value}`).join(' · ')}
-          </QuantumText>
-          <QuantumText variant="caption" color="#7F7F7F">Updated {new Date(metric.lastUpdated).toLocaleString('en-GB')}</QuantumText>
-        </QuantumCard>
-      ) : (
-        <QuantumNotice>No activity yet.</QuantumNotice>
-      )}
-
-      <CustomerJourneySection accent={brand.accent} brandName={brand.name} />
-      {brand.slug === 'retail' ? <UsedCarShopSection accent={brand.accent} /> : null}
+      <QuantumButton onPress={() => router.push(suiteRoute as never)}>
+        Open {brand.homeLabel}
+      </QuantumButton>
     </QuantumScreen>
   )
 }
@@ -112,6 +90,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
-  metricRow: { flexDirection: 'row', gap: quantumSpace.sm },
+  grid: { gap: quantumSpace.sm },
+  moduleChip: { paddingVertical: quantumSpace.sm },
 })

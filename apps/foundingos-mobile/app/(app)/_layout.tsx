@@ -2,10 +2,11 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Tabs } from 'expo-router'
 import { Text, View, Pressable, StyleSheet } from 'react-native'
 import { BRANDS } from '../../lib/brands'
+import { fetchLicensedSuites } from '../../lib/core-operations-api'
 import { FOUNDINGOS_SHELL_THEME, useQuantumStore } from '../../lib/store'
 import { QuantumWheelModal } from '../../components/QuantumWheel'
 import { CommandBarModal } from '../../components/CommandBar'
@@ -19,6 +20,8 @@ export default function AppTabsLayout() {
   const activeBrandSlug = useQuantumStore((state) => state.activeBrandSlug)
   const setCommandBarOpen = useQuantumStore((state) => state.setCommandBarOpen)
   const setQuantumWheelOpen = useQuantumStore((state) => state.setQuantumWheelOpen)
+  const licensedSuites = useQuantumStore((state) => state.licensedSuites)
+  const setLicensedSuites = useQuantumStore((state) => state.setLicensedSuites)
   const shellTheme = FOUNDINGOS_SHELL_THEME
   const activeBrand = BRANDS.find((brand) => brand.slug === activeBrandSlug) ?? BRANDS[0]
   const activeWorkspaceName = activeBrand?.name ?? 'FoundingOS Home'
@@ -27,6 +30,19 @@ export default function AppTabsLayout() {
   const [captureType, setCaptureType] = useState<'voice' | 'photo' | 'video' | null>(null)
   const [confirmationData, setConfirmationData] = useState<AIConfirmationData | null>(null)
   const renderHeaderTitle = (title: string) => <QuantumShellHeaderTitle title={title} brandName={activeWorkspaceName} accent={shellAccent} />
+
+  // Suite tab visibility is driven by real TenantSuiteLicense records via the
+  // Core.Operations /module-access endpoint — not hardcoded. Re-checked on
+  // every mount of the authenticated shell.
+  useEffect(() => {
+    let cancelled = false
+    fetchLicensedSuites().then((suites) => {
+      if (!cancelled) setLicensedSuites(suites)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [setLicensedSuites])
 
   const tabIcons = {
     home: ({ color, size }: { color: string; size?: number }) => <HomeIcon color={color} size={size} />,
@@ -82,6 +98,7 @@ export default function AppTabsLayout() {
           options={{
             title: 'Hiring',
             headerTitle: () => renderHeaderTitle('Core.Workforce'),
+            href: licensedSuites.core_workforce ? undefined : null,
           }}
         />
         <Tabs.Screen
@@ -103,6 +120,7 @@ export default function AppTabsLayout() {
           options={{
             title: 'Intel',
             headerTitle: () => renderHeaderTitle('Core.Intelligence'),
+            href: licensedSuites.core_intelligence ? undefined : null,
           }}
         />
         <Tabs.Screen

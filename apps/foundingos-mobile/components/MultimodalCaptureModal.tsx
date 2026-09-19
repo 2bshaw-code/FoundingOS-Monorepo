@@ -15,7 +15,7 @@ export type AIConfirmationData = {
   brandSlug: string
   title: string
   summary: string
-  confidenceScore: number
+  confidenceScore: number | null
   whatsappMessage: string
   details: Record<string, unknown>
 }
@@ -44,24 +44,13 @@ export function MultimodalCaptureModal({
 
   const captureTitle = captureType === 'voice' ? 'Voice AI Assistant' : captureType === 'photo' ? 'AI Photo Scanner' : 'AI Video Analysis'
 
+  // Photo/video capture always maps to inventory or logistics intake — the previous
+  // per-brand branches (`activeBrandSlug === 'finance'/'retail'`) were unreachable dead
+  // code left over from the 9-brand model; brandSlug values are now only
+  // foundingos/core_operations/core_workforce/core_intelligence.
   const mediaConfig = (type: CaptureType) => {
-    let endpoint = '/api/ai/inventory-intake'
-    let actionType = 'PHOTO_INVENTORY_INTAKE'
-
-    if (type === 'photo') {
-      if (activeBrandSlug === 'finance') {
-        endpoint = '/api/boltons/finance-expense'
-        actionType = 'RECEIPT_EXPENSE_SCAN'
-      } else if (activeBrandSlug === 'retail') {
-        endpoint = '/api/boltons/shelf-scanner'
-        actionType = 'SHELF_STOCK_SCAN'
-      }
-    } else if (type === 'video') {
-      endpoint = '/api/ai/logistics-routing'
-      actionType = 'VIDEO_MULTIITEM_SCAN'
-    }
-
-    return { endpoint, actionType }
+    if (type === 'video') return { endpoint: '/api/ai/logistics-routing', actionType: 'VIDEO_MULTIITEM_SCAN' }
+    return { endpoint: '/api/ai/inventory-intake', actionType: 'PHOTO_INVENTORY_INTAKE' }
   }
 
   const processMediaPayload = async (mediaUri: string, type: CaptureType) => {
@@ -83,10 +72,10 @@ export function MultimodalCaptureModal({
       onConfirmationReady({
         actionType,
         brandSlug: activeBrandSlug,
-        title: suggestion?.name || data?.boltOn || 'AI Multimodal Intake Detected',
-        summary: suggestion?.whatsappMessage || `Detected ${type} capture and mapped it into a structured workflow.`,
-        confidenceScore: suggestion?.confidenceScore || 0.95,
-        whatsappMessage: suggestion?.whatsappMessage || `AI action logged: ${type} intake processed for ${activeBrandSlug}.`,
+        title: suggestion?.name || data?.boltOn || `${type === 'photo' ? 'Photo' : 'Video'} capture recorded`,
+        summary: suggestion?.whatsappMessage || `The backend accepted this ${type} capture but returned no structured suggestion yet.`,
+        confidenceScore: typeof suggestion?.confidenceScore === 'number' ? suggestion.confidenceScore : null,
+        whatsappMessage: suggestion?.whatsappMessage || `${type} intake recorded for ${activeBrandSlug} — awaiting a structured suggestion.`,
         details: suggestion || data || { uri: mediaUri },
       })
     } catch (err) {
@@ -146,16 +135,17 @@ export function MultimodalCaptureModal({
 
       if (!res.ok) throw new Error(`AI endpoint returned ${res.status}`)
       const data = await res.json().catch(() => null)
+      const suggestion = data?.suggestion
 
       onClose()
       onConfirmationReady({
         actionType: 'VOICE_COMMAND_ACTION',
         brandSlug: activeBrandSlug,
-        title: 'Voice Command Processed',
-        summary: `Command "${voiceInputText}" was mapped to a structured domain model.`,
-        confidenceScore: 0.96,
-        whatsappMessage: `Voice command "${voiceInputText}" processed on ${activeBrandSlug}.`,
-        details: data?.suggestion || { commandText: voiceInputText },
+        title: suggestion?.name || `Voice command recorded`,
+        summary: suggestion?.whatsappMessage || `Command "${voiceInputText}" was accepted but returned no structured suggestion yet.`,
+        confidenceScore: typeof suggestion?.confidenceScore === 'number' ? suggestion.confidenceScore : null,
+        whatsappMessage: suggestion?.whatsappMessage || `Voice command "${voiceInputText}" recorded for ${activeBrandSlug} — awaiting a structured suggestion.`,
+        details: suggestion || { commandText: voiceInputText },
       })
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown processing error'
@@ -247,10 +237,14 @@ export function AIConfirmationModal({ data, onClose }: { data: AIConfirmationDat
           <QuantumText variant="h2">{data.title}</QuantumText>
           <QuantumText>{data.summary}</QuantumText>
 
-          <QuantumCard accent={theme.accent} elevated={false}>
-            <QuantumText variant="caption">Confidence Score</QuantumText>
-            <QuantumText variant="h2" color={theme.accent}>{(data.confidenceScore * 100).toFixed(0)}%</QuantumText>
-          </QuantumCard>
+          {data.confidenceScore != null ? (
+            <QuantumCard accent={theme.accent} elevated={false}>
+              <QuantumText variant="caption">Confidence Score</QuantumText>
+              <QuantumText variant="h2" color={theme.accent}>{(data.confidenceScore * 100).toFixed(0)}%</QuantumText>
+            </QuantumCard>
+          ) : (
+            <QuantumNotice>No structured confidence score was returned for this capture.</QuantumNotice>
+          )}
 
           <QuantumCard accent={quantumColors.whatsapp} elevated={false}>
             <QuantumText variant="overline" color={quantumColors.whatsapp}>WhatsApp automation message</QuantumText>
