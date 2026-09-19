@@ -1455,6 +1455,66 @@ function AccountingModule({ data }: { data: CoreOperationsWorkspaceData }) {
   )
 }
 
+function DeliveryMapPanel({ vehicles, assignments }: { vehicles: DeliveryVehicle[]; assignments: DeliveryAssignment[] }) {
+  const vehiclePoints = vehicles.filter((vehicle) => vehicle.currentLat != null && vehicle.currentLng != null)
+  const routeAssignments = assignments.filter((assignment) => assignment.originLat != null && assignment.originLng != null && assignment.destinationLat != null && assignment.destinationLng != null)
+  const allLats = [...vehiclePoints.map((vehicle) => vehicle.currentLat as number), ...routeAssignments.flatMap((assignment) => [assignment.originLat as number, assignment.destinationLat as number])]
+  const allLngs = [...vehiclePoints.map((vehicle) => vehicle.currentLng as number), ...routeAssignments.flatMap((assignment) => [assignment.originLng as number, assignment.destinationLng as number])]
+
+  if (!allLats.length) {
+    return (
+      <article className="panel" style={{ display: 'grid', gap: 12 }}>
+        <div><p className="eyebrow">Live tracking</p><h2 style={{ margin: '6px 0' }}>Delivery map</h2></div>
+        <p style={{ margin: 0, color: '#94a3b8' }}>No live GPS positions yet. Add origin/destination coordinates when creating an assignment, or update a vehicle&apos;s current position, to see it plotted here.</p>
+      </article>
+    )
+  }
+
+  const minLat = Math.min(...allLats), maxLat = Math.max(...allLats)
+  const minLng = Math.min(...allLngs), maxLng = Math.max(...allLngs)
+  const spanLat = maxLat - minLat || 0.01
+  const spanLng = maxLng - minLng || 0.01
+  const project = (lat: number, lng: number): [number, number] => [
+    ((lng - minLng) / spanLng) * 280 + 10,
+    (1 - (lat - minLat) / spanLat) * 180 + 10,
+  ]
+
+  return (
+    <article className="panel" style={{ display: 'grid', gap: 12 }}>
+      <div><p className="eyebrow">Live tracking</p><h2 style={{ margin: '6px 0' }}>Delivery map</h2></div>
+      <svg viewBox="0 0 300 200" role="img" aria-label="Delivery map showing vehicle positions and active routes" style={{ width: '100%', height: 220, background: '#0b1220', borderRadius: 12, border: '1px solid rgba(148,163,184,0.14)' }}>
+        {routeAssignments.map((assignment) => {
+          const [x1, y1] = project(assignment.originLat as number, assignment.originLng as number)
+          const [x2, y2] = project(assignment.destinationLat as number, assignment.destinationLng as number)
+          const delivered = assignment.status === 'delivered'
+          return (
+            <g key={assignment.id}>
+              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={statusTone(assignment.status)} strokeWidth={2} strokeDasharray={delivered ? undefined : '4 3'} />
+              <circle cx={x1} cy={y1} r={3} fill="#64748b" />
+              <circle cx={x2} cy={y2} r={4} fill={statusTone(assignment.status)} />
+            </g>
+          )
+        })}
+        {vehiclePoints.map((vehicle) => {
+          const [x, y] = project(vehicle.currentLat as number, vehicle.currentLng as number)
+          return (
+            <g key={vehicle.id}>
+              <circle cx={x} cy={y} r={6} fill="#38bdf8" stroke="#0b1220" strokeWidth={1.5} />
+              <text x={x + 8} y={y + 3} fontSize={9} fill="#e2e8f0">{vehicle.label}</text>
+            </g>
+          )
+        })}
+      </svg>
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 12, color: '#94a3b8' }}>
+        <span>● Vehicle position</span>
+        <span>— Route in progress</span>
+        <span>— Delivered route</span>
+      </div>
+      <p style={{ margin: 0, fontSize: 12, color: '#64748b' }}>{vehiclePoints.length} vehicle position{vehiclePoints.length === 1 ? '' : 's'} · {routeAssignments.length} route{routeAssignments.length === 1 ? '' : 's'} with known coordinates</p>
+    </article>
+  )
+}
+
 function DeliveryModule({ data }: { data: CoreOperationsWorkspaceData }) {
   const summary = data.summary
   const [formState, patchFormState, resetFormState] = useFormState()
@@ -1488,6 +1548,10 @@ function DeliveryModule({ data }: { data: CoreOperationsWorkspaceData }) {
           zoneId: String(form.get('zoneId') || '') || undefined,
           recipient: String(form.get('recipient') || '') || undefined,
           message: String(form.get('message') || '') || undefined,
+          originLat: form.get('originLat') ? Number(form.get('originLat')) : undefined,
+          originLng: form.get('originLng') ? Number(form.get('originLng')) : undefined,
+          destinationLat: form.get('destinationLat') ? Number(form.get('destinationLat')) : undefined,
+          destinationLng: form.get('destinationLng') ? Number(form.get('destinationLng')) : undefined,
         }),
       }))
       event.currentTarget.reset()
@@ -1519,6 +1583,7 @@ function DeliveryModule({ data }: { data: CoreOperationsWorkspaceData }) {
         <MetricCard label="Success rate" value={percentage(summary.metrics.deliverySuccessRate)} detail={`${integer(summary.metrics.delivered)} delivered assignments.`} />
         <MetricCard label="Delivery revenue" value={money(summary.metrics.deliveryRevenuePence)} detail={`${integer(summary.deliveryZones.length)} configured zones.`} />
       </div>
+      <DeliveryMapPanel vehicles={summary.deliveryVehicles} assignments={summary.deliveryAssignments} />
       <div className="module-grid" style={{ alignItems: 'start' }}>
         <form className="panel" onSubmit={createAssignment} style={{ display: 'grid', gap: 12 }}>
           <div><p className="eyebrow">Assign delivery</p><h2 style={{ margin: '6px 0' }}>Write to <code>/delivery/assignments</code></h2></div>
@@ -1528,6 +1593,15 @@ function DeliveryModule({ data }: { data: CoreOperationsWorkspaceData }) {
           <label><span>Zone</span><select className="input" name="zoneId"><option value="">No zone</option>{summary.deliveryZones.map((zone) => <option key={zone.id} value={zone.id}>{zone.name}</option>)}</select></label>
           <label><span>Recipient</span><input className="input" name="recipient" placeholder="WhatsApp number for notification" /></label>
           <label><span>Message</span><textarea className="input" name="message" rows={3} placeholder="Optional custom delivery message" /></label>
+          <details style={{ display: 'grid', gap: 10 }}>
+            <summary style={{ cursor: 'pointer', color: '#94a3b8' }}>Route coordinates (optional, powers the live map)</summary>
+            <div style={{ display: 'grid', gap: 10, gridTemplateColumns: '1fr 1fr' }}>
+              <label><span>Origin latitude</span><input className="input" name="originLat" type="number" step="any" placeholder="e.g. 51.5072" /></label>
+              <label><span>Origin longitude</span><input className="input" name="originLng" type="number" step="any" placeholder="e.g. -0.1276" /></label>
+              <label><span>Destination latitude</span><input className="input" name="destinationLat" type="number" step="any" placeholder="e.g. 51.4545" /></label>
+              <label><span>Destination longitude</span><input className="input" name="destinationLng" type="number" step="any" placeholder="e.g. -0.9781" /></label>
+            </div>
+          </details>
           <button type="submit" className="btn btn-primary" disabled={formState.busy}>{formState.busy ? 'Saving…' : 'Create live assignment'}</button>
         </form>
         <article className="panel" style={{ display: 'grid', gap: 12 }}>

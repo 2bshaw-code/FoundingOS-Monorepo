@@ -36,6 +36,32 @@ function now() {
   return new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' }).format(new Date())
 }
 
+// Each of these ids is a distinct facet of the same underlying hiring pipeline (ATS records,
+// candidate relationships, open jobs, pipeline stages, interview scheduling, and offers all
+// read from the same candidate table) — the title/description differentiate what the view is
+// framed around so the module doesn't look identical to every other module in the sidebar.
+const workforceModuleCopy: Record<string, { title: string; description: string }> = {
+  onboarding: { title: 'People and onboarding', description: 'Track new hires from accepted offer through their first completed onboarding checklist.' },
+  ats: { title: 'Applicant tracking', description: 'Every application in one queue, with source and screening status visible per candidate.' },
+  crm: { title: 'Candidate relationships', description: 'See ownership and last contact for every person currently in an active hiring conversation.' },
+  candidates: { title: 'Candidates', description: 'See who is moving, where hiring is blocked, and what action keeps the team plan on track.' },
+  jobs: { title: 'Open roles', description: 'Roles currently being hired for, grouped by how much pipeline coverage each one has.' },
+  pipelines: { title: 'Pipeline overview', description: 'Candidate volume and conversion at each stage, from applied through to hired.' },
+  interviews: { title: 'Interview schedule', description: 'Candidates currently booked for or awaiting an interview slot.' },
+  offers: { title: 'Offers', description: 'Outstanding offers, acceptance risk, and days remaining before they expire.' },
+}
+
+const intelligenceModuleCopy: Record<string, { title: string; description: string }> = {
+  monitoring: { title: 'Business health', description: 'Turn activity from every workspace into a clear view of what changed and what matters.' },
+  tickets: { title: 'Signal tickets', description: 'Open decisions logged as trackable tickets, each tied to a business area and owner.' },
+  alerts: { title: 'Alerts', description: 'Signals above the confidence threshold that need an immediate accountable response.' },
+  assets: { title: 'Monitored assets', description: 'The workspaces, integrations, and data sources Core.Intelligence is currently reading from.' },
+  systems: { title: 'Connected systems', description: 'Health and signal volume from each connected suite, at a glance.' },
+  uptime: { title: 'Uptime and reliability', description: 'How consistently signals have been landing from every connected workspace.' },
+  incidents: { title: 'Incidents', description: 'Risks that have escalated past normal thresholds and need a resolution owner.' },
+  reports: { title: 'Reports', description: 'A rollup of resolved decisions and their outcomes, for review and audit.' },
+}
+
 function MetricStrip({ items }: { items: Array<{ label: string; value: string; detail: string }> }) {
   return <div className="retail-metric-strip">{items.map((item) => <article key={item.label}><span>{item.label}</span><strong>{item.value}</strong><small>{item.detail}</small></article>)}</div>
 }
@@ -70,7 +96,7 @@ function WorkforceWorkspace({ moduleId }: { moduleId: string }) {
   }
 
   return <section className="retail-workspace">
-    <WorkspaceHeader eyebrow="Core.Workforce" title={moduleId === 'onboarding' ? 'People and onboarding' : 'Hiring pipeline'} description="See who is moving, where hiring is blocked, and what action keeps the team plan on track." onCreate={createCandidate} />
+    <WorkspaceHeader eyebrow="Core.Workforce" title={(workforceModuleCopy[moduleId] ?? workforceModuleCopy.candidates).title} description={(workforceModuleCopy[moduleId] ?? workforceModuleCopy.candidates).description} onCreate={createCandidate} />
     <ActivityToast activity={activity} />
     <CEOBriefing
       headline={ready ? `${ready} strong candidate${ready === 1 ? '' : 's'} ready to progress` : 'The hiring pipeline is moving'}
@@ -121,7 +147,7 @@ function IntelligenceWorkspace({ moduleId }: { moduleId: string }) {
   }
 
   return <section className="retail-workspace">
-    <WorkspaceHeader eyebrow="Core.Intelligence" title={moduleId === 'monitoring' ? 'Business health' : 'Risks and recommendations'} description="Turn activity from every workspace into a clear view of what changed, what matters, and what to do next." onCreate={() => {
+    <WorkspaceHeader eyebrow="Core.Intelligence" title={(intelligenceModuleCopy[moduleId] ?? intelligenceModuleCopy.tickets).title} description={(intelligenceModuleCopy[moduleId] ?? intelligenceModuleCopy.tickets).description} onCreate={() => {
       const next: BusinessRisk = { id: `RSK-${43 + risks.length}`, area: 'Operations', signal: 'New signal awaiting review', impact: 'Impact not yet quantified', confidence: 72, owner: 'Unassigned', status: 'Open', recommendation: 'Review the connected events and assign an owner.' }
       setRisks((current) => [next, ...current]); setSelectedId(next.id); setActivity({ id: `risk-${Date.now()}`, label: `${next.id} created`, detail: 'New signal entered the decision queue', time: now() })
     }} />
