@@ -31,12 +31,18 @@ import {
   QuantumSectionHeader,
   QuantumText,
   getSemanticColor,
+  quantumColors,
+  quantumRadius,
   quantumSpace,
 } from '../../../components/QuantumUI'
 
 type ModuleTone = 'good' | 'watch' | 'risk' | 'info'
 type ModuleMetric = { label: string; value: string; tone?: ModuleTone }
 type ModuleItem = { id: string; title: string; subtitle?: string; meta?: string; tone?: ModuleTone }
+type AgingBucket = { bucket: string; count: number; amountPence: number }
+type AgingWorstItem = { id: string; title: string; daysOverdue: number; amountPence: number }
+type CalendarEntry = { id: string; day: number; title: string; status: string; tone: ModuleTone }
+type FunnelStage = { stage: string; count: number }
 type ModuleView = {
   title: string
   description: string
@@ -45,6 +51,11 @@ type ModuleView = {
   emptyLabel: string
   ctaLabel: string
   ctaRoute: string
+  // Bespoke panel data. When set, the screen renders a purpose-built visual
+  // (aging chart / calendar grid / funnel bars) in place of the generic list.
+  aging?: { buckets: AgingBucket[]; worst: AgingWorstItem[] }
+  calendar?: { month: string; daysInMonth: number; entries: CalendarEntry[] }
+  funnel?: FunnelStage[]
 }
 
 function formatPence(pence: number | null | undefined): string {
@@ -62,6 +73,40 @@ function toneForStatus(status: string): ModuleTone {
   if (['completed', 'paid', 'delivered', 'hired', 'filled', 'active', 'open'].includes(value)) return 'good'
   if (['overdue', 'rejected', 'failed', 'cancelled', 'no_show'].includes(value)) return 'risk'
   return 'watch'
+}
+
+const AGING_BUCKET_LABELS = ['Current', '1-30 days', '31-60 days', '61-90 days', '90+ days']
+
+function buildInvoiceAging(invoices: { id: string; number: string; totalPence: number; dueAt?: string | null; paidAt?: string | null }[]): ModuleView['aging'] {
+  const now = Date.now()
+  const buckets: AgingBucket[] = AGING_BUCKET_LABELS.map((bucket) => ({ bucket, count: 0, amountPence: 0 }))
+  const worst: AgingWorstItem[] = []
+  for (const invoice of invoices) {
+    if (invoice.paidAt || !invoice.dueAt) continue
+    const daysOverdue = Math.floor((now - new Date(invoice.dueAt).getTime()) / (24 * 60 * 60 * 1000))
+    const index = daysOverdue <= 0 ? 0 : daysOverdue <= 30 ? 1 : daysOverdue <= 60 ? 2 : daysOverdue <= 90 ? 3 : 4
+    buckets[index].count += 1
+    buckets[index].amountPence += invoice.totalPence
+    if (daysOverdue > 0) worst.push({ id: invoice.id, title: invoice.number, daysOverdue, amountPence: invoice.totalPence })
+  }
+  worst.sort((a, b) => b.daysOverdue - a.daysOverdue)
+  return { buckets, worst: worst.slice(0, 5) }
+}
+
+function buildMarketingCalendar(campaigns: { id: string; name: string; status: string; scheduledAt?: string | null }[]): ModuleView['calendar'] {
+  const reference = new Date()
+  const daysInMonth = new Date(reference.getFullYear(), reference.getMonth() + 1, 0).getDate()
+  const monthLabel = reference.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+  const entries: CalendarEntry[] = campaigns
+    .filter((c) => c.scheduledAt)
+    .map((c) => ({
+      id: c.id,
+      day: new Date(c.scheduledAt as string).getDate(),
+      title: c.name,
+      status: c.status,
+      tone: toneForStatus(c.status),
+    }))
+  return { month: monthLabel, daysInMonth, entries }
 }
 
 async function loadCoreOperationsModule(moduleId: string): Promise<ModuleView> {
@@ -105,6 +150,7 @@ async function loadCoreOperationsModule(moduleId: string): Promise<ModuleView> {
       emptyLabel: 'No invoices yet.',
       ctaLabel: 'Open Work & Approvals',
       ctaRoute: '/(app)/workflows',
+      aging: buildInvoiceAging(invoices),
     }
   }
   if (moduleId === 'inventory') {
@@ -149,6 +195,7 @@ async function loadCoreOperationsModule(moduleId: string): Promise<ModuleView> {
       emptyLabel: 'No campaigns yet.',
       ctaLabel: 'Open Marketing Console',
       ctaRoute: '/(app)/marketing',
+      calendar: buildMarketingCalendar(campaigns),
     }
   }
   // messaging
@@ -235,6 +282,7 @@ async function loadCoreWorkforceModule(moduleId: string): Promise<ModuleView> {
       emptyLabel: 'No pipeline data yet.',
       ctaLabel: 'Open Core.Workforce',
       ctaRoute: '/(app)/workforce',
+      funnel: counts,
     }
   }
   // interviews
@@ -334,6 +382,101 @@ async function loadModule(brandSlug: string, moduleId: string): Promise<ModuleVi
   return loadCoreOperationsModule(moduleId)
 }
 
+function InvoiceAgingPanel({ aging }: { aging: NonNullable<ModuleView['aging']> }) {
+  const maxAmount = Math.max(1, ...aging.buckets.map((b) => b.amountPence))
+  return (
+    <QuantumCard accent={quantumColors.neutral200}>
+      <QuantumText variant="h3">Aging by days overdue</QuantumText>
+      <View style={styles.agingChart}>
+        {aging.buckets.map((bucket) => {
+          const heightPct = Math.max(4, Math.round((bucket.amountPence / maxAmount) * 100))
+          const tone = bucket.bucket === 'Current' ? 'good' : bucket.bucket === '90+ days' ? 'risk' : 'watch'
+          return (
+            <View key={bucket.bucket} style={styles.agingCol}>
+              <QuantumText variant="caption">{formatPence(bucket.amountPence)}</QuantumText>
+              <View style={styles.agingBarTrack}>
+                <View style={[styles.agingBarFill, { height: `${heightPct}%`, backgroundColor: getSemanticColor(tone) }]} />
+              </View>
+              <QuantumText variant="caption" color="#7F7F7F" align="center">{bucket.bucket}</QuantumText>
+              <QuantumText variant="caption" color="#7F7F7F">{bucket.count} invoice{bucket.count === 1 ? '' : 's'}</QuantumText>
+            </View>
+          )
+        })}
+      </View>
+      {aging.worst.length > 0 ? (
+        <>
+          <QuantumText variant="h3" style={styles.agingWorstHeading}>Most overdue</QuantumText>
+          {aging.worst.map((invoice) => (
+            <View key={invoice.id} style={styles.agingWorstRow}>
+              <QuantumText style={styles.title}>{invoice.title}</QuantumText>
+              <QuantumText color={quantumColors.danger}>{invoice.daysOverdue}d · {formatPence(invoice.amountPence)}</QuantumText>
+            </View>
+          ))}
+        </>
+      ) : null}
+    </QuantumCard>
+  )
+}
+
+function MarketingCalendarPanel({ calendar }: { calendar: NonNullable<ModuleView['calendar']> }) {
+  const days = Array.from({ length: calendar.daysInMonth }, (_, i) => i + 1)
+  const entriesByDay = new Map<number, CalendarEntry[]>()
+  for (const entry of calendar.entries) {
+    entriesByDay.set(entry.day, [...(entriesByDay.get(entry.day) ?? []), entry])
+  }
+  return (
+    <QuantumCard accent={quantumColors.neutral200}>
+      <QuantumText variant="h3">{calendar.month}</QuantumText>
+      <View style={styles.calendarGrid}>
+        {days.map((day) => {
+          const dayEntries = entriesByDay.get(day) ?? []
+          const isToday = day === new Date().getDate()
+          return (
+            <View key={day} style={[styles.calendarCell, isToday && styles.calendarCellToday]}>
+              <QuantumText variant="caption" color={isToday ? quantumColors.neutral900 : '#7F7F7F'}>{day}</QuantumText>
+              {dayEntries.slice(0, 2).map((entry) => (
+                <View key={entry.id} style={[styles.calendarDot, { backgroundColor: getSemanticColor(entry.tone) }]} />
+              ))}
+            </View>
+          )
+        })}
+      </View>
+      {calendar.entries.length === 0 ? <QuantumNotice>No campaigns scheduled this month.</QuantumNotice> : (
+        calendar.entries
+          .slice()
+          .sort((a, b) => a.day - b.day)
+          .map((entry) => (
+            <View key={entry.id} style={styles.agingWorstRow}>
+              <QuantumText style={styles.title}>{entry.title}</QuantumText>
+              <QuantumText color={getSemanticColor(entry.tone)}>Day {entry.day} · {entry.status}</QuantumText>
+            </View>
+          ))
+      )}
+    </QuantumCard>
+  )
+}
+
+function PipelineFunnelPanel({ funnel }: { funnel: FunnelStage[] }) {
+  const maxCount = Math.max(1, ...funnel.map((f) => f.count))
+  return (
+    <QuantumCard accent={quantumColors.neutral200}>
+      <QuantumText variant="h3">Candidate funnel</QuantumText>
+      {funnel.map((stage) => {
+        const widthPct = Math.max(6, Math.round((stage.count / maxCount) * 100))
+        return (
+          <View key={stage.stage} style={styles.funnelRow}>
+            <QuantumText variant="caption" style={styles.funnelLabel}>{stage.stage}</QuantumText>
+            <View style={styles.funnelTrack}>
+              <View style={[styles.funnelBar, { width: `${widthPct}%` }]} />
+            </View>
+            <QuantumText variant="caption">{stage.count}</QuantumText>
+          </View>
+        )
+      })}
+    </QuantumCard>
+  )
+}
+
 export default function ModuleDetailScreen() {
   const { slug, moduleId } = useLocalSearchParams<{ slug: string; moduleId: string }>()
   const brand = BRANDS.find((entry) => entry.slug === slug)
@@ -390,7 +533,13 @@ export default function ModuleDetailScreen() {
           </View>
 
           <QuantumSectionHeader label={view.title} />
-          {view.items.length === 0 ? (
+          {view.aging ? (
+            <InvoiceAgingPanel aging={view.aging} />
+          ) : view.calendar ? (
+            <MarketingCalendarPanel calendar={view.calendar} />
+          ) : view.funnel ? (
+            <PipelineFunnelPanel funnel={view.funnel} />
+          ) : view.items.length === 0 ? (
             <QuantumNotice>{view.emptyLabel}</QuantumNotice>
           ) : (
             view.items.map((item) => (
@@ -413,4 +562,18 @@ const styles = StyleSheet.create({
   metricGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.md },
   metricCard: { flexGrow: 1, flexBasis: '47%', minWidth: 148 },
   title: { fontWeight: '600' },
+  agingChart: { flexDirection: 'row', justifyContent: 'space-between', gap: quantumSpace.sm, marginTop: quantumSpace.md, height: 140 },
+  agingCol: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: quantumSpace.xs },
+  agingBarTrack: { width: '100%', flex: 1, borderRadius: quantumRadius.sm, backgroundColor: quantumColors.neutral800, justifyContent: 'flex-end', overflow: 'hidden' },
+  agingBarFill: { width: '100%', borderRadius: quantumRadius.sm },
+  agingWorstHeading: { marginTop: quantumSpace.lg, marginBottom: quantumSpace.xs },
+  agingWorstRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: quantumSpace.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: quantumColors.neutral700 },
+  calendarGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: quantumSpace.md, marginBottom: quantumSpace.md },
+  calendarCell: { width: '13%', aspectRatio: 1, borderRadius: quantumRadius.sm, backgroundColor: quantumColors.neutral800, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  calendarCellToday: { backgroundColor: quantumColors.success },
+  calendarDot: { width: 5, height: 5, borderRadius: 3 },
+  funnelRow: { flexDirection: 'row', alignItems: 'center', gap: quantumSpace.sm, marginTop: quantumSpace.sm },
+  funnelLabel: { width: 84 },
+  funnelTrack: { flex: 1, height: 14, borderRadius: quantumRadius.sm, backgroundColor: quantumColors.neutral800, overflow: 'hidden' },
+  funnelBar: { height: '100%', borderRadius: quantumRadius.sm, backgroundColor: quantumColors.neutral200 },
 })
