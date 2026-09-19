@@ -5357,6 +5357,292 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   cursor: pointer;
 }
 
+.retail-app-activity-log {
+  margin-top: 14px;
+}
+
+.retail-app-activity-add {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.retail-app-activity-add input {
+  border: 1px solid #d8e1ea;
+  border-radius: 6px;
+  flex: 1;
+  font-size: 12px;
+  padding: 7px 9px;
+}
+
+.retail-app-activity-add button {
+  font-size: 11px;
+  padding: 6px 12px;
+}
+
+.retail-app-activity-list {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.retail-app-activity-list li {
+  background: #f6f7f9;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  gap: 2px;
+  padding: 8px 10px;
+}
+
+.retail-app-activity-list li small {
+  color: #8795a7;
+  font-weight: 600;
+}
+
+.retail-app-activity-empty {
+  color: #8795a7;
+  font-size: 11px;
+  margin: 0;
+}
+
+.retail-app-stock-take {
+  background: #f6f7f9;
+  border-radius: 10px;
+  margin-top: 14px;
+  padding: 12px;
+}
+
+.retail-app-stock-take[data-low="true"] {
+  background: #fff3e8;
+}
+
+.retail-app-stock-take-gauge {
+  margin-bottom: 6px;
+}
+
+.retail-app-stock-take-bar {
+  background: #e5eaf0;
+  border-radius: 999px;
+  height: 8px;
+  margin-bottom: 6px;
+  overflow: visible;
+  position: relative;
+}
+
+.retail-app-stock-take-bar i {
+  background: var(--retail-accent, #22c55e);
+  border-radius: 999px;
+  display: block;
+  height: 100%;
+}
+
+.retail-app-stock-take-bar b {
+  background: #43505f;
+  border-radius: 1px;
+  height: 14px;
+  position: absolute;
+  top: -3px;
+  width: 2px;
+}
+
+.retail-app-stock-take-gauge span {
+  color: #56667b;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.retail-app-stock-take-alert {
+  color: #d97a1f;
+  font-size: 11px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.retail-app-stock-take-form {
+  display: flex;
+  gap: 6px;
+}
+
+.retail-app-stock-take-form input {
+  border: 1px solid #d8e1ea;
+  border-radius: 6px;
+  flex: 1;
+  font-size: 12px;
+  padding: 7px 9px;
+}
+
+.retail-app-stock-take-form button {
+  font-size: 11px;
+  padding: 6px 12px;
+}
+
+.retail-app-forecast-bar {
+  background: #fff;
+  border: 1px solid #e5eaf0;
+  border-radius: 12px;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 18px 0;
+  padding: 16px 20px;
+}
+
+.retail-app-forecast-bar div {
+  display: flex;
+  flex-direction: column;
+}
+
+.retail-app-forecast-bar strong {
+  font-size: 20px;
+}
+
+.retail-app-forecast-bar span {
+  color: #8795a7;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.retail-app-cashflow-chart {
+  background: #fff;
+  border: 1px solid #e5eaf0;
+  border-radius: 12px;
+  margin: 18px 0;
+  padding: 20px;
+}
+
+.retail-app-cashflow-legend {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.retail-app-cashflow-legend span {
+  align-items: center;
+  color: #56667b;
+  display: flex;
+  font-size: 11px;
+  gap: 4px;
+}
+
+.retail-app-cashflow-legend i,
+.retail-app-map-legend i {
+  border-radius: 3px;
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+}
+
+.retail-app-cashflow-legend i[data-tone="in"] {
+  background: #22c55e;
+}
+
+.retail-app-cashflow-legend i[data-tone="out"] {
+  background: #ff496e;
+}
+
+.retail-app-cashflow-bars {
+  align-items: end;
+  display: flex;
+  gap: 14px;
+  height: 160px;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.retail-app-cashflow-column {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.retail-app-cashflow-pair {
+  align-items: end;
+  display: flex;
+  flex: 1;
+  gap: 4px;
+}
+
+.retail-app-cashflow-pair i {
+  border-radius: 3px 3px 0 0;
+  display: block;
+  width: 12px;
+}
+
+.retail-app-cashflow-pair i[data-tone="in"] {
+  background: #22c55e;
+}
+
+.retail-app-cashflow-pair i[data-tone="out"] {
+  background: #ff496e;
+}
+
+.retail-app-cashflow-column span {
+  color: #56667b;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.retail-app-cashflow-column small {
+  color: #24c47a;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.retail-app-cashflow-column small[data-negative="true"] {
+  color: #ff496e;
+}
+
+.retail-app-map-panel {
+  background: #fff;
+  border: 1px solid #e5eaf0;
+  border-radius: 12px;
+  margin: 18px 0;
+  padding: 20px;
+}
+
+.retail-app-map-canvas {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.retail-app-map-legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.retail-app-map-legend span {
+  align-items: center;
+  color: #56667b;
+  display: flex;
+  font-size: 11px;
+  gap: 4px;
+}
+
+.retail-app-map-legend i[data-tone="on-time"] {
+  background: #22c55e;
+}
+
+.retail-app-map-legend i[data-tone="delayed"] {
+  background: #ffb33e;
+}
+
+.retail-app-map-legend i[data-tone="at-risk"] {
+  background: #ff496e;
+}
+
 .retail-app-detail dl {
   display: grid;
   gap: 8px;
