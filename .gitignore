@@ -18,3 +18,14 @@ apps/*/.build-clean
 .vercel
 .env*
 core-operations/backend/src/generated/
+core-workforce/backend/src/generated/
+
+# Generated Vercel serverless bundle for Core.Operations backend
+/api/index.js
+/api/generated/
+/api/node_modules/
+/public/
+core-workforce/backend/api/
+core-workforce/backend/public/
+core-intelligence/backend/api/
+core-intelligence/backend/public/

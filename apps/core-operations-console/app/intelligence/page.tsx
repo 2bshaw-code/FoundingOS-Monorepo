@@ -11,7 +11,7 @@ import { BrandMicroDashboard } from '@foundingos/ui/brand-micro-dashboard'
 import { AIInsightsPanel } from '@foundingos/ui/ai-insights'
 import { InsightsPanel } from '@foundingos/ui/insights'
 
-const CORE_OPERATIONS_API_BASE = process.env.NEXT_PUBLIC_CORE_OPERATIONS_API_URL || 'https://core-operations-api.foundingos.com/api/v1/ops'
+const CORE_OPERATIONS_API_BASE = '/api/core-operations/ops'
 
 export default async function IntelligencePage() {
   const layer = BRAND_PERSONALITIES.retail

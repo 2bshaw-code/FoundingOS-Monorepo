@@ -4,16 +4,18 @@
 */
 import crypto from 'node:crypto'
 
-const config = () => ({
-  accessToken: process.env.WHATSAPP_ACCESS_TOKEN || '',
-  phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || '',
-  verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || '',
-  appSecret: process.env.WHATSAPP_APP_SECRET || '',
-  graphVersion: process.env.WHATSAPP_GRAPH_VERSION || 'v22.0',
+type WhatsAppCredentialInput = Partial<{ accessToken: unknown; phoneNumberId: unknown; verifyToken: unknown; appSecret: unknown; graphVersion: unknown }>
+
+const config = (credentials: WhatsAppCredentialInput = {}) => ({
+  accessToken: String(credentials.accessToken || process.env.WHATSAPP_ACCESS_TOKEN || ''),
+  phoneNumberId: String(credentials.phoneNumberId || process.env.WHATSAPP_PHONE_NUMBER_ID || ''),
+  verifyToken: String(credentials.verifyToken || process.env.WHATSAPP_VERIFY_TOKEN || ''),
+  appSecret: String(credentials.appSecret || process.env.WHATSAPP_APP_SECRET || ''),
+  graphVersion: String(credentials.graphVersion || process.env.WHATSAPP_GRAPH_VERSION || 'v22.0'),
 })
 
-export const whatsappReadiness = () => {
-  const value = config()
+export const whatsappReadiness = (credentials?: WhatsAppCredentialInput) => {
+  const value = config(credentials)
   return {
     configured: Boolean(value.accessToken && value.phoneNumberId && value.verifyToken && value.appSecret),
     webhookVerification: Boolean(value.verifyToken),
@@ -23,17 +25,19 @@ export const whatsappReadiness = () => {
   }
 }
 
-export const verifyWebhook = (mode: unknown, token: unknown) => mode === 'subscribe' && Boolean(config().verifyToken) && token === config().verifyToken
+export const verifyWebhook = (mode: unknown, token: unknown, credentials?: WhatsAppCredentialInput) => mode === 'subscribe' && Boolean(config(credentials).verifyToken) && token === config(credentials).verifyToken
 
-export const verifyWebhookSignature = (body: Buffer, signature: string | undefined) => {
-  const secret = config().appSecret
+export const verifyWebhookSignature = (body: Buffer, signature: string | undefined, credentials?: WhatsAppCredentialInput) => {
+  const secret = config(credentials).appSecret
   if (!secret || !signature?.startsWith('sha256=')) return false
   const expected = `sha256=${crypto.createHmac('sha256', secret).update(body).digest('hex')}`
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
+  const expectedBuffer = Buffer.from(expected)
+  const signatureBuffer = Buffer.from(signature)
+  return expectedBuffer.length === signatureBuffer.length && crypto.timingSafeEqual(expectedBuffer, signatureBuffer)
 }
 
-export const sendWhatsAppText = async (to: unknown, text: unknown, phoneNumberId?: string) => {
-  const value = config()
+export const sendWhatsAppText = async (to: unknown, text: unknown, phoneNumberId?: string, credentials?: WhatsAppCredentialInput) => {
+  const value = config(credentials)
   const senderId = phoneNumberId || value.phoneNumberId
   if (!value.accessToken || !senderId) throw new Error('WhatsApp Cloud API is not configured')
   const response = await fetch(`https://graph.facebook.com/${value.graphVersion}/${senderId}/messages`, {

@@ -20,9 +20,32 @@ model AuthUser {
   active       Boolean         @default(true)
   sessions     AuthSession[]
   resets       PasswordReset[]
+  messagingParticipants MessagingParticipant[]
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
+  invitations  TenantInvitation[] @relation("InvitationInvitee")
 
+  @@schema("wros")
+}
+
+model TenantInvitation {
+  id             String   @id @default(uuid())
+  tenantId       String
+  email          String
+  role           String
+  permissions    Json
+  tokenHash      String   @unique
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  revokedAt      DateTime?
+  invitedBy      String
+  acceptedUserId String?
+  acceptedUser   AuthUser? @relation("InvitationInvitee", fields: [acceptedUserId], references: [id], onDelete: SetNull)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId, email, expiresAt])
+  @@index([tenantId, acceptedAt, revokedAt])
   @@schema("wros")
 }
 
@@ -217,6 +240,8 @@ model MessagingChannelConnection {
 model MessagingParticipant {
   id          String   @id @default(cuid())
   tenantId    String
+  userId      String?
+  user        AuthUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
   channel     String
   address     String
   displayName String?
@@ -227,6 +252,7 @@ model MessagingParticipant {
 
   @@unique([tenantId, channel, address])
   @@index([tenantId, active])
+  @@index([userId])
   @@schema("wros")
 }
 
@@ -505,6 +531,8 @@ model Event {
   createdAt DateTime @default(now())
 
   @@index([tenantId, createdAt])
+  @@index([tenantId, type, createdAt])
+  @@index([tenantId, source, type, createdAt])
   @@index([source, createdAt])
   @@schema("wros")
 }
@@ -539,5 +567,208 @@ model LocationProfile {
   updatedAt         DateTime @updatedAt
   createdAt         DateTime @default(now())
 
+  @@schema("wros")
+}
+
+model TenantOnboarding {
+  id                String   @id @default(cuid())
+  tenantId          String   @unique
+  businessName      String
+  ownerName         String
+  industry          String?
+  countryCode       String   @default("GB")
+  currency          String   @default("GBP")
+  timezone          String   @default("Europe/London")
+  completedSteps    Json
+  goLiveStatus      String   @default("setup")
+  acceptedTermsAt   DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@schema("wros")
+}
+
+model TenantControlSettings {
+  id                    String   @id @default(cuid())
+  tenantId              String   @unique
+  notificationChannel   String   @default("whatsapp")
+  notificationEnabled   Boolean  @default(true)
+  approvalThresholdPence Int      @default(0)
+  requireOwnerExecution Boolean  @default(true)
+  requireEvidence       Boolean  @default(true)
+  governanceMode        String   @default("human_approval")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@schema("wros")
+}
+
+model TenantWorkspace {
+  id        String   @id @default(cuid())
+  tenantId  String
+  workspace String
+  enabled   Boolean  @default(true)
+  plan      String   @default("growth")
+  modules   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, workspace])
+  @@index([tenantId, enabled])
+  @@schema("wros")
+}
+
+model WorkspaceRecord {
+  id          String    @id @default(cuid())
+  tenantId    String
+  workspace   String
+  module      String
+  reference   String
+  name        String
+  status      String
+  ownerId     String?
+  valuePence  Int?
+  data        Json
+  version     Int       @default(1)
+  createdBy   String
+  updatedBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  @@unique([tenantId, workspace, module, reference])
+  @@index([tenantId, workspace, module, status])
+  @@index([tenantId, updatedAt])
+  @@schema("wros")
+}
+
+model IntegrationCredential {
+  id                    String   @id @default(cuid())
+  tenantId              String
+  provider              String
+  displayName           String
+  status                String   @default("configured")
+  configuration         Json
+  credentialsCiphertext String
+  credentialsIv         String
+  credentialsTag        String
+  lastCheckedAt         DateTime?
+  lastError             String?
+  createdBy             String
+  updatedBy             String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@unique([tenantId, provider])
+  @@index([tenantId, status])
+  @@schema("wros")
+}
+
+model WorkspaceAuditEvent {
+  id         String   @id @default(cuid())
+  tenantId   String
+  actorId    String
+  action     String
+  workspace  String?
+  module     String?
+  entityId   String?
+  requestId  String?
+  metadata   Json
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, workspace, module])
+  @@schema("wros")
+}
+
+model IdempotencyRecord {
+  id         String   @id @default(cuid())
+  tenantId   String
+  key        String
+  operation  String
+  response   Json
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+
+  @@unique([tenantId, key])
+  @@index([expiresAt])
+  @@schema("wros")
+}
+
+model AgentAction {
+  id                    String   @id @default(cuid())
+  tenantId              String
+  kind                  String
+  title                 String
+  summary               String
+  rationale             String
+  status                String   @default("proposed")
+  riskLevel             String   @default("medium")
+  requiresApproval      Boolean  @default(true)
+  sourceEventId         String?
+  input                 Json
+  steps                 Json
+  coordinationSummary   Json?
+  historicalContext     Json?
+  predictiveSignals     Json?
+  simulationPreview     Json?
+  outcomeSummary        String?
+  outcomeAssessment     Json?
+  trailEventIds         Json     @default("[]")
+  estimatedValuePence   Int?
+  proposedBy            String
+  approvedBy            String?
+  approvedAt            DateTime?
+  executedBy            String?
+  executedAt            DateTime?
+  result                Json?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  execution             AgentActionExecution?
+
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, kind, createdAt])
+  @@schema("wros")
+}
+
+model AgentActionExecution {
+  id               String   @id @default(cuid())
+  tenantId         String
+  actionId         String   @unique
+  action           AgentAction @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  status           String
+  effects          Json
+  compensation     Json?
+  executedBy       String
+  executedAt       DateTime
+  reversedBy       String?
+  reversedAt       DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([tenantId, status, createdAt])
+  @@schema("wros")
+}
+
+// Real, persisted record of which suite(s) a tenant is licensed to use.
+// This is the single source of truth `createModuleAccessMiddleware`
+// (see @founder-os/auth) checks before allowing non-founder_master
+// access to any suite's gated routes — across Core.Operations,
+// Core.Workforce, and Core.Intelligence. `suite` holds one of
+// 'core_operations' | 'core_workforce' | 'core_intelligence'.
+model TenantSuiteLicense {
+  id          String    @id @default(cuid())
+  tenantId    String
+  suite       String
+  planTier    String    @default("starter")
+  enabled     Boolean   @default(true)
+  seats       Int?
+  trialEndsAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([tenantId, suite])
+  @@index([tenantId, enabled])
   @@schema("wros")
 }

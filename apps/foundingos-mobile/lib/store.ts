@@ -46,41 +46,23 @@ export const BRAND_SKINS: Record<string, QuantumTheme> = {
   foundingos: {
     ...FOUNDINGOS_SHELL_THEME,
   },
-  retail: {
+  core_operations: {
     ...FOUNDINGOS_SHELL_THEME,
-    accent: '#00A651',
-    glow: 'rgba(0, 166, 81, 0.18)',
-    glowColor: 'rgba(0, 166, 81, 0.18)',
+    accent: '#26E07F',
+    glow: 'rgba(38, 224, 127, 0.18)',
+    glowColor: 'rgba(38, 224, 127, 0.18)',
   },
-  talent: {
+  core_workforce: {
     ...FOUNDINGOS_SHELL_THEME,
-    accent: '#FF7A00',
-    glow: 'rgba(255, 136, 0, 0.15)',
-    glowColor: 'rgba(255, 136, 0, 0.15)',
+    accent: '#FFB703',
+    glow: 'rgba(255, 183, 3, 0.18)',
+    glowColor: 'rgba(255, 183, 3, 0.18)',
   },
-  marketing: {
+  core_intelligence: {
     ...FOUNDINGOS_SHELL_THEME,
-    accent: '#EC4899',
-    glow: 'rgba(236, 72, 153, 0.15)',
-    glowColor: 'rgba(236, 72, 153, 0.15)',
-  },
-  finance: {
-    ...FOUNDINGOS_SHELL_THEME,
-    accent: '#A8A8A8',
-    glow: 'rgba(168, 168, 168, 0.18)',
-    glowColor: 'rgba(168, 168, 168, 0.18)',
-  },
-  health: {
-    ...FOUNDINGOS_SHELL_THEME,
-    accent: '#4FC3F7',
-    glow: 'rgba(51, 204, 255, 0.15)',
-    glowColor: 'rgba(51, 204, 255, 0.15)',
-  },
-  logistics: {
-    ...FOUNDINGOS_SHELL_THEME,
-    accent: '#DC143C',
-    glow: 'rgba(220, 20, 60, 0.15)',
-    glowColor: 'rgba(220, 20, 60, 0.15)',
+    accent: '#A78BFA',
+    glow: 'rgba(167, 139, 250, 0.18)',
+    glowColor: 'rgba(167, 139, 250, 0.18)',
   },
 }
 
@@ -100,7 +82,7 @@ export function getShellSafeTheme(slug: string): QuantumTheme {
   return SHELL_SAFE_BRAND_SKINS[slug] ?? SHELL_SAFE_BRAND_SKINS[DEFAULT_BRAND_SLUG]
 }
 
-function getValidBrandSlug(slug: string): string {
+export function getValidBrandSlug(slug: string): string {
   return BRAND_SKINS[slug] ? slug : DEFAULT_BRAND_SLUG
 }
 
@@ -116,24 +98,16 @@ export type OutboxItem = {
 }
 
 interface QuantumState {
-  // Console & Brand selection
   activeBrandSlug: string
   activeConsoleModule: string | null
   role: UserRole
   tier: UserTier
-
-  // Africa-ready / Performance mode
   lowEndMode: boolean
-
-  // UI state
   commandBarOpen: boolean
   quantumWheelOpen: boolean
   isOnline: boolean
-
-  // Outbox sync count
   pendingSyncCount: number
-
-  // Actions
+  licensedSuites: { core_workforce: boolean; core_intelligence: boolean }
   setActiveBrand: (slug: string) => void
   setActiveConsoleModule: (moduleName: string | null) => void
   setRole: (role: UserRole) => void
@@ -144,10 +118,10 @@ interface QuantumState {
   setQuantumWheelOpen: (open: boolean) => void
   setIsOnline: (online: boolean) => void
   setPendingSyncCount: (count: number) => void
-
-  // Computed getters
+  setLicensedSuites: (suites: { core_workforce: boolean; core_intelligence: boolean }) => void
   getActiveBrand: () => Brand | undefined
   getActiveTheme: () => QuantumTheme
+  getVisibleBrands: () => Brand[]
 }
 
 export const useQuantumStore = create<QuantumState>((set, get) => ({
@@ -160,6 +134,9 @@ export const useQuantumStore = create<QuantumState>((set, get) => ({
   quantumWheelOpen: false,
   isOnline: true,
   pendingSyncCount: 0,
+  // Defaults to visible so the shell renders instantly; corrected once the real
+  // TenantSuiteLicense-backed /module-access check resolves (see _layout.tsx).
+  licensedSuites: { core_workforce: true, core_intelligence: true },
 
   setActiveBrand: (slug: string) => set({ activeBrandSlug: getValidBrandSlug(slug) }),
   setActiveConsoleModule: (moduleName: string | null) => set({ activeConsoleModule: moduleName }),
@@ -171,7 +148,16 @@ export const useQuantumStore = create<QuantumState>((set, get) => ({
   setQuantumWheelOpen: (open: boolean) => set({ quantumWheelOpen: open }),
   setIsOnline: (online: boolean) => set({ isOnline: online }),
   setPendingSyncCount: (count: number) => set({ pendingSyncCount: count }),
+  setLicensedSuites: (suites) => set({ licensedSuites: suites }),
 
   getActiveBrand: () => BRANDS.find((b) => b.slug === getValidBrandSlug(get().activeBrandSlug)),
   getActiveTheme: () => getShellSafeTheme(get().activeBrandSlug),
+  getVisibleBrands: () => {
+    const { licensedSuites } = get()
+    return BRANDS.filter((brand) => {
+      if (brand.slug === 'core_workforce') return licensedSuites.core_workforce
+      if (brand.slug === 'core_intelligence') return licensedSuites.core_intelligence
+      return true
+    })
+  },
 }))

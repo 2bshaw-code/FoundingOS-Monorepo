@@ -1,0 +1,283 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["wros"]
+}
+
+model AuthUser {
+  id           String             @id @default(uuid())
+  email        String             @unique
+  passwordHash String
+  role         String
+  tenantId     String?
+  permissions  Json?
+  active       Boolean            @default(true)
+  sessions     AuthSession[]
+  resets       PasswordReset[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  invitations  TenantInvitation[] @relation("InvitationInvitee")
+
+  @@schema("wros")
+}
+
+model TenantInvitation {
+  id             String    @id @default(uuid())
+  tenantId       String
+  email          String
+  role           String
+  permissions    Json
+  tokenHash      String    @unique
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  revokedAt      DateTime?
+  invitedBy      String
+  acceptedUserId String?
+  acceptedUser   AuthUser? @relation("InvitationInvitee", fields: [acceptedUserId], references: [id], onDelete: SetNull)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([tenantId, email, expiresAt])
+  @@index([tenantId, acceptedAt, revokedAt])
+  @@schema("wros")
+}
+
+model AuthSession {
+  id                String   @id @default(uuid())
+  userId            String
+  user              AuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash  String
+  refreshTokenId    String
+  deviceFingerprint String
+  ipPrefix          String?
+  expiresAt         DateTime
+  rotatedAt         DateTime @default(now())
+  revokedAt         DateTime?
+  createdAt         DateTime @default(now())
+
+  @@index([userId])
+  @@schema("wros")
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String
+  user      AuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@schema("wros")
+}
+
+enum JobStatus {
+  open
+  closed
+  filled
+
+  @@schema("wros")
+}
+
+enum CandidateStage {
+  Applied
+  Screening
+  Interview
+  Offer
+  Hired
+  Rejected
+
+  @@schema("wros")
+}
+
+enum InterviewStatus {
+  scheduled
+  completed
+  cancelled
+  no_show
+
+  @@schema("wros")
+}
+
+enum WorkforceActionStatus {
+  proposed
+  approved
+  rejected
+  executing
+  completed
+  reversed
+
+  @@schema("wros")
+}
+
+model Job {
+  id             String            @id @default(cuid())
+  tenantId       String
+  title          String
+  department     String?
+  location       String?
+  status         JobStatus         @default(open)
+  description    String?
+  candidates     Candidate[]
+  pipelineEvents PipelineEvent[]
+  actions        WorkforceAction[] @relation("ActionJob")
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, department, createdAt])
+  @@schema("wros")
+}
+
+model Candidate {
+  id             String             @id @default(cuid())
+  tenantId       String
+  jobId          String
+  job            Job                @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  name           String
+  email          String
+  phone          String?
+  source         String?
+  resumeUrl      String?
+  notes          String?
+  stage          CandidateStage     @default(Applied)
+  interviews     Interview[]
+  pipelineEvents PipelineEvent[]
+  actions        WorkforceAction[]  @relation("ActionCandidate")
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([tenantId, email, jobId])
+  @@index([tenantId, stage, createdAt])
+  @@index([tenantId, jobId, stage])
+  @@schema("wros")
+}
+
+model PipelineEvent {
+  id          String          @id @default(cuid())
+  tenantId    String
+  candidateId String?
+  candidate   Candidate?      @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  jobId       String?
+  job         Job?            @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  type        String
+  stageFrom   CandidateStage?
+  stageTo     CandidateStage?
+  summary     String
+  metadata    Json?
+  createdBy   String?
+  createdAt   DateTime        @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, candidateId, createdAt])
+  @@index([tenantId, type, createdAt])
+  @@schema("wros")
+}
+
+model Interview {
+  id           String          @id @default(cuid())
+  tenantId     String
+  candidateId  String
+  candidate    Candidate       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  scheduledAt  DateTime
+  interviewer  String
+  status       InterviewStatus @default(scheduled)
+  outcomeNotes String?
+  createdBy    String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([tenantId, scheduledAt])
+  @@index([tenantId, candidateId, status])
+  @@schema("wros")
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  tenantId  String?
+  type      String
+  source    String
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, type, createdAt])
+  @@index([tenantId, source, type, createdAt])
+  @@schema("wros")
+}
+
+model WorkspaceAuditEvent {
+  id        String   @id @default(cuid())
+  tenantId  String
+  actorId   String
+  action    String
+  workspace String?
+  module    String?
+  entityId  String?
+  requestId String?
+  metadata  Json
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, workspace, module])
+  @@schema("wros")
+}
+
+model WorkforceAction {
+  id                String                @id @default(cuid())
+  tenantId          String
+  kind              String
+  title             String
+  summary           String
+  rationale         String?
+  status            WorkforceActionStatus @default(proposed)
+  requiresApproval  Boolean               @default(true)
+  sourceCandidateId String?
+  sourceCandidate   Candidate?            @relation("ActionCandidate", fields: [sourceCandidateId], references: [id], onDelete: SetNull)
+  sourceJobId       String?
+  sourceJob         Job?                  @relation("ActionJob", fields: [sourceJobId], references: [id], onDelete: SetNull)
+  input             Json
+  simulationPreview Json?
+  outcomeSummary    String?
+  outcomeAssessment Json?
+  trailEventIds     Json                  @default("[]")
+  proposedBy        String
+  approvedBy        String?
+  approvedAt        DateTime?
+  executedBy        String?
+  executedAt        DateTime?
+  result            Json?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  execution         WorkforceActionExecution?
+
+  @@index([tenantId, status, createdAt])
+  @@index([tenantId, kind, createdAt])
+  @@schema("wros")
+}
+
+model WorkforceActionExecution {
+  id           String          @id @default(cuid())
+  tenantId     String
+  actionId     String          @unique
+  action       WorkforceAction @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  status       String
+  effects      Json
+  compensation Json?
+  executedBy   String
+  executedAt   DateTime
+  reversedBy   String?
+  reversedAt   DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([tenantId, status, createdAt])
+  @@schema("wros")
+}

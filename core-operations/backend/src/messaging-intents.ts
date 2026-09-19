@@ -18,6 +18,10 @@ export type WhatsAppInbound = {
 
 export type MessagingIntent =
   | { type: 'status' }
+  | { type: 'intelligence_snapshot' }
+  | { type: 'agent_decision'; decision: 'approve' | 'reject'; actionReference?: string }
+  | { type: 'agent_execution'; operation: 'execute' | 'reverse'; actionReference?: string }
+  | { type: 'agent_explanation'; detail: 'why' | 'impact' | 'alternatives' | 'more'; actionReference?: string }
   | { type: 'create_order'; customer: string; detail: string; totalPence: number; deliveryAddress?: string }
   | { type: 'mark_delivered'; reference: string }
   | { type: 'create_invoice'; reference: string }
@@ -36,7 +40,18 @@ const parseMoneyToPence = (value: string | undefined) => {
 export function classifyMessagingIntent(input: string): MessagingIntent {
   const value = input.trim()
   if (/^\/?(status|today)$/i.test(value)) return { type: 'status' }
+  if (/^\/?(snapshot|intelligence)$/i.test(value)) return { type: 'intelligence_snapshot' }
   if (/^\/?help$/i.test(value)) return { type: 'help' }
+  const decision = value.match(/^\/?(approve|reject)(?:\s+(.+))?$/i)
+  if (decision) return { type: 'agent_decision', decision: decision[1].toLowerCase() as 'approve' | 'reject', actionReference: decision[2]?.trim() }
+  const execution = value.match(/^\/?(execute|undo|reverse)(?:\s+(.+))?$/i)
+  if (execution) return { type: 'agent_execution', operation: execution[1].toLowerCase() === 'execute' ? 'execute' : 'reverse', actionReference: execution[2]?.trim() }
+  const explanation = value.match(/^\/?(why|impact|alternatives|more)(?:\s+(.+))?$/i)
+  if (explanation) return { type: 'agent_explanation', detail: explanation[1].toLowerCase() as 'why' | 'impact' | 'alternatives' | 'more', actionReference: explanation[2]?.trim() }
+  if (/^(?:why (?:this|now)|show (?:me )?(?:the )?evidence)\??$/i.test(value)) return { type: 'agent_explanation', detail: 'why', actionReference: undefined }
+  if (/^(?:what(?:'s| is) the impact|show (?:me )?(?:the )?(?:value|impact))\??$/i.test(value)) return { type: 'agent_explanation', detail: 'impact', actionReference: undefined }
+  if (/^(?:what are the alternatives|show (?:me )?(?:the )?alternatives)\??$/i.test(value)) return { type: 'agent_explanation', detail: 'alternatives', actionReference: undefined }
+  if (/^(?:tell me more|show (?:me )?(?:the )?(?:details|trail))\??$/i.test(value)) return { type: 'agent_explanation', detail: 'more', actionReference: undefined }
 
   const structuredOrder = value.match(/^\/order\s+([^|]+)\|([^|]+)(?:\|([^|]+))?(?:\|(.+))?$/i)
   if (structuredOrder) {

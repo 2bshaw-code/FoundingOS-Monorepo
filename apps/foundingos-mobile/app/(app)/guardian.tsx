@@ -3,17 +3,34 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { useCallback, useEffect, useState } from 'react'
-import { RefreshControl, StyleSheet, View } from 'react-native'
+import { Pressable, RefreshControl, StyleSheet, View } from 'react-native'
 import { router } from 'expo-router'
-import { fetchGuardianStatus, type GuardianStatus } from '../../lib/api'
+import {
+  AgentActionIntelligence,
+  CoreOpsApiError,
+  fetchAgentActionIntelligence,
+} from '../../lib/core-operations-api'
 import { FOUNDINGOS_ACCENT } from '../../lib/brands'
-import { explainGuardianWarning } from '../../lib/guardian-ai'
-import { useAIAssistance } from '../../lib/ai-assistance'
-import { QuantumButton, QuantumCard, QuantumLoadingScreen, QuantumNotice, QuantumScreen, QuantumSectionHeader, QuantumText, getSemanticColor, quantumSpace } from '../../components/QuantumUI'
+import {
+  QuantumCard,
+  QuantumLoadingScreen,
+  QuantumMetric,
+  QuantumNotice,
+  QuantumScreen,
+  QuantumSectionHeader,
+  QuantumText,
+  getSemanticColor,
+  quantumSpace,
+} from '../../components/QuantumUI'
+
+function severityTone(severity: 'watch' | 'material' | 'positive') {
+  if (severity === 'material') return 'risk' as const
+  if (severity === 'positive') return 'good' as const
+  return 'watch' as const
+}
 
 export default function GuardianScreen() {
-  const [aiEnabled] = useAIAssistance()
-  const [status, setStatus] = useState<GuardianStatus | null>(null)
+  const [data, setData] = useState<AgentActionIntelligence | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
@@ -22,11 +39,13 @@ export default function GuardianScreen() {
     if (isRefresh) setRefreshing(true)
     setError('')
     try {
-      const data = await fetchGuardianStatus()
-      if (!data) setError('Guardian requires an admin session.')
-      setStatus(data)
-    } catch {
-      setError('Could not load Guardian. Pull down to try again.')
+      setData(await fetchAgentActionIntelligence())
+    } catch (err) {
+      if (err instanceof CoreOpsApiError && err.status === 401) {
+        setError('Guardian requires a signed-in session.')
+      } else {
+        setError('Could not load Guardian. Pull down to try again.')
+      }
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -39,44 +58,74 @@ export default function GuardianScreen() {
 
   if (loading) return <QuantumLoadingScreen />
 
+  const materialSignals = data?.emergingSignals.filter((signal) => signal.severity === 'material') ?? []
+  const hasIssues = materialSignals.length > 0 || data?.interactions.some((i) => i.severity === 'material')
+
   return (
     <QuantumScreen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={FOUNDINGOS_ACCENT} />}>
       {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
-      {status ? (
+      {data ? (
         <>
-          <QuantumNotice tone={status.hasIssues ? 'danger' : 'success'}>
-            {status.hasIssues ? 'Guardian detected an issue. Review required.' : 'Guardian all clear.'}
+          <QuantumNotice tone={hasIssues ? 'danger' : 'success'}>
+            {hasIssues
+              ? `Guardian detected ${materialSignals.length || data.interactions.length} material issue(s). Review required.`
+              : 'Guardian all clear. No material risks in the governed action ledger.'}
           </QuantumNotice>
 
-          <QuantumSectionHeader label="Survey feed warnings" />
-          {status.surveyWarnings.length === 0 ? (
-            <QuantumNotice>No warnings. Every category has submissions and every route is responding.</QuantumNotice>
+          <QuantumSectionHeader label="System reliability" />
+          <QuantumCard accent={FOUNDINGOS_ACCENT}>
+            <View style={styles.metricRow}>
+              <QuantumMetric label="Prediction accuracy" value={`${Math.round(data.health.averagePredictionAccuracy * 100)}%`} tone="info" />
+              <QuantumMetric label="Assessed outcomes" value={data.health.totalAssessedOutcomes} tone="info" />
+              <QuantumMetric label="Active patterns" value={data.health.activePatterns} tone="info" />
+            </View>
+            <QuantumText variant="caption" color="#7F7F7F">{data.health.narrative}</QuantumText>
+            {data.health.recurringDeviation ? (
+              <QuantumNotice tone="warning">
+                Recurring deviation on {data.health.recurringDeviation.field} ({data.health.recurringDeviation.count}x): {data.health.recurringDeviation.insight}
+              </QuantumNotice>
+            ) : null}
+          </QuantumCard>
+
+          <QuantumSectionHeader label="Emerging signals" />
+          {data.emergingSignals.length === 0 ? (
+            <QuantumNotice>No emerging signals. Every governed workflow is within expected range.</QuantumNotice>
           ) : (
-            status.surveyWarnings.map((warning) => {
-              const info = aiEnabled ? explainGuardianWarning(warning) : null
-              return (
-                <QuantumCard key={warning} accent={getSemanticColor('risk')}>
-                  {info ? (
-                    <View style={styles.aiHint}>
-                      <QuantumText variant="overline" color={FOUNDINGOS_ACCENT}>AI</QuantumText>
-                      <QuantumText><QuantumText variant="caption">What I noticed: </QuantumText>{info.whatINoticed}</QuantumText>
-                      <QuantumText><QuantumText variant="caption">Why it matters: </QuantumText>{info.whyItMatters}</QuantumText>
-                      <QuantumText><QuantumText variant="caption">What you can do: </QuantumText>{info.whatYouCanDo}</QuantumText>
-                      <QuantumButton onPress={() => router.push('/(app)/superdash')}>Investigate — {info.investigateLabel}</QuantumButton>
-                    </View>
-                  ) : (
-                    <QuantumText>{warning}</QuantumText>
-                  )}
-                </QuantumCard>
-              )
-            })
+            data.emergingSignals.map((signal) => (
+              <QuantumCard key={signal.id} accent={getSemanticColor(severityTone(signal.severity))}>
+                <QuantumText variant="overline" color={getSemanticColor(severityTone(signal.severity))}>{signal.kind.replace(/-/g, ' ')}</QuantumText>
+                <QuantumText style={styles.title}>{signal.title}</QuantumText>
+                <QuantumText variant="caption">{signal.summary}</QuantumText>
+                <QuantumText variant="caption" color="#7F7F7F">Reliability {Math.round(signal.reliability * 100)}% · {signal.outcomeCount} outcomes</QuantumText>
+                <QuantumText variant="caption">{signal.advisory}</QuantumText>
+              </QuantumCard>
+            ))
           )}
 
-          <QuantumSectionHeader label="Core enforcement" />
-          {status.coreEnforcement.map((item) => (
-            <QuantumCard key={item} accent={FOUNDINGOS_ACCENT}>
-              <QuantumText>{item}</QuantumText>
-            </QuantumCard>
+          <QuantumSectionHeader label="Cross-action risk interactions" />
+          {data.interactions.length === 0 ? (
+            <QuantumNotice>No cross-action interactions detected.</QuantumNotice>
+          ) : (
+            data.interactions.map((interaction) => (
+              <QuantumCard key={interaction.id} accent={getSemanticColor(interaction.severity === 'material' ? 'risk' : 'watch')}>
+                <QuantumText style={styles.title}>{interaction.actionTitles[0]} ↔ {interaction.actionTitles[1]}</QuantumText>
+                <QuantumText variant="caption">{interaction.summary}</QuantumText>
+                <QuantumText variant="caption" color="#7F7F7F">{interaction.dimensions.join(' · ')}</QuantumText>
+                <QuantumText variant="caption">{interaction.advisory}</QuantumText>
+              </QuantumCard>
+            ))
+          )}
+
+          <QuantumSectionHeader label="Core enforcement — audit trail" />
+          {data.auditTrail.slice(0, 10).map((entry) => (
+            <Pressable key={entry.id} onPress={() => router.push('/(app)/workflows')}>
+              <QuantumCard accent={FOUNDINGOS_ACCENT}>
+                <QuantumText style={styles.title}>{entry.actionTitle}</QuantumText>
+                <QuantumText variant="caption">{entry.stage.toUpperCase()} · {entry.actor}</QuantumText>
+                <QuantumText variant="caption" color="#7F7F7F">{new Date(entry.occurredAt).toLocaleString('en-GB')}</QuantumText>
+                <QuantumText variant="caption">{entry.summary}</QuantumText>
+              </QuantumCard>
+            </Pressable>
           ))}
         </>
       ) : null}
@@ -85,5 +134,6 @@ export default function GuardianScreen() {
 }
 
 const styles = StyleSheet.create({
-  aiHint: { gap: quantumSpace.sm },
+  metricRow: { flexDirection: 'row', gap: quantumSpace.sm, flexWrap: 'wrap' },
+  title: { fontWeight: '600' },
 })

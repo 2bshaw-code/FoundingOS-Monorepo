@@ -73,3 +73,40 @@ model Product {
 
   @@schema("core_intelligence")
 }
+
+// Real forecasts computed from live Core.Operations data (orders, inventory, receivables).
+// Never hand-authored numbers: `evidence` always carries the source values a forecast was
+// derived from, so a founder can trace a projection back to real underlying data.
+model IntelligenceForecastSnapshot {
+  id               String   @id @default(cuid())
+  tenantId         String
+  metric           String
+  horizonDays      Int
+  method           String
+  baselineValue    Float
+  projectedValue   Float
+  unit             String
+  evidence         Json
+  generatedBy      String
+  createdAt        DateTime @default(now())
+
+  @@index([tenantId, metric, createdAt])
+  @@schema("core_intelligence")
+}
+
+// Founder-defined what-if comparisons. Baseline/projected metrics are always computed from
+// real current Core.Operations data at creation time, not fabricated.
+model IntelligenceScenario {
+  id                String   @id @default(cuid())
+  tenantId          String
+  name              String
+  assumptions       Json
+  baselineMetrics   Json
+  projectedMetrics  Json
+  deltaSummary      String
+  createdBy         String
+  createdAt         DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@schema("core_intelligence")
+}

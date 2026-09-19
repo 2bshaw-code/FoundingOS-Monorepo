@@ -14,6 +14,10 @@ jobs:
           # 22+ is required for --experimental-strip-types (used below to run the real
           # tester-system test suite directly against the TypeScript sources, no build step).
           node-version: 22
+      # test:tester-system runs via `node --import tsx`, a devDependency — install it before
+      # any step needs it. This was previously masked because an earlier verify step always
+      # failed first; fixing those exposed that `npm ci` was never actually run in this job.
+      - run: npm ci
       - run: node scripts/verify-topology.mjs
       - run: node scripts/verify-superdashboard-isolation.mjs
       - run: node scripts/verify-brand-assets.mjs
@@ -32,6 +36,14 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
+      # Build-only local workspace deps first: core-operations/workforce/intelligence backends
+      # import @founder-os/auth and @founder-os/bob by their built `dist/` exports (not source),
+      # and each backend's own module resolution expects a generated Prisma client under
+      # src/generated/prisma — both are intentionally gitignored build artifacts (see .gitignore),
+      # so typecheck fails with "cannot find module" unless they're produced first, exactly as
+      # each backend's own `build` script already does before `tsc`.
+      - run: npm run build --workspace @founder-os/auth --workspace @founder-os/bob
+      - run: npm run prisma:generate --workspace @founder-os/core-operations-backend --workspace @founder-os/core-workforce-backend --workspace @founder-os/core-intelligence-backend
       # Real, whole-monorepo type safety gate across all 26 apps + shared packages — this
       # session's actual bugs (both hydration issues, several prop-signature mismatches) were
       # frequently caught this way during manual verification; this makes that automatic on

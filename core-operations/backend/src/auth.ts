@@ -18,11 +18,14 @@ export const authService = new AuthService(createPrismaAuthRepository(prisma), {
   refreshTokenSecret: required('AUTH_REFRESH_TOKEN_SECRET'),
   ...groupTokenContract,
 })
-export const merchantRoles = [roles.founderMaster, roles.retailManager, roles.retailStaff]
+export const merchantRoles = [roles.founderMaster, roles.businessOwner, roles.businessManager, roles.businessStaff, roles.businessViewer, roles.retailManager, roles.retailStaff]
 const resetDelivery = process.env.PASSWORD_RESET_WEBHOOK_URL ? createPasswordResetWebhook(process.env.PASSWORD_RESET_WEBHOOK_URL, 'core_operations') : undefined
 export const authRouter = createAuthRouter({ service: authService, production: process.env.NODE_ENV === 'production', allowedRoles: merchantRoles, deliverPasswordReset: resetDelivery })
 export const requireMerchantAccess = createAccessMiddleware(authService, merchantRoles)
-export const requireOwnerAccess = createAccessMiddleware(authService, [roles.founderMaster, roles.retailManager])
+export const requireOwnerAccess = createAccessMiddleware(authService, [roles.founderMaster, roles.businessOwner, roles.businessManager, roles.retailManager])
+export const requireDecisionApprovalAccess = createAccessMiddleware(authService, [roles.founderMaster, roles.businessOwner, roles.businessManager, roles.retailManager])
+export const requireExecutionAccess = createAccessMiddleware(authService, [roles.founderMaster, roles.businessOwner])
+export const requireTenantOwnerAccess = createAccessMiddleware(authService, [roles.founderMaster, roles.businessOwner])
 
 const ensureDemoRetailUser = async () => {
   const email = process.env.DEMO_RETAIL_EMAIL || 'retail.manager@demo.local'

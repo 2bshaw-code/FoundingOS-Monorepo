@@ -48,13 +48,16 @@
     "verify:superdashboard-isolation": "node scripts/verify-superdashboard-isolation.mjs",
     "verify:lockdown": "node scripts/verify-ecosystem-lockdown.mjs",
     "verify:backup-readiness": "node scripts/verify-backup-readiness.mjs",
+    "verify:production-readiness": "node scripts/verify-production-readiness.mjs",
+    "generate:site-access": "node scripts/generate-site-access.mjs",
     "verify:hydration-safety": "node scripts/verify-hydration-safety.mjs",
-    "test:tester-system": "node --experimental-strip-types scripts/test-tester-system.mjs",
+    "test:tester-system": "node --import tsx scripts/test-tester-system.mjs",
     "demo:credentials": "node scripts/load-demo-credentials.mjs",
     "test": "npm test --workspace @foundingos/auth && npm run test:tester-system",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },
   "devDependencies": {
+    "esbuild": "^0.28.0",
     "tsx": "^4.23.13",
     "turbo": "^2.5.6"
   },

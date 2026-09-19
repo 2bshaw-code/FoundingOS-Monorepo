@@ -213,7 +213,7 @@ function SiteNav() {
         <Link href="/suites">Suites</Link>
         <Link href="/#how-it-works">How it works</Link>
         <Link href="/workspaces">Workspaces</Link>
-        <Link className="nav-test-workspaces" href="/test-workspaces/retail">Test workspaces</Link>
+        <Link className="nav-test-workspaces" href="/test-workspaces">Test workspaces</Link>
         <Link href="/workspaces/marketing">Marketing</Link>
         <Link href="/intelligence">Intelligence</Link>
         <Link href="/pricing">Pricing</Link>

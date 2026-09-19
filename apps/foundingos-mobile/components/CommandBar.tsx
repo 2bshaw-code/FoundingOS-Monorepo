@@ -5,7 +5,6 @@
 import { useMemo, useState } from 'react'
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { router } from 'expo-router'
-import { BRANDS } from '../lib/brands'
 import { useQuantumStore } from '../lib/store'
 import { enqueueOutboxAction } from '../lib/outbox-sync'
 import { QuantumButton, QuantumListItem, QuantumModalSurface, QuantumNotice, QuantumSectionHeader, QuantumText, QuantumTextInput, quantumColors, quantumSpace } from './QuantumUI'
@@ -16,18 +15,19 @@ export function CommandBarModal({ onOpenMultimodal }: { onOpenMultimodal?: (type
   const commandBarOpen = useQuantumStore((state) => state.commandBarOpen)
   const setCommandBarOpen = useQuantumStore((state) => state.setCommandBarOpen)
   const activeBrandSlug = useQuantumStore((state) => state.activeBrandSlug)
+  const getVisibleBrands = useQuantumStore((state) => state.getVisibleBrands)
   const [query, setQuery] = useState('')
   const [statusMessage, setStatusMessage] = useState('')
 
   const filteredWorkspaces = useMemo(
     () =>
-      BRANDS.filter(
+      getVisibleBrands().filter(
         (brand) =>
           brand.name.toLowerCase().includes(query.toLowerCase()) ||
           brand.tagline.toLowerCase().includes(query.toLowerCase()) ||
           brand.modules.some((module) => module.toLowerCase().includes(query.toLowerCase()))
       ),
-    [query]
+    [query, getVisibleBrands]
   )
 
   if (!commandBarOpen) return null

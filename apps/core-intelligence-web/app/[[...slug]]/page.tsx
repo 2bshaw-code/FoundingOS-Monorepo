@@ -6,8 +6,15 @@
 'use client'
 
 import { useState } from 'react'
-import { brands } from '@foundingos/config'
 import { PremiumSocialLinks } from '@foundingos/ui'
+
+// Core.Intelligence is a suite (see suites.ts), not a legacy per-brand entry in
+// @foundingos/config's brand registry, so it resolves its own web/console URLs
+// directly here rather than through `brands`. See docs/migration-map.md's env
+// var mapping table for the NEXT_PUBLIC_IT_* → NEXT_PUBLIC_CORE_INTELLIGENCE_*
+// rename this follows.
+const coreIntelligenceWebUrl = process.env.NEXT_PUBLIC_CORE_INTELLIGENCE_WEB_URL || process.env.NEXT_PUBLIC_IT_WEB_URL || 'http://localhost:3003'
+const coreIntelligenceConsoleUrl = process.env.NEXT_PUBLIC_CORE_INTELLIGENCE_CONSOLE_URL || process.env.NEXT_PUBLIC_IT_CONSOLE_URL || 'http://localhost:4006'
 
 const features = [
   { title: 'Operational clarity', description: 'Keep every workflow, message, and update connected across the teams and channels your business uses.', icon: '◉' },
@@ -27,12 +34,12 @@ const messagingOptions = [
 ] as const
 
 const consoleLinks = [
-  { name: 'Intelligence Console', href: `${brands.it.consoleUrl.replace(/\/+$/, '')}/console` },
-  { name: 'Data Operations Console', href: `${brands.it.consoleUrl.replace(/\/+$/, '')}/console` },
+  { name: 'Intelligence Console', href: `${coreIntelligenceConsoleUrl.replace(/\/+$/, '')}/console` },
+  { name: 'Data Operations Console', href: `${coreIntelligenceConsoleUrl.replace(/\/+$/, '')}/console` },
 ] as const
 
-const itHomeUrl = brands.it.webUrl
-const itPackageUrl = (slug: string) => `${brands.it.consoleUrl.replace(/\/+$/, '')}/console/packages/${slug}`
+const itHomeUrl = coreIntelligenceWebUrl
+const itPackageUrl = (slug: string) => `${coreIntelligenceConsoleUrl.replace(/\/+$/, '')}/console/packages/${slug}`
 
 export default function Page() {
   const [bobOpen, setBobOpen] = useState(false)
@@ -57,8 +64,8 @@ export default function Page() {
     { label: 'Check conversion risk', answer: 'Conversion risk is rising in the middle of the funnel, so I’ve suggested a focused outreach sequence and a better handoff moment.' },
   ] as const
   const consoleDetails = [
-    { name: 'Intelligence Console', href: `${brands.it.consoleUrl.replace(/\/+$/, '')}/console`, description: 'Review discovery signals, routing trends, and operational visibility at a glance.' },
-    { name: 'Data Operations Console', href: `${brands.it.consoleUrl.replace(/\/+$/, '')}/console`, description: 'Manage data workflows, reporting, and structured operations for the CoreIntelligence brand.' },
+    { name: 'Intelligence Console', href: `${coreIntelligenceConsoleUrl.replace(/\/+$/, '')}/console`, description: 'Review discovery signals, routing trends, and operational visibility at a glance.' },
+    { name: 'Data Operations Console', href: `${coreIntelligenceConsoleUrl.replace(/\/+$/, '')}/console`, description: 'Manage data workflows, reporting, and structured operations for the CoreIntelligence brand.' },
   ] as const
 
   const handleBobAction = (answer: string) => {

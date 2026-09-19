@@ -65,7 +65,12 @@ if (audioToggleSitesChecked < 4) {
   throw new Error(`Expected at least 4 [data-audio-toggle] sites across the repo, found ${audioToggleSitesChecked} — did one get removed or renamed?`)
 }
 
-const skipGuardFiles = ['packages/ui/src/topbar.tsx', 'packages/ui/src/theme.tsx']
+// topbar.tsx's sidebar-collapse state (and its skipNextApplyRef guard) was removed when the
+// component was rewritten to the simplified, suite-driven Topbar during the FoundingOS 3-suite
+// restructure — it no longer mounts any localStorage-backed effect, so there is nothing left
+// for that guard to protect. theme.tsx still owns the real double-write/flash-prone state, so
+// it remains the only file this check applies to.
+const skipGuardFiles = ['packages/ui/src/theme.tsx']
 for (const path of skipGuardFiles) {
   const source = await readFile(new URL(path, repoRoot), 'utf8')
   if (!/skipNextApplyRef/.test(source)) {
@@ -131,4 +136,4 @@ for (const fnName of ['seedRecords', 'seedNotes', 'seedActivity']) {
   }
 }
 
-console.log(`Hydration safety verified: ${audioToggleSitesChecked} audio-toggle sites protected, both effect-skip guards present, ${localeSitesChecked} app/package files scanned clean for locale-dependent formatting bugs, CRM seed functions clean of non-deterministic values.`)
+console.log(`Hydration safety verified: ${audioToggleSitesChecked} audio-toggle sites protected, the effect-skip guard is present, ${localeSitesChecked} app/package files scanned clean for locale-dependent formatting bugs, CRM seed functions clean of non-deterministic values.`)

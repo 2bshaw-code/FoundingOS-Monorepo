@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type CSSProperties, type FormEvent } from 'react'
 
-const API_BASE = process.env.NEXT_PUBLIC_CORE_OPERATIONS_API_URL || 'https://core-operations-api.foundingos.com/api/v1/ops'
+const API_BASE = '/api/core-operations/ops'
 
 type BrandProfile = {
   companyName: string

@@ -6,7 +6,7 @@ import type { BrandConsoleConfig } from '@foundingos/ui/console'
 
 export const brandConfig: BrandConsoleConfig = {
   "name": "Core.Operations",
-  "logo": "◉",
+  "logo": "F",
   "accent": "#00C853",
   "typography": {
     "heading": "Inter",
@@ -549,6 +549,43 @@ export const brandConfig: BrandConsoleConfig = {
                 "Triage Ticket",
                 "Resolve Ticket",
                 "Close Ticket"
+          ]
+    },
+    {
+          "id": "monitoring",
+          "label": "Monitoring",
+          "description": "Governed-action intelligence, emerging signals, and the live execution audit trail.",
+          "metrics": [
+                {
+                      "label": "Prediction accuracy",
+                      "value": "\u2014",
+                      "trend": "Live",
+                      "icon": "\u25c8",
+                      "tone": "good"
+                },
+                {
+                      "label": "Active interactions",
+                      "value": "\u2014",
+                      "trend": "Live",
+                      "icon": "\u25c9",
+                      "tone": "watch"
+                },
+                {
+                      "label": "Measured outcomes",
+                      "value": "\u2014",
+                      "trend": "Live",
+                      "icon": "\u2713",
+                      "tone": "good"
+                }
+          ],
+          "actions": [
+                "Review Signals",
+                "Inspect Audit Trail"
+          ],
+          "workflow": [
+                "Detect Signal",
+                "Assess Outcome",
+                "Record Audit Entry"
           ]
     },
     {

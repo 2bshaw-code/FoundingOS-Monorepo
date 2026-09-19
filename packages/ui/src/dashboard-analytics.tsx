@@ -88,7 +88,7 @@ export function DashboardAnalytics({ suite }: { suite: string }) {
             <div key={step.label}>
               <span>{step.label}</span>
               <i style={{ width: `${Math.max(18, (step.value / funnelMaximum) * 100)}%` }} />
-              <strong>{step.value.toLocaleString()}</strong>
+              <strong>{step.value.toLocaleString('en-GB')}</strong>
               {index > 0 && <small>{Math.round((step.value / analytics.funnel[index - 1].value) * 100)}% from previous</small>}
             </div>
           ))}

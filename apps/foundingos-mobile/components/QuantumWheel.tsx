@@ -4,7 +4,7 @@
 */
 import { useEffect, useRef, useState } from 'react'
 import { Animated, Modal, Pressable, StyleSheet, View } from 'react-native'
-import { BRANDS } from '../lib/brands'
+import { BRANDS as ALL_BRANDS } from '../lib/brands'
 import { useQuantumStore } from '../lib/store'
 import { QuantumSphere } from './QuantumSphere'
 import { QuantumButton, QuantumCard, QuantumModalSurface, QuantumPill, QuantumText, quantumColors, quantumRadius, quantumSpace, useActiveQuantumTheme } from './QuantumUI'
@@ -14,6 +14,9 @@ export function QuantumWheelModal() {
   const setQuantumWheelOpen = useQuantumStore((state) => state.setQuantumWheelOpen)
   const activeBrandSlug = useQuantumStore((state) => state.activeBrandSlug)
   const setActiveBrand = useQuantumStore((state) => state.setActiveBrand)
+  const getVisibleBrands = useQuantumStore((state) => state.getVisibleBrands)
+  // Suite visibility is real, license-driven data — not the full static list.
+  const BRANDS = getVisibleBrands().length > 0 ? getVisibleBrands() : ALL_BRANDS
   const theme = useActiveQuantumTheme()
   const rotateAnim = useRef(new Animated.Value(0)).current
   const [selectedIndex, setSelectedIndex] = useState(Math.max(0, BRANDS.findIndex((brand) => brand.slug === activeBrandSlug)))

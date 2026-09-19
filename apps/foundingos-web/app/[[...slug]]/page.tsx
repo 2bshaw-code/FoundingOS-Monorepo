@@ -3,10 +3,10 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { FounderLauncher, type WorkspaceSlug } from '@foundingos/ui'
-import { WorkspaceTestPage, type TestWorkspaceSlug } from '@foundingos/ui/workspace-test-page'
+import { WorkspaceDirectory, WorkspaceTestPage, type TestWorkspaceSlug } from '@foundingos/ui/workspace-test-page'
 import { notFound } from 'next/navigation'
 
-const pages = new Set(['suites', 'workspaces', 'consoles', 'test-workspaces', 'marketing', 'intelligence', 'about', 'pricing', 'contact'])
+const pages = new Set(['suites', 'workspaces', 'consoles', 'app', 'test-workspaces', 'marketing', 'intelligence', 'about', 'pricing', 'contact'])
 const workspaceSlugs = new Set<WorkspaceSlug>(['retail', 'logistics', 'finance', 'talent', 'health'])
 const testWorkspaceSlugs = new Set<TestWorkspaceSlug>(['retail', 'logistics', 'finance', 'marketing', 'talent', 'health', 'intelligence'])
 const workspaceSections: Record<TestWorkspaceSlug, string[]> = {
@@ -16,7 +16,7 @@ const workspaceSections: Record<TestWorkspaceSlug, string[]> = {
   marketing: ['overview', 'campaigns', 'calendar', 'audiences', 'segments', 'leads', 'content', 'brand-studio', 'channels', 'journeys', 'inbox', 'attribution', 'reports', 'automations', 'team', 'integrations', 'settings'],
   talent: ['overview', 'candidates', 'jobs', 'interviews', 'offers', 'onboarding', 'people', 'performance', 'time-off', 'learning', 'payroll', 'engagement', 'reports', 'automations', 'team', 'integrations', 'settings'],
   health: ['overview', 'appointments', 'patients', 'care-plans', 'triage', 'clinical-inbox', 'follow-ups', 'practitioners', 'locations', 'inventory', 'billing', 'claims', 'compliance', 'reports', 'automations', 'team', 'integrations', 'settings'],
-  intelligence: ['overview', 'signals', 'risks', 'recommendations', 'forecasts', 'scenarios', 'anomalies', 'event-feed', 'workflows', 'models', 'data-sources', 'reports', 'automations', 'team', 'integrations', 'settings'],
+  intelligence: ['overview', 'outcomes', 'strategic-overview', 'signals', 'risks', 'recommendations', 'forecasts', 'scenarios', 'anomalies', 'event-feed', 'workflows', 'models', 'data-sources', 'reports', 'automations', 'team', 'integrations', 'settings'],
 }
 
 export const dynamicParams = false
@@ -24,8 +24,11 @@ export const dynamicParams = false
 export function generateStaticParams() {
   return [
     { slug: [] },
+    { slug: ['home'] },
     { slug: ['suites'] },
     { slug: ['workspaces'] },
+    { slug: ['test-workspaces'] },
+    { slug: ['app'] },
     { slug: ['workspaces', 'retail'] },
     { slug: ['workspaces', 'logistics'] },
     { slug: ['workspaces', 'finance'] },
@@ -35,6 +38,8 @@ export function generateStaticParams() {
     ...Object.entries(workspaceSections).flatMap(([workspace, sections]) => [
       { slug: ['test-workspaces', workspace] },
       ...sections.filter((section) => section !== 'overview').map((section) => ({ slug: ['test-workspaces', workspace, section] })),
+      { slug: ['app', workspace] },
+      ...sections.filter((section) => section !== 'overview').map((section) => ({ slug: ['app', workspace, section] })),
     ]),
     // Compatibility paths for previously published links.
     { slug: ['consoles'] },
@@ -56,7 +61,9 @@ export default async function Page({ params }: { params: Promise<{ slug?: string
   const page = slug[0] || 'home'
   if (page === 'home') return <FounderLauncher />
   if (!pages.has(page)) notFound()
-  if (page === 'test-workspaces') {
+  if (page === 'test-workspaces' && slug.length === 1) return <WorkspaceDirectory />
+  if (page === 'app' && slug.length === 1) return <WorkspaceDirectory basePath="/app" />
+  if (page === 'test-workspaces' || page === 'app') {
     const workspace = slug[1] as TestWorkspaceSlug
     const section = slug[2] ?? 'overview'
     if (!testWorkspaceSlugs.has(workspace) || slug.length > 3 || !workspaceSections[workspace].includes(section)) notFound()

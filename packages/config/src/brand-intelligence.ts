@@ -5,7 +5,7 @@
 // Per-brand personality layer: KPIs, sparkline, and the three intelligence tiles.
 // 'finance' is included because Finance is an internal FounderOS module with its
 // own tester survey and signal — it has no standalone console or port.
-export type IntelBrandSlug = 'retail' | 'meat' | 'foundthat' | 'talent' | 'crypto' | 'finance' | 'health' | 'logistics'
+export type IntelBrandSlug = 'retail' | 'meat' | 'foundthat' | 'talent' | 'crypto' | 'finance' | 'health' | 'logistics' | 'it'
 
 export type PersonalityKpi = { label: string; value: string; trend?: string }
 
@@ -152,5 +152,24 @@ export const BRAND_PERSONALITIES: Record<IntelBrandSlug, PersonalityLayer> = {
     insightTile: 'Delivery time improved after consolidating overlapping routes.',
     riskTile: 'Two depots are nearing peak fleet utilisation.',
     opportunityTile: 'Add a depot in the highest-demand delivery zone.',
+  },
+  // Core.Intelligence's own personality layer — KPI dashboards, funnels, and reporting
+  // built from first-party operational data (see suites.ts's core_intelligence entry),
+  // distinct from the per-legacy-brand entries above.
+  it: {
+    brand: 'it',
+    name: 'Decision Pulse',
+    color: '#4CC9FF',
+    basePulse: 66,
+    microStory: 'Decision Pulse: founder-level reporting is catching funnel drop-off a full week earlier than before.',
+    kpis: [
+      { label: 'Reporting coverage', value: '96%', trend: '+3%' },
+      { label: 'Funnel conversion', value: '22%', trend: '+1.5%' },
+      { label: 'Time-to-insight', value: '4.2h', trend: '-0.8h' },
+    ],
+    sparkline: [61, 63, 64, 67, 70, 72],
+    insightTile: 'Founder dashboards are surfacing funnel drop-off earlier this cycle.',
+    riskTile: 'One reporting feed is lagging behind its usual refresh window.',
+    opportunityTile: 'Extend the earliest-warning funnel alert to two more workspaces.',
   },
 }

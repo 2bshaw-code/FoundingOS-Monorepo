@@ -233,6 +233,21 @@ model TesterSession {
   @@map("tester_sessions")
 }
 
+model PreviewVisitor {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  signInCount    Int      @default(1)
+  firstSignedInAt DateTime @default(now())
+  lastSignedInAt DateTime @default(now())
+  lastReturnPath String?
+  lastReferrer   String?
+  lastUserAgent  String?
+  lastIpHash     String?
+
+  @@index([lastSignedInAt])
+  @@map("preview_visitors")
+}
+
 // Historical anomaly detections (SuperDashAnomaly output for category tiles, plus brand-
 // level high/low-engagement Autonomous triggers). category/message/score cover the
 // existing category-level use; brandName/totalEngagement/categoryBreakdown are additive,
