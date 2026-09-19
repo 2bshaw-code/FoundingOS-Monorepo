@@ -5,7 +5,9 @@
 
 'use client'
 
-import { brands } from '@foundingos/config'
+// Core.Intelligence resolves its own web URL directly (see [[...slug]]/page.tsx
+// for the full rationale) rather than through the legacy `brands` registry.
+const coreIntelligenceWebUrl = process.env.NEXT_PUBLIC_CORE_INTELLIGENCE_WEB_URL || process.env.NEXT_PUBLIC_IT_WEB_URL || 'http://localhost:3003'
 
 const legalSections = [
 
@@ -21,7 +23,7 @@ const consoleLinks = [
   { name: 'Data Operations Console', href: '/data' },
 ] as const
 
-const itHomeUrl = brands.it.webUrl
+const itHomeUrl = coreIntelligenceWebUrl
 
 export default function Page() {
   return (

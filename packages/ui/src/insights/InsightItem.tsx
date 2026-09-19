@@ -26,7 +26,7 @@ export function InsightItem({ insight }: { insight: InsightRecord }) {
         <span className="event-feed-icon">{display.icon}</span>
         <strong className="event-feed-title">{title}</strong>
         <span className="event-feed-source">{insight.source}</span>
-        <time className="event-feed-timestamp">{new Date(insight.createdAt).toLocaleString()}</time>
+        <time className="event-feed-timestamp">{new Date(insight.createdAt).toLocaleString('en-GB', { timeZone: 'UTC' })}</time>
       </div>
       <p>{detail}</p>
       {expanded ? <pre className="event-feed-payload">{JSON.stringify(insight.payload, null, 2)}</pre> : null}
