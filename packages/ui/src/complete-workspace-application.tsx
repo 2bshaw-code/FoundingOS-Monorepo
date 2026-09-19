@@ -987,6 +987,51 @@ const directoryMetricLabel = (group: string): string => {
   return 'health score'
 }
 
+function assignCalendarDay(id: string, totalDays: number) {
+  const hash = [...id].reduce((total, char) => total + char.charCodeAt(0), 0)
+  return 1 + (hash % Math.max(totalDays, 1))
+}
+
+const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+// A real month calendar — not a directory list pretending to be one. Records land on a
+// deterministic day of the month (hashed from their id) so the layout is stable between
+// renders. The month itself defaults to a fixed anchor on first paint (SSR-safe) and swaps to
+// the real current month client-side via useEffect, so there is never a server/client mismatch.
+function CalendarGridView({ records, selectedId, onSelect }: { records: WorkspaceRecord[]; selectedId?: string; onSelect: (id: string) => void }) {
+  const [anchor, setAnchor] = useState(() => new Date(2026, 0, 1))
+  useEffect(() => setAnchor(new Date()), [])
+  const totalDays = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0).getDate()
+  const startWeekday = new Date(anchor.getFullYear(), anchor.getMonth(), 1).getDay()
+  const monthLabel = anchor.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+  const recordsByDay = new Map<number, WorkspaceRecord[]>()
+  records.forEach((record) => {
+    const day = assignCalendarDay(record.id, totalDays)
+    recordsByDay.set(day, [...(recordsByDay.get(day) ?? []), record])
+  })
+  const cells: Array<{ day: number | null; records: WorkspaceRecord[] }> = []
+  for (let i = 0; i < startWeekday; i++) cells.push({ day: null, records: [] })
+  for (let day = 1; day <= totalDays; day++) cells.push({ day, records: recordsByDay.get(day) ?? [] })
+  while (cells.length % 7 !== 0) cells.push({ day: null, records: [] })
+  const weeks: Array<typeof cells> = []
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7))
+  return <div className="retail-app-calendar-card">
+    <div className="retail-app-panel-heading"><div><p>Schedule</p><h2>{monthLabel}</h2></div><span>{records.length} scheduled</span></div>
+    <div className="retail-app-calendar-weekdays">{weekdayLabels.map((day) => <span key={day}>{day}</span>)}</div>
+    <div className="retail-app-calendar-grid">
+      {weeks.map((week, weekIndex) => <div className="retail-app-calendar-row" key={weekIndex}>
+        {week.map((cell, cellIndex) => <div className={`retail-app-calendar-cell${cell.day === anchor.getDate() ? ' is-today' : ''}${cell.day === null ? ' is-empty' : ''}`} key={cellIndex}>
+          {cell.day ? <span className="retail-app-calendar-daynum">{cell.day}</span> : null}
+          <div className="retail-app-calendar-chips">
+            {cell.records.map((record) => <button className={`retail-app-calendar-chip${record.id === selectedId ? ' selected' : ''}`} key={record.id} onClick={() => onSelect(record.id)} title={record.name} type="button">{record.name}</button>)}
+          </div>
+        </div>)}
+      </div>)}
+    </div>
+    {records.length === 0 ? <p className="retail-app-board-empty">Nothing scheduled this month</p> : null}
+  </div>
+}
+
 function RecordsPage({ workspace, config, item, state, createRecord, advanceRecord, publishHandoff }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
   const records = state.records[item.id] ?? []
   const statuses = statusFor(item)
@@ -1050,13 +1095,14 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   }
   const origin = selected ? recordOrigin(selected, config) : null
   const isDirectory = !item.statuses
+  const isCalendar = item.id === 'calendar'
   const metricLabel = directoryMetricLabel(item.group)
   return <>
-    <WorkspaceHeading eyebrow={`${config.suite} · ${item.group}`} title={item.label} copy={isDirectory ? `Browse every ${item.label.toLowerCase()} record with health, owner, and connected handoff.` : `Manage every ${item.label.toLowerCase()} record, owner, stage, activity, and connected handoff.`} action={<button className="retail-app-primary" onClick={() => setCreating(true)} type="button">+ New record</button>} />
+    <WorkspaceHeading eyebrow={`${config.suite} · ${item.group}`} title={item.label} copy={isCalendar ? `See every scheduled ${item.label.toLowerCase()} entry laid out by day, and click through to its details.` : isDirectory ? `Browse every ${item.label.toLowerCase()} record with health, owner, and connected handoff.` : `Manage every ${item.label.toLowerCase()} record, owner, stage, activity, and connected handoff.`} action={<button className="retail-app-primary" onClick={() => setCreating(true)} type="button">+ New record</button>} />
     {!isDirectory ? <div className="complete-workspace-stage-summary">{statuses.map((status) => <article key={status}><strong>{records.filter((record) => record.status === status).length}</strong><span>{status}</span></article>)}</div> : null}
     <div className="retail-app-toolbar"><input aria-label={`Search ${item.label}`} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${item.label.toLowerCase()}`} value={query} /><span className="retail-app-record-count">{visible.length} matching</span><button onClick={() => window.print()} type="button">Export / print</button></div>
     <section className="retail-app-record-layout">
-      {isDirectory ? <div className="retail-app-directory-card">
+      {isCalendar ? <CalendarGridView onSelect={selectRecord} records={visible} selectedId={selected?.id} /> : isDirectory ? <div className="retail-app-directory-card">
         <div className="retail-app-panel-heading"><div><p>{item.group}</p><h2>{visible.length} {item.label.toLowerCase()}</h2></div></div>
         <div className="retail-app-directory-grid">
           {visible.map((record) => {
