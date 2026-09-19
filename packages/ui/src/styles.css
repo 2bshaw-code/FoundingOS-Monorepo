@@ -1044,6 +1044,18 @@ body {
   color: var(--text);
 }
 
+/* Global placeholder contrast fix: browsers default placeholder text to a fixed
+   mid-grey that ignores the day/night theme, so on the dark theme's navy input
+   backgrounds it reads as near-invisible dark-grey-on-dark-navy (the "search
+   boxes are too dark to read" issue across every module's search/filter input).
+   --muted already flips per theme (light grey-blue in dark mode, darker grey in
+   day mode), so using it here keeps every search box readable in both themes. */
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
 .console-shell-page {
   overflow-x: hidden;
   --sidebar-width: 280px;
@@ -3842,6 +3854,14 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   width: 100%;
 }
 
+/* Same fixed-light-surface reasoning as .retail-app-toolbar above: this topbar
+   is always on a white background regardless of theme, so its placeholder
+   needs its own fixed readable grey rather than the theme-following --muted. */
+.retail-product-topbar input::placeholder {
+  color: #738198;
+  opacity: 1;
+}
+
 .retail-product-topbar > div {
   align-items: center;
   display: flex;
@@ -4178,11 +4198,22 @@ body:has(.complete-workspace-directory) .found-ai-panel {
 
 .retail-app-toolbar input {
   border: 0;
+  color: #172033;
   flex: 1;
   font: inherit;
   min-width: 180px;
   outline: 0;
   padding: 7px 9px;
+}
+
+/* .retail-app-toolbar's background is always white regardless of the day/night
+   theme toggle (a fixed light-mode POS-style surface), so its placeholder needs
+   its own fixed, readable grey rather than the theme-following --muted used
+   elsewhere — in dark mode --muted is a light grey-blue that would be very low
+   contrast against this white background. */
+.retail-app-toolbar input::placeholder {
+  color: #8795a7;
+  opacity: 1;
 }
 
 .retail-app-toolbar select,
