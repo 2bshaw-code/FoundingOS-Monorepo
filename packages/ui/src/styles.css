@@ -1671,6 +1671,10 @@ a {
 /* Full Retail business application */
 .retail-product-shell {
   --retail-accent: #24c47a;
+  /* Darkened toward the shell's dark text colour so pastel accents (purple, pink,
+     light blue, orange) stay readable on the light sidebar/background instead of
+     rendering as low-contrast light-on-light text. */
+  --retail-accent-text: color-mix(in srgb, var(--retail-accent) 55%, #172033);
   background: #f5f7fa;
   color: #172033;
   display: grid;
@@ -1682,7 +1686,7 @@ a {
 .complete-workspace-shell .retail-product-sidebar nav a.active {
   background: color-mix(in srgb, var(--retail-accent) 16%, transparent);
   border-color: color-mix(in srgb, var(--retail-accent) 35%, transparent);
-  color: var(--retail-accent);
+  color: var(--retail-accent-text);
 }
 
 body:has(.complete-workspace-shell) > div > .foundingos-footer,
@@ -1826,7 +1830,7 @@ body:has(.complete-workspace-directory) .found-ai-panel {
 }
 
 .complete-workspace-live {
-  color: var(--retail-accent);
+  color: var(--retail-accent-text);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: .08em;

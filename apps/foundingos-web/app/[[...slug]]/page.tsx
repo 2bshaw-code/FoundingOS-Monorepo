@@ -16,7 +16,7 @@ const workspaceSections: Record<TestWorkspaceSlug, string[]> = {
   marketing: ['overview', 'campaigns', 'calendar', 'audiences', 'segments', 'leads', 'content', 'brand-studio', 'channels', 'journeys', 'inbox', 'attribution', 'reports', 'automations', 'team', 'integrations', 'settings'],
   talent: ['overview', 'candidates', 'jobs', 'interviews', 'offers', 'onboarding', 'people', 'performance', 'time-off', 'learning', 'payroll', 'engagement', 'reports', 'automations', 'team', 'integrations', 'settings'],
   health: ['overview', 'appointments', 'patients', 'care-plans', 'triage', 'clinical-inbox', 'follow-ups', 'practitioners', 'locations', 'inventory', 'billing', 'claims', 'compliance', 'reports', 'automations', 'team', 'integrations', 'settings'],
-  intelligence: ['overview', 'signals', 'risks', 'recommendations', 'forecasts', 'scenarios', 'anomalies', 'event-feed', 'workflows', 'models', 'data-sources', 'reports', 'automations', 'team', 'integrations', 'settings'],
+  intelligence: ['overview', 'outcomes', 'strategic-overview', 'signals', 'risks', 'recommendations', 'forecasts', 'scenarios', 'anomalies', 'event-feed', 'workflows', 'models', 'data-sources', 'reports', 'automations', 'team', 'integrations', 'settings'],
 }
 
 export const dynamicParams = false
