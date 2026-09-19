@@ -4626,8 +4626,76 @@ body:has(.complete-workspace-directory) .found-ai-panel {
 .retail-app-inbox-layout {
   display: grid;
   gap: 14px;
-  grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 190px) minmax(0, 340px) minmax(0, 1fr);
   margin-top: 14px;
+}
+
+.retail-app-inbox-folders {
+  background: #fff;
+  border: 1px solid #e5eaf0;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.retail-app-inbox-folders button {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #445;
+  cursor: pointer;
+  display: flex;
+  font-size: 13px;
+  justify-content: space-between;
+  padding: 8px 9px;
+  text-align: left;
+}
+
+.retail-app-inbox-folders button:hover {
+  background: #f7f9fb;
+}
+
+.retail-app-inbox-folders button.active {
+  background: #f0fbf6;
+  color: #14532d;
+  font-weight: 600;
+}
+
+.retail-app-inbox-folders button em {
+  color: #8a97a6;
+  font-size: 11px;
+  font-style: normal;
+}
+
+.retail-app-inbox-folders button.active em {
+  color: #22c55e;
+}
+
+.retail-app-inbox-connect {
+  border-top: 1px solid #eef1f4;
+  margin-top: 8px;
+  padding-top: 10px;
+}
+
+.retail-app-inbox-connect p {
+  color: #8a97a6;
+  font-size: 11px;
+  margin: 0 0 4px;
+}
+
+.retail-app-inbox-connect a {
+  color: var(--retail-accent, #22c55e);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.retail-app-inbox-connect a:hover {
+  text-decoration: underline;
 }
 
 .retail-app-inbox-list {
@@ -4636,6 +4704,21 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   border-radius: 12px;
   min-width: 0;
   padding: 17px;
+}
+
+.retail-app-inbox-search {
+  background: #f7f9fb;
+  border: 1px solid #e5eaf0;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+.retail-app-inbox-channel {
+  font-style: normal;
+  margin-right: 4px;
 }
 
 .retail-app-inbox-rows {
@@ -13232,4 +13315,378 @@ html[data-accessibility-simplified='true'] .btn {
 .finance-aging-value {
   text-align: right;
   color: var(--muted);
+}
+
+/* Talent: Performance review ranking */
+.retail-app-performance-panel {
+  background: #fff;
+  border: 1px solid #e5eaf0;
+  border-radius: 12px;
+  margin-top: 14px;
+  padding: 17px;
+}
+
+.retail-app-performance-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.retail-app-performance-row {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 22px minmax(0, 160px) minmax(0, 1fr) 40px;
+}
+
+.retail-app-performance-rank {
+  color: #8a97a6;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.retail-app-performance-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.retail-app-performance-track {
+  background: #eef1f4;
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.retail-app-performance-track i {
+  border-radius: 999px;
+  display: block;
+  height: 100%;
+}
+
+.retail-app-performance-track i[data-tone="done"] { background: #22c55e; }
+.retail-app-performance-track i[data-tone="info"] { background: #3b82f6; }
+.retail-app-performance-track i[data-tone="warn"] { background: #f59e0b; }
+
+.retail-app-performance-score {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+}
+
+/* Talent: Payroll run summary */
+.retail-app-payroll-summary {
+  background: #fff;
+  border: 1px solid #e5eaf0;
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 14px;
+  padding: 16px;
+}
+
+.retail-app-payroll-summary div {
+  border-left: 2px solid #eef1f4;
+  padding-left: 12px;
+}
+
+.retail-app-payroll-summary strong {
+  display: block;
+  font-size: 19px;
+}
+
+.retail-app-payroll-summary span {
+  color: #8a97a6;
+  font-size: 11px;
+}
+
+/* Talent: Onboarding checklist */
+.retail-app-onboarding-checklist {
+  background: #f6f7f9;
+  border-radius: 10px;
+  margin-top: 14px;
+  padding: 12px;
+}
+
+.retail-app-onboarding-checklist ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.retail-app-onboarding-checklist li {
+  align-items: center;
+  color: #8a97a6;
+  display: flex;
+  font-size: 12px;
+  gap: 8px;
+}
+
+.retail-app-onboarding-checklist li[data-done="true"] {
+  color: #14532d;
+  font-weight: 600;
+}
+
+.retail-app-onboarding-checklist li span {
+  color: var(--retail-accent, #22c55e);
+  font-weight: 700;
+  width: 14px;
+}
+
+@media (max-width: 720px) {
+  .retail-app-payroll-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Retail: Products catalog grid */
+.retail-app-product-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  margin-top: 12px;
+}
+
+.retail-app-product-card {
+  background: #fff;
+  border: 1px solid #e5e9f0;
+  border-radius: 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  text-align: left;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  width: 100%;
+}
+
+.retail-app-product-card:hover {
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+  transform: translateY(-2px);
+}
+
+.retail-app-product-card.selected {
+  border-color: var(--retail-accent, #22c55e);
+  box-shadow: 0 0 0 2px var(--retail-accent, #22c55e);
+}
+
+.retail-app-product-photo {
+  background: #f4f6f9;
+  height: 120px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.retail-app-product-photo.placeholder {
+  align-items: center;
+  background: linear-gradient(135deg, #dbeafe, #e0f2fe);
+  color: #1e3a8a;
+  display: flex;
+  font-size: 22px;
+  font-weight: 700;
+  justify-content: center;
+}
+
+.retail-app-product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px 12px;
+}
+
+.retail-app-product-info strong {
+  font-size: 13px;
+}
+
+.retail-app-product-category {
+  color: #8a97a6;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.retail-app-product-foot {
+  align-items: center;
+  display: flex;
+  font-size: 12px;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.retail-app-product-foot em {
+  color: #15803d;
+  font-style: normal;
+}
+
+.retail-app-product-foot em[data-low="true"] {
+  color: #b45309;
+}
+
+/* Finance: Budgets vs actual panel */
+.retail-app-budget-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.retail-app-budget-row {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
+}
+
+.retail-app-budget-name {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.retail-app-budget-track {
+  background: #eef1f5;
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.retail-app-budget-track i {
+  background: var(--retail-accent, #22c55e);
+  display: block;
+  height: 100%;
+}
+
+.retail-app-budget-track i[data-over="true"] {
+  background: #dc2626;
+}
+
+.retail-app-budget-figures {
+  color: #4b5563;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Retail: CRM contact profile panel */
+.retail-app-crm-panel {
+  border-top: 1px solid #e5e9f0;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.retail-app-crm-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0 0;
+}
+
+.retail-app-crm-fields div {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.retail-app-crm-fields dt {
+  color: #8a97a6;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.retail-app-crm-fields dd {
+  font-size: 12px;
+  margin: 0;
+  text-align: right;
+}
+
+.retail-app-crm-score {
+  margin-top: 10px;
+}
+
+.retail-app-crm-next {
+  background: #f4f6f9;
+  border-radius: 10px;
+  margin-top: 10px;
+  padding: 10px 12px;
+}
+
+.retail-app-crm-next b {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.retail-app-crm-next p {
+  font-size: 13px;
+  margin: 4px 0 0;
+}
+
+.retail-app-crm-quick-actions {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 10px;
+}
+
+.retail-app-crm-quick-actions button {
+  background: #fff;
+  border: 1px solid #e5e9f0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 6px 4px;
+}
+
+.retail-app-crm-quick-actions button:hover {
+  border-color: var(--retail-accent, #22c55e);
+}
+
+/* Health: inline clinical guidance advice panel */
+.retail-app-care-guidance {
+  border-top: 1px solid #e5e9f0;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.retail-app-care-guidance-card {
+  background: #fef9f0;
+  border: 1px solid #fde8c8;
+  border-radius: 10px;
+  margin-top: 8px;
+  padding: 10px 12px;
+}
+
+.retail-app-care-guidance-card b {
+  display: block;
+  font-size: 12px;
+}
+
+.retail-app-care-guidance-card p {
+  color: #4b5563;
+  font-size: 12px;
+  margin: 4px 0 8px;
+}
+
+.retail-app-care-guidance-card a {
+  color: #b45309;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .retail-app-budget-row {
+    grid-template-columns: 1fr;
+  }
+
+  .retail-app-crm-quick-actions {
+    grid-template-columns: 1fr;
+  }
 }
