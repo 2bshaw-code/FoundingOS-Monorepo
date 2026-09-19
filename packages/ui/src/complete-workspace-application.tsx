@@ -1032,6 +1032,66 @@ function CalendarGridView({ records, selectedId, onSelect }: { records: Workspac
   </div>
 }
 
+const messageBodies = [
+  'Thanks for getting back to me so quickly — really appreciate the update. Can you confirm the next step and when I should expect to hear back?',
+  'Following up on this one more time. It\u2019s been a few days and I just want to make sure it hasn\u2019t slipped through the cracks.',
+  'Quick question before we go ahead — does this include everything we discussed on the call, or is there a separate step I\u2019m missing?',
+  'This looks great, thank you! Happy to proceed whenever you\u2019re ready on your side.',
+  'I wanted to flag that the timeline has shifted slightly on our end. Let me know if that changes anything for you.',
+  'Really pleased with how this has gone so far. Is there anything you need from us to keep things moving?',
+]
+
+function messageBody(id: string) {
+  const hash = [...id].reduce((total, char) => total + char.charCodeAt(0), 0)
+  return messageBodies[hash % messageBodies.length]
+}
+
+// A real two-pane mail-client layout, not a Kanban board wearing an "inbox" label — a message
+// list on the left (avatar, sender, subject preview, unread indicator, timestamp) and the open
+// message with a reply box on the right, exactly like Gmail/Outlook/WhatsApp Web.
+function InboxListView({ records, selectedId, onSelect, statuses }: { records: WorkspaceRecord[]; selectedId?: string; onSelect: (id: string) => void; statuses: string[] }) {
+  const selected = records.find((record) => record.id === selectedId) ?? records[0]
+  const [replyDraft, setReplyDraft] = useState('')
+  const [sentFlash, setSentFlash] = useState(false)
+  const sendReply = () => {
+    if (!replyDraft.trim()) return
+    setReplyDraft('')
+    setSentFlash(true)
+    window.setTimeout(() => setSentFlash(false), 2400)
+  }
+  return <div className="retail-app-inbox-layout">
+    <div className="retail-app-inbox-list">
+      <div className="retail-app-panel-heading"><div><p>Inbox</p><h2>{records.length} conversations</h2></div><span>{records.filter((record) => record.status === statuses[0]).length} unread</span></div>
+      <div className="retail-app-inbox-rows">
+        {records.map((record) => <button className={`retail-app-inbox-row${record.id === selectedId ? ' selected' : ''}${record.status === statuses[0] ? ' is-unread' : ''}`} key={record.id} onClick={() => onSelect(record.id)} type="button">
+          <span className="retail-app-inbox-avatar">{initials(record.name)}</span>
+          <span className="retail-app-inbox-row-body">
+            <span className="retail-app-inbox-row-top"><b>{record.name}</b><i>{record.updated}</i></span>
+            <span className="retail-app-inbox-row-preview">{record.secondary} — {messageBody(record.id).slice(0, 46)}…</span>
+          </span>
+          {record.status === statuses[0] ? <span className="retail-app-inbox-dot" /> : null}
+        </button>)}
+        {records.length === 0 ? <p className="retail-app-board-empty">No conversations yet</p> : null}
+      </div>
+    </div>
+    {selected ? <div className="retail-app-inbox-thread">
+      <div className="retail-app-inbox-thread-head">
+        <span className="retail-app-inbox-avatar large">{initials(selected.name)}</span>
+        <div><strong>{selected.name}</strong><span>{selected.secondary} · {selected.updated}</span></div>
+        <span className={`retail-app-status status-${selected.status.toLowerCase().replace(/\s+/g, '-')}`}>{selected.status}</span>
+      </div>
+      <div className="retail-app-inbox-thread-body">
+        <p>{messageBody(selected.id)}</p>
+      </div>
+      <div className="retail-app-inbox-reply">
+        <textarea onChange={(event) => setReplyDraft(event.target.value)} placeholder={`Reply to ${selected.name}…`} rows={3} value={replyDraft} />
+        <button className="retail-app-primary" disabled={!replyDraft.trim()} onClick={sendReply} type="button">Send reply</button>
+        {sentFlash ? <span className="retail-app-inbox-sent">Sent ✓</span> : null}
+      </div>
+    </div> : <div className="retail-app-inbox-thread"><p className="retail-app-board-empty">Select a conversation to read it</p></div>}
+  </div>
+}
+
 function RecordsPage({ workspace, config, item, state, createRecord, advanceRecord, publishHandoff }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
   const records = state.records[item.id] ?? []
   const statuses = statusFor(item)
@@ -1096,12 +1156,13 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const origin = selected ? recordOrigin(selected, config) : null
   const isDirectory = !item.statuses
   const isCalendar = item.id === 'calendar'
+  const isInbox = item.id === 'inbox'
   const metricLabel = directoryMetricLabel(item.group)
   return <>
-    <WorkspaceHeading eyebrow={`${config.suite} · ${item.group}`} title={item.label} copy={isCalendar ? `See every scheduled ${item.label.toLowerCase()} entry laid out by day, and click through to its details.` : isDirectory ? `Browse every ${item.label.toLowerCase()} record with health, owner, and connected handoff.` : `Manage every ${item.label.toLowerCase()} record, owner, stage, activity, and connected handoff.`} action={<button className="retail-app-primary" onClick={() => setCreating(true)} type="button">+ New record</button>} />
-    {!isDirectory ? <div className="complete-workspace-stage-summary">{statuses.map((status) => <article key={status}><strong>{records.filter((record) => record.status === status).length}</strong><span>{status}</span></article>)}</div> : null}
-    <div className="retail-app-toolbar"><input aria-label={`Search ${item.label}`} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${item.label.toLowerCase()}`} value={query} /><span className="retail-app-record-count">{visible.length} matching</span><button onClick={() => window.print()} type="button">Export / print</button></div>
-    <section className="retail-app-record-layout">
+    <WorkspaceHeading eyebrow={`${config.suite} · ${item.group}`} title={item.label} copy={isInbox ? `Every conversation for ${config.label.toLowerCase()} in one inbox — open a message to read the full thread and reply.` : isCalendar ? `See every scheduled ${item.label.toLowerCase()} entry laid out by day, and click through to its details.` : isDirectory ? `Browse every ${item.label.toLowerCase()} record with health, owner, and connected handoff.` : `Manage every ${item.label.toLowerCase()} record, owner, stage, activity, and connected handoff.`} action={<button className="retail-app-primary" onClick={() => setCreating(true)} type="button">+ New record</button>} />
+    {!isDirectory && !isInbox ? <div className="complete-workspace-stage-summary">{statuses.map((status) => <article key={status}><strong>{records.filter((record) => record.status === status).length}</strong><span>{status}</span></article>)}</div> : null}
+    {!isInbox ? <div className="retail-app-toolbar"><input aria-label={`Search ${item.label}`} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${item.label.toLowerCase()}`} value={query} /><span className="retail-app-record-count">{visible.length} matching</span><button onClick={() => window.print()} type="button">Export / print</button></div> : null}
+    {isInbox ? <InboxListView onSelect={selectRecord} records={visible} selectedId={selected?.id} statuses={statuses} /> : <section className="retail-app-record-layout">
       {isCalendar ? <CalendarGridView onSelect={selectRecord} records={visible} selectedId={selected?.id} /> : isDirectory ? <div className="retail-app-directory-card">
         <div className="retail-app-panel-heading"><div><p>{item.group}</p><h2>{visible.length} {item.label.toLowerCase()}</h2></div></div>
         <div className="retail-app-directory-grid">
@@ -1139,7 +1200,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
         <button aria-expanded={sourceOpen} className="retail-app-source-toggle" onClick={() => setSourceOpen((open) => !open)} type="button"><span>Source: {origin.label}</span><b>{sourceOpen ? '−' : '+'}</b></button>
         {sourceOpen ? <p className="retail-app-source-detail">{origin.detail}</p> : null}
         {!isDirectory ? <div className="retail-app-stage">{statuses.map((status) => <span className={status === selected.status ? 'active' : ''} key={status}>{status}</span>)}</div> : null}{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}{productionModeEnabled && item.id === 'payments' && selected.status !== 'Paid' ? <button className="retail-app-primary" disabled={saving || !selected.backendId} onClick={() => void collectPayment()} type="button">Collect with Stripe</button> : !isDirectory && selected.status !== statuses.at(-1) ? <button className="retail-app-primary" disabled={saving} onClick={() => void advance()} type="button">Move to {statuses[Math.min(statuses.indexOf(selected.status) + 1, statuses.length - 1)]}</button> : null}<button className="retail-app-secondary" disabled={saving} onClick={() => void publishHandoff(item.id, selected, handoffTarget).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Handoff could not be published'))} type="button">Handoff to {configs[handoffTarget].label}</button></aside> : null}
-    </section>
+    </section>}
     {creating ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void create(event)}><div><p>{item.label}</p><h2>Create a record</h2></div><label>Name<input name="name" required /></label><label>Context<input name="secondary" required /></label><div className="retail-app-form-grid"><label>Value<input name="value" placeholder="£0 or priority" required /></label><label>Owner<select name="owner"><option>Maya</option><option>Noah</option><option>Ava</option><option>Bobby</option></select></label></div>{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setCreating(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Saving…' : 'Create record'}</button></footer></form></div> : null}
   </>
 }
