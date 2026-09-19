@@ -1015,6 +1015,11 @@ function hashSpread(id: string, min: number, max: number) {
   return min + (Math.abs(hash) % (max - min))
 }
 
+// Parses a "£4,280"-style value string into a plain number; returns 0 for non-numeric values
+// like "High priority" so callers can safely sum a mixed set of records.
+const parseCurrency = (value: string) => Number(value.replace(/[^0-9.]/g, '')) || 0
+const formatCurrency = (value: number) => value >= 1000 ? `£${(value / 1000).toFixed(1)}k` : `£${Math.round(value)}`
+
 const directoryMetricLabel = (group: string): string => {
   if (group === 'Resources') return 'capacity'
   if (group === 'Commerce' || group === 'Distribution') return 'stock health'
@@ -1408,21 +1413,65 @@ function StockTakePanel({ record, count, onCountChange, onRecord }: { record: Wo
 // far along the stage it's in (later stages count for more), so the number reflects likely
 // close value, not just the raw sum of everything in the funnel.
 function PipelineForecastBar({ statuses, records }: { statuses: string[]; records: WorkspaceRecord[] }) {
-  const parseValue = (value: string) => Number(value.replace(/[^0-9.]/g, '')) || 0
   const open = records.filter((record) => record.status !== statuses.at(-1))
-  const total = open.reduce((sum, record) => sum + parseValue(record.value), 0)
+  const total = open.reduce((sum, record) => sum + parseCurrency(record.value), 0)
   const weighted = open.reduce((sum, record) => {
     const stageIndex = statuses.indexOf(record.status)
     const probability = statuses.length > 1 ? (stageIndex + 1) / statuses.length : 1
-    return sum + parseValue(record.value) * probability
+    return sum + parseCurrency(record.value) * probability
   }, 0)
-  const won = records.filter((record) => record.status === statuses.at(-1)).reduce((sum, record) => sum + parseValue(record.value), 0)
-  const format = (value: number) => value >= 1000 ? `£${(value / 1000).toFixed(1)}k` : `£${Math.round(value)}`
+  const won = records.filter((record) => record.status === statuses.at(-1)).reduce((sum, record) => sum + parseCurrency(record.value), 0)
   return <div className="retail-app-forecast-bar">
-    <div><strong>{format(total)}</strong><span>Open pipeline</span></div>
-    <div><strong>{format(weighted)}</strong><span>Weighted forecast</span></div>
-    <div><strong>{format(won)}</strong><span>Won this period</span></div>
+    <div><strong>{formatCurrency(total)}</strong><span>Open pipeline</span></div>
+    <div><strong>{formatCurrency(weighted)}</strong><span>Weighted forecast</span></div>
+    <div><strong>{formatCurrency(won)}</strong><span>Won this period</span></div>
     <div><strong>{total ? Math.round((won / (total + won)) * 100) : 0}%</strong><span>Win rate</span></div>
+  </div>
+}
+
+// A conversion funnel for any board module: shows how many records are at (or have passed)
+// each stage, and the drop-off percentage stage-to-stage — the same shape recruiters/sales
+// teams expect from a real funnel chart, generated purely from `statuses`/`records` so it works
+// for every pipeline-shaped module (candidates, leads, orders, deliveries, and more) for free.
+function ConversionFunnel({ statuses, records }: { statuses: string[]; records: WorkspaceRecord[] }) {
+  const statusIndex = (status: string) => Math.max(0, statuses.indexOf(status))
+  const stageCounts = statuses.map((status, index) => records.filter((record) => statusIndex(record.status) >= index).length)
+  const top = stageCounts[0] || 1
+  return <div className="retail-app-funnel">
+    <div className="retail-app-panel-heading"><div><p>{statuses.at(-1)} conversion</p><h2>Funnel across {statuses.length} stages</h2></div></div>
+    <div className="retail-app-funnel-rows">
+      {statuses.map((status, index) => {
+        const count = stageCounts[index]
+        const previous = index > 0 ? stageCounts[index - 1] : count
+        const dropOff = index > 0 && previous > 0 ? Math.round(((previous - count) / previous) * 100) : null
+        return <div className="retail-app-funnel-row" key={status}>
+          <span className="retail-app-funnel-label">{status}</span>
+          <div className="retail-app-funnel-track"><i data-tone={boardTones[index % boardTones.length]} style={{ width: `${top ? (count / top) * 100 : 0}%` }} /></div>
+          <span className="retail-app-funnel-count">{count}</span>
+          {dropOff !== null ? <span className="retail-app-funnel-drop" data-high={dropOff >= 40}>{'\u2193'}{dropOff}%</span> : <span className="retail-app-funnel-drop" />}
+        </div>
+      })}
+    </div>
+  </div>
+}
+
+// A total-value-by-stage bar for any board module where records carry parseable currency
+// values (orders, purchasing, invoices, bills, payments, quotes, billing) — skips itself when
+// fewer than half the records have a numeric value, so it never shows a meaningless £0 bar for
+// modules that use text priorities instead (e.g. "High priority").
+function ValueByStageBar({ statuses, records }: { statuses: string[]; records: WorkspaceRecord[] }) {
+  const numeric = records.filter((record) => parseCurrency(record.value) > 0)
+  if (numeric.length < records.length / 2) return null
+  const totals = statuses.map((status) => records.filter((record) => record.status === status).reduce((sum, record) => sum + parseCurrency(record.value), 0))
+  const max = Math.max(...totals, 1)
+  const grandTotal = totals.reduce((sum, value) => sum + value, 0)
+  return <div className="retail-app-value-bar">
+    <div className="retail-app-panel-heading"><div><p>Value</p><h2>{formatCurrency(grandTotal)} across {statuses.length} stages</h2></div></div>
+    <div className="retail-app-value-columns">{statuses.map((status, index) => <div className="retail-app-value-column" key={status}>
+      <div className="retail-app-value-column-track"><i data-tone={boardTones[index % boardTones.length]} style={{ height: `${(totals[index] / max) * 100}%` }} /></div>
+      <strong>{formatCurrency(totals[index])}</strong>
+      <span>{status}</span>
+    </div>)}</div>
   </div>
 }
 
@@ -1581,6 +1630,8 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
     {isSalesPipeline && records.length > 0 ? <PipelineForecastBar records={records} statuses={statuses} /> : null}
     {isCashflow ? <CashFlowChart seed={`${workspace}-${config.subjects[0]}`} /> : null}
     {isTracking && records.length > 0 ? <DeliveryMapPanel onSelect={selectRecord} records={records} selectedId={selected?.id} /> : null}
+    {!isDirectory && !isInbox && !isCalendar && !isContentStudio && !isSalesPipeline && !isInventory && records.length > 0 ? <ValueByStageBar records={records} statuses={statuses} /> : null}
+    {!isDirectory && !isInbox && !isCalendar && !isContentStudio && !isSalesPipeline && !isInventory && records.length > 0 ? <ConversionFunnel records={records} statuses={statuses} /> : null}
     {!isInbox && !isCalendar && records.length > 0 ? (isDirectory ? <DirectoryKPIBar metricLabel={metricLabel} records={records} /> : <PipelineKPIBar records={records} statuses={statuses} />) : null}
     {!isInbox ? <div className="retail-app-toolbar"><input aria-label={`Search ${item.label}`} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${item.label.toLowerCase()}`} value={query} /><span className="retail-app-record-count">{visible.length} matching</span><button onClick={() => window.print()} type="button">Export / print</button></div> : null}
     {isInbox ? <InboxListView onSelect={selectRecord} records={visible} selectedId={selected?.id} statuses={statuses} /> : <section className="retail-app-record-layout">
