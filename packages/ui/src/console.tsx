@@ -288,8 +288,12 @@ function makeRows(prefix: string, items: string[], fields: DataField[]) {
     values: fields.reduce<Record<string, string>>((acc, field) => {
       const value = field.key === 'name'
         ? item
+        // A 'type' select field previously seeded with the record's own name (e.g. the
+        // "Type breakdown" chart legend showing action names like "Review activity"
+        // instead of real types) — that made the chart meaningless on every generic
+        // module page. Rotate through the field's real configured options instead.
         : field.key === 'type'
-          ? item
+          ? (field.options?.[index % field.options.length] ?? item)
           : field.key === 'status'
             ? ['Active', 'Pending', 'Review'][index % 3]
             : field.key === 'owner'
@@ -412,6 +416,48 @@ export function DataWorkbench({ title, description, fields, rows, cards, accentS
     return Array.from(counts.entries()).map(([label, count]) => ({ label, count, tone: statusTone(label) }))
   }, [records, filterField])
 
+  // Real, data-driven gauge visuals — every module page used to show the exact same flat
+  // text cards regardless of what data it held, which is why they "all looked the same".
+  // These two gauges are computed straight from each module's own real records, so the
+  // numbers and colours genuinely differ module to module instead of being static
+  // placeholder text. Prefer an actual status/stage/pipeline field over the breakdown
+  // bar's field (which may be a plain category like 'type' whose values — e.g. "Core",
+  // "Workflow" — never match a good/watch/risk keyword and would always read as 0%).
+  const healthField = useMemo(
+    () => fields.find((field) => STATUS_LIKE_FIELD_KEYS.has(field.key)) ?? filterField,
+    [fields, filterField],
+  )
+  const gaugeMetrics = useMemo<BrandMetric[]>(() => {
+    if (!healthField) return []
+    const counts = new Map<string, number>()
+    for (const row of records) {
+      const value = row.values[healthField.key]
+      if (!value) continue
+      counts.set(value, (counts.get(value) ?? 0) + 1)
+    }
+    const segments = Array.from(counts.entries()).map(([label, count]) => ({ count, tone: statusTone(label) }))
+    if (segments.length === 0) return []
+    const total = segments.reduce((sum, segment) => sum + segment.count, 0) || 1
+    const good = segments.filter((segment) => segment.tone === 'good').reduce((sum, segment) => sum + segment.count, 0)
+    const risk = segments.filter((segment) => segment.tone === 'risk').reduce((sum, segment) => sum + segment.count, 0)
+    const healthPct = Math.round((good / total) * 100)
+    const attentionPct = Math.round((risk / total) * 100)
+    return [
+      {
+        label: `${healthField.label} health`,
+        value: `${healthPct}%`,
+        trend: `${good} of ${total} on track`,
+        tone: healthPct >= 60 ? 'good' : healthPct >= 30 ? 'watch' : 'risk',
+      },
+      {
+        label: 'Needs attention',
+        value: `${attentionPct}%`,
+        trend: risk > 0 ? `${risk} flagged` : 'Nothing flagged',
+        tone: attentionPct === 0 ? 'good' : attentionPct > 40 ? 'risk' : 'watch',
+      },
+    ]
+  }, [records, healthField])
+
   useEffect(() => {
     setPage(1)
   }, [query, filter])
@@ -491,6 +537,13 @@ export function DataWorkbench({ title, description, fields, rows, cards, accentS
           </article>
         ))}
       </div>
+
+      {gaugeMetrics.length > 0 && (
+        <div className="panel">
+          <h2>{title} at a glance</h2>
+          <MetricsGrid metrics={gaugeMetrics} />
+        </div>
+      )}
 
       {distributionSegments.length > 0 && (
         <div className="panel">
