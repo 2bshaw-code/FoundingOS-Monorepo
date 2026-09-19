@@ -24,6 +24,7 @@ const FOUNDINGOS_HOME_MODULE_ROUTES: Record<string, string> = {
   messaging: '/(app)/automation',
   'event-feed': '/(app)/activity',
   team: '/(app)/team',
+  setup: '/(app)/onboarding',
 }
 
 export default function BrandDetailScreen() {

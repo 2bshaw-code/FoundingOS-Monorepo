@@ -44,7 +44,7 @@ export const BRANDS: Brand[] = [
     logo: require('../assets/logos/foundingos.png'),
     accent: FOUNDINGOS_ACCENT,
     tagline: 'One shell for Core.Operations, Core.Workforce, and Core.Intelligence.',
-    modules: ['Business Pulse', 'Approvals', 'Messaging', 'Event Feed', 'Team'],
+    modules: ['Business Pulse', 'Approvals', 'Messaging', 'Event Feed', 'Team', 'Setup'],
     availability: 'overview',
     homeLabel: 'Overview',
     theme: {

@@ -15,11 +15,13 @@ import {
   BusinessPulse,
   OwnerOperationsData,
   PlatformEvent,
+  TenantOnboarding,
   decideAgentAction,
   executeAgentAction,
   fetchAgentActionIntelligence,
   fetchBusinessPulse,
   fetchEventFeed,
+  fetchOnboarding,
   fetchOwnerOperations,
   getAgentActionTrail,
   getSession,
@@ -128,6 +130,7 @@ export default function FounderCommandDeck() {
   const [expandedActionId, setExpandedActionId] = useState<string | null>(null)
   const [trail, setTrail] = useState<AgentActionTrailEvent[]>([])
   const [trailLoading, setTrailLoading] = useState(false)
+  const [onboarding, setOnboarding] = useState<TenantOnboarding | null>(null)
 
   const loadAll = useCallback(async () => {
     const session = await getSession()
@@ -136,18 +139,20 @@ export default function FounderCommandDeck() {
       setLoading(false)
       return
     }
-    const [actionsResult, pulseResult, operationsResult, eventsResult, intelligenceResult] = await Promise.all([
+    const [actionsResult, pulseResult, operationsResult, eventsResult, intelligenceResult, onboardingResult] = await Promise.all([
       listAgentActions().catch(() => []),
       fetchBusinessPulse(),
       fetchOwnerOperations().catch(() => null),
       fetchEventFeed(15),
       fetchAgentActionIntelligence().catch(() => null),
+      fetchOnboarding().catch(() => null),
     ])
     setActions(actionsResult)
     setPulse(pulseResult)
     setOperations(operationsResult)
     setEvents(eventsResult)
     setIntelligence(intelligenceResult)
+    setOnboarding(onboardingResult)
     setLoading(false)
   }, [])
 
@@ -475,6 +480,14 @@ export default function FounderCommandDeck() {
           {connected ? <View style={styles.online} /> : null}
         </Pressable>
       </View>
+
+      {connected && onboarding && onboarding.goLiveStatus !== 'live' ? (
+        <Pressable onPress={() => router.push('/(app)/onboarding')}>
+          <QuantumNotice tone="info">
+            Setup isn't finished yet — complete your business profile and connect WhatsApp to go live. Tap to continue.
+          </QuantumNotice>
+        </Pressable>
+      ) : null}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.workspaceRail}>
         <Pressable
