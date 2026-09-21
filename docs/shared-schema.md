@@ -82,6 +82,67 @@ Replaces the first-party analytics portion of `foundthis`/`core_intelligence`.
 | `foundmeat.*` (Supplier, Stock, Traceability, MeatOrder) | Brand deprecated |
 | `foundcrypto.*` (Chart, Signal, AutomationRule, RiskProfile) | Brand deprecated |
 
+## Multi-tenancy & isolation (current implementation)
+
+The schema above describes the target `Tenant`/`tenantId` model. The
+Prisma schema actually deployed today (`packages/db/prisma/schema.prisma`)
+predates that rename and still uses `Brand`/`brandId` (FK-based tables:
+`User`, `Module`, `Subscription`, `ActivityLog`) and `brandSlug` (string-keyed
+tables: `BrandSubscription`, `CrmDeal`, `BrandFinance`, `AccountingInvoice`).
+Both are the same concept — one row per tenant/customer organization — under
+the older name; treat `brandId`/`brandSlug` as synonyms for `tenantId` until
+the rename lands.
+
+Isolation today is **pooled**: every tenant's rows live in the same
+PostgreSQL database and tables, distinguished only by that discriminator
+column. As of migration `20260902100000_tenant_isolation_rls`, isolation is
+enforced at two layers, not one:
+
+1. **Application layer (existing)** — every query passes an explicit
+   `where: { brandId }` / `where: { brandSlug }` filter.
+2. **Database layer (new, defense-in-depth)** — Postgres Row-Level Security
+   is enabled and forced on every tenant-scoped table. A policy on each table
+   only allows rows matching two session-local settings,
+   `app.current_brand_id` / `app.current_brand_slug`, set per-transaction. If
+   application code ever forgets the `WHERE` filter, the database itself
+   still refuses to return or write another tenant's rows.
+
+All tenant-scoped reads/writes must go through the helpers in
+`packages/db/src/index.ts`:
+
+- `withTenantScope({ brandId, brandSlug }, callback)` — sets the two session
+  GUCs for the given tenant before running `callback`, so RLS scopes the
+  query to that tenant only. Use this in every per-tenant request handler.
+- `withAdminBypass(callback)` — sets `app.bypass_rls = 'on'`, allowing the
+  callback to see every tenant's rows. Reserved for genuinely cross-tenant
+  reads (SuperDash rollups such as `readRealPipelineRollup`,
+  `readAllBrandSubscriptions`) — never call this from a handler that took a
+  brandId/brandSlug from the current request.
+
+`AnomalyLog`, `EngagementLog`, `BrandMetric`, and `DriftLog` are intentionally
+excluded from RLS — they are cross-brand admin/portfolio rollup tables, not
+per-tenant application data.
+
+### Dedicated database per large tenant (`Brand.dataTier`)
+
+`Brand.dataTier` (`pooled` default, or `dedicated`) is the flag a large or
+contractually-sensitive tenant is promoted to when the shared pool is no
+longer appropriate — either for scale (a very large tenant's volume/locks
+would otherwise affect every other tenant sharing the same tables) or for a
+buyer's data-residency requirement. Provisioning path for a `dedicated`
+tenant:
+
+1. Stand up a new Postgres instance/database and run the same Prisma
+   migrations against it (schema is identical — no per-tenant schema drift).
+2. Backfill that tenant's rows from the pooled database into the dedicated
+   one, then delete them from the pool.
+3. Route that tenant's connection string (`DATABASE_URL`) to the dedicated
+   instance at the connection-pooling layer, keyed off `Brand.dataTier` /
+   `Brand.slug`, instead of the shared pool's URL. (This routing layer does
+   not exist yet — `dataTier` is currently just the provisioning flag; wiring
+   per-tenant connection routing is the next step once a tenant actually
+   needs this tier.)
+
 ## Migration approach
 
 1. Stand up the new shared schema in `packages/db` alongside the existing

@@ -13,6 +13,18 @@ enum Role {
   user
 }
 
+// Tenant isolation tier — see docs/shared-schema.md "Multi-tenancy & isolation".
+// `pooled` (default): rows live in the shared database, isolated only by the
+// brandId/brandSlug discriminator + Postgres Row-Level Security policies.
+// `dedicated`: reserved for large/enterprise tenants who need a physically
+// separate database — see docs/shared-schema.md for the provisioning path.
+// This field does not itself move data; it is the flag that the provisioning
+// tooling and app-layer connection routing key off of.
+enum DataTier {
+  pooled
+  dedicated
+}
+
 model Brand {
   id            String         @id @default(cuid())
   slug          String         @unique
@@ -20,6 +32,7 @@ model Brand {
   accentColor   String
   websiteUrl    String
   consoleUrl    String
+  dataTier      DataTier       @default(pooled)
   users         User[]
   modules       Module[]
   subscriptions Subscription[]
