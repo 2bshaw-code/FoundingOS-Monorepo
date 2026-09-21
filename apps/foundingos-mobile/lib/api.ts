@@ -61,6 +61,27 @@ export async function authedFetch(url: string, init: RequestInit = {}): Promise<
   return fetch(url, { ...init, headers })
 }
 
+// Mirrors verifySession() in lib/core-operations-api.ts for the legacy tester-login
+// system: a stored token can exist on disk without the backend still accepting it
+// (revoked account, expired session, etc.), which would otherwise silently bounce a
+// user past the login screen into a broken signed-in-but-nothing-loads state.
+export async function verifyLegacyToken(): Promise<boolean> {
+  if (IS_DEMO_MODE) return true
+  const token = await getToken()
+  if (!token) return false
+  try {
+    const response = await authedFetch(`${API_BASE}/api/superdash/overview`)
+    if (response.status === 401 || response.status === 403) {
+      await logout()
+      return false
+    }
+    return true
+  } catch {
+    // Network/server error unrelated to auth — don't destroy a possibly-valid token.
+    return true
+  }
+}
+
 // Real, live, publicly-readable engagement data — the same feed that powers SuperDash on the
 // web. No auth required for this one endpoint.
 export type BrandMetric = {

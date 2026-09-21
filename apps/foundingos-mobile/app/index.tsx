@@ -7,8 +7,8 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleShe
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
-import { login as legacyLogin, getToken as getLegacyToken } from '../lib/api'
-import { login as coreOpsLogin, getSession as getCoreOpsSession } from '../lib/core-operations-api'
+import { login as legacyLogin, getToken as getLegacyToken, verifyLegacyToken } from '../lib/api'
+import { login as coreOpsLogin, getSession as getCoreOpsSession, verifySession as verifyCoreOpsSession } from '../lib/core-operations-api'
 import { login as coreWorkforceLogin, getSession as getCoreWorkforceSession } from '../lib/core-workforce-api'
 import { FOUNDINGOS_ACCENT, FOUNDINGOS_BASE } from '../lib/brands'
 import { QuantumSphere } from '../components/QuantumSphere'
@@ -22,10 +22,32 @@ export default function LoginScreen() {
   const [checkingSession, setCheckingSession] = useState(true)
 
   useEffect(() => {
-    Promise.all([getCoreOpsSession(), getLegacyToken()]).then(([coreOpsSession, legacyToken]) => {
-      if (coreOpsSession || legacyToken) router.replace('/(app)/home')
+    let cancelled = false
+    async function checkExistingSession() {
+      // A stored session/token can exist on disk without still being valid (revoked
+      // account, expired token, stale install, etc.) — verifying before redirecting
+      // stops the app from silently bouncing the user straight back past the login
+      // screen into a broken "signed in but nothing loads" state, which looked like
+      // the login page flashing and then disappearing.
+      const [coreOpsSession, legacyToken] = await Promise.all([getCoreOpsSession(), getLegacyToken()])
+      if (cancelled) return
+      const [coreOpsValid, legacyValid] = await Promise.all([
+        coreOpsSession ? verifyCoreOpsSession() : Promise.resolve(false),
+        legacyToken ? verifyLegacyToken() : Promise.resolve(false),
+      ])
+      if (cancelled) return
+      if (coreOpsValid || legacyValid) {
+        // Keep checkingSession true (spinner stays up) until navigation actually
+        // completes, instead of flashing the login form for a frame first.
+        router.replace('/(app)/home')
+        return
+      }
       setCheckingSession(false)
-    })
+    }
+    checkExistingSession()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   async function handleSignIn() {
