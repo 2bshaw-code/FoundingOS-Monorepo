@@ -47,5 +47,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!access|api/access|api/billing/webhook|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)'],
+  matcher: ['/((?!access|privacy|api/access|api/billing/webhook|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)'],
 }
