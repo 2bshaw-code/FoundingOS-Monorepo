@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { QuantumMiniBars } from '../../components/QuantumMiniCharts'
 import { QuantumButton, QuantumCard, QuantumNotice, QuantumScreen, QuantumText, quantumColors, quantumSpace } from '../../components/QuantumUI'
-import { BRANDS } from '../../lib/brands'
+import { BRANDS, FOUNDINGOS_ACCENT } from '../../lib/brands'
 import {
   AgentAction,
   AgentActionIntelligence,
@@ -438,12 +438,22 @@ export default function FounderCommandDeck() {
         {renderKpiGrid()}
         <View style={styles.launcherGrid}>
           <QuantumCard accent="#26E07F" style={styles.launcherCard}>
-            <QuantumText variant="h3">Core.Operations</QuantumText>
+            <View style={styles.launcherHeaderRow}>
+              <View style={[styles.workspaceIconBadge, styles.launcherIconBadge, { backgroundColor: '#26E07F22', borderColor: '#26E07F55' }]}>
+                <Text style={[styles.workspaceIconGlyph, { color: '#26E07F', fontSize: 17 }]}>⚙</Text>
+              </View>
+              <QuantumText variant="h3">Core.Operations</QuantumText>
+            </View>
             <QuantumText variant="caption">Live orders, inventory, approvals, and campaign controls.</QuantumText>
             <QuantumButton onPress={() => router.push('/workflows')}>Open work</QuantumButton>
           </QuantumCard>
           <QuantumCard accent="#A78BFA" style={styles.launcherCard}>
-            <QuantumText variant="h3">Core.Intelligence</QuantumText>
+            <View style={styles.launcherHeaderRow}>
+              <View style={[styles.workspaceIconBadge, styles.launcherIconBadge, { backgroundColor: '#A78BFA22', borderColor: '#A78BFA55' }]}>
+                <Text style={[styles.workspaceIconGlyph, { color: '#A78BFA', fontSize: 17 }]}>✦</Text>
+              </View>
+              <QuantumText variant="h3">Core.Intelligence</QuantumText>
+            </View>
             <QuantumText variant="caption">Accuracy trends, learning momentum, emerging signals, and audit history.</QuantumText>
             <QuantumButton tone="secondary" onPress={() => router.push('/intelligence')}>Open intelligence</QuantumButton>
           </QuantumCard>
@@ -494,6 +504,9 @@ export default function FounderCommandDeck() {
           style={[styles.workspaceTab, activeWorkspaceSlug === 'foundingos' && styles.workspaceTabActive]}
           onPress={() => setActiveWorkspace('foundingos')}
         >
+          <View style={[styles.workspaceIconBadge, { backgroundColor: `${FOUNDINGOS_ACCENT}22`, borderColor: `${FOUNDINGOS_ACCENT}55` }]}>
+            <Text style={[styles.workspaceIconGlyph, { color: FOUNDINGOS_ACCENT }]}>⌂</Text>
+          </View>
           <Text style={styles.workspaceTabLabel}>Overview</Text>
         </Pressable>
         {WORKSPACES.map((workspace) => (
@@ -505,7 +518,9 @@ export default function FounderCommandDeck() {
             ]}
             onPress={() => setActiveWorkspace(workspace.slug)}
           >
-            <View style={[styles.workspaceDot, { backgroundColor: workspace.accent }]} />
+            <View style={[styles.workspaceIconBadge, { backgroundColor: `${workspace.accent}22`, borderColor: `${workspace.accent}55` }]}>
+              <Text style={[styles.workspaceIconGlyph, { color: workspace.accent }]}>{workspace.icon}</Text>
+            </View>
             <Text style={styles.workspaceTabLabel}>{workspace.homeLabel}</Text>
           </Pressable>
         ))}
@@ -632,6 +647,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(56, 189, 248, 0.14)',
   },
   workspaceDot: { width: 8, height: 8, borderRadius: 4 },
+  workspaceIconBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  workspaceIconGlyph: { fontSize: 14, fontWeight: '900' },
+  launcherHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: quantumSpace.sm },
+  launcherIconBadge: { width: 32, height: 32, borderRadius: 16 },
   workspaceTabLabel: { color: '#fff', fontSize: 14, fontWeight: '800' },
   notice: {
     borderRadius: 12,
