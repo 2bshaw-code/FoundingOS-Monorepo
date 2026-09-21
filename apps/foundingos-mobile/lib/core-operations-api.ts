@@ -539,6 +539,41 @@ export const createPipelineLead = (input: { companyName: string; contactName?: s
 export const updatePipelineLeadStage = (id: string, stage: string) =>
   authedRequest<PipelineLead>(`/api/v1/ops/leads/${id}`, { method: 'PATCH', body: JSON.stringify({ stage }) })
 
+// Generic workspace module records — the same backend the web app's
+// production mode uses for every module across all 7 workspaces
+// (platform.ts: listWorkspaceRecords/createWorkspaceRecord/updateWorkspaceRecord).
+// This lets every module defined in lib/workspace-modules.ts read and write
+// real, tenant-scoped data with no per-module backend work required.
+export type WorkspaceRecordDTO = {
+  id: string
+  reference: string
+  name: string
+  status: string
+  ownerId: string | null
+  valuePence: number | null
+  data: Record<string, unknown> | null
+  version: number
+  updatedAt: string
+}
+
+export const fetchWorkspaceRecords = (workspace: string, module: string) =>
+  authedRequest<WorkspaceRecordDTO[]>(`/api/v1/ops/platform/workspaces/${workspace}/${module}/records`)
+
+export const createWorkspaceRecord = (
+  workspace: string,
+  module: string,
+  input: { reference: string; name: string; status: string; ownerId?: string; valuePence?: number; data?: Record<string, unknown> },
+) =>
+  authedRequest<WorkspaceRecordDTO>(`/api/v1/ops/platform/workspaces/${workspace}/${module}/records`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+
+export const updateWorkspaceRecord = (
+  id: string,
+  input: { version: number; status?: string; name?: string; valuePence?: number; data?: Record<string, unknown> },
+) => authedRequest<WorkspaceRecordDTO>(`/api/v1/ops/platform/records/${id}`, { method: 'PATCH', body: JSON.stringify(input) })
+
 export async function fetchEventFeed(limit = 20): Promise<PlatformEvent[]> {
   try {
     return await authedRequest<PlatformEvent[]>(`/api/v1/ops/platform/events?limit=${limit}`)

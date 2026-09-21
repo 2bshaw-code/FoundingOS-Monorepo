@@ -4,11 +4,12 @@
 */
 import { router } from 'expo-router'
 import { useEffect, useMemo, useState } from 'react'
-import { View, StyleSheet } from 'react-native'
+import { Pressable, View, StyleSheet } from 'react-native'
 import { BRANDS, FOUNDINGOS_ACCENT } from '../../../lib/brands'
 import { getSession } from '../../../lib/core-operations-api'
+import { WORKSPACES } from '../../../lib/workspace-modules'
 import { useQuantumStore } from '../../../lib/store'
-import { QuantumButton, QuantumCard, QuantumHeader, QuantumNotice, QuantumScreen, QuantumText, quantumSpace } from '../../../components/QuantumUI'
+import { QuantumButton, QuantumCard, QuantumHeader, QuantumNotice, QuantumScreen, QuantumSectionHeader, QuantumText, quantumSpace } from '../../../components/QuantumUI'
 
 export default function WorkspaceDirectoryScreen() {
   const setActiveBrand = useQuantumStore((state) => state.setActiveBrand)
@@ -64,6 +65,22 @@ export default function WorkspaceDirectoryScreen() {
           </QuantumCard>
         )
       })}
+
+      <QuantumSectionHeader label="Live workspaces · full module access" />
+      <QuantumText variant="caption">
+        Every module below reads and writes the same real, tenant-scoped data as the web app — sales pipelines, orders,
+        inventory, campaigns, payroll, and more.
+      </QuantumText>
+      <View style={styles.workspaceGrid}>
+        {WORKSPACES.map((workspace) => (
+          <Pressable key={workspace.slug} style={styles.workspaceCard} onPress={() => router.push(`/workspace/${workspace.slug}`)}>
+            <QuantumCard accent={workspace.accent}>
+              <QuantumText variant="h3">{workspace.label}</QuantumText>
+              <QuantumText variant="caption">{workspace.modules.length} modules</QuantumText>
+            </QuantumCard>
+          </Pressable>
+        ))}
+      </View>
     </QuantumScreen>
   )
 }
@@ -72,4 +89,6 @@ const styles = StyleSheet.create({
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: quantumSpace.md },
   flex: { flex: 1 },
   moduleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
+  workspaceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
+  workspaceCard: { minWidth: 150, flexGrow: 1 },
 })
