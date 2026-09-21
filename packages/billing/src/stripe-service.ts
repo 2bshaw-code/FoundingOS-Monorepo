@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { getStripeClient } from './stripe-client.ts'
-import { getPrismaClient } from '@foundingos/db'
+import { isDatabaseConfigured, withTenantScope } from '@foundingos/db'
 import { isCommercialMode } from '@foundingos/config/commercial-mode'
 
 export type CommercialResult<T> = { ok: true; data: T } | { ok: false; reason: 'not_configured' | 'error'; message: string }
@@ -56,30 +56,31 @@ export async function syncSubscriptionFromStripe(params: {
   status: 'trialing' | 'active' | 'past_due' | 'canceled'
   plan: string
 }): Promise<CommercialResult<{ subscriptionId: string }>> {
-  const prisma = getPrismaClient()
-  if (!prisma || !isCommercialMode()) return notConfigured()
+  if (!isDatabaseConfigured() || !isCommercialMode()) return notConfigured()
 
   const billingState = params.status === 'trialing' ? 'trial' : params.status === 'canceled' ? 'cancelled' : params.status === 'past_due' ? 'past_due' : 'active'
 
-  const subscription = await prisma.subscription.upsert({
-    where: { id: params.stripeSubscriptionId },
-    update: {
-      status: params.status,
-      billingState,
-      stripeCustomerId: params.stripeCustomerId,
-      stripeSubscriptionId: params.stripeSubscriptionId,
-    },
-    create: {
-      id: params.stripeSubscriptionId,
-      brandId: params.brandId,
-      userId: params.userId,
-      plan: params.plan,
-      status: params.status,
-      billingState,
-      stripeCustomerId: params.stripeCustomerId,
-      stripeSubscriptionId: params.stripeSubscriptionId,
-    },
-  })
+  const subscription = await withTenantScope({ brandId: params.brandId }, (tx) =>
+    tx.subscription.upsert({
+      where: { id: params.stripeSubscriptionId },
+      update: {
+        status: params.status,
+        billingState,
+        stripeCustomerId: params.stripeCustomerId,
+        stripeSubscriptionId: params.stripeSubscriptionId,
+      },
+      create: {
+        id: params.stripeSubscriptionId,
+        brandId: params.brandId,
+        userId: params.userId,
+        plan: params.plan,
+        status: params.status,
+        billingState,
+        stripeCustomerId: params.stripeCustomerId,
+        stripeSubscriptionId: params.stripeSubscriptionId,
+      },
+    }),
+  )
 
   return { ok: true, data: { subscriptionId: subscription.id } }
 }
