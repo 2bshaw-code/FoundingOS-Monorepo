@@ -515,6 +515,30 @@ export const fetchOwnerOperations = () => authedRequest<OwnerOperationsData>('/a
 
 export const fetchMarketingWorkspace = () => authedRequest<MarketingWorkspace>('/api/v1/ops/marketing/workspace')
 
+// Sales Pipeline / Deals — backed by the real, tenant-scoped Lead model
+// (core-operations/backend/src/pipeline.ts), not client-side mock data. The
+// backend's `stage` field is a free-form string, so the app's Kanban stage
+// names ('Lead' | 'Qualified' | 'Proposal' | 'Won' | 'Lost') are used directly
+// as the stored stage value — no separate enum/mapping layer needed.
+export type PipelineLead = {
+  id: string
+  companyName: string
+  contactName: string | null
+  stage: string
+  valuePence: number
+  createdAt: string
+  updatedAt: string
+}
+
+export const fetchPipelineLeads = () =>
+  authedRequest<{ leads: PipelineLead[] }>('/api/v1/ops/owner/pipeline').then((data) => data.leads)
+
+export const createPipelineLead = (input: { companyName: string; contactName?: string; valuePence?: number; stage?: string }) =>
+  authedRequest<PipelineLead>('/api/v1/ops/leads', { method: 'POST', body: JSON.stringify(input) })
+
+export const updatePipelineLeadStage = (id: string, stage: string) =>
+  authedRequest<PipelineLead>(`/api/v1/ops/leads/${id}`, { method: 'PATCH', body: JSON.stringify({ stage }) })
+
 export async function fetchEventFeed(limit = 20): Promise<PlatformEvent[]> {
   try {
     return await authedRequest<PlatformEvent[]>(`/api/v1/ops/platform/events?limit=${limit}`)

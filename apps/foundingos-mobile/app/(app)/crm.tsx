@@ -2,11 +2,19 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { useMemo, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { RefreshControl, StyleSheet, View } from 'react-native'
+import {
+  CoreOpsApiError,
+  PipelineLead,
+  createPipelineLead,
+  fetchPipelineLeads,
+  updatePipelineLeadStage,
+} from '../../lib/core-operations-api'
 import {
   QuantumButton,
   QuantumCard,
+  QuantumLoadingScreen,
   QuantumMetric,
   QuantumNotice,
   QuantumPill,
@@ -19,9 +27,13 @@ import {
 
 // Sales pipeline stages, in forward order. A deal can only move to the next
 // stage from here (or be marked Lost from any stage) — mirrors the web
-// test-workspaces/retail/crm simulation so mobile and web feel the same.
+// test-workspaces/retail/sales-pipeline module so mobile and web feel the
+// same. Backed by the real, tenant-scoped Lead model (POST/PATCH
+// /api/v1/ops/leads) — stage moves persist to the real database, not just
+// on this device.
 const STAGES = ['Lead', 'Qualified', 'Proposal', 'Won'] as const
 type Stage = (typeof STAGES)[number]
+const LOST_STAGE = 'Lost'
 
 const STAGE_ACCENT: Record<Stage, string> = {
   Lead: '#38BDF8',
@@ -29,28 +41,6 @@ const STAGE_ACCENT: Record<Stage, string> = {
   Proposal: '#FBBF24',
   Won: '#26E07F',
 }
-
-type Deal = {
-  id: string
-  company: string
-  contact: string
-  valuePence: number
-  stage: Stage
-  owner: string
-  lost?: boolean
-}
-
-// Deterministic demo pipeline — no live CRM backend exists yet, so this is an
-// honest interactive simulation (same pattern as the web CRM/sales-pipeline
-// pages) rather than pretending to show real tenant data.
-const INITIAL_DEALS: Deal[] = [
-  { id: 'd1', company: 'Riverside Grocers', contact: 'Amara Yusuf', valuePence: 480000, stage: 'Lead', owner: 'You' },
-  { id: 'd2', company: 'North Star Cafés', contact: 'Ola Benson', valuePence: 920000, stage: 'Lead', owner: 'You' },
-  { id: 'd3', company: 'Harborlight Retail', contact: 'Priya Shah', valuePence: 1540000, stage: 'Qualified', owner: 'You' },
-  { id: 'd4', company: 'Fenwick & Co', contact: 'Marcus Lee', valuePence: 2100000, stage: 'Qualified', owner: 'You' },
-  { id: 'd5', company: 'Bloom Market Group', contact: 'Sofia Reyes', valuePence: 3650000, stage: 'Proposal', owner: 'You' },
-  { id: 'd6', company: 'Anchor Supply Co', contact: 'Dev Patel', valuePence: 1275000, stage: 'Won', owner: 'You' },
-]
 
 function formatCurrency(pence: number) {
   return `£${(pence / 100).toLocaleString('en-GB', { maximumFractionDigits: 0 })}`
@@ -62,42 +52,104 @@ function nextStage(stage: Stage): Stage | null {
   return STAGES[index + 1]
 }
 
+function isKnownStage(stage: string): stage is Stage {
+  return (STAGES as readonly string[]).includes(stage)
+}
+
 export default function CrmScreen() {
   const theme = useActiveQuantumTheme()
-  const [deals, setDeals] = useState<Deal[]>(INITIAL_DEALS)
+  const [leads, setLeads] = useState<PipelineLead[]>([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState('')
+  const [busyId, setBusyId] = useState<string | null>(null)
   const [filter, setFilter] = useState<Stage | 'All'>('All')
 
-  const openDeals = useMemo(() => deals.filter((deal) => !deal.lost), [deals])
+  const load = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true)
+    setError('')
+    try {
+      const data = await fetchPipelineLeads()
+      setLeads(data)
+    } catch (err) {
+      setError(err instanceof CoreOpsApiError ? err.message : 'Could not load the sales pipeline. Pull to refresh to try again.')
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  // Leads with no recognised stage yet (freshly imported, or created outside
+  // this Kanban view) default into the first column rather than disappearing.
+  const openDeals = useMemo(() => leads.filter((lead) => lead.stage !== LOST_STAGE), [leads])
+  const dealStage = useCallback((lead: PipelineLead): Stage => (isKnownStage(lead.stage) ? lead.stage : 'Lead'), [])
+
   const pipelineValue = useMemo(
-    () => openDeals.filter((deal) => deal.stage !== 'Won').reduce((sum, deal) => sum + deal.valuePence, 0),
-    [openDeals],
+    () => openDeals.filter((lead) => dealStage(lead) !== 'Won').reduce((sum, lead) => sum + lead.valuePence, 0),
+    [openDeals, dealStage],
   )
-  const wonValue = useMemo(() => openDeals.filter((deal) => deal.stage === 'Won').reduce((sum, deal) => sum + deal.valuePence, 0), [openDeals])
+  const wonValue = useMemo(
+    () => openDeals.filter((lead) => dealStage(lead) === 'Won').reduce((sum, lead) => sum + lead.valuePence, 0),
+    [openDeals, dealStage],
+  )
   const winRate = useMemo(() => {
-    const decided = deals.filter((deal) => deal.stage === 'Won' || deal.lost)
+    const decided = leads.filter((lead) => dealStage(lead) === 'Won' || lead.stage === LOST_STAGE)
     if (decided.length === 0) return 0
-    return Math.round((deals.filter((deal) => deal.stage === 'Won').length / decided.length) * 100)
-  }, [deals])
+    return Math.round((leads.filter((lead) => dealStage(lead) === 'Won').length / decided.length) * 100)
+  }, [leads, dealStage])
 
-  const visibleDeals = filter === 'All' ? openDeals : openDeals.filter((deal) => deal.stage === filter)
+  const visibleDeals = filter === 'All' ? openDeals : openDeals.filter((lead) => dealStage(lead) === filter)
 
-  function advance(dealId: string) {
-    setDeals((current) =>
-      current.map((deal) => {
-        if (deal.id !== dealId) return deal
-        const next = nextStage(deal.stage)
-        return next ? { ...deal, stage: next } : deal
-      }),
-    )
+  async function advance(lead: PipelineLead) {
+    const next = nextStage(dealStage(lead))
+    if (!next) return
+    setBusyId(lead.id)
+    setError('')
+    try {
+      const updated = await updatePipelineLeadStage(lead.id, next)
+      setLeads((current) => current.map((item) => (item.id === lead.id ? updated : item)))
+    } catch (err) {
+      setError(err instanceof CoreOpsApiError ? err.message : 'Could not update this deal — try again.')
+    } finally {
+      setBusyId(null)
+    }
   }
 
-  function markLost(dealId: string) {
-    setDeals((current) => current.map((deal) => (deal.id === dealId ? { ...deal, lost: true } : deal)))
+  async function markLost(lead: PipelineLead) {
+    setBusyId(lead.id)
+    setError('')
+    try {
+      const updated = await updatePipelineLeadStage(lead.id, LOST_STAGE)
+      setLeads((current) => current.map((item) => (item.id === lead.id ? updated : item)))
+    } catch (err) {
+      setError(err instanceof CoreOpsApiError ? err.message : 'Could not update this deal — try again.')
+    } finally {
+      setBusyId(null)
+    }
   }
+
+  async function addDeal() {
+    setError('')
+    try {
+      const created = await createPipelineLead({ companyName: 'New deal', stage: 'Lead', valuePence: 0 })
+      setLeads((current) => [created, ...current])
+    } catch (err) {
+      setError(err instanceof CoreOpsApiError ? err.message : 'Could not add a deal — try again.')
+    }
+  }
+
+  if (loading) return <QuantumLoadingScreen />
 
   return (
-    <QuantumScreen contentStyle={styles.screen}>
-      <QuantumNotice tone="info">Interactive simulation · stage moves persist on this device only</QuantumNotice>
+    <QuantumScreen
+      contentStyle={styles.screen}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={theme.accent} />}
+    >
+      {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
 
       <View style={styles.kpiRow}>
         <QuantumCard accent="#38BDF8" style={styles.kpiCard}>
@@ -111,14 +163,19 @@ export default function CrmScreen() {
         </QuantumCard>
       </View>
 
-      <QuantumSectionHeader label="Pipeline stage" />
+      <View style={styles.headerRow}>
+        <QuantumSectionHeader label="Pipeline stage" />
+        <QuantumButton tone="secondary" onPress={addDeal}>
+          + Add deal
+        </QuantumButton>
+      </View>
       <View style={styles.pillRow}>
         <QuantumPill active={filter === 'All'} onPress={() => setFilter('All')}>
           All ({openDeals.length})
         </QuantumPill>
         {STAGES.map((stage) => (
           <QuantumPill key={stage} active={filter === stage} accent={STAGE_ACCENT[stage]} onPress={() => setFilter(stage)}>
-            {stage} ({openDeals.filter((deal) => deal.stage === stage).length})
+            {stage} ({openDeals.filter((lead) => dealStage(lead) === stage).length})
           </QuantumPill>
         ))}
       </View>
@@ -127,26 +184,32 @@ export default function CrmScreen() {
         {visibleDeals.length === 0 ? (
           <QuantumNotice>No deals in this stage yet.</QuantumNotice>
         ) : (
-          visibleDeals.map((deal) => {
-            const stageAccent = STAGE_ACCENT[deal.stage]
-            const next = nextStage(deal.stage)
+          visibleDeals.map((lead) => {
+            const stage = dealStage(lead)
+            const stageAccent = STAGE_ACCENT[stage]
+            const next = nextStage(stage)
+            const busy = busyId === lead.id
             return (
-              <QuantumCard key={deal.id} accent={stageAccent} style={styles.dealCard}>
+              <QuantumCard key={lead.id} accent={stageAccent} style={styles.dealCard}>
                 <View style={styles.dealHeaderRow}>
                   <View style={{ flex: 1 }}>
-                    <QuantumText variant="h3">{deal.company}</QuantumText>
+                    <QuantumText variant="h3">{lead.companyName}</QuantumText>
                     <QuantumText variant="caption" color={theme.subtextColor}>
-                      {deal.contact} · Owner: {deal.owner}
+                      {lead.contactName || 'No contact on file'}
                     </QuantumText>
                   </View>
                   <QuantumText variant="h2" color={stageAccent}>
-                    {formatCurrency(deal.valuePence)}
+                    {formatCurrency(lead.valuePence)}
                   </QuantumText>
                 </View>
                 <View style={styles.dealActionsRow}>
-                  {next ? <QuantumButton onPress={() => advance(deal.id)}>Move to {next}</QuantumButton> : null}
-                  {deal.stage !== 'Won' ? (
-                    <QuantumButton tone="ghost" onPress={() => markLost(deal.id)}>
+                  {next ? (
+                    <QuantumButton onPress={() => advance(lead)} disabled={busy}>
+                      Move to {next}
+                    </QuantumButton>
+                  ) : null}
+                  {stage !== 'Won' ? (
+                    <QuantumButton tone="ghost" onPress={() => markLost(lead)} disabled={busy}>
                       Mark lost
                     </QuantumButton>
                   ) : null}
@@ -164,6 +227,7 @@ const styles = StyleSheet.create({
   screen: { gap: quantumSpace.lg },
   kpiRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
   kpiCard: { flex: 1, minWidth: 140, alignItems: 'center' },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
   dealList: { gap: quantumSpace.md },
   dealCard: { gap: quantumSpace.sm },
