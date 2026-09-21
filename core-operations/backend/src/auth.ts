@@ -37,13 +37,32 @@ const ensureDemoRetailUser = async () => {
   })
 }
 
+// Seeds a real, working founder account (and a matching tenant) so the app's live
+// business data, Actions Queue, and CRM/pipeline paths are actually reachable — a
+// bare AuthUser row with no tenantId would sign in fine but show a permanently
+// empty Command Deck, since every tenant-scoped query filters by tenantId.
 const ensureDemoFounderUser = async () => {
   const email = process.env.DEMO_FOUNDER_EMAIL || 'founder@demo.local'
   const passwordHash = await bcrypt.hash(process.env.DEMO_FOUNDER_PASSWORD || 'DemoOnly!2026', 12)
-  await prisma.authUser.upsert({
+  const tenantId = process.env.DEMO_FOUNDER_TENANT_ID || 'demo-founder-tenant'
+  const user = await prisma.authUser.upsert({
     where: { email },
-    create: { email, passwordHash, role: roles.founderMaster, active: true },
+    create: { email, passwordHash, role: roles.founderMaster, tenantId, active: true },
     update: { passwordHash, role: roles.founderMaster, active: true },
+  })
+  const resolvedTenantId = user.tenantId || tenantId
+  await prisma.tenantOnboarding.upsert({
+    where: { tenantId: resolvedTenantId },
+    create: {
+      tenantId: resolvedTenantId,
+      businessName: process.env.DEMO_FOUNDER_BUSINESS_NAME || 'FoundingOS',
+      ownerName: process.env.DEMO_FOUNDER_OWNER_NAME || 'Founder',
+      goLiveStatus: 'live',
+      completedSteps: { profile: true, billing: true, integrations: true },
+      acceptedTermsAt: new Date(),
+      completedAt: new Date(),
+    },
+    update: {},
   })
 }
 
