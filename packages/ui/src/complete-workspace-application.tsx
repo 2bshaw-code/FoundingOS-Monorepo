@@ -1965,6 +1965,53 @@ function DeliveryMapPanel({ records, selectedId, onSelect }: { records: Workspac
   </div>
 }
 
+// Locational mapping for Talent's Candidates module — plots every candidate on a simplified
+// UK map by their (deterministic) home city, colour-coded by pipeline stage, with a
+// city/radius filter and click-to-select pins. This is the "Gridmate"-style spatial view
+// recruiters use to see where talent pools are concentrated and plan in-person interviews or
+// office/remote coverage by geography, not just a flat list of applicants.
+const talentCities: Array<{ name: string; x: number; y: number }> = [
+  { name: 'London', x: 280, y: 178 },
+  { name: 'Manchester', x: 220, y: 100 },
+  { name: 'Birmingham', x: 235, y: 132 },
+  { name: 'Leeds', x: 232, y: 84 },
+  { name: 'Bristol', x: 178, y: 152 },
+  { name: 'Glasgow', x: 178, y: 30 },
+  { name: 'Edinburgh', x: 208, y: 28 },
+  { name: 'Liverpool', x: 205, y: 100 },
+]
+const candidateCity = (id: string) => talentCities[hashSpread(id, 0, talentCities.length)]
+const boardToneColor: Record<(typeof boardTones)[number], string> = { neutral: '#94a3b8', info: '#3b82f6', warn: '#f59e0b', done: '#22c55e' }
+function TalentLocationMapPanel({ records, statuses, selectedId, onSelect, cityFilter, onCityFilterChange }: { records: WorkspaceRecord[]; statuses: string[]; selectedId?: string; onSelect: (id: string) => void; cityFilter: string; onCityFilterChange: (city: string) => void }) {
+  const citiesInUse = talentCities.filter((city) => records.some((record) => candidateCity(record.id).name === city.name))
+  return <div className="retail-app-map-panel retail-app-location-map">
+    <div className="retail-app-panel-heading">
+      <div><p>Recruiting</p><h2>Candidate location map</h2></div>
+      <select aria-label="Filter candidates by city" onChange={(event) => onCityFilterChange(event.target.value)} value={cityFilter}>
+        <option value="all">All locations</option>
+        {citiesInUse.map((city) => <option key={city.name} value={city.name}>{city.name}</option>)}
+      </select>
+    </div>
+    <div className="retail-app-map-canvas">
+      <svg height="220" role="presentation" viewBox="0 0 400 220" width="100%">
+        <rect fill="#eef3f8" height="220" width="400" />
+        {talentCities.map((city) => <text fill="#9aa6b8" fontSize="9" key={city.name} x={city.x + 8} y={city.y + 3}>{city.name}</text>)}
+        {records.map((record) => {
+          const city = candidateCity(record.id)
+          const jitterX = hashSpread(`${record.id}-jx`, -14, 14)
+          const jitterY = hashSpread(`${record.id}-jy`, -14, 14)
+          const stageIndex = Math.max(0, statuses.indexOf(record.status))
+          const tone = boardTones[stageIndex % boardTones.length]
+          return <g cursor="pointer" key={record.id} onClick={() => onSelect(record.id)} transform={`translate(${city.x + jitterX} ${city.y + jitterY})`}>
+            <circle fill={boardToneColor[tone]} r={record.id === selectedId ? 9 : 6} stroke="#fff" strokeWidth="2" />
+          </g>
+        })}
+      </svg>
+    </div>
+    <div className="retail-app-map-legend">{statuses.map((status, index) => <span key={status}><i data-tone={boardTones[index % boardTones.length]} />{status}</span>)}</div>
+  </div>
+}
+
 function RecordsPage({ workspace, config, item, state, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string, kind?: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
   const records = state.records[item.id] ?? []
   const statuses = statusFor(item)
@@ -1978,6 +2025,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const [noteText, setNoteText] = useState('')
   const [noteKind, setNoteKind] = useState('Note')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [cityFilter, setCityFilter] = useState('all')
   const [sortBy, setSortBy] = useState<'default' | 'name' | 'value' | 'owner' | 'score'>('default')
   const [checkedIds, setCheckedIds] = useState<string[]>([])
   const [boardView, setBoardView] = useState<'kanban' | 'list'>('kanban')
@@ -2027,7 +2075,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
       setSaving(false)
     }
   }
-  const matched = records.filter((record) => `${record.id} ${record.name} ${record.secondary} ${record.status}`.toLowerCase().includes(query.toLowerCase()) && (statusFilter === 'all' || record.status === statusFilter))
+  const matched = records.filter((record) => `${record.id} ${record.name} ${record.secondary} ${record.status}`.toLowerCase().includes(query.toLowerCase()) && (statusFilter === 'all' || record.status === statusFilter) && (cityFilter === 'all' || candidateCity(record.id).name === cityFilter))
   const visible = sortBy === 'default'
     ? matched
     : sortBy === 'score'
@@ -2178,6 +2226,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
     {isSalesPipeline && records.length > 0 ? <PipelineForecastBar records={records} statuses={statuses} /> : null}
     {isCashflow ? <CashFlowChart seed={`${workspace}-${config.subjects[0]}`} /> : null}
     {isTracking && records.length > 0 ? <DeliveryMapPanel onSelect={selectRecord} records={records} selectedId={selected?.id} /> : null}
+    {isCandidates && records.length > 0 ? <TalentLocationMapPanel cityFilter={cityFilter} onCityFilterChange={setCityFilter} onSelect={selectRecord} records={records} selectedId={selected?.id} statuses={statuses} /> : null}
     {isPayroll && records.length > 0 ? <PayrollSummaryPanel records={records} statuses={statuses} /> : null}
     {isPerformance && records.length > 0 ? <PerformanceScorePanel records={records} /> : null}
     {isBudgets && records.length > 0 ? <BudgetProgressPanel records={records} /> : null}

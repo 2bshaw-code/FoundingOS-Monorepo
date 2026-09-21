@@ -6096,6 +6096,29 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   background: #ff496e;
 }
 
+.retail-app-map-legend i[data-tone="neutral"] {
+  background: #94a3b8;
+}
+
+.retail-app-map-legend i[data-tone="info"] {
+  background: #3b82f6;
+}
+
+.retail-app-map-legend i[data-tone="warn"] {
+  background: #f59e0b;
+}
+
+.retail-app-map-legend i[data-tone="done"] {
+  background: #22c55e;
+}
+
+.retail-app-location-map .retail-app-panel-heading select {
+  border: 1px solid #dbe2eb;
+  border-radius: 8px;
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
 .retail-app-funnel,
 .retail-app-value-bar {
   background: #fff;
