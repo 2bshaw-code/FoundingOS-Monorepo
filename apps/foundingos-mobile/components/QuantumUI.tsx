@@ -2,6 +2,7 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
+import { LinearGradient } from 'expo-linear-gradient'
 import { ReactElement, ReactNode, useState } from 'react'
 import {
   ActivityIndicator,
@@ -53,6 +54,20 @@ export const quantumColors = {
   danger: '#FF5470',
   whatsapp: '#25D366',
 } as const
+
+// Darkens (negative percent) or lightens (positive percent) a #rrggbb hex color by
+// mixing it toward black/white. Used to build a subtle two-stop gradient from a flat
+// accent color without needing a second design token per accent.
+export function shadeColor(hex: string, percent: number): string {
+  const clean = hex.replace('#', '')
+  if (clean.length !== 6) return hex
+  const num = parseInt(clean, 16)
+  const amount = Math.round(2.55 * percent)
+  const r = Math.min(255, Math.max(0, (num >> 16) + amount))
+  const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00ff) + amount))
+  const b = Math.min(255, Math.max(0, (num & 0x0000ff) + amount))
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`
+}
 
 // Sizes tuned for a "premium, easy-to-read" feel (Sep 2026 legibility pass): every
 // step is larger than the original scale, and `label` was added because buttons/pills
@@ -119,24 +134,32 @@ export function useActiveQuantumTheme() {
 
 export function QuantumScreen({ children, scroll = true, refreshControl, style, contentStyle }: QuantumScreenProps) {
   const theme = useActiveQuantumTheme()
-  const containerStyle = [styles.screen, { backgroundColor: theme.bgPrimary }, style]
+  const containerStyle = [styles.screen, style]
   const content = [styles.screenContent, contentStyle]
 
   return (
-    <SafeAreaView style={containerStyle} edges={['left', 'right', 'bottom']}>
-      {scroll ? (
-        <ScrollView
-          style={styles.flex}
-          contentContainerStyle={content}
-          refreshControl={refreshControl}
-          showsVerticalScrollIndicator={false}
-        >
-          {children}
-        </ScrollView>
-      ) : (
-        <View style={content}>{children}</View>
-      )}
-    </SafeAreaView>
+    <View style={styles.screenBackdrop}>
+      <LinearGradient
+        colors={[theme.bgSecondary, theme.bgPrimary, '#000814']}
+        locations={[0, 0.55, 1]}
+        style={StyleSheet.absoluteFill}
+      />
+      <View pointerEvents="none" style={[styles.screenGlow, { backgroundColor: theme.accent, opacity: 0.16 }]} />
+      <SafeAreaView style={containerStyle} edges={['left', 'right', 'bottom']}>
+        {scroll ? (
+          <ScrollView
+            style={styles.flex}
+            contentContainerStyle={content}
+            refreshControl={refreshControl}
+            showsVerticalScrollIndicator={false}
+          >
+            {children}
+          </ScrollView>
+        ) : (
+          <View style={content}>{children}</View>
+        )}
+      </SafeAreaView>
+    </View>
   )
 }
 
@@ -175,6 +198,14 @@ export function QuantumCard({ children, accent, elevated = true, style }: Quantu
         style,
       ]}
     >
+      {accent ? (
+        <LinearGradient
+          colors={[accent, `${accent}00`]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.cardAccentBar}
+        />
+      ) : null}
       {children}
     </View>
   )
@@ -205,17 +236,27 @@ export function QuantumButton({ children, onPress, tone = 'primary', disabled, s
     tone === 'primary' ? theme.accent : tone === 'danger' ? quantumColors.danger : tone === 'secondary' ? theme.bgSecondary : 'transparent'
   const borderColor = tone === 'ghost' || tone === 'secondary' ? theme.borderColor : backgroundColor
   const textColor = tone === 'primary' || tone === 'danger' ? quantumColors.neutral900 : theme.textColor
+  const gradientColors = tone === 'primary' ? [shadeColor(theme.accent, 18), theme.accent, shadeColor(theme.accent, -18)] : null
 
   return (
     <Pressable
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor, borderColor, opacity: disabled ? 0.55 : pressed ? 0.82 : 1 },
+        { borderColor, opacity: disabled ? 0.55 : pressed ? 0.82 : 1, overflow: 'hidden' },
+        !gradientColors && { backgroundColor },
         style,
       ]}
       onPress={onPress}
       disabled={disabled}
     >
+      {gradientColors ? (
+        <LinearGradient
+          colors={gradientColors as [string, string, ...string[]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      ) : null}
       {typeof children === 'string' || typeof children === 'number' ? (
         <QuantumText variant="label" color={textColor} style={styles.buttonText}>
           {children}
@@ -432,6 +473,15 @@ export function getScreenHeaderOptions(theme: QuantumTheme) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   screen: { flex: 1 },
+  screenBackdrop: { flex: 1 },
+  screenGlow: {
+    position: 'absolute',
+    top: -140,
+    right: -100,
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+  },
   screenContent: {
     paddingHorizontal: quantumSpace.lg,
     paddingTop: quantumSpace.lg,
@@ -444,6 +494,16 @@ const styles = StyleSheet.create({
     borderRadius: quantumRadius.lg,
     padding: quantumSpace.xl,
     gap: quantumSpace.md,
+    position: 'relative',
+  },
+  cardAccentBar: {
+    position: 'absolute',
+    top: 0,
+    left: 1,
+    right: 1,
+    height: 3,
+    borderTopLeftRadius: quantumRadius.lg - 1,
+    borderTopRightRadius: quantumRadius.lg - 1,
   },
   cardElevation: {
     shadowOpacity: 0.2,

@@ -5,13 +5,14 @@
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
 import { login as legacyLogin, getToken as getLegacyToken } from '../lib/api'
 import { login as coreOpsLogin, getSession as getCoreOpsSession } from '../lib/core-operations-api'
 import { login as coreWorkforceLogin, getSession as getCoreWorkforceSession } from '../lib/core-workforce-api'
 import { FOUNDINGOS_ACCENT, FOUNDINGOS_BASE } from '../lib/brands'
 import { QuantumSphere } from '../components/QuantumSphere'
-import { QuantumButton, QuantumCard, QuantumFormField, QuantumNotice, QuantumPasswordInput, QuantumText, QuantumTextInput, quantumSpace } from '../components/QuantumUI'
+import { QuantumButton, QuantumCard, QuantumFormField, QuantumNotice, QuantumPasswordInput, QuantumText, QuantumTextInput, quantumSpace, shadeColor } from '../components/QuantumUI'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
@@ -60,49 +61,59 @@ export default function LoginScreen() {
 
   if (checkingSession) {
     return (
-      <SafeAreaView style={styles.center}>
+      <View style={styles.center}>
+        <LinearGradient colors={[shadeColor(FOUNDINGOS_BASE, 8), FOUNDINGOS_BASE, '#000814']} style={StyleSheet.absoluteFill} />
         <ActivityIndicator color={FOUNDINGOS_ACCENT} />
-      </SafeAreaView>
+      </View>
     )
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={styles.brand}>
-          <QuantumSphere size={72} />
-          <QuantumText variant="h1" align="center">FoundingOS</QuantumText>
-          <QuantumText color="#D8D8D8" align="center">
-            One command system for every workspace in your business.
-          </QuantumText>
-        </View>
+    <View style={styles.container}>
+      <LinearGradient colors={[shadeColor(FOUNDINGOS_BASE, 8), FOUNDINGOS_BASE, '#000814']} style={StyleSheet.absoluteFill} />
+      <LinearGradient
+        colors={[`${FOUNDINGOS_ACCENT}29`, `${FOUNDINGOS_ACCENT}00`]}
+        style={styles.glow}
+      />
+      <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.brand}>
+            <QuantumSphere size={72} />
+            <QuantumText variant="h1" align="center">FoundingOS</QuantumText>
+            <QuantumText color="#D8D8D8" align="center">
+              One command system for every workspace in your business.
+            </QuantumText>
+          </View>
 
-        <QuantumCard accent={FOUNDINGOS_ACCENT}>
-          <QuantumFormField label="Email">
-            <QuantumTextInput
-              placeholder="you@example.com"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
-            />
-          </QuantumFormField>
-          <QuantumFormField label="Password or access code">
-            <QuantumPasswordInput placeholder="••••••••" value={password} onChangeText={setPassword} />
-          </QuantumFormField>
-          {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
-          <QuantumButton onPress={handleSignIn} disabled={loading}>
-            {loading ? <ActivityIndicator color={FOUNDINGOS_BASE} /> : 'Sign in'}
-          </QuantumButton>
-        </QuantumCard>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          <QuantumCard accent={FOUNDINGOS_ACCENT}>
+            <QuantumFormField label="Email">
+              <QuantumTextInput
+                placeholder="you@example.com"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
+              />
+            </QuantumFormField>
+            <QuantumFormField label="Password or access code">
+              <QuantumPasswordInput placeholder="••••••••" value={password} onChangeText={setPassword} />
+            </QuantumFormField>
+            {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
+            <QuantumButton onPress={handleSignIn} disabled={loading}>
+              {loading ? <ActivityIndicator color={FOUNDINGOS_BASE} /> : 'Sign in'}
+            </QuantumButton>
+          </QuantumCard>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: FOUNDINGOS_BASE, padding: quantumSpace.xl },
+  container: { flex: 1, backgroundColor: FOUNDINGOS_BASE },
+  safeArea: { flex: 1, padding: quantumSpace.xl },
   keyboard: { flex: 1, justifyContent: 'center', gap: quantumSpace.xxl },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: FOUNDINGOS_BASE },
   brand: { alignItems: 'center', gap: quantumSpace.lg },
+  glow: { position: 'absolute', top: -160, left: -80, width: 340, height: 340, borderRadius: 170 },
 })
