@@ -1095,6 +1095,38 @@ const overdueCount = (records: WorkspaceRecord[] | undefined): number => {
   }).length
 }
 
+// A real, explainable lead score for CRM records — unlike a generic "AI score" black box,
+// every point is derived from data already on the record (pipeline stage, deal value versus
+// the rest of the pipeline, logged engagement, and follow-up status) so a rep can see exactly
+// why a lead is Hot/Warm/Cold and what would move it, the way HubSpot/Pipedrive scoring should
+// work but rarely explains clearly.
+function computeLeadScore(record: WorkspaceRecord, statuses: string[], records: WorkspaceRecord[]): { score: number; tier: 'Hot' | 'Warm' | 'Cold'; factors: string[] } {
+  const factors: string[] = []
+  const stageIndex = Math.max(0, statuses.indexOf(record.status))
+  const stagePoints = statuses.length > 1 ? Math.round((stageIndex / (statuses.length - 1)) * 35) : 0
+  factors.push(`${record.status} stage (+${stagePoints})`)
+
+  const values = records.map((item) => parseCurrency(item.value)).filter((amount) => amount > 0)
+  const avgValue = values.length ? values.reduce((total, amount) => total + amount, 0) / values.length : 0
+  const recordValue = parseCurrency(record.value)
+  const valuePoints = avgValue > 0 ? Math.max(0, Math.min(25, Math.round((recordValue / avgValue) * 12.5))) : 0
+  if (recordValue > 0) factors.push(`${formatCurrency(recordValue)} deal vs ${formatCurrency(avgValue)} average (+${valuePoints})`)
+
+  const logCount = record.log?.length ?? 0
+  const engagementPoints = Math.min(25, logCount * 6)
+  factors.push(`${logCount} logged ${logCount === 1 ? 'activity' : 'activities'} (+${engagementPoints})`)
+
+  const badge = dueBadge(record.dueDate)
+  let duePoints = 0
+  if (badge?.tone === 'overdue') { duePoints = -15; factors.push(`Follow-up overdue (${duePoints})`) }
+  else if (badge?.tone === 'soon') { duePoints = 8; factors.push(`Follow-up due soon (+${duePoints})`) }
+  else if (badge?.tone === 'later') { duePoints = 2; factors.push(`Follow-up scheduled (+${duePoints})`) }
+
+  const score = Math.max(0, Math.min(100, stagePoints + valuePoints + engagementPoints + duePoints))
+  const tier: 'Hot' | 'Warm' | 'Cold' = score >= 70 ? 'Hot' : score >= 40 ? 'Warm' : 'Cold'
+  return { score, tier, factors }
+}
+
 const directoryMetricLabel = (group: string): string => {
   if (group === 'Resources') return 'capacity'
   if (group === 'Commerce' || group === 'Distribution') return 'stock health'
@@ -1846,12 +1878,12 @@ function crmSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '')
 }
 const crmNextActions = ['Send a follow-up email', 'Book a discovery call', 'Share pricing options', 'Confirm renewal date', 'Introduce to account manager']
-function CRMContactPanel({ record, onLog }: { record: WorkspaceRecord; onLog: (note: string) => void }) {
+function CRMContactPanel({ record, records, statuses, onLog }: { record: WorkspaceRecord; records: WorkspaceRecord[]; statuses: string[]; onLog: (note: string) => void }) {
   const slug = crmSlug(record.name)
   const hash = [...record.id].reduce((total, char) => total + char.charCodeAt(0), 0)
   const email = `${slug || 'contact'}@${slug ? slug.split('.')[0] : 'customer'}.com`
   const phone = `+44 7${String(100000000 + (hash * 137) % 899999999).slice(0, 9)}`
-  const score = hashPercent(record.id, 40, 98)
+  const { score, tier, factors } = computeLeadScore(record, statuses, records)
   const nextAction = crmNextActions[hash % crmNextActions.length]
   return <div className="retail-app-crm-panel">
     <p className="retail-app-attachment-label">Contact profile</p>
@@ -1860,7 +1892,10 @@ function CRMContactPanel({ record, onLog }: { record: WorkspaceRecord; onLog: (n
       <div><dt>Phone</dt><dd><a href={`tel:${phone.replace(/\s+/g, '')}`}>{phone}</a></dd></div>
       <div><dt>Company</dt><dd>{record.secondary}</dd></div>
     </dl>
-    <div className="retail-app-crm-score"><div className="retail-app-stock-take-gauge"><div className="retail-app-stock-take-bar"><i style={{ width: `${score}%` }} /></div><span>Lead score: {score}%</span></div></div>
+    <div className="retail-app-crm-score">
+      <div className="retail-app-stock-take-gauge"><div className="retail-app-stock-take-bar"><i style={{ width: `${score}%` }} /></div><span>Lead score: {score}% · <b data-tone={tier === 'Hot' ? 'danger' : tier === 'Warm' ? 'warn' : 'info'}>{tier === 'Hot' ? '🔥' : tier === 'Warm' ? '🌤️' : '❄️'} {tier}</b></span></div>
+      <ul className="retail-app-crm-score-factors">{factors.map((factor) => <li key={factor}>{factor}</li>)}</ul>
+    </div>
     <div className="retail-app-crm-next"><b>Next best action</b><p>{nextAction}</p></div>
     <div className="retail-app-crm-quick-actions">
       <button onClick={() => onLog(`Logged a call with ${record.name}`)} type="button">📞 Log call</button>
@@ -2247,6 +2282,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
                     <strong>{record.name}</strong>
                     <span>{record.secondary}</span>
                     <div className="retail-app-board-item-meta"><b>{record.value}</b><i className="retail-app-board-item-owner"><span className="retail-app-board-item-avatar">{initials(record.owner)}</span>{record.owner}</i></div>
+                    {isCRM ? (() => { const lead = computeLeadScore(record, statuses, records); return <span className="retail-app-lead-score-badge" data-tone={lead.tier === 'Hot' ? 'danger' : lead.tier === 'Warm' ? 'warn' : 'info'}>{lead.tier === 'Hot' ? '🔥' : lead.tier === 'Warm' ? '🌤️' : '❄️'} {lead.score}</span> })() : null}
                     {dueBadge(record.dueDate) ? <span className={`retail-app-due-badge retail-app-due-${dueBadge(record.dueDate)!.tone}`}>{dueBadge(record.dueDate)!.label}</span> : null}
                     <div className="retail-app-board-item-foot"><small>{record.updated}</small>{statuses.indexOf(status) < statuses.length - 1 ? <a onClick={(event) => { event.stopPropagation(); void advanceRecord(item.id, record, statuses[statuses.indexOf(status) + 1]) }} role="button">Move to {statuses[statuses.indexOf(status) + 1]} →</a> : null}</div>
                   </button>
@@ -2261,7 +2297,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
         {isContentStudio ? <ContentPreviewCard body={selected.secondary.includes(' \u00b7 ') ? selected.secondary.slice(selected.secondary.indexOf(' \u00b7 ') + 3) : selected.secondary} cta={selected.value} hashtags={[]} headline={selected.name} image={selected.attachment} type={selected.secondary.split(' \u00b7 ')[0] ?? 'Social post'} /> : <AttachmentBox attachment={selected.attachment} attachmentName={selected.attachmentName ?? ''} onRemove={() => attachRecord(item.id, selected, undefined, '')} onUpload={(file) => void readFileAsDataUrl(file).then((dataUrl) => attachRecord(item.id, selected, dataUrl, file.name))} />}
         {isInventory ? <StockTakePanel count={stockCount} onCountChange={setStockCount} onRecord={recordStock} record={selected} /> : null}
         {isOnboarding ? <OnboardingChecklistPanel record={selected} /> : null}
-        {isCRM ? <CRMContactPanel onLog={(note) => logNote(item.id, selected, note)} record={selected} /> : null}
+        {isCRM ? <CRMContactPanel onLog={(note) => logNote(item.id, selected, note)} record={selected} records={records} statuses={statuses} /> : null}
         {isCarePlans ? <CareGuidancePanel record={selected} /> : null}
         {isProductionOrders ? <ProductionOrderPanel record={selected} /> : null}
         {isBOM ? <BOMComponentsPanel record={selected} /> : null}

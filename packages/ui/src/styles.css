@@ -13917,6 +13917,63 @@ html[data-accessibility-simplified='true'] .btn {
   margin-top: 10px;
 }
 
+.retail-app-crm-score span {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.retail-app-crm-score b[data-tone="danger"] {
+  color: #b3261e;
+}
+
+.retail-app-crm-score b[data-tone="warn"] {
+  color: #9a6700;
+}
+
+.retail-app-crm-score b[data-tone="info"] {
+  color: #445069;
+}
+
+.retail-app-crm-score-factors {
+  display: grid;
+  gap: 3px;
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.retail-app-crm-score-factors li {
+  color: #6b7383;
+  font-size: 11px;
+}
+
+.retail-app-lead-score-badge {
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 700;
+  gap: 3px;
+  margin-top: 4px;
+  padding: 2px 8px;
+  width: fit-content;
+}
+
+.retail-app-lead-score-badge[data-tone="danger"] {
+  background: #fde2e1;
+  color: #b3261e;
+}
+
+.retail-app-lead-score-badge[data-tone="warn"] {
+  background: #fef1d6;
+  color: #9a6700;
+}
+
+.retail-app-lead-score-badge[data-tone="info"] {
+  background: #e9eef7;
+  color: #445069;
+}
+
 .retail-app-crm-next {
   background: #f4f6f9;
   border-radius: 10px;
