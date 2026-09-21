@@ -290,7 +290,7 @@ export default function WorkforceScreen() {
         ) : (
           <View style={{ gap: quantumSpace.sm }}>
             <QuantumNotice tone="warning">Sign in with your FoundingOS account on the login screen to connect Core.Workforce.</QuantumNotice>
-            <QuantumButton onPress={() => router.push('/')}>Sign in</QuantumButton>
+            <QuantumButton onPress={() => router.replace('/')}>Sign in</QuantumButton>
           </View>
         )
       ) : (

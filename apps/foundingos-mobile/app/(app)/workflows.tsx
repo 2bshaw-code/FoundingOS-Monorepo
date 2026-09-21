@@ -188,7 +188,7 @@ export default function WorkflowsScreen() {
       {!connected ? (
         <View style={{ gap: quantumSpace.sm }}>
           <QuantumNotice tone="warning">Sign in with your Core.Operations account to see governed actions.</QuantumNotice>
-          <QuantumButton onPress={() => router.push('/')}>Sign in</QuantumButton>
+          <QuantumButton onPress={() => router.replace('/')}>Sign in</QuantumButton>
         </View>
       ) : (
         <>
