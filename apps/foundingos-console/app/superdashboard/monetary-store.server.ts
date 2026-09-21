@@ -8,7 +8,7 @@
 // zero (this product has no real paying customers yet — that's the truthful current state,
 // not a placeholder to dress up). Nothing here is a payment processor: these are
 // informational records only, set by a real admin action, never auto-charged or auto-billed.
-import { getPrismaClient } from '@foundingos/db'
+import { getPrismaClient, isDatabaseConfigured, withAdminBypass, withTenantScope } from '@foundingos/db'
 import { brands, type BrandSlug } from '@foundingos/config'
 import { BASE_TIERS, INDUSTRY_PACKS, type BaseTierName } from '@foundingos/config/package-model-d'
 
@@ -29,9 +29,10 @@ export type RealBrandSubscription = {
   status: string
 }
 
+// Cross-brand rollup (SuperDash) — intentionally reads every tenant's rows, so
+// it goes through withAdminBypass rather than withTenantScope.
 export async function readAllBrandSubscriptions(): Promise<RealBrandSubscription[]> {
-  const prisma = getPrismaClient()
-  const rows = prisma ? await prisma.brandSubscription.findMany() : []
+  const rows = isDatabaseConfigured() ? await withAdminBypass((tx) => tx.brandSubscription.findMany()) : []
   const byBrand = new Map(rows.map((row) => [row.brandSlug, row]))
   return REAL_BRAND_SLUGS.map((slug) => {
     const row = byBrand.get(slug)
@@ -65,19 +66,20 @@ export async function readRealCommercialTotals(): Promise<{ totalMrr: number; to
 // mrr/arr. This IS the "activation" package-model-d.ts's header says is currently only
 // "tracked client-side" — now a real, persisted, server-side action.
 export async function setBrandSubscription(brandSlug: BrandSlug, baseTierName: BaseTierName | null, industryPackName: string | null): Promise<RealBrandSubscription> {
-  const prisma = getPrismaClient()
-  if (!prisma) throw new Error('Database unavailable')
+  if (!isDatabaseConfigured()) throw new Error('Database unavailable')
   const baseTier = baseTierName ? BASE_TIERS.find((t) => t.name === baseTierName) : null
   const industryPack = industryPackName ? INDUSTRY_PACKS.find((p) => p.name === industryPackName) : null
   const price = (baseTier?.monthlyPrice ?? 0) + (industryPack?.monthlyPrice ?? 0)
   const mrr = price
   const arr = Number((mrr * 12).toFixed(2))
   const status = price > 0 ? 'active' : 'none'
-  const row = await prisma.brandSubscription.upsert({
-    where: { brandSlug },
-    update: { baseTier: baseTierName, industryPack: industryPackName, price, mrr, arr, status },
-    create: { brandSlug, baseTier: baseTierName, industryPack: industryPackName, price, mrr, arr, status },
-  })
+  const row = await withTenantScope({ brandSlug }, (tx) =>
+    tx.brandSubscription.upsert({
+      where: { brandSlug },
+      update: { baseTier: baseTierName, industryPack: industryPackName, price, mrr, arr, status },
+      create: { brandSlug, baseTier: baseTierName, industryPack: industryPackName, price, mrr, arr, status },
+    }),
+  )
   return {
     brandSlug,
     brandName: brands[brandSlug]?.name ?? brandSlug,
@@ -98,25 +100,25 @@ export async function setBrandSubscription(brandSlug: BrandSlug, baseTierName: B
 const STAGE_PROBABILITY: Record<string, number> = { Discovery: 0.1, Qualified: 0.3, Proposal: 0.6, Won: 1, Lost: 0 }
 
 export async function readCrmDeals(brandSlug: BrandSlug) {
-  const prisma = getPrismaClient()
-  return prisma ? prisma.crmDeal.findMany({ where: { brandSlug }, orderBy: { createdAt: 'desc' } }) : []
+  if (!isDatabaseConfigured()) return []
+  return withTenantScope({ brandSlug }, (tx) => tx.crmDeal.findMany({ where: { brandSlug }, orderBy: { createdAt: 'desc' } }))
 }
 
 export async function createCrmDeal(brandSlug: BrandSlug, name: string, dealValue: number, currency: string, stage: string, owner?: string) {
-  const prisma = getPrismaClient()
-  if (!prisma) throw new Error('Database unavailable')
+  if (!isDatabaseConfigured()) throw new Error('Database unavailable')
   const probability = STAGE_PROBABILITY[stage] ?? 0.3
   const expectedValue = dealValue
   const probabilityWeightedValue = Number((dealValue * probability).toFixed(2))
-  return prisma.crmDeal.create({ data: { brandSlug, name, dealValue, currency, stage, expectedValue, probabilityWeightedValue, owner } })
+  return withTenantScope({ brandSlug }, (tx) =>
+    tx.crmDeal.create({ data: { brandSlug, name, dealValue, currency, stage, expectedValue, probabilityWeightedValue, owner } }),
+  )
 }
 
 // SuperDash cross-brand pipeline rollup — reads the same real CrmDeal rows every brand's own
 // CRM would show, rather than a second duplicate table, so there's only ever one source of
-// truth for "what is a deal worth".
+// truth for "what is a deal worth". Intentionally admin-bypass (spans every tenant).
 export async function readRealPipelineRollup() {
-  const prisma = getPrismaClient()
-  const deals = prisma ? await prisma.crmDeal.findMany() : []
+  const deals = isDatabaseConfigured() ? await withAdminBypass((tx) => tx.crmDeal.findMany()) : []
   return {
     totalDealValue: Number(deals.reduce((sum, d) => sum + d.dealValue, 0).toFixed(2)),
     totalExpectedValue: Number(deals.reduce((sum, d) => sum + d.expectedValue, 0).toFixed(2)),
@@ -130,8 +132,7 @@ export async function readRealPipelineRollup() {
 // comment); not yet wired into the Finance module UI or brand console pages this pass.
 // ---------------------------------------------------------------------------
 export async function readBrandFinance(brandSlug: BrandSlug) {
-  const prisma = getPrismaClient()
-  const row = prisma ? await prisma.brandFinance.findUnique({ where: { brandSlug } }) : null
+  const row = isDatabaseConfigured() ? await withTenantScope({ brandSlug }, (tx) => tx.brandFinance.findUnique({ where: { brandSlug } })) : null
   return {
     brandSlug,
     revenue: row?.revenue ?? 0,
@@ -145,14 +146,15 @@ export async function readBrandFinance(brandSlug: BrandSlug) {
 }
 
 export async function setBrandFinance(brandSlug: BrandSlug, revenue: number, expenses: number, currency = 'GBP') {
-  const prisma = getPrismaClient()
-  if (!prisma) throw new Error('Database unavailable')
+  if (!isDatabaseConfigured()) throw new Error('Database unavailable')
   const profit = Number((revenue - expenses).toFixed(2))
-  return prisma.brandFinance.upsert({
-    where: { brandSlug },
-    update: { revenue, expenses, profit, currency },
-    create: { brandSlug, revenue, expenses, profit, currency },
-  })
+  return withTenantScope({ brandSlug }, (tx) =>
+    tx.brandFinance.upsert({
+      where: { brandSlug },
+      update: { revenue, expenses, profit, currency },
+      create: { brandSlug, revenue, expenses, profit, currency },
+    }),
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -160,14 +162,15 @@ export async function setBrandFinance(brandSlug: BrandSlug, revenue: number, exp
 // UI this pass).
 // ---------------------------------------------------------------------------
 export async function readAccountingInvoices(brandSlug: BrandSlug) {
-  const prisma = getPrismaClient()
-  return prisma ? prisma.accountingInvoice.findMany({ where: { brandSlug }, orderBy: { createdAt: 'desc' } }) : []
+  if (!isDatabaseConfigured()) return []
+  return withTenantScope({ brandSlug }, (tx) => tx.accountingInvoice.findMany({ where: { brandSlug }, orderBy: { createdAt: 'desc' } }))
 }
 
 export async function createAccountingInvoice(brandSlug: BrandSlug, invoiceNumber: string, invoiceAmount: number, paidAmount: number, currency = 'GBP') {
-  const prisma = getPrismaClient()
-  if (!prisma) throw new Error('Database unavailable')
+  if (!isDatabaseConfigured()) throw new Error('Database unavailable')
   const outstandingAmount = Number((invoiceAmount - paidAmount).toFixed(2))
   const status = outstandingAmount <= 0 ? 'paid' : paidAmount > 0 ? 'partial' : 'draft'
-  return prisma.accountingInvoice.create({ data: { brandSlug, invoiceNumber, invoiceAmount, paidAmount, outstandingAmount, currency, status } })
+  return withTenantScope({ brandSlug }, (tx) =>
+    tx.accountingInvoice.create({ data: { brandSlug, invoiceNumber, invoiceAmount, paidAmount, outstandingAmount, currency, status } }),
+  )
 }
