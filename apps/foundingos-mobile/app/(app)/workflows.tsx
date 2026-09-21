@@ -2,9 +2,11 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
+import { router } from 'expo-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, RefreshControl, StyleSheet, View } from 'react-native'
 import {
+  QuantumButton,
   QuantumCard,
   QuantumMetric,
   QuantumNotice,
@@ -184,7 +186,10 @@ export default function WorkflowsScreen() {
       {notice ? <QuantumNotice tone="info">{notice}</QuantumNotice> : null}
 
       {!connected ? (
-        <QuantumNotice tone="warning">Sign in with your Core.Operations account to see governed actions.</QuantumNotice>
+        <View style={{ gap: quantumSpace.sm }}>
+          <QuantumNotice tone="warning">Sign in with your Core.Operations account to see governed actions.</QuantumNotice>
+          <QuantumButton onPress={() => router.push('/')}>Sign in</QuantumButton>
+        </View>
       ) : (
         <>
           <View style={styles.filterRow}>

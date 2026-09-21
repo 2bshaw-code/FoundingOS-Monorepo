@@ -2,6 +2,7 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
+import { router } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import { ActivityIndicator, RefreshControl, StyleSheet, View } from 'react-native'
 import { QuantumComparisonBars } from '../../components/QuantumMiniCharts'
@@ -11,6 +12,7 @@ import {
   getSession,
 } from '../../lib/core-operations-api'
 import {
+  QuantumButton,
   QuantumCard,
   QuantumMetric,
   QuantumNotice,
@@ -78,7 +80,10 @@ export default function IntelligenceScreen() {
       </QuantumCard>
 
       {!connected ? (
-        <QuantumNotice tone="warning">Sign in with your Core.Operations account to view live intelligence evidence.</QuantumNotice>
+        <View style={{ gap: quantumSpace.sm }}>
+          <QuantumNotice tone="warning">Sign in with your Core.Operations account to view live intelligence evidence.</QuantumNotice>
+          <QuantumButton onPress={() => router.push('/')}>Sign in</QuantumButton>
+        </View>
       ) : null}
 
       {connected && summary ? (

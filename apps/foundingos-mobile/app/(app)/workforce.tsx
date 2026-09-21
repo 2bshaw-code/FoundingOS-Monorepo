@@ -2,6 +2,7 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
+import { router } from 'expo-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, RefreshControl, StyleSheet, View } from 'react-native'
 import {
@@ -287,7 +288,10 @@ export default function WorkforceScreen() {
             </QuantumButton>
           </QuantumCard>
         ) : (
-          <QuantumNotice tone="warning">Sign in with your FoundingOS account on the login screen to connect Core.Workforce.</QuantumNotice>
+          <View style={{ gap: quantumSpace.sm }}>
+            <QuantumNotice tone="warning">Sign in with your FoundingOS account on the login screen to connect Core.Workforce.</QuantumNotice>
+            <QuantumButton onPress={() => router.push('/')}>Sign in</QuantumButton>
+          </View>
         )
       ) : (
         <>

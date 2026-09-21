@@ -2,6 +2,7 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
+import { router } from 'expo-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, RefreshControl, StyleSheet, View } from 'react-native'
 import { getAllOutboxItems } from '../../lib/outbox-sync'
@@ -114,7 +115,10 @@ export default function AutomationScreen() {
       {notice ? <QuantumNotice tone="info">{notice}</QuantumNotice> : null}
 
       {!connected && !loading ? (
-        <QuantumNotice tone="warning">Sign in with your Core.Operations account to inspect real messaging readiness.</QuantumNotice>
+        <View style={{ gap: quantumSpace.sm }}>
+          <QuantumNotice tone="warning">Sign in with your Core.Operations account to inspect real messaging readiness.</QuantumNotice>
+          <QuantumButton onPress={() => router.push('/')}>Sign in</QuantumButton>
+        </View>
       ) : null}
 
       {loading ? (
