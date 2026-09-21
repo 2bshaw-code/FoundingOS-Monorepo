@@ -2196,6 +2196,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
       <span className="retail-app-record-count">{visible.length} matching</span>
       <button onClick={() => exportCsv(visible)} type="button">Export CSV</button>
       <button onClick={() => window.print()} type="button">Print</button>
+      {item.id === 'crm' ? <button onClick={() => setCheckedIds(visible.filter((record) => computeLeadScore(record, statuses, records).tier === 'Hot').map((record) => record.id))} type="button">🔥 Select hot leads</button> : null}
     </div> : null}
     {!isInbox && !isCalendar ? <div className="retail-app-views-bar">
       {savedViews.length > 0 ? <div className="retail-app-view-chips">
