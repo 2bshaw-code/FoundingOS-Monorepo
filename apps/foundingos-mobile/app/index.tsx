@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router } from 'expo-router'
@@ -76,33 +76,39 @@ export default function LoginScreen() {
         style={styles.glow}
       />
       <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={styles.brand}>
-            <QuantumSphere size={72} />
-            <QuantumText variant="h1" align="center">FoundingOS</QuantumText>
-            <QuantumText color="#D8D8D8" align="center">
-              One command system for every workspace in your business.
-            </QuantumText>
-          </View>
+        <KeyboardAvoidingView style={styles.keyboardWrapper} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <ScrollView
+            contentContainerStyle={styles.keyboard}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.brand}>
+              <QuantumSphere size={72} />
+              <QuantumText variant="h1" align="center">FoundingOS</QuantumText>
+              <QuantumText color="#D8D8D8" align="center">
+                One command system for every workspace in your business.
+              </QuantumText>
+            </View>
 
-          <QuantumCard accent={FOUNDINGOS_ACCENT}>
-            <QuantumFormField label="Email">
-              <QuantumTextInput
-                placeholder="you@example.com"
-                autoCapitalize="none"
-                keyboardType="email-address"
-                value={email}
-                onChangeText={setEmail}
-              />
-            </QuantumFormField>
-            <QuantumFormField label="Password or access code">
-              <QuantumPasswordInput placeholder="••••••••" value={password} onChangeText={setPassword} />
-            </QuantumFormField>
-            {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
-            <QuantumButton onPress={handleSignIn} disabled={loading}>
-              {loading ? <ActivityIndicator color={FOUNDINGOS_BASE} /> : 'Sign in'}
-            </QuantumButton>
-          </QuantumCard>
+            <QuantumCard accent={FOUNDINGOS_ACCENT}>
+              <QuantumFormField label="Email">
+                <QuantumTextInput
+                  placeholder="you@example.com"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  value={email}
+                  onChangeText={setEmail}
+                />
+              </QuantumFormField>
+              <QuantumFormField label="Password or access code">
+                <QuantumPasswordInput placeholder="••••••••" value={password} onChangeText={setPassword} />
+              </QuantumFormField>
+              {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
+              <QuantumButton onPress={handleSignIn} disabled={loading}>
+                {loading ? <ActivityIndicator color={FOUNDINGOS_BASE} /> : 'Sign in'}
+              </QuantumButton>
+            </QuantumCard>
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
@@ -112,7 +118,8 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: FOUNDINGOS_BASE },
   safeArea: { flex: 1, padding: quantumSpace.xl },
-  keyboard: { flex: 1, justifyContent: 'center', gap: quantumSpace.xxl },
+  keyboardWrapper: { flex: 1 },
+  keyboard: { flexGrow: 1, justifyContent: 'center', gap: quantumSpace.xxl, paddingVertical: quantumSpace.xl },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: FOUNDINGOS_BASE },
   brand: { alignItems: 'center', gap: quantumSpace.lg },
   glow: { position: 'absolute', top: -160, left: -80, width: 340, height: 340, borderRadius: 170 },
