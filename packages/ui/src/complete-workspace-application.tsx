@@ -1869,8 +1869,23 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const [statusFilter, setStatusFilter] = useState('all')
   const [sortBy, setSortBy] = useState<'default' | 'name' | 'value' | 'owner'>('default')
   const [checkedIds, setCheckedIds] = useState<string[]>([])
+  const [boardView, setBoardView] = useState<'kanban' | 'list'>('kanban')
   const [editing, setEditing] = useState(false)
   const [editDraft, setEditDraft] = useState({ name: '', secondary: '', value: '', owner: '' })
+  const [dragRecordId, setDragRecordId] = useState<string | null>(null)
+  const [dragOverStatus, setDragOverStatus] = useState<string | null>(null)
+  const dropOnStage = async (status: string) => {
+    const record = records.find((candidate) => candidate.id === dragRecordId)
+    setDragRecordId(null)
+    setDragOverStatus(null)
+    if (!record || record.status === status) return
+    setSaving(true)
+    try {
+      await advanceRecord(item.id, record, status)
+    } finally {
+      setSaving(false)
+    }
+  }
   const matched = records.filter((record) => `${record.id} ${record.name} ${record.secondary} ${record.status}`.toLowerCase().includes(query.toLowerCase()) && (statusFilter === 'all' || record.status === statusFilter))
   const visible = sortBy === 'default' ? matched : [...matched].sort((a, b) => sortBy === 'value' ? parseCurrency(b.value) - parseCurrency(a.value) : String(a[sortBy]).localeCompare(String(b[sortBy])))
   const selected = records.find((record) => record.id === selectedId) ?? records[0]
@@ -2028,6 +2043,10 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
       <input aria-label={`Search ${item.label}`} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${item.label.toLowerCase()}`} value={query} />
       {!isDirectory && !isCalendar ? <select aria-label={`Filter ${item.label} by status`} onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}><option value="all">All stages</option>{statuses.map((status) => <option key={status} value={status}>{status}</option>)}</select> : null}
       <select aria-label={`Sort ${item.label}`} onChange={(event) => setSortBy(event.target.value as typeof sortBy)} value={sortBy}><option value="default">Sort: default</option><option value="name">Sort: name A–Z</option><option value="value">Sort: value high–low</option><option value="owner">Sort: owner A–Z</option></select>
+      {!isDirectory && !isCalendar && !isProducts ? <div className="retail-app-view-toggle" role="group">
+        <button aria-pressed={boardView === 'kanban'} onClick={() => setBoardView('kanban')} type="button">▦ Board</button>
+        <button aria-pressed={boardView === 'list'} onClick={() => setBoardView('list')} type="button">☰ List</button>
+      </div> : null}
       <span className="retail-app-record-count">{visible.length} matching</span>
       <button onClick={() => exportCsv(visible)} type="button">Export CSV</button>
       <button onClick={() => window.print()} type="button">Print</button>
@@ -2056,24 +2075,64 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
           })}
           {visible.length === 0 ? <p className="retail-app-board-empty">No records match your search</p> : null}
         </div>
-      </div> : <div className="retail-app-board-card">
+      </div> : boardView === 'list' ? <div className="retail-app-table-card">
         <div className="retail-app-panel-heading"><div><p>{item.group}</p><h2>{visible.length} records across {statuses.length} stages</h2></div></div>
+        <div className="retail-app-table-scroll"><table className="retail-app-list-table">
+          <thead><tr><th /><th>Name</th><th>Detail</th><th>Stage</th><th>Value</th><th>Owner</th><th>Updated</th><th /></tr></thead>
+          <tbody>
+            {visible.map((record) => <tr className={selected?.id === record.id ? 'selected' : ''} key={record.id} onClick={() => selectRecord(record.id)}>
+              <td onClick={(event) => event.stopPropagation()}><input aria-label={`Select ${record.name}`} checked={checked.includes(record.id)} className="retail-app-check" onChange={() => toggleChecked(record.id)} type="checkbox" /></td>
+              <td><strong>{record.name}</strong></td>
+              <td><span className="retail-app-list-secondary">{record.secondary}</span></td>
+              <td onClick={(event) => event.stopPropagation()}>
+                <select aria-label={`Stage for ${record.name}`} onChange={(event) => void advanceRecord(item.id, record, event.target.value)} value={record.status}>
+                  {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+                </select>
+              </td>
+              <td>{record.value}</td>
+              <td><span className="retail-app-board-item-owner"><span className="retail-app-board-item-avatar">{initials(record.owner)}</span>{record.owner}</span></td>
+              <td><small>{record.updated}</small></td>
+              <td onClick={(event) => event.stopPropagation()}>{statuses.indexOf(record.status) < statuses.length - 1 ? <a onClick={() => void advanceRecord(item.id, record, statuses[statuses.indexOf(record.status) + 1])} role="button">Advance →</a> : null}</td>
+            </tr>)}
+          </tbody>
+        </table>
+        {visible.length === 0 ? <p className="retail-app-board-empty">No records match your search</p> : null}
+        </div>
+      </div> : <div className="retail-app-board-card">
+        <div className="retail-app-panel-heading"><div><p>{item.group}</p><h2>{visible.length} records across {statuses.length} stages</h2></div><small className="retail-app-board-hint">Drag a card to a new stage to move it</small></div>
         <div className="retail-app-board">
           {statuses.map((status, index) => {
             const columnRecords = visible.filter((record) => record.status === status)
-            return <div className="retail-app-board-column" data-tone={boardTones[index % boardTones.length]} key={status}>
+            const columnValue = columnRecords.reduce((sum, record) => sum + parseCurrency(record.value), 0)
+            return <div
+              className={`retail-app-board-column${dragOverStatus === status ? ' drag-over' : ''}`}
+              data-tone={boardTones[index % boardTones.length]}
+              key={status}
+              onDragLeave={() => setDragOverStatus((current) => current === status ? null : current)}
+              onDragOver={(event) => { event.preventDefault(); setDragOverStatus(status) }}
+              onDrop={(event) => { event.preventDefault(); void dropOnStage(status) }}
+            >
               <header><span>{status}</span><strong>{columnRecords.length}</strong></header>
+              {columnValue > 0 ? <p className="retail-app-board-column-total">{formatCurrency(columnValue)} total</p> : null}
               <div className="retail-app-board-column-body">
                 {columnRecords.map((record) => <div className="retail-app-check-wrap" key={record.id}>
                   <input aria-label={`Select ${record.name}`} checked={checked.includes(record.id)} className="retail-app-check" onChange={() => toggleChecked(record.id)} type="checkbox" />
-                  <button className={`retail-app-board-item${selected?.id === record.id ? ' selected' : ''}`} onClick={() => selectRecord(record.id)} type="button">
+                  <button
+                    className={`retail-app-board-item${selected?.id === record.id ? ' selected' : ''}${dragRecordId === record.id ? ' dragging' : ''}`}
+                    draggable
+                    onClick={() => selectRecord(record.id)}
+                    onDragEnd={() => { setDragRecordId(null); setDragOverStatus(null) }}
+                    onDragStart={(event) => { event.dataTransfer.effectAllowed = 'move'; setDragRecordId(record.id) }}
+                    type="button"
+                  >
                     {record.attachment ? <img alt="" className="retail-app-board-item-thumb" src={record.attachment} /> : null}
                     <strong>{record.name}</strong>
                     <span>{record.secondary}</span>
-                    <div className="retail-app-board-item-meta"><b>{record.value}</b><i>{record.owner}</i></div>
+                    <div className="retail-app-board-item-meta"><b>{record.value}</b><i className="retail-app-board-item-owner"><span className="retail-app-board-item-avatar">{initials(record.owner)}</span>{record.owner}</i></div>
+                    <div className="retail-app-board-item-foot"><small>{record.updated}</small>{statuses.indexOf(status) < statuses.length - 1 ? <a onClick={(event) => { event.stopPropagation(); void advanceRecord(item.id, record, statuses[statuses.indexOf(status) + 1]) }} role="button">Move to {statuses[statuses.indexOf(status) + 1]} →</a> : null}</div>
                   </button>
                 </div>)}
-                {columnRecords.length === 0 ? <p className="retail-app-board-empty">No records in this stage</p> : null}
+                {columnRecords.length === 0 ? <p className="retail-app-board-empty" onDragOver={(event) => { event.preventDefault(); setDragOverStatus(status) }} onDrop={(event) => { event.preventDefault(); void dropOnStage(status) }}>Drop here to move to {status}</p> : null}
               </div>
             </div>
           })}

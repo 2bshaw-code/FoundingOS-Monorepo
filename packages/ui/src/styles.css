@@ -4367,6 +4367,63 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   white-space: nowrap;
 }
 
+.retail-app-view-toggle {
+  display: flex;
+  gap: 2px;
+}
+
+.retail-app-view-toggle button {
+  background: #f5f7fa;
+  border: 1px solid #d8e0e9;
+  color: #3f4f64;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  padding: 8px 10px;
+}
+
+.retail-app-view-toggle button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.retail-app-view-toggle button:last-child {
+  border-left: 0;
+  border-radius: 0 6px 6px 0;
+}
+
+.retail-app-view-toggle button[aria-pressed='true'] {
+  background: var(--retail-accent, #22c55e);
+  border-color: var(--retail-accent, #22c55e);
+  color: #fff;
+}
+
+.retail-app-list-table select {
+  background: #f5f7fa;
+  border: 1px solid #d8e0e9;
+  border-radius: 6px;
+  color: #3f4f64;
+  font: inherit;
+  font-size: 10px;
+  padding: 5px 6px;
+}
+
+.retail-app-list-secondary {
+  color: #8795a7;
+}
+
+.retail-app-list-table a {
+  color: var(--retail-accent-text, #147d48);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 10px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.retail-app-list-table a:hover {
+  text-decoration: underline;
+}
+
 .retail-app-record-layout {
   align-items: start;
   display: grid;
@@ -4418,6 +4475,26 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   border-top-color: var(--retail-accent, #22c55e);
 }
 
+.retail-app-board-column.drag-over {
+  background: color-mix(in srgb, var(--retail-accent) 12%, #f7f9fb);
+  border-color: var(--retail-accent);
+  border-style: dashed;
+}
+
+.retail-app-board-hint {
+  color: #a3b0c2;
+  font-size: 10px;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.retail-app-board-column-total {
+  color: #49586c;
+  font-size: 10px;
+  font-weight: 700;
+  margin: -4px 4px 0;
+}
+
 .retail-app-board-column header {
   align-items: center;
   color: #49586c;
@@ -4450,11 +4527,16 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   background: #fff;
   border: 1px solid #e5eaf0;
   border-radius: 8px;
-  cursor: pointer;
+  cursor: grab;
   display: grid;
   gap: 5px;
   padding: 10px;
   text-align: left;
+}
+
+.retail-app-board-item.dragging {
+  cursor: grabbing;
+  opacity: .45;
 }
 
 .retail-app-board-item strong {
@@ -4481,6 +4563,50 @@ body:has(.complete-workspace-directory) .found-ai-panel {
 .retail-app-board-item-meta i {
   color: #8795a7;
   font-style: normal;
+}
+
+.retail-app-board-item-owner {
+  align-items: center;
+  display: flex;
+  gap: 5px;
+}
+
+.retail-app-board-item-avatar {
+  align-items: center;
+  background: #eef2f7;
+  border-radius: 999px;
+  color: #49586c;
+  display: inline-flex;
+  font-size: 8px;
+  font-weight: 700;
+  height: 16px;
+  justify-content: center;
+  width: 16px;
+}
+
+.retail-app-board-item-foot {
+  align-items: center;
+  border-top: 1px solid #eef1f6;
+  display: flex;
+  font-size: 9px;
+  justify-content: space-between;
+  margin-top: 2px;
+  padding-top: 6px;
+}
+
+.retail-app-board-item-foot small {
+  color: #a3b0c2;
+}
+
+.retail-app-board-item-foot a {
+  color: var(--retail-accent-text, #147d48);
+  cursor: pointer;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.retail-app-board-item-foot a:hover {
+  text-decoration: underline;
 }
 
 .retail-app-board-item:hover {
