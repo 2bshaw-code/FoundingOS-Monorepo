@@ -82,7 +82,7 @@ export default function IntelligenceScreen() {
       {!connected ? (
         <View style={{ gap: quantumSpace.sm }}>
           <QuantumNotice tone="warning">Sign in with your Core.Operations account to view live intelligence evidence.</QuantumNotice>
-          <QuantumButton onPress={() => router.push('/')}>Sign in</QuantumButton>
+          <QuantumButton onPress={() => router.replace('/')}>Sign in</QuantumButton>
         </View>
       ) : null}
 

@@ -293,7 +293,7 @@ export default function MarketingScreen() {
       {!connected ? (
         <View style={{ gap: quantumSpace.sm }}>
           <QuantumNotice tone="warning">Sign in with your Core.Operations account to manage live marketing records.</QuantumNotice>
-          <QuantumButton onPress={() => router.push('/')}>Sign in</QuantumButton>
+          <QuantumButton onPress={() => router.replace('/')}>Sign in</QuantumButton>
         </View>
       ) : null}
       {connected && !workspace ? <QuantumNotice tone="danger">Marketing data could not be loaded. Pull to refresh.</QuantumNotice> : null}

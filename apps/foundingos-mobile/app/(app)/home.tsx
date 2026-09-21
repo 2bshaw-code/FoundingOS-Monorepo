@@ -141,9 +141,9 @@ export default function FounderCommandDeck() {
     }
     const [actionsResult, pulseResult, operationsResult, eventsResult, intelligenceResult, onboardingResult] = await Promise.all([
       listAgentActions().catch(() => []),
-      fetchBusinessPulse(),
+      fetchBusinessPulse().catch(() => null),
       fetchOwnerOperations().catch(() => null),
-      fetchEventFeed(15),
+      fetchEventFeed(15).catch(() => []),
       fetchAgentActionIntelligence().catch(() => null),
       fetchOnboarding().catch(() => null),
     ])
@@ -159,6 +159,16 @@ export default function FounderCommandDeck() {
   useEffect(() => {
     loadAll()
   }, [loadAll])
+
+  // If this screen is ever reached without a valid session — a stale deep link, an
+  // in-memory app resume after a TestFlight update, or any other edge case — send the
+  // user straight to the real login screen instead of leaving them stuck on a passive
+  // "not connected" banner that looks like the update didn't take effect.
+  useEffect(() => {
+    if (!loading && !connected) {
+      router.replace('/')
+    }
+  }, [loading, connected])
 
   const showNotice = (text: string) => {
     setNotice(text)
@@ -544,7 +554,7 @@ export default function FounderCommandDeck() {
           <QuantumNotice tone="warning">
             Sign in with your Core.Operations account to see live business data, Core.Intelligence signals, and the governed AI Actions Queue.
           </QuantumNotice>
-          <QuantumButton onPress={() => router.push('/')}>Sign in</QuantumButton>
+          <QuantumButton onPress={() => router.replace('/')}>Sign in</QuantumButton>
         </View>
       ) : null}
 
