@@ -144,14 +144,18 @@ async function loadCoreOperationsModule(moduleId: string): Promise<ModuleView> {
   }
   if (moduleId === 'orders') {
     const { orders, metrics } = await fetchOwnerOperations()
+    const toneRank: Record<ModuleTone, number> = { risk: 0, watch: 1, info: 2, good: 3 }
+    const sorted = [...orders].sort((a, b) => toneRank[toneForStatus(a.status)] - toneRank[toneForStatus(b.status)])
+    const needsAttention = orders.filter((o) => toneForStatus(o.status) === 'risk').length
     return {
       title: 'Orders',
-      description: 'Live sales orders with payment and delivery status, pulled straight from the shared operations ledger.',
+      description: 'Live sales orders with payment and delivery status, most urgent first.',
       metrics: [
         { label: 'Open orders', value: String(metrics.orders), tone: 'info' },
+        { label: 'Needs attention', value: String(needsAttention), tone: needsAttention > 0 ? 'risk' : 'good' },
         { label: 'Revenue', value: formatPence(metrics.orderRevenuePence), tone: 'good' },
       ],
-      items: orders.map((order) => ({
+      items: sorted.map((order) => ({
         id: order.id,
         title: order.reference,
         subtitle: `${order.status} · ${formatPence(order.totalPence)}`,
