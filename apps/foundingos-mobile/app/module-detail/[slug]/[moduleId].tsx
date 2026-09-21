@@ -45,6 +45,7 @@ type AgingBucket = { bucket: string; count: number; amountPence: number }
 type AgingWorstItem = { id: string; title: string; daysOverdue: number; amountPence: number }
 type CalendarEntry = { id: string; day: number; title: string; status: string; tone: ModuleTone }
 type FunnelStage = { stage: string; count: number }
+type StockGaugeItem = { id: string; name: string; sku: string; stock: number; lowStockLevel: number }
 type ModuleView = {
   title: string
   description: string
@@ -59,6 +60,7 @@ type ModuleView = {
   calendar?: { month: string; daysInMonth: number; entries: CalendarEntry[] }
   funnel?: FunnelStage[]
   crm?: { records: CrmRecord[] }
+  stock?: { items: StockGaugeItem[] }
 }
 
 function formatPence(pence: number | null | undefined): string {
@@ -94,6 +96,14 @@ function buildInvoiceAging(invoices: { id: string; number: string; totalPence: n
   }
   worst.sort((a, b) => b.daysOverdue - a.daysOverdue)
   return { buckets, worst: worst.slice(0, 5) }
+}
+
+// Ranks inventory by how close each item is to its reorder point (lowest
+// headroom first), mirroring the web app's stock-take gauge so the mobile
+// app surfaces the same replenishment priorities first.
+function buildStockGauge(inventory: { id: string; name: string; sku: string; stock: number; lowStockLevel: number }[]): ModuleView['stock'] {
+  const ranked = [...inventory].sort((a, b) => (a.stock - a.lowStockLevel) - (b.stock - b.lowStockLevel))
+  return { items: ranked.slice(0, 8) }
 }
 
 function buildMarketingCalendar(campaigns: { id: string; name: string; status: string; scheduledAt?: string | null }[]): ModuleView['calendar'] {
@@ -195,6 +205,7 @@ async function loadCoreOperationsModule(moduleId: string): Promise<ModuleView> {
       emptyLabel: 'No inventory items yet.',
       ctaLabel: 'Open Command Deck',
       ctaRoute: '/(app)/home',
+      stock: buildStockGauge(inventory),
     }
   }
   if (moduleId === 'marketing') {
@@ -548,6 +559,37 @@ function CRMPipelinePanel({ records }: { records: CrmRecord[] }) {
   )
 }
 
+// Mirrors the web app's stock-take gauge: a horizontal bar scaled to 3x the
+// reorder point, with a threshold marker so operators can see headroom at a
+// glance, plus an explicit alert when an item is below its reorder point.
+function StockGaugePanel({ stock }: { stock: NonNullable<ModuleView['stock']> }) {
+  return (
+    <QuantumCard accent={quantumColors.neutral200}>
+      <QuantumText variant="h3">Reorder priority</QuantumText>
+      {stock.items.map((item) => {
+        const scale = Math.max(1, item.lowStockLevel * 3)
+        const pct = Math.max(4, Math.min(100, Math.round((item.stock / scale) * 100)))
+        const thresholdPct = Math.min(96, Math.round((item.lowStockLevel / scale) * 100))
+        const low = item.stock <= item.lowStockLevel
+        return (
+          <View key={item.id} style={styles.stockRow}>
+            <View style={styles.stockHeader}>
+              <QuantumText style={styles.title}>{item.name}</QuantumText>
+              <QuantumText variant="caption" color="#7F7F7F">{item.sku}</QuantumText>
+            </View>
+            <View style={styles.stockGaugeTrack}>
+              <View style={[styles.stockGaugeFill, { width: `${pct}%`, backgroundColor: getSemanticColor(low ? 'risk' : 'good') }]} />
+              <View style={[styles.stockGaugeMarker, { left: `${thresholdPct}%` }]} />
+            </View>
+            <QuantumText variant="caption" color="#D8D8D8">{item.stock} on hand · reorder at {item.lowStockLevel}</QuantumText>
+            {low ? <QuantumText variant="caption" color={getSemanticColor('risk')}>⚠️ Below reorder point — raise a purchase order</QuantumText> : null}
+          </View>
+        )
+      })}
+    </QuantumCard>
+  )
+}
+
 function PipelineFunnelPanel({ funnel }: { funnel: FunnelStage[] }) {
   const maxCount = Math.max(1, ...funnel.map((f) => f.count))
   return (
@@ -633,6 +675,8 @@ export default function ModuleDetailScreen() {
             <MarketingCalendarPanel calendar={view.calendar} />
           ) : view.funnel ? (
             <PipelineFunnelPanel funnel={view.funnel} />
+          ) : view.stock ? (
+            view.stock.items.length === 0 ? <QuantumNotice>{view.emptyLabel}</QuantumNotice> : <StockGaugePanel stock={view.stock} />
           ) : view.items.length === 0 ? (
             <QuantumNotice>{view.emptyLabel}</QuantumNotice>
           ) : (
@@ -670,6 +714,11 @@ const styles = StyleSheet.create({
   funnelLabel: { width: 84 },
   funnelTrack: { flex: 1, height: 14, borderRadius: quantumRadius.sm, backgroundColor: quantumColors.neutral800, overflow: 'hidden' },
   funnelBar: { height: '100%', borderRadius: quantumRadius.sm, backgroundColor: quantumColors.neutral200 },
+  stockRow: { marginTop: quantumSpace.md, paddingTop: quantumSpace.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: quantumColors.neutral700, gap: quantumSpace.xs },
+  stockHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  stockGaugeTrack: { height: 10, borderRadius: quantumRadius.sm, backgroundColor: quantumColors.neutral800, overflow: 'visible', justifyContent: 'center' },
+  stockGaugeFill: { height: '100%', borderRadius: quantumRadius.sm },
+  stockGaugeMarker: { position: 'absolute', top: -2, width: 2, height: 14, backgroundColor: quantumColors.neutral200 },
   crmHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   crmScoreBadge: { paddingHorizontal: quantumSpace.sm, paddingVertical: 2, borderRadius: quantumRadius.sm, backgroundColor: quantumColors.neutral800 },
   crmExpanded: { marginTop: quantumSpace.sm, paddingTop: quantumSpace.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: quantumColors.neutral700, gap: 2 },
