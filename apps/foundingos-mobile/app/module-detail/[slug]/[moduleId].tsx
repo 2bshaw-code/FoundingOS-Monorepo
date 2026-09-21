@@ -16,6 +16,7 @@ import {
   fetchOwnerOperations,
 } from '../../../lib/core-operations-api'
 import { buildCrmRecords, computeLeadScore, creditSafetyLookup, type CrmRecord } from '../../../lib/crm-api'
+import { candidateCity, citiesInUse } from '../../../lib/talent-location'
 import {
   CoreWorkforceApiError,
   listCandidates,
@@ -267,18 +268,20 @@ async function loadCoreWorkforceModule(moduleId: string): Promise<ModuleView> {
   }
   if (moduleId === 'applicants') {
     const candidates = await listCandidates()
+    const cities = citiesInUse(candidates.map((c) => c.id))
     return {
       title: 'Applicants',
-      description: 'Every candidate across every open role, with current stage.',
+      description: 'Every candidate across every open role, with current stage and city (matches the web Talent location map).',
       metrics: [
         { label: 'Total', value: String(candidates.length), tone: 'info' },
         { label: 'In interview', value: String(candidates.filter((c) => c.stage === 'Interview').length), tone: 'watch' },
+        { label: 'Cities', value: String(cities.length), tone: 'info' },
       ],
       items: candidates.map((c) => ({
         id: c.id,
         title: c.name,
         subtitle: c.job?.title ?? 'Role unavailable',
-        meta: c.stage,
+        meta: `${c.stage} · ${candidateCity(c.id)}`,
         tone: toneForStatus(c.stage),
       })),
       emptyLabel: 'No applicants yet.',
