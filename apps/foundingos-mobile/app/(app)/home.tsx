@@ -427,6 +427,7 @@ export default function FounderCommandDeck() {
             <View style={styles.launcherRow}>
               <QuantumButton onPress={() => router.push('/workflows')}>Open approvals</QuantumButton>
               <QuantumButton tone="secondary" onPress={() => router.push('/marketing')}>Open marketing</QuantumButton>
+              <QuantumButton tone="secondary" onPress={() => router.push('/crm')}>Open sales pipeline</QuantumButton>
             </View>
           </QuantumCard>
         </View>
@@ -446,6 +447,16 @@ export default function FounderCommandDeck() {
             </View>
             <QuantumText variant="caption">Live orders, inventory, approvals, and campaign controls.</QuantumText>
             <QuantumButton onPress={() => router.push('/workflows')}>Open work</QuantumButton>
+          </QuantumCard>
+          <QuantumCard accent="#38BDF8" style={styles.launcherCard}>
+            <View style={styles.launcherHeaderRow}>
+              <View style={[styles.workspaceIconBadge, styles.launcherIconBadge, { backgroundColor: '#38BDF822', borderColor: '#38BDF855' }]}>
+                <Text style={[styles.workspaceIconGlyph, { color: '#38BDF8', fontSize: 17 }]}>◎</Text>
+              </View>
+              <QuantumText variant="h3">Sales pipeline</QuantumText>
+            </View>
+            <QuantumText variant="caption">Track deals from lead to won with a real kanban-style pipeline.</QuantumText>
+            <QuantumButton onPress={() => router.push('/crm')}>Open pipeline</QuantumButton>
           </QuantumCard>
           <QuantumCard accent="#A78BFA" style={styles.launcherCard}>
             <View style={styles.launcherHeaderRow}>

@@ -137,6 +137,7 @@ export default function AppTabsLayout() {
             headerTitle: () => renderHeaderTitle('Workspace Directory'),
           }}
         />
+        <Tabs.Screen name="crm" options={{ href: null, headerTitle: () => renderHeaderTitle('Sales Pipeline') }} />
         <Tabs.Screen name="activity" options={{ href: null }} />
         <Tabs.Screen name="superdash" options={{ href: null }} />
         <Tabs.Screen name="guardian" options={{ href: null }} />
