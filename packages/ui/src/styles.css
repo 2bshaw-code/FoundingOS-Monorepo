@@ -1124,19 +1124,39 @@ a {
 }
 
 .site-shell nav {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 24px 32px;
   border-bottom: 1px solid var(--line);
-  backdrop-filter: blur(18px);
   transition: background-color 250ms ease, border-color 250ms ease, color 250ms ease;
+}
+
+/* The blur lives on this pseudo-element rather than directly on `nav` because
+   `backdrop-filter` creates a new containing block for `position: fixed`
+   descendants — putting it on `nav` itself trapped the mobile slide-in panel
+   inside the ~120px bar instead of letting it size against the real viewport. */
+.site-shell nav::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  backdrop-filter: blur(18px);
 }
 
 :root[data-theme='day'] .site-shell nav {
   background: rgba(255, 255, 255, 0.68);
   border-bottom-color: rgba(91, 76, 170, 0.16);
   box-shadow: 0 12px 40px rgba(63, 55, 116, 0.08);
+}
+
+.site-nav-bar {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .site-nav-links {

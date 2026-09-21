@@ -216,13 +216,24 @@ async function SiteNav() {
   const signedIn = Boolean((await cookies()).get(SITE_ACCESS_COOKIE_NAME)?.value)
   return (
     <nav>
-      <Link href="/" className="site-nav-logo">FoundingOS</Link>
+      {/* The checkbox must be a direct child of <nav>, as a preceding sibling of
+          .site-nav-links/.site-nav-scrim below, for the CSS `~` sibling combinator
+          toggle to work — it can't live inside .site-nav-bar with the visible button,
+          even though the button (a <label htmlFor>) is only ever shown there. */}
       <input type="checkbox" id="site-nav-toggle" className="site-nav-toggle-checkbox" />
-      <label htmlFor="site-nav-toggle" className="site-nav-toggle-button" aria-label="Open menu">
-        <span />
-        <span />
-        <span />
-      </label>
+      {/* The visible bar (logo, blur, border) lives in this inner wrapper rather than on
+          <nav> itself: `backdrop-filter` creates a new containing block for `position:
+          fixed` descendants, which trapped the slide-in panel inside the ~120px bar
+          instead of the full viewport. Keeping <nav> filter-free lets the panel and
+          scrim below size themselves against the real viewport. */}
+      <div className="site-nav-bar">
+        <Link href="/" className="site-nav-logo">FoundingOS</Link>
+        <label htmlFor="site-nav-toggle" className="site-nav-toggle-button" aria-label="Open menu">
+          <span />
+          <span />
+          <span />
+        </label>
+      </div>
       <div className="site-nav-links">
         <Link href="/suites">Suites</Link>
         <Link href="/#how-it-works">How it works</Link>
