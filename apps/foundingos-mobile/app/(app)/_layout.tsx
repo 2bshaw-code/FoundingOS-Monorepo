@@ -176,5 +176,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 5 },
     elevation: 4,
   },
-  headerBtnText: { fontSize: 10, fontWeight: '900', textAlign: 'center' },
+  headerBtnText: { fontSize: 12, fontWeight: '900', textAlign: 'center' },
 })
