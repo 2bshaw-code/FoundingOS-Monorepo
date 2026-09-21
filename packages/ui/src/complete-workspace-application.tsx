@@ -1978,7 +1978,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const [noteText, setNoteText] = useState('')
   const [noteKind, setNoteKind] = useState('Note')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [sortBy, setSortBy] = useState<'default' | 'name' | 'value' | 'owner'>('default')
+  const [sortBy, setSortBy] = useState<'default' | 'name' | 'value' | 'owner' | 'score'>('default')
   const [checkedIds, setCheckedIds] = useState<string[]>([])
   const [boardView, setBoardView] = useState<'kanban' | 'list'>('kanban')
   const [editing, setEditing] = useState(false)
@@ -2028,7 +2028,11 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
     }
   }
   const matched = records.filter((record) => `${record.id} ${record.name} ${record.secondary} ${record.status}`.toLowerCase().includes(query.toLowerCase()) && (statusFilter === 'all' || record.status === statusFilter))
-  const visible = sortBy === 'default' ? matched : [...matched].sort((a, b) => sortBy === 'value' ? parseCurrency(b.value) - parseCurrency(a.value) : String(a[sortBy]).localeCompare(String(b[sortBy])))
+  const visible = sortBy === 'default'
+    ? matched
+    : sortBy === 'score'
+      ? [...matched].sort((a, b) => computeLeadScore(b, statuses, records).score - computeLeadScore(a, statuses, records).score)
+      : [...matched].sort((a, b) => sortBy === 'value' ? parseCurrency(b.value) - parseCurrency(a.value) : String(a[sortBy]).localeCompare(String(b[sortBy])))
   const selected = records.find((record) => record.id === selectedId) ?? records[0]
   const checked = checkedIds.filter((id) => visible.some((record) => record.id === id))
   const toggleChecked = (id: string) => setCheckedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])
@@ -2184,7 +2188,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
     {!isInbox ? <div className="retail-app-toolbar">
       <input aria-label={`Search ${item.label}`} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${item.label.toLowerCase()}`} value={query} />
       {!isDirectory && !isCalendar ? <select aria-label={`Filter ${item.label} by status`} onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}><option value="all">All stages</option>{statuses.map((status) => <option key={status} value={status}>{status}</option>)}</select> : null}
-      <select aria-label={`Sort ${item.label}`} onChange={(event) => setSortBy(event.target.value as typeof sortBy)} value={sortBy}><option value="default">Sort: default</option><option value="name">Sort: name A–Z</option><option value="value">Sort: value high–low</option><option value="owner">Sort: owner A–Z</option></select>
+      <select aria-label={`Sort ${item.label}`} onChange={(event) => setSortBy(event.target.value as typeof sortBy)} value={sortBy}><option value="default">Sort: default</option><option value="name">Sort: name A–Z</option><option value="value">Sort: value high–low</option><option value="owner">Sort: owner A–Z</option>{item.id === 'crm' ? <option value="score">Sort: lead score high–low</option> : null}</select>
       {!isDirectory && !isCalendar && !isProducts ? <div className="retail-app-view-toggle" role="group">
         <button aria-pressed={boardView === 'kanban'} onClick={() => setBoardView('kanban')} type="button">▦ Board</button>
         <button aria-pressed={boardView === 'list'} onClick={() => setBoardView('list')} type="button">☰ List</button>
