@@ -216,7 +216,13 @@ async function SiteNav() {
   const signedIn = Boolean((await cookies()).get(SITE_ACCESS_COOKIE_NAME)?.value)
   return (
     <nav>
-      <Link href="/">FoundingOS</Link>
+      <Link href="/" className="site-nav-logo">FoundingOS</Link>
+      <input type="checkbox" id="site-nav-toggle" className="site-nav-toggle-checkbox" />
+      <label htmlFor="site-nav-toggle" className="site-nav-toggle-button" aria-label="Open menu">
+        <span />
+        <span />
+        <span />
+      </label>
       <div className="site-nav-links">
         <Link href="/suites">Suites</Link>
         <Link href="/#how-it-works">How it works</Link>
@@ -231,6 +237,10 @@ async function SiteNav() {
         <ThemeToggle />
         {signedIn ? <form action="/api/access/logout" method="post" className="site-nav-logout"><button type="submit">Log out</button></form> : null}
       </div>
+      {/* Closing the menu by tapping outside it: a full-screen label sits behind the open
+          panel and re-checks the (hidden) toggle off via its `for` attribute. Pure CSS,
+          no client JS needed since SiteNav is an async server component. */}
+      <label htmlFor="site-nav-toggle" className="site-nav-scrim" aria-hidden="true" />
     </nav>
   )
 }
