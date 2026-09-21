@@ -4367,6 +4367,76 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   white-space: nowrap;
 }
 
+.retail-app-views-bar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -6px 0 14px;
+}
+
+.retail-app-views-bar input {
+  background: #fff;
+  border: 1px solid #d8e0e9;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 11px;
+  padding: 6px 9px;
+  width: 160px;
+}
+
+.retail-app-views-bar > button {
+  background: #f5f7fa;
+  border: 1px solid #d8e0e9;
+  border-radius: 6px;
+  color: #3f4f64;
+  font-size: 11px;
+  padding: 6px 10px;
+}
+
+.retail-app-views-bar > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.retail-app-view-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.retail-app-view-chip {
+  align-items: center;
+  background: color-mix(in srgb, var(--retail-accent, #24c47a) 12%, #fff);
+  border: 1px solid color-mix(in srgb, var(--retail-accent, #24c47a) 35%, #fff);
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px 4px 3px 10px;
+}
+
+.retail-app-view-chip button {
+  background: none;
+  border: 0;
+  color: var(--retail-accent-text, #147d48);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0;
+}
+
+.retail-app-view-chip a {
+  color: #8a97a6;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 4px;
+}
+
+.retail-app-view-chip a:hover {
+  color: #b3261e;
+}
+
 .retail-app-view-toggle {
   display: flex;
   gap: 2px;
@@ -4607,6 +4677,31 @@ body:has(.complete-workspace-directory) .found-ai-panel {
 
 .retail-app-board-item-foot a:hover {
   text-decoration: underline;
+}
+
+.retail-app-due-badge {
+  border-radius: 999px;
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  margin-top: 4px;
+  padding: 2px 8px;
+  width: fit-content;
+}
+
+.retail-app-due-overdue {
+  background: #fde2e1;
+  color: #b3261e;
+}
+
+.retail-app-due-soon {
+  background: #fef1d6;
+  color: #9a6700;
+}
+
+.retail-app-due-later {
+  background: #e9eef7;
+  color: #445069;
 }
 
 .retail-app-board-item:hover {
@@ -13731,6 +13826,44 @@ html[data-accessibility-simplified='true'] .btn {
 .retail-app-crm-fields dd {
   font-size: 12px;
   margin: 0;
+  text-align: right;
+}
+
+.retail-app-channel-mix {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 6px 0 0;
+}
+
+.retail-app-channel-mix-row {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 84px 1fr 32px;
+}
+
+.retail-app-channel-mix-row span {
+  color: #667085;
+  font-size: 11px;
+}
+
+.retail-app-channel-mix-bar {
+  background: #eef1f6;
+  border-radius: 999px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.retail-app-channel-mix-bar i {
+  background: var(--retail-accent, #f56fc2);
+  border-radius: 999px;
+  display: block;
+  height: 100%;
+}
+
+.retail-app-channel-mix-row b {
+  font-size: 11px;
   text-align: right;
 }
 
