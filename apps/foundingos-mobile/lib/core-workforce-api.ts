@@ -88,16 +88,69 @@ export class CoreWorkforceApiError extends Error {
   }
 }
 
+// Same 15 minute access-token expiry as Core.Operations, with no prior refresh
+// handling — see the matching comment in core-operations-api.ts.
+let refreshInFlight: Promise<CoreWorkforceSession | null> | null = null
+
+async function refreshSession(): Promise<CoreWorkforceSession | null> {
+  if (refreshInFlight) return refreshInFlight
+  refreshInFlight = (async () => {
+    const current = await getSession()
+    if (!current?.refreshToken) return null
+    try {
+      const response = await fetch(`${CORE_WORKFORCE_API_BASE}/api/v1/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-refresh-token': current.refreshToken },
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data?.success) {
+        await clearSession()
+        return null
+      }
+      const session: CoreWorkforceSession = {
+        token: data.token,
+        refreshToken: data.refreshToken,
+        userId: data.user?.id,
+        email: data.user?.email,
+        role: data.user?.role,
+        tenantId: data.user?.tenantId ?? null,
+      }
+      await setSession(session)
+      return session
+    } catch {
+      return null
+    }
+  })()
+  try {
+    return await refreshInFlight
+  } finally {
+    refreshInFlight = null
+  }
+}
+
 async function authedRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const session = await getSession()
+  let session = await getSession()
   if (!session) throw new CoreWorkforceApiError('Not signed in to Core.Workforce', 401)
   const deviceFingerprint = await getDeviceFingerprint()
-  const headers = new Headers(init.headers)
-  headers.set('Authorization', `Bearer ${session.token}`)
-  headers.set('X-Device-Fingerprint', deviceFingerprint)
-  if (session.tenantId) headers.set('X-Tenant-Id', session.tenantId)
-  if (init.body) headers.set('Content-Type', 'application/json')
-  const response = await fetch(`${CORE_WORKFORCE_API_BASE}${path}`, { ...init, headers })
+
+  const send = async (activeSession: CoreWorkforceSession) => {
+    const headers = new Headers(init.headers)
+    headers.set('Authorization', `Bearer ${activeSession.token}`)
+    headers.set('X-Device-Fingerprint', deviceFingerprint)
+    if (activeSession.tenantId) headers.set('X-Tenant-Id', activeSession.tenantId)
+    if (init.body) headers.set('Content-Type', 'application/json')
+    return fetch(`${CORE_WORKFORCE_API_BASE}${path}`, { ...init, headers })
+  }
+
+  let response = await send(session)
+  if (response.status === 401) {
+    const refreshed = await refreshSession()
+    if (refreshed) {
+      session = refreshed
+      response = await send(session)
+    }
+  }
+
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
     throw new CoreWorkforceApiError(data?.message || `Request failed (${response.status})`, response.status)

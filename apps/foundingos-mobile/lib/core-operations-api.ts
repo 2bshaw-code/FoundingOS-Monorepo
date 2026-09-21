@@ -88,16 +88,75 @@ export class CoreOpsApiError extends Error {
   }
 }
 
+// The backend issues short-lived (15 minute) access tokens plus a longer-lived
+// refresh token. Without this, every screen would 401 ~15 minutes into a
+// session and dump the user back to the login screen — which is exactly the
+// "sign in button takes me back to overview" loop this fixes. Concurrent 401s
+// (e.g. several tabs fetching at once) share one in-flight refresh instead of
+// each racing to refresh separately.
+let refreshInFlight: Promise<CoreOpsSession | null> | null = null
+
+async function refreshSession(): Promise<CoreOpsSession | null> {
+  if (refreshInFlight) return refreshInFlight
+  refreshInFlight = (async () => {
+    const current = await getSession()
+    if (!current?.refreshToken) return null
+    try {
+      const response = await fetch(`${CORE_OPS_API_BASE}/api/v1/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-refresh-token': current.refreshToken },
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data?.success) {
+        await clearSession()
+        return null
+      }
+      const session: CoreOpsSession = {
+        token: data.token,
+        refreshToken: data.refreshToken,
+        userId: data.user?.id,
+        email: data.user?.email,
+        role: data.user?.role,
+        tenantId: data.user?.tenantId ?? null,
+      }
+      await setSession(session)
+      return session
+    } catch {
+      // Network failure — keep the existing (expired) session rather than
+      // signing the user out over a transient connectivity issue.
+      return null
+    }
+  })()
+  try {
+    return await refreshInFlight
+  } finally {
+    refreshInFlight = null
+  }
+}
+
 async function authedRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const session = await getSession()
+  let session = await getSession()
   if (!session) throw new CoreOpsApiError('Not signed in to Core.Operations', 401)
   const deviceFingerprint = await getDeviceFingerprint()
-  const headers = new Headers(init.headers)
-  headers.set('Authorization', `Bearer ${session.token}`)
-  headers.set('X-Device-Fingerprint', deviceFingerprint)
-  if (session.tenantId) headers.set('X-Tenant-Id', session.tenantId)
-  if (init.body) headers.set('Content-Type', 'application/json')
-  const response = await fetch(`${CORE_OPS_API_BASE}${path}`, { ...init, headers })
+
+  const send = async (activeSession: CoreOpsSession) => {
+    const headers = new Headers(init.headers)
+    headers.set('Authorization', `Bearer ${activeSession.token}`)
+    headers.set('X-Device-Fingerprint', deviceFingerprint)
+    if (activeSession.tenantId) headers.set('X-Tenant-Id', activeSession.tenantId)
+    if (init.body) headers.set('Content-Type', 'application/json')
+    return fetch(`${CORE_OPS_API_BASE}${path}`, { ...init, headers })
+  }
+
+  let response = await send(session)
+  if (response.status === 401) {
+    const refreshed = await refreshSession()
+    if (refreshed) {
+      session = refreshed
+      response = await send(session)
+    }
+  }
+
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
     throw new CoreOpsApiError(data?.message || `Request failed (${response.status})`, response.status)
