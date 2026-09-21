@@ -1730,6 +1730,36 @@ function CandidateProfilePanel({ record, statuses }: { record: WorkspaceRecord; 
 // A clinical patient snapshot for Health's Patients module — last visit, next appointment, and
 // allergy flags, the at-a-glance clinical context a directory record on its own can't show.
 const patientAllergies = ['No known allergies', 'Penicillin allergy', 'Latex allergy', 'Nut allergy', 'Seasonal pollen allergy']
+// A per-campaign performance breakdown for Marketing's Campaigns module — channel mix,
+// reach/CTR/ROAS, deterministically derived from the record id and its budget (value) so the
+// numbers stay stable between renders without needing extra backend fields.
+const campaignChannels = ['Email', 'WhatsApp', 'Paid social', 'Organic social']
+function CampaignPerformancePanel({ record }: { record: WorkspaceRecord }) {
+  const budget = parseCurrency(record.value) || hashSpread(record.id, 400, 4000)
+  const reach = hashSpread(`${record.id}-reach`, 1200, 26000)
+  const ctr = (hashPercent(`${record.id}-ctr`, 18, 62) / 10).toFixed(1)
+  const roas = (hashPercent(`${record.id}-roas`, 180, 620) / 100).toFixed(1)
+  const spend = campaignChannels.map((channel, index) => ({ channel, pct: hashPercent(`${record.id}-${channel}`, 8, 46 - index * 3) }))
+  const total = spend.reduce((sum, row) => sum + row.pct, 0) || 1
+  return <div className="retail-app-patient-panel">
+    <p className="retail-app-attachment-label">Campaign performance</p>
+    <dl className="retail-app-crm-fields">
+      <div><dt>Reach</dt><dd>{reach.toLocaleString()}</dd></div>
+      <div><dt>Click-through rate</dt><dd>{ctr}%</dd></div>
+      <div><dt>Return on ad spend</dt><dd>{roas}x</dd></div>
+      <div><dt>Budget</dt><dd>{formatCurrency(budget)}</dd></div>
+    </dl>
+    <p className="retail-app-attachment-label">Channel mix</p>
+    <div className="retail-app-channel-mix">
+      {spend.map((row) => <div className="retail-app-channel-mix-row" key={row.channel}>
+        <span>{row.channel}</span>
+        <div className="retail-app-channel-mix-bar"><i style={{ width: `${Math.round((row.pct / total) * 100)}%` }} /></div>
+        <b>{Math.round((row.pct / total) * 100)}%</b>
+      </div>)}
+    </div>
+  </div>
+}
+
 function PatientSnapshotPanel({ record }: { record: WorkspaceRecord }) {
   const allergy = patientAllergies[hashSpread(record.id, 0, patientAllergies.length)]
   const daysSinceVisit = 1 + hashSpread(`${record.id}-visit`, 0, 89)
@@ -2039,6 +2069,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const isInvoices = item.id === 'invoices'
   const isCandidates = item.id === 'candidates'
   const isPatients = item.id === 'patients'
+  const isCampaigns = item.id === 'campaigns'
   const metricLabel = directoryMetricLabel(item.group)
   return <>
     <WorkspaceHeading eyebrow={`${config.suite} · ${item.group}`} title={item.label} copy={isInbox ? `Every conversation for ${config.label.toLowerCase()} in one inbox — open a message to read the full thread and reply.` : isCalendar ? `See every scheduled ${item.label.toLowerCase()} entry laid out by day, and click through to its details.` : isContentStudio ? `Brief FoundAI on what you're promoting and it will draft the copy — then send it straight into the pipeline below.` : isDirectory ? `Browse every ${item.label.toLowerCase()} record with health, owner, and connected handoff.` : `Manage every ${item.label.toLowerCase()} record, owner, stage, activity, and connected handoff.`} action={<button className="retail-app-primary" onClick={() => setCreating(true)} type="button">+ New record</button>} />
@@ -2165,6 +2196,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
         {isBOM ? <BOMComponentsPanel record={selected} /> : null}
         {isCandidates ? <CandidateProfilePanel record={selected} statuses={statuses} /> : null}
         {isPatients ? <PatientSnapshotPanel record={selected} /> : null}
+        {isCampaigns ? <CampaignPerformancePanel record={selected} /> : null}
         {editing ? <div className="retail-app-edit-form">
           <label>Name<input onChange={(event) => setEditDraft((current) => ({ ...current, name: event.target.value }))} value={editDraft.name} /></label>
           <label>{isDirectory ? 'Category' : 'Context'}<input onChange={(event) => setEditDraft((current) => ({ ...current, secondary: event.target.value }))} value={editDraft.secondary} /></label>

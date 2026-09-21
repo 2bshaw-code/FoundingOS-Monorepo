@@ -13759,6 +13759,44 @@ html[data-accessibility-simplified='true'] .btn {
   text-align: right;
 }
 
+.retail-app-channel-mix {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 6px 0 0;
+}
+
+.retail-app-channel-mix-row {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 84px 1fr 32px;
+}
+
+.retail-app-channel-mix-row span {
+  color: #667085;
+  font-size: 11px;
+}
+
+.retail-app-channel-mix-bar {
+  background: #eef1f6;
+  border-radius: 999px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.retail-app-channel-mix-bar i {
+  background: var(--retail-accent, #f56fc2);
+  border-radius: 999px;
+  display: block;
+  height: 100%;
+}
+
+.retail-app-channel-mix-row b {
+  font-size: 11px;
+  text-align: right;
+}
+
 .retail-app-crm-score {
   margin-top: 10px;
 }
