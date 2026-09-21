@@ -264,14 +264,16 @@ async function loadCoreOperationsModule(moduleId: string): Promise<ModuleView> {
 async function loadCoreWorkforceModule(moduleId: string): Promise<ModuleView> {
   if (moduleId === 'roles') {
     const jobs = await listJobs()
+    const statusRank: Record<string, number> = { open: 0, filled: 1, closed: 2 }
+    const sorted = [...jobs].sort((a, b) => (statusRank[a.status] ?? 1) - (statusRank[b.status] ?? 1))
     return {
       title: 'Roles',
-      description: 'Every open, filled, and closed role in the hiring pipeline.',
+      description: 'Every open, filled, and closed role in the hiring pipeline, open roles first.',
       metrics: [
         { label: 'Open', value: String(jobs.filter((j) => j.status === 'open').length), tone: 'info' },
         { label: 'Filled', value: String(jobs.filter((j) => j.status === 'filled').length), tone: 'good' },
       ],
-      items: jobs.map((job) => ({
+      items: sorted.map((job) => ({
         id: job.id,
         title: job.title,
         subtitle: [job.department, job.location].filter(Boolean).join(' · '),
