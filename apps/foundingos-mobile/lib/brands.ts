@@ -63,7 +63,7 @@ export const BRANDS: Brand[] = [
     logo: require('../assets/logos/foundingos.png'),
     accent: '#26E07F',
     tagline: 'Live operations, governed actions, campaigns, delivery, and shared records.',
-    modules: ['Orders', 'Invoices', 'Inventory', 'Marketing', 'Messaging'],
+    modules: ['CRM', 'Orders', 'Invoices', 'Inventory', 'Marketing', 'Messaging'],
     availability: 'live',
     homeLabel: 'Core.Operations',
   },

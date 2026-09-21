@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { useCallback, useEffect, useState } from 'react'
-import { RefreshControl, StyleSheet, View } from 'react-native'
+import { Pressable, RefreshControl, StyleSheet, View } from 'react-native'
 import { useLocalSearchParams, router } from 'expo-router'
 import { BRANDS } from '../../../lib/brands'
 import {
@@ -15,6 +15,7 @@ import {
   fetchMessagingReadiness,
   fetchOwnerOperations,
 } from '../../../lib/core-operations-api'
+import { buildCrmRecords, computeLeadScore, creditSafetyLookup, type CrmRecord } from '../../../lib/crm-api'
 import {
   CoreWorkforceApiError,
   listCandidates,
@@ -56,6 +57,7 @@ type ModuleView = {
   aging?: { buckets: AgingBucket[]; worst: AgingWorstItem[] }
   calendar?: { month: string; daysInMonth: number; entries: CalendarEntry[] }
   funnel?: FunnelStage[]
+  crm?: { records: CrmRecord[] }
 }
 
 function formatPence(pence: number | null | undefined): string {
@@ -110,6 +112,25 @@ function buildMarketingCalendar(campaigns: { id: string; name: string; status: s
 }
 
 async function loadCoreOperationsModule(moduleId: string): Promise<ModuleView> {
+  if (moduleId === 'crm') {
+    const records = buildCrmRecords()
+    const hot = records.filter((r) => computeLeadScore(r, records).tier === 'Hot').length
+    const overdue = records.filter((r) => r.daysUntilFollowUp < 0).length
+    return {
+      title: 'CRM',
+      description: 'Every contact with an explainable lead score, follow-up status, and a live company credit check.',
+      metrics: [
+        { label: 'Contacts', value: String(records.length), tone: 'info' },
+        { label: '🔥 Hot leads', value: String(hot), tone: hot > 0 ? 'good' : 'watch' },
+        { label: 'Follow-ups overdue', value: String(overdue), tone: overdue > 0 ? 'risk' : 'good' },
+      ],
+      items: [],
+      emptyLabel: 'No contacts yet.',
+      ctaLabel: 'Open Core.Operations',
+      ctaRoute: '/(app)/home',
+      crm: { records },
+    }
+  }
   if (moduleId === 'orders') {
     const { orders, metrics } = await fetchOwnerOperations()
     return {
@@ -456,6 +477,72 @@ function MarketingCalendarPanel({ calendar }: { calendar: NonNullable<ModuleView
   )
 }
 
+const TIER_EMOJI: Record<'Hot' | 'Warm' | 'Cold', string> = { Hot: '🔥', Warm: '🌤', Cold: '❄️' }
+const TIER_TONE: Record<'Hot' | 'Warm' | 'Cold', ModuleTone> = { Hot: 'risk', Warm: 'watch', Cold: 'info' }
+
+function formatPenceCompact(pence: number): string {
+  return `£${(pence / 100).toLocaleString('en-GB', { maximumFractionDigits: 0 })}`
+}
+
+function CRMContactCard({ record, records, expanded, onToggle }: { record: CrmRecord; records: CrmRecord[]; expanded: boolean; onToggle: () => void }) {
+  const { score, tier, factors } = computeLeadScore(record, records)
+  const credit = creditSafetyLookup(record.company)
+  const followUpLabel = record.daysUntilFollowUp < 0
+    ? `${Math.abs(record.daysUntilFollowUp)}d overdue`
+    : record.daysUntilFollowUp === 0
+      ? 'Due today'
+      : `Due in ${record.daysUntilFollowUp}d`
+  return (
+    <Pressable onPress={onToggle}>
+      <QuantumCard accent={getSemanticColor(TIER_TONE[tier])}>
+        <View style={styles.crmHeaderRow}>
+          <View style={{ flex: 1 }}>
+            <QuantumText style={styles.title}>{record.name}</QuantumText>
+            <QuantumText variant="caption" color="#7F7F7F">{record.company}</QuantumText>
+          </View>
+          <View style={styles.crmScoreBadge}>
+            <QuantumText variant="caption" color={getSemanticColor(TIER_TONE[tier])}>{TIER_EMOJI[tier]} {score} · {tier}</QuantumText>
+          </View>
+        </View>
+        <QuantumText variant="caption" color="#D8D8D8">{record.status} · {formatPenceCompact(record.valuePence)} · Owner {record.owner}</QuantumText>
+        <QuantumText variant="caption" color={record.daysUntilFollowUp < 0 ? quantumColors.danger : '#7F7F7F'}>{followUpLabel}</QuantumText>
+        {expanded ? (
+          <View style={styles.crmExpanded}>
+            <QuantumText variant="h3" style={styles.agingWorstHeading}>Why this score</QuantumText>
+            {factors.map((factor) => (
+              <QuantumText key={factor} variant="caption" color="#D8D8D8">• {factor}</QuantumText>
+            ))}
+            <QuantumText variant="h3" style={styles.agingWorstHeading}>Credit safety (CreditSafe{credit.source === 'demo' ? ' · demo data' : ''})</QuantumText>
+            <View style={styles.crmHeaderRow}>
+              <QuantumText color={getSemanticColor(credit.band === 'Low risk' ? 'good' : credit.band === 'Medium risk' ? 'watch' : 'risk')}>
+                {credit.score}/100 · {credit.band}
+              </QuantumText>
+              <QuantumText variant="caption" color="#7F7F7F">Limit {formatPenceCompact(credit.limitPence)}</QuantumText>
+            </View>
+          </View>
+        ) : null}
+      </QuantumCard>
+    </Pressable>
+  )
+}
+
+function CRMPipelinePanel({ records }: { records: CrmRecord[] }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  return (
+    <>
+      {records.map((record) => (
+        <CRMContactCard
+          key={record.id}
+          record={record}
+          records={records}
+          expanded={expandedId === record.id}
+          onToggle={() => setExpandedId((current) => (current === record.id ? null : record.id))}
+        />
+      ))}
+    </>
+  )
+}
+
 function PipelineFunnelPanel({ funnel }: { funnel: FunnelStage[] }) {
   const maxCount = Math.max(1, ...funnel.map((f) => f.count))
   return (
@@ -533,7 +620,9 @@ export default function ModuleDetailScreen() {
           </View>
 
           <QuantumSectionHeader label={view.title} />
-          {view.aging ? (
+          {view.crm ? (
+            view.crm.records.length === 0 ? <QuantumNotice>{view.emptyLabel}</QuantumNotice> : <CRMPipelinePanel records={view.crm.records} />
+          ) : view.aging ? (
             <InvoiceAgingPanel aging={view.aging} />
           ) : view.calendar ? (
             <MarketingCalendarPanel calendar={view.calendar} />
@@ -576,4 +665,7 @@ const styles = StyleSheet.create({
   funnelLabel: { width: 84 },
   funnelTrack: { flex: 1, height: 14, borderRadius: quantumRadius.sm, backgroundColor: quantumColors.neutral800, overflow: 'hidden' },
   funnelBar: { height: '100%', borderRadius: quantumRadius.sm, backgroundColor: quantumColors.neutral200 },
+  crmHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  crmScoreBadge: { paddingHorizontal: quantumSpace.sm, paddingVertical: 2, borderRadius: quantumRadius.sm, backgroundColor: quantumColors.neutral800 },
+  crmExpanded: { marginTop: quantumSpace.sm, paddingTop: quantumSpace.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: quantumColors.neutral700, gap: 2 },
 })
