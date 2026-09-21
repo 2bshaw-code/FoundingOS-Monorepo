@@ -33,9 +33,9 @@ export const quantumSpace = {
 } as const
 
 export const quantumRadius = {
-  sm: 8,
-  md: 12,
-  lg: 12,
+  sm: 10,
+  md: 14,
+  lg: 18,
   pill: 999,
 } as const
 
@@ -54,13 +54,17 @@ export const quantumColors = {
   whatsapp: '#25D366',
 } as const
 
+// Sizes tuned for a "premium, easy-to-read" feel (Sep 2026 legibility pass): every
+// step is larger than the original scale, and `label` was added because buttons/pills
+// were previously reusing the tiny `caption` size, which read as cramped and cheap.
 export const quantumTypography = StyleSheet.create({
-  h1: { fontSize: 28, lineHeight: 34, fontWeight: '900', letterSpacing: -0.5 },
-  h2: { fontSize: 22, lineHeight: 28, fontWeight: '800', letterSpacing: -0.25 },
-  h3: { fontSize: 17, lineHeight: 22, fontWeight: '800' },
-  body: { fontSize: 14, lineHeight: 20, fontWeight: '500' },
-  caption: { fontSize: 12, lineHeight: 16, fontWeight: '700' },
-  overline: { fontSize: 11, lineHeight: 14, fontWeight: '900', letterSpacing: 0.8, textTransform: 'uppercase' },
+  h1: { fontSize: 32, lineHeight: 38, fontWeight: '900', letterSpacing: -0.5 },
+  h2: { fontSize: 25, lineHeight: 31, fontWeight: '800', letterSpacing: -0.25 },
+  h3: { fontSize: 19, lineHeight: 25, fontWeight: '800' },
+  body: { fontSize: 16, lineHeight: 23, fontWeight: '500' },
+  label: { fontSize: 16, lineHeight: 20, fontWeight: '800' },
+  caption: { fontSize: 14, lineHeight: 19, fontWeight: '700' },
+  overline: { fontSize: 12, lineHeight: 15, fontWeight: '900', letterSpacing: 0.8, textTransform: 'uppercase' },
 })
 
 type QuantumScreenProps = {
@@ -213,7 +217,7 @@ export function QuantumButton({ children, onPress, tone = 'primary', disabled, s
       disabled={disabled}
     >
       {typeof children === 'string' || typeof children === 'number' ? (
-        <QuantumText variant="caption" color={textColor} style={styles.buttonText}>
+        <QuantumText variant="label" color={textColor} style={styles.buttonText}>
           {children}
         </QuantumText>
       ) : (
@@ -238,7 +242,7 @@ export function QuantumPill({ children, active, accent, onPress }: QuantumPillPr
       onPress={onPress}
       disabled={!onPress}
     >
-      <QuantumText variant="caption" color={active ? quantumColors.neutral900 : theme.textColor}>
+      <QuantumText variant="label" color={active ? quantumColors.neutral900 : theme.textColor}>
         {children}
       </QuantumText>
     </Pressable>
@@ -293,7 +297,7 @@ export function QuantumPasswordInput(props: TextInputProps) {
         accessibilityLabel={visible ? 'Hide password' : 'Show password'}
         style={{ position: 'absolute', right: quantumSpace.md, padding: quantumSpace.xs }}
       >
-        <Text style={{ color: theme.textColor, fontSize: 13, fontWeight: '600' }}>{visible ? 'Hide' : 'Show'}</Text>
+        <Text style={{ color: theme.textColor, fontSize: 15, fontWeight: '700' }}>{visible ? 'Hide' : 'Show'}</Text>
       </Pressable>
     </View>
   )
@@ -418,7 +422,7 @@ export function getScreenHeaderOptions(theme: QuantumTheme) {
   return {
     headerStyle: { backgroundColor: theme.bgPrimary },
     headerTintColor: theme.textColor,
-    headerTitleStyle: { color: theme.textColor, fontSize: 16, fontWeight: '900' as const },
+    headerTitleStyle: { color: theme.textColor, fontSize: 19, fontWeight: '900' as const },
     headerTitleContainerStyle: { maxWidth: 238, minWidth: 0, flexShrink: 1 },
     headerRightContainerStyle: { flexShrink: 0 },
     headerShadowVisible: false,
@@ -438,30 +442,30 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     borderRadius: quantumRadius.lg,
-    padding: quantumSpace.lg,
-    gap: quantumSpace.sm,
+    padding: quantumSpace.xl,
+    gap: quantumSpace.md,
   },
   cardElevation: {
-    shadowOpacity: 0.16,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6,
   },
   button: {
     borderWidth: 1,
     borderRadius: quantumRadius.pill,
     paddingVertical: quantumSpace.md,
-    paddingHorizontal: quantumSpace.lg,
+    paddingHorizontal: quantumSpace.xl,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 44,
+    minHeight: 52,
   },
   buttonText: { fontWeight: '900' },
   pill: {
     borderWidth: 1,
     borderRadius: quantumRadius.pill,
-    paddingVertical: 6,
-    paddingHorizontal: quantumSpace.md,
+    paddingVertical: quantumSpace.sm,
+    paddingHorizontal: quantumSpace.lg,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -480,8 +484,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: quantumRadius.md,
     padding: quantumSpace.md,
-    fontSize: 14,
-    minHeight: 44,
+    fontSize: 16,
+    minHeight: 50,
   },
   formField: { gap: quantumSpace.sm },
   listItem: {
@@ -490,7 +494,7 @@ const styles = StyleSheet.create({
     gap: quantumSpace.md,
     borderWidth: 1,
     borderRadius: quantumRadius.md,
-    padding: quantumSpace.md,
+    padding: quantumSpace.lg,
   },
   listDot: { width: 10, height: 10, borderRadius: 5 },
   listCopy: { flex: 1, gap: quantumSpace.xs },
@@ -515,8 +519,8 @@ const styles = StyleSheet.create({
   notice: {
     borderWidth: 1,
     borderRadius: quantumRadius.md,
-    paddingVertical: quantumSpace.sm,
-    paddingHorizontal: quantumSpace.md,
+    paddingVertical: quantumSpace.md,
+    paddingHorizontal: quantumSpace.lg,
   },
   metric: {
     flex: 1,
