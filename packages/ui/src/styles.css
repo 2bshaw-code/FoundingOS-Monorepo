@@ -4367,6 +4367,76 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   white-space: nowrap;
 }
 
+.retail-app-views-bar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -6px 0 14px;
+}
+
+.retail-app-views-bar input {
+  background: #fff;
+  border: 1px solid #d8e0e9;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 11px;
+  padding: 6px 9px;
+  width: 160px;
+}
+
+.retail-app-views-bar > button {
+  background: #f5f7fa;
+  border: 1px solid #d8e0e9;
+  border-radius: 6px;
+  color: #3f4f64;
+  font-size: 11px;
+  padding: 6px 10px;
+}
+
+.retail-app-views-bar > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.retail-app-view-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.retail-app-view-chip {
+  align-items: center;
+  background: color-mix(in srgb, var(--retail-accent, #24c47a) 12%, #fff);
+  border: 1px solid color-mix(in srgb, var(--retail-accent, #24c47a) 35%, #fff);
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px 4px 3px 10px;
+}
+
+.retail-app-view-chip button {
+  background: none;
+  border: 0;
+  color: var(--retail-accent-text, #147d48);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0;
+}
+
+.retail-app-view-chip a {
+  color: #8a97a6;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 4px;
+}
+
+.retail-app-view-chip a:hover {
+  color: #b3261e;
+}
+
 .retail-app-view-toggle {
   display: flex;
   gap: 2px;

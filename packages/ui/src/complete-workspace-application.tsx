@@ -1919,6 +1919,36 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const [editDraft, setEditDraft] = useState({ name: '', secondary: '', value: '', owner: '' })
   const [dragRecordId, setDragRecordId] = useState<string | null>(null)
   const [dragOverStatus, setDragOverStatus] = useState<string | null>(null)
+  const savedViewsKey = `founding-os:${workspace}:${item.id}:views`
+  const [savedViews, setSavedViews] = useState<Array<{ name: string; query: string; statusFilter: string; sortBy: string }>>([])
+  const [viewName, setViewName] = useState('')
+  useEffect(() => {
+    const stored = window.localStorage.getItem(savedViewsKey)
+    setSavedViews(stored ? JSON.parse(stored) as Array<{ name: string; query: string; statusFilter: string; sortBy: string }> : [])
+    // Reset transient view-builder state when switching modules so it doesn't leak across pages.
+    setViewName('')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedViewsKey])
+  const saveCurrentView = () => {
+    const name = viewName.trim()
+    if (!name) return
+    const next = [...savedViews.filter((view) => view.name !== name), { name, query, statusFilter, sortBy }]
+    setSavedViews(next)
+    window.localStorage.setItem(savedViewsKey, JSON.stringify(next))
+    setViewName('')
+  }
+  const applyView = (name: string) => {
+    const view = savedViews.find((candidate) => candidate.name === name)
+    if (!view) return
+    setQuery(view.query)
+    setStatusFilter(view.statusFilter)
+    setSortBy(view.sortBy as typeof sortBy)
+  }
+  const removeView = (name: string) => {
+    const next = savedViews.filter((view) => view.name !== name)
+    setSavedViews(next)
+    window.localStorage.setItem(savedViewsKey, JSON.stringify(next))
+  }
   const dropOnStage = async (status: string) => {
     const record = records.find((candidate) => candidate.id === dragRecordId)
     setDragRecordId(null)
@@ -2096,6 +2126,16 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
       <span className="retail-app-record-count">{visible.length} matching</span>
       <button onClick={() => exportCsv(visible)} type="button">Export CSV</button>
       <button onClick={() => window.print()} type="button">Print</button>
+    </div> : null}
+    {!isInbox && !isCalendar ? <div className="retail-app-views-bar">
+      {savedViews.length > 0 ? <div className="retail-app-view-chips">
+        {savedViews.map((view) => <span className="retail-app-view-chip" key={view.name}>
+          <button onClick={() => applyView(view.name)} type="button">{view.name}</button>
+          <a aria-label={`Remove view ${view.name}`} onClick={() => removeView(view.name)} role="button">×</a>
+        </span>)}
+      </div> : null}
+      <input aria-label="Save current filters as a view" onChange={(event) => setViewName(event.target.value)} placeholder="Name this view…" value={viewName} />
+      <button disabled={!viewName.trim()} onClick={saveCurrentView} type="button">Save view</button>
     </div> : null}
     {!isInbox && !isCalendar && checked.length > 0 ? <div className="retail-app-bulk-bar">
       <span>{checked.length} selected</span>
