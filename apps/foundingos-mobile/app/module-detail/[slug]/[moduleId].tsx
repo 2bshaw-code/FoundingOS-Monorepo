@@ -324,14 +324,18 @@ async function loadCoreWorkforceModule(moduleId: string): Promise<ModuleView> {
   }
   // interviews
   const interviews = await listInterviews()
+  const now = Date.now()
+  const sorted = [...interviews].sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
+  const next = sorted.find((i) => i.status === 'scheduled' && new Date(i.scheduledAt).getTime() >= now)
   return {
     title: 'Interviews',
-    description: 'Scheduled and completed interviews across the hiring pipeline.',
+    description: 'Scheduled and completed interviews across the hiring pipeline, soonest first.',
     metrics: [
       { label: 'Scheduled', value: String(interviews.filter((i) => i.status === 'scheduled').length), tone: 'watch' },
       { label: 'Completed', value: String(interviews.filter((i) => i.status === 'completed').length), tone: 'good' },
+      { label: 'Next up', value: next ? formatDate(next.scheduledAt) : 'None booked', tone: next ? 'info' : 'watch' },
     ],
-    items: interviews.map((interview) => ({
+    items: sorted.map((interview) => ({
       id: interview.id,
       title: `Interview with ${interview.interviewer}`,
       subtitle: formatDate(interview.scheduledAt),
