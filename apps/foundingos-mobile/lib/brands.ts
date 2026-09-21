@@ -19,6 +19,7 @@ export type Brand = {
   modules: string[]
   availability: BrandAvailability
   homeLabel: string
+  icon: string
   theme?: {
     background: string
     surface: string
@@ -47,6 +48,7 @@ export const BRANDS: Brand[] = [
     modules: ['Business Pulse', 'Approvals', 'Messaging', 'Event Feed', 'Team', 'Setup'],
     availability: 'overview',
     homeLabel: 'Overview',
+    icon: '⌂',
     theme: {
       background: FOUNDINGOS_BASE,
       surface: FOUNDINGOS_SURFACE_GRADIENT,
@@ -66,6 +68,7 @@ export const BRANDS: Brand[] = [
     modules: ['CRM', 'Orders', 'Invoices', 'Inventory', 'Marketing', 'Messaging'],
     availability: 'live',
     homeLabel: 'Core.Operations',
+    icon: '⚙',
   },
   {
     id: 'core_workforce',
@@ -78,6 +81,7 @@ export const BRANDS: Brand[] = [
     modules: ['Roles', 'Applicants', 'Pipeline', 'Interviews'],
     availability: 'live',
     homeLabel: 'Core.Workforce',
+    icon: '◈',
   },
   {
     id: 'core_intelligence',
@@ -90,5 +94,6 @@ export const BRANDS: Brand[] = [
     modules: ['Accuracy', 'Learning', 'Signals', 'Audit Trail'],
     availability: 'live',
     homeLabel: 'Core.Intelligence',
+    icon: '✦',
   },
 ]
