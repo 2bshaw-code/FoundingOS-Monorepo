@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
-import { router } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 import { login as legacyLogin, getToken as getLegacyToken, verifyLegacyToken } from '../lib/api'
 import { login as coreOpsLogin, getSession as getCoreOpsSession, verifySession as verifyCoreOpsSession } from '../lib/core-operations-api'
 import { login as coreWorkforceLogin, getSession as getCoreWorkforceSession } from '../lib/core-workforce-api'
@@ -15,6 +15,8 @@ import { QuantumSphere } from '../components/QuantumSphere'
 import { QuantumButton, QuantumCard, QuantumFormField, QuantumNotice, QuantumPasswordInput, QuantumText, QuantumTextInput, quantumSpace, shadeColor } from '../components/QuantumUI'
 
 export default function LoginScreen() {
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
+  const destination = typeof returnTo === 'string' && returnTo.startsWith('/') ? returnTo : '/(app)/home'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -46,8 +48,10 @@ export default function LoginScreen() {
       void legacyValid
       if (coreOpsValid) {
         // Keep checkingSession true (spinner stays up) until navigation actually
-        // completes, instead of flashing the login form for a frame first.
-        router.replace('/(app)/home')
+        // completes, instead of flashing the login form for a frame first. Return to
+        // whichever tab sent the user here (via ?returnTo=...) instead of always
+        // dropping back onto Overview.
+        router.replace(destination as any)
         return
       }
       setCheckingSession(false)
@@ -77,7 +81,7 @@ export default function LoginScreen() {
       // an honest "not connected" state rather than blocking Core.Operations sign-in.
       coreWorkforceLogin(email.trim(), password.trim()).catch(() => undefined)
       setLoading(false)
-      router.replace('/(app)/home')
+      router.replace(destination as any)
       return
     }
     const legacyResult = await legacyLogin(email.trim(), password.trim())
@@ -86,7 +90,7 @@ export default function LoginScreen() {
       setError(realResult.error || legacyResult.error)
       return
     }
-    router.replace('/(app)/home')
+    router.replace(destination as any)
   }
 
   if (checkingSession) {

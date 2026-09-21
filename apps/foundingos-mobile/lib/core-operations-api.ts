@@ -102,9 +102,18 @@ async function refreshSession(): Promise<CoreOpsSession | null> {
     const current = await getSession()
     if (!current?.refreshToken) return null
     try {
+      // The backend rejects a refresh with "Refresh token required" unless a device
+      // fingerprint is also present — omitting this header (as an earlier version of
+      // this function did) makes every refresh attempt fail and wipe the session,
+      // which is worse than not refreshing at all.
+      const deviceFingerprint = await getDeviceFingerprint()
       const response = await fetch(`${CORE_OPS_API_BASE}/api/v1/auth/refresh`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-refresh-token': current.refreshToken },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-refresh-token': current.refreshToken,
+          'X-Device-Fingerprint': deviceFingerprint,
+        },
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok || !data?.success) {
