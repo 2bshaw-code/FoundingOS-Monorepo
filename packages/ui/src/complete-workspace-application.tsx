@@ -8,7 +8,7 @@ const workspaceRoot = productionModeEnabled ? '/app' : '/test-workspaces'
 
 export type BusinessWorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'marketing' | 'talent' | 'health' | 'intelligence'
 
-type WorkspaceRecord = { id: string; backendId?: string; version?: number; name: string; secondary: string; value: string; status: string; owner: string; updated: string; attachment?: string; attachmentName?: string; quantity?: number; reorderPoint?: number; log?: Array<{ time: string; note: string }> }
+type WorkspaceRecord = { id: string; backendId?: string; version?: number; name: string; secondary: string; value: string; status: string; owner: string; updated: string; attachment?: string; attachmentName?: string; quantity?: number; reorderPoint?: number; log?: Array<{ time: string; note: string }>; dueDate?: string }
 type WorkspaceModule = { id: string; label: string; group: string; statuses?: string[] }
 type WorkspaceEvent = { id: string; workspace: BusinessWorkspaceSlug; text: string; time: string; type?: string; payload?: Record<string, unknown> }
 type WorkspaceState = {
@@ -500,9 +500,9 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
   }
   // Edits a record's core fields directly from the detail panel — every module gets inline
   // editing of name/secondary/value/owner for free, without any module-specific wiring.
-  const updateRecord = async (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner'>>) => {
+  const updateRecord = async (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate'>>) => {
     const nextRecord = production && record.backendId
-      ? fromProductionRecord(await productionRecords.update(record.backendId, { name: patch.name ?? record.name, data: { secondary: patch.secondary ?? record.secondary, value: patch.value ?? record.value, owner: patch.owner ?? record.owner }, version: record.version }))
+      ? fromProductionRecord(await productionRecords.update(record.backendId, { name: patch.name ?? record.name, data: { secondary: patch.secondary ?? record.secondary, value: patch.value ?? record.value, owner: patch.owner ?? record.owner, dueDate: patch.dueDate ?? record.dueDate }, version: record.version }))
       : { ...record, ...patch, updated: 'Now' }
     update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? nextRecord : item) } }), `${module}: ${record.name} details updated`)
   }
@@ -1058,6 +1058,21 @@ function hashSpread(id: string, min: number, max: number) {
 // like "High priority" so callers can safely sum a mixed set of records.
 const parseCurrency = (value: string) => Number(value.replace(/[^0-9.]/g, '')) || 0
 const formatCurrency = (value: number) => value >= 1000 ? `£${(value / 1000).toFixed(1)}k` : `£${Math.round(value)}`
+
+// Turns a record's follow-up date into a short label + urgency tone for the board/list badge —
+// "Overdue" (red), "Due today"/"Due tomorrow" (amber), or "Due <date>" (neutral) for anything later.
+const dueBadge = (dueDate?: string): { label: string; tone: 'overdue' | 'soon' | 'later' } | null => {
+  if (!dueDate) return null
+  const due = new Date(`${dueDate}T00:00:00`)
+  if (Number.isNaN(due.getTime())) return null
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const days = Math.round((due.getTime() - today.getTime()) / 86400000)
+  if (days < 0) return { label: `Overdue ${Math.abs(days)}d`, tone: 'overdue' }
+  if (days === 0) return { label: 'Due today', tone: 'soon' }
+  if (days === 1) return { label: 'Due tomorrow', tone: 'soon' }
+  if (days <= 3) return { label: `Due in ${days}d`, tone: 'soon' }
+  return { label: `Due ${due.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`, tone: 'later' }
+}
 
 const directoryMetricLabel = (group: string): string => {
   if (group === 'Resources') return 'capacity'
@@ -1855,7 +1870,7 @@ function DeliveryMapPanel({ records, selectedId, onSelect }: { records: Workspac
   </div>
 }
 
-function RecordsPage({ workspace, config, item, state, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
+function RecordsPage({ workspace, config, item, state, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
   const records = state.records[item.id] ?? []
   const statuses = statusFor(item)
   const [sourceOpen, setSourceOpen] = useState(false)
@@ -2078,7 +2093,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
       </div> : boardView === 'list' ? <div className="retail-app-table-card">
         <div className="retail-app-panel-heading"><div><p>{item.group}</p><h2>{visible.length} records across {statuses.length} stages</h2></div></div>
         <div className="retail-app-table-scroll"><table className="retail-app-list-table">
-          <thead><tr><th /><th>Name</th><th>Detail</th><th>Stage</th><th>Value</th><th>Owner</th><th>Updated</th><th /></tr></thead>
+          <thead><tr><th /><th>Name</th><th>Detail</th><th>Stage</th><th>Value</th><th>Owner</th><th>Follow-up</th><th>Updated</th><th /></tr></thead>
           <tbody>
             {visible.map((record) => <tr className={selected?.id === record.id ? 'selected' : ''} key={record.id} onClick={() => selectRecord(record.id)}>
               <td onClick={(event) => event.stopPropagation()}><input aria-label={`Select ${record.name}`} checked={checked.includes(record.id)} className="retail-app-check" onChange={() => toggleChecked(record.id)} type="checkbox" /></td>
@@ -2091,6 +2106,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
               </td>
               <td>{record.value}</td>
               <td><span className="retail-app-board-item-owner"><span className="retail-app-board-item-avatar">{initials(record.owner)}</span>{record.owner}</span></td>
+              <td>{dueBadge(record.dueDate) ? <span className={`retail-app-due-badge retail-app-due-${dueBadge(record.dueDate)!.tone}`}>{dueBadge(record.dueDate)!.label}</span> : <small>—</small>}</td>
               <td><small>{record.updated}</small></td>
               <td onClick={(event) => event.stopPropagation()}>{statuses.indexOf(record.status) < statuses.length - 1 ? <a onClick={() => void advanceRecord(item.id, record, statuses[statuses.indexOf(record.status) + 1])} role="button">Advance →</a> : null}</td>
             </tr>)}
@@ -2129,6 +2145,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
                     <strong>{record.name}</strong>
                     <span>{record.secondary}</span>
                     <div className="retail-app-board-item-meta"><b>{record.value}</b><i className="retail-app-board-item-owner"><span className="retail-app-board-item-avatar">{initials(record.owner)}</span>{record.owner}</i></div>
+                    {dueBadge(record.dueDate) ? <span className={`retail-app-due-badge retail-app-due-${dueBadge(record.dueDate)!.tone}`}>{dueBadge(record.dueDate)!.label}</span> : null}
                     <div className="retail-app-board-item-foot"><small>{record.updated}</small>{statuses.indexOf(status) < statuses.length - 1 ? <a onClick={(event) => { event.stopPropagation(); void advanceRecord(item.id, record, statuses[statuses.indexOf(status) + 1]) }} role="button">Move to {statuses[statuses.indexOf(status) + 1]} →</a> : null}</div>
                   </button>
                 </div>)}
@@ -2156,7 +2173,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
             <label>Owner<input onChange={(event) => setEditDraft((current) => ({ ...current, owner: event.target.value }))} value={editDraft.owner} /></label>
           </div>
           <footer><button className="retail-app-secondary" onClick={() => setEditing(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} onClick={() => void saveEdit()} type="button">{saving ? 'Saving…' : 'Save changes'}</button></footer>
-        </div> : <dl><div><dt>{isDirectory ? 'Category' : 'Workflow'}</dt><dd>{item.label}</dd></div><div><dt>Status</dt><dd>{selected.status}</dd></div><div><dt>Owner</dt><dd>{selected.owner}</dd></div><div><dt>Value</dt><dd>{selected.value}</dd></div><div><dt>Updated</dt><dd>{selected.updated}</dd></div></dl>}
+        </div> : <dl><div><dt>{isDirectory ? 'Category' : 'Workflow'}</dt><dd>{item.label}</dd></div><div><dt>Status</dt><dd>{selected.status}</dd></div><div><dt>Owner</dt><dd>{selected.owner}</dd></div><div><dt>Value</dt><dd>{selected.value}</dd></div><div><dt>Updated</dt><dd>{selected.updated}</dd></div>{!isDirectory && !isCalendar ? <div><dt>Follow-up</dt><dd><input aria-label="Set follow-up date" onChange={(event) => void updateRecord(item.id, selected, { dueDate: event.target.value || undefined })} type="date" value={selected.dueDate ?? ''} />{dueBadge(selected.dueDate) ? <span className={`retail-app-due-badge retail-app-due-${dueBadge(selected.dueDate)!.tone}`}>{dueBadge(selected.dueDate)!.label}</span> : null}</dd></div> : null}</dl>}
         {!editing ? <button className="retail-app-secondary retail-app-edit-toggle" onClick={startEdit} type="button">Edit details</button> : null}
         {!isContentStudio ? <ActivityLog entries={selected.log ?? []} note={noteText} onAdd={addNote} onNoteChange={setNoteText} placeholder={isInventory ? 'Add a note about this stock' : 'Add an activity note'} /> : null}
         <button aria-expanded={sourceOpen} className="retail-app-source-toggle" onClick={() => setSourceOpen((open) => !open)} type="button"><span>Source: {origin.label}</span><b>{sourceOpen ? '−' : '+'}</b></button>
