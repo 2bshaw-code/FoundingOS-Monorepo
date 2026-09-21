@@ -36,7 +36,15 @@ export default function LoginScreen() {
         legacyToken ? verifyLegacyToken() : Promise.resolve(false),
       ])
       if (cancelled) return
-      if (coreOpsValid || legacyValid) {
+      // Only skip the login screen for a verified real Core.Operations session. A
+      // legacy-only token being valid is NOT enough to auto-skip: those tokens come
+      // from the read-only tester system and have no real tenant behind them, so
+      // silently bouncing a legacy-only user past this screen made it impossible to
+      // ever enter real credentials — every tap of "Sign in" (from a Core.Operations
+      // screen that requires a real session) landed back here and bounced straight
+      // back to the overview, looking like a login/overview loop.
+      void legacyValid
+      if (coreOpsValid) {
         // Keep checkingSession true (spinner stays up) until navigation actually
         // completes, instead of flashing the login form for a frame first.
         router.replace('/(app)/home')
