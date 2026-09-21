@@ -199,11 +199,13 @@ async function loadCoreOperationsModule(moduleId: string): Promise<ModuleView> {
   }
   if (moduleId === 'marketing') {
     const { campaigns, metrics } = await fetchMarketingWorkspace()
+    const liveCount = campaigns.filter((c) => c.status.toLowerCase() === 'live').length
     return {
       title: 'Marketing',
       description: 'Live campaigns and performance across every connected channel.',
       metrics: [
         { label: 'Campaigns', value: String(metrics.campaigns), tone: 'info' },
+        { label: 'Live now', value: String(liveCount), tone: liveCount > 0 ? 'good' : 'watch' },
         { label: 'Conversions', value: String(metrics.conversions), tone: 'good' },
         { label: 'Revenue', value: formatPence(metrics.revenuePence), tone: 'good' },
       ],
