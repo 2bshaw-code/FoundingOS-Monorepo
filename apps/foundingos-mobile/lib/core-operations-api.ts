@@ -105,6 +105,29 @@ async function authedRequest<T>(path: string, init: RequestInit = {}): Promise<T
   return (data?.data !== undefined ? data.data : data) as T
 }
 
+// Checks whether a locally stored Core.Operations session is still accepted by the
+// backend — a session token can exist on disk (e.g. from a previous install, a
+// revoked account, or an expired token) without actually being valid, which would
+// otherwise cause the app to silently bounce a user straight back past the login
+// screen into a broken "signed in but every call 401s" state. Any stored session
+// found invalid here is cleared so the login screen behaves like a fresh sign-in.
+export async function verifySession(): Promise<boolean> {
+  const session = await getSession()
+  if (!session) return false
+  try {
+    await authedRequest('/api/v1/ops/platform/onboarding')
+    return true
+  } catch (err) {
+    if (err instanceof CoreOpsApiError && err.status === 401) {
+      await clearSession()
+      return false
+    }
+    // Network/server error unrelated to auth (offline, 5xx, etc.) — don't destroy a
+    // possibly-valid session over a transient failure.
+    return true
+  }
+}
+
 export type AgentActionStatus = 'proposed' | 'approved' | 'rejected' | 'executing' | 'completed'
 
 export type AgentAction = {
