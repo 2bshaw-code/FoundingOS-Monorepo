@@ -470,12 +470,17 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
     update((current) => ({ ...current, records: { ...current.records, [module]: [mapped, ...(current.records[module] ?? [])] } }))
     return mapped
   }
+  // Advances a record to a new stage — also auto-logs a "Stage" activity entry so the timeline
+  // shows every pipeline movement without an operator having to write it up manually, the same
+  // automatic stage-change audit trail HubSpot/Pipedrive/Monday keep on every deal.
   const advanceRecord = async (module: string, record: WorkspaceRecord, status: string) => {
     if (production && !record.backendId) throw new Error('Production record identifier is missing')
     const nextRecord = production
       ? fromProductionRecord(await productionRecords.update(record.backendId!, { status, version: record.version }))
       : { ...record, status, updated: 'Now' }
-    update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? nextRecord : item) } }), `${module}: ${record.name} moved to ${status}`)
+    const stageEntry = { time: 'Now', note: `Moved from ${record.status} to ${status}`, kind: 'Stage' }
+    const withLog = { ...nextRecord, log: [stageEntry, ...(nextRecord.log ?? [])] }
+    update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? withLog : item) } }), `${module}: ${record.name} moved to ${status}`)
   }
   // Attaches (or replaces) a file on any record, in any module, board or directory alike — the
   // system-wide upload/preview/download capability isn't backend-persisted yet, so this always
@@ -1481,7 +1486,7 @@ function AttachmentBox({ attachment, attachmentName, onUpload, onRemove }: { att
 // icons every mainstream CRM (HubSpot, Pipedrive, Close) uses so an operator can scan a
 // record's history at a glance instead of reading every line.
 const activityKinds = ['Note', 'Call', 'Email', 'Meeting', 'Task'] as const
-const activityIcon: Record<string, string> = { Note: '📝', Call: '📞', Email: '✉️', Meeting: '📅', Task: '✅' }
+const activityIcon: Record<string, string> = { Note: '📝', Call: '📞', Email: '✉️', Meeting: '📅', Task: '✅', Stage: '➡️' }
 function ActivityLog({ entries, note, kind, onKindChange, onNoteChange, onAdd, placeholder }: { entries: Array<{ time: string; note: string; kind?: string }>; note: string; kind: string; onKindChange: (value: string) => void; onNoteChange: (value: string) => void; onAdd: () => void; placeholder: string }) {
   return <div className="retail-app-activity-log">
     <p className="retail-app-attachment-label">Activity</p>
