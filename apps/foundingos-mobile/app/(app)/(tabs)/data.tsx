@@ -4,8 +4,8 @@
 */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, RefreshControl, StyleSheet, View } from 'react-native'
-import { useQuantumStore, OutboxItem } from '../../lib/store'
-import { getAllOutboxItems, processOutboxSync } from '../../lib/outbox-sync'
+import { useQuantumStore, OutboxItem } from '../../../lib/store'
+import { getAllOutboxItems, processOutboxSync } from '../../../lib/outbox-sync'
 import {
   QuantumButton,
   QuantumCard,
@@ -18,7 +18,7 @@ import {
   getSemanticColor,
   quantumSpace,
   useActiveQuantumTheme,
-} from '../../components/QuantumUI'
+} from '../../../components/QuantumUI'
 
 function formatQueuedTime(value: number) {
   return new Date(value).toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })

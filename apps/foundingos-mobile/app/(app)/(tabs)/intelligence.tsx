@@ -5,12 +5,12 @@
 import { router } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import { ActivityIndicator, RefreshControl, StyleSheet, View } from 'react-native'
-import { QuantumComparisonBars } from '../../components/QuantumMiniCharts'
+import { QuantumComparisonBars } from '../../../components/QuantumMiniCharts'
 import {
   AgentActionIntelligence,
   fetchAgentActionIntelligence,
   getSession,
-} from '../../lib/core-operations-api'
+} from '../../../lib/core-operations-api'
 import {
   QuantumButton,
   QuantumCard,
@@ -22,7 +22,7 @@ import {
   quantumColors,
   quantumSpace,
   useActiveQuantumTheme,
-} from '../../components/QuantumUI'
+} from '../../../components/QuantumUI'
 
 function formatPence(pence: number | null | undefined): string {
   if (!pence) return '£0'

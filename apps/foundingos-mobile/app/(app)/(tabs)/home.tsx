@@ -5,9 +5,9 @@
 import { router } from 'expo-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { QuantumMiniBars } from '../../components/QuantumMiniCharts'
-import { QuantumButton, QuantumCard, QuantumNotice, QuantumScreen, QuantumText, quantumColors, quantumSpace } from '../../components/QuantumUI'
-import { BRANDS, FOUNDINGOS_ACCENT } from '../../lib/brands'
+import { QuantumMiniBars } from '../../../components/QuantumMiniCharts'
+import { QuantumButton, QuantumCard, QuantumNotice, QuantumScreen, QuantumText, quantumColors, quantumSpace } from '../../../components/QuantumUI'
+import { BRANDS, FOUNDINGOS_ACCENT } from '../../../lib/brands'
 import {
   AgentAction,
   AgentActionIntelligence,
@@ -27,10 +27,10 @@ import {
   getSession,
   listAgentActions,
   reverseAgentActionExecution,
-} from '../../lib/core-operations-api'
-import { getToken as getLegacyToken } from '../../lib/api'
-import { enqueueOutboxAction } from '../../lib/outbox-sync'
-import { useQuantumStore } from '../../lib/store'
+} from '../../../lib/core-operations-api'
+import { getToken as getLegacyToken } from '../../../lib/api'
+import { enqueueOutboxAction } from '../../../lib/outbox-sync'
+import { useQuantumStore } from '../../../lib/store'
 
 const WORKSPACES = BRANDS.filter((workspace) => workspace.slug !== 'foundingos')
 

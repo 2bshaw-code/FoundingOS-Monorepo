@@ -5,10 +5,10 @@
 import { router } from 'expo-router'
 import { useEffect, useMemo, useState } from 'react'
 import { View, StyleSheet } from 'react-native'
-import { BRANDS, FOUNDINGOS_ACCENT } from '../../lib/brands'
-import { getSession } from '../../lib/core-operations-api'
-import { useQuantumStore } from '../../lib/store'
-import { QuantumButton, QuantumCard, QuantumHeader, QuantumNotice, QuantumScreen, QuantumText, quantumSpace } from '../../components/QuantumUI'
+import { BRANDS, FOUNDINGOS_ACCENT } from '../../../lib/brands'
+import { getSession } from '../../../lib/core-operations-api'
+import { useQuantumStore } from '../../../lib/store'
+import { QuantumButton, QuantumCard, QuantumHeader, QuantumNotice, QuantumScreen, QuantumText, quantumSpace } from '../../../components/QuantumUI'
 
 export default function WorkspaceDirectoryScreen() {
   const setActiveBrand = useQuantumStore((state) => state.setActiveBrand)

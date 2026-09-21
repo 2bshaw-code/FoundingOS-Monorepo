@@ -19,7 +19,7 @@ import {
   QuantumTextInput,
   quantumSpace,
   useActiveQuantumTheme,
-} from '../../components/QuantumUI'
+} from '../../../components/QuantumUI'
 import {
   Candidate,
   CandidateStage,
@@ -37,10 +37,10 @@ import {
   login as workforceLogin,
   proposeShortlistingAction,
   reverseWorkforceActionExecution,
-} from '../../lib/core-workforce-api'
-import { getSession as getCoreOpsSession } from '../../lib/core-operations-api'
-import { enqueueOutboxAction } from '../../lib/outbox-sync'
-import { useQuantumStore } from '../../lib/store'
+} from '../../../lib/core-workforce-api'
+import { getSession as getCoreOpsSession } from '../../../lib/core-operations-api'
+import { enqueueOutboxAction } from '../../../lib/outbox-sync'
+import { useQuantumStore } from '../../../lib/store'
 
 const ACTION_STATUS_LABEL: Record<WorkforceActionStatus, string> = {
   proposed: 'Suggested',

@@ -16,7 +16,7 @@ import {
   QuantumText,
   quantumSpace,
   useActiveQuantumTheme,
-} from '../../components/QuantumUI'
+} from '../../../components/QuantumUI'
 import {
   AgentAction,
   AgentActionStatus,
@@ -25,9 +25,9 @@ import {
   getSession,
   listAgentActions,
   reverseAgentActionExecution,
-} from '../../lib/core-operations-api'
-import { enqueueOutboxAction } from '../../lib/outbox-sync'
-import { useQuantumStore } from '../../lib/store'
+} from '../../../lib/core-operations-api'
+import { enqueueOutboxAction } from '../../../lib/outbox-sync'
+import { useQuantumStore } from '../../../lib/store'
 
 const STATUS_LABEL: Record<AgentActionStatus, string> = {
   proposed: 'Suggested',
