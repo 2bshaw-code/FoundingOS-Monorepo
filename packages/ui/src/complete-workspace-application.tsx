@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { Fragment, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
+import { Fragment, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { bootstrapProduction, getProductionSession, loginToProduction, logoutProduction, productionAgentActions, productionApiConfigured, productionModeEnabled, productionPlatform, productionRecords, productionRequest, type AgentAction, type AgentIntelligenceSummary, type ControlSettings, type ProductionInvitation, type ProductionSession, type ProductionWorkspaceRecord } from './workspace-production-client'
 
 const workspaceRoot = productionModeEnabled ? '/app' : '/test-workspaces'
@@ -2599,6 +2600,41 @@ function ProductionAccess({ onAuthenticated }: { onAuthenticated: (session: Prod
   return <main className="complete-workspace-access"><section><div className="complete-workspace-access-brand"><span>F</span><div><strong>FoundingOS</strong><small>Business in a box</small></div></div><p className="eyebrow">{initializing ? 'First deployment' : 'Secure workspace access'}</p><h1>{initializing ? 'Initialize your business' : 'Sign in to FoundingOS'}</h1><p>{initializing ? 'Create the first tenant and owner. The bootstrap token comes from your deployment secret manager and is never stored in the browser.' : 'Access every enabled workspace with your tenant-scoped account.'}</p><form onSubmit={(event) => void (initializing ? bootstrap(event) : login(event))}>{initializing ? <><label>Business name<input name="businessName" required /></label><label>Owner name<input name="ownerName" required /></label></> : null}<label>Email<input autoComplete="email" name="email" required type="email" /></label><label>Password<input autoComplete={initializing ? 'new-password' : 'current-password'} minLength={12} name="password" required type="password" /></label>{initializing ? <label>Deployment bootstrap token<input autoComplete="off" name="bootstrapToken" required type="password" /></label> : null}{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<button className="retail-app-primary" disabled={busy} type="submit">{busy ? 'Please wait…' : initializing ? 'Initialize and sign in' : 'Sign in'}</button></form><button className="complete-workspace-access-switch" onClick={() => { setInitializing((value) => !value); setError('') }} type="button">{initializing ? 'Return to sign in' : 'Initialize a new deployment'}</button></section></main>
 }
 
+// A cross-workspace command palette (Cmd/Ctrl+K) — the single fastest way to jump to any
+// module in any workspace, or to a specific record by name, without hunting through nav
+// trees. This is the "everything, instantly" search HubSpot/Pipedrive/Monday never quite
+// nail, and it works identically across every FoundingOS workspace since it lives in the shell.
+type PaletteEntry = { key: string; label: string; hint: string; href: string }
+function CommandPalette({ open, onClose, workspace, state }: { open: boolean; onClose: () => void; workspace: BusinessWorkspaceSlug; state: WorkspaceState }) {
+  const router = useRouter()
+  const [query, setQuery] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+  useEffect(() => { if (open) { setQuery(''); requestAnimationFrame(() => inputRef.current?.focus()) } }, [open])
+  const entries = useMemo<PaletteEntry[]>(() => {
+    const modules: PaletteEntry[] = Object.entries(configs).flatMap(([slug, cfg]) => cfg.modules.map((item) => ({
+      key: `${slug}-${item.id}`, label: item.label, hint: cfg.label, href: `${workspaceRoot}/${slug}${item.id === 'overview' ? '' : `/${item.id}`}`,
+    })))
+    const records: PaletteEntry[] = Object.entries(state.records).flatMap(([moduleId, list]) => list.map((record) => ({
+      key: `record-${moduleId}-${record.id}`, label: record.name, hint: `${configs[workspace].label} · ${record.status}`, href: `${workspaceRoot}/${workspace}/${moduleId}`,
+    })))
+    return [...records, ...modules]
+  }, [state.records, workspace])
+  const matches = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return entries.slice(0, 8)
+    return entries.filter((entry) => entry.label.toLowerCase().includes(q) || entry.hint.toLowerCase().includes(q)).slice(0, 12)
+  }, [entries, query])
+  const go = (href: string) => { onClose(); router.push(href) }
+  if (!open) return null
+  return <div className="retail-app-palette-overlay" onClick={onClose} role="presentation">
+    <div className="retail-app-palette" onClick={(event) => event.stopPropagation()} role="dialog" aria-label="Command palette">
+      <input aria-label="Jump to a module or record" onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') onClose(); if (event.key === 'Enter' && matches[0]) go(matches[0].href) }} placeholder="Jump to any workspace, module, or record…" ref={inputRef} value={query} />
+      <ul className="retail-app-palette-list">{matches.length ? matches.map((entry) => <li key={entry.key}><button onClick={() => go(entry.href)} type="button"><strong>{entry.label}</strong><small>{entry.hint}</small></button></li>) : <li className="retail-app-palette-empty">No matches</li>}</ul>
+      <div className="retail-app-palette-foot"><span>↑↓ navigate</span><span>Enter select</span><span>Esc close</span></div>
+    </div>
+  </div>
+}
+
 export function CompleteWorkspaceApplication({ workspace, section = 'overview' }: { workspace: BusinessWorkspaceSlug; section?: string }) {
   const config = configs[workspace]
   const current = config.modules.find((item) => item.id === section) ?? config.modules[0]
@@ -2611,6 +2647,39 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
   const { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff } = useWorkspaceState(workspace, current.id, session)
   const agent = useAgentActions(production, session, (text) => update((current) => current, text))
   const groups = useMemo(() => [...new Set(config.modules.map((item) => item.group))], [config.modules])
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  // Collapsible nav groups — several workspaces (Retail, Marketing) have 20+ modules across
+  // 8-9 groups, more than fit in one viewport, so collapsing groups you're not using keeps the
+  // sidebar scannable at a glance instead of forcing an internal scrollbar for everything,
+  // matching how Notion/Linear/HubSpot handle deep nav trees.
+  const navCollapseKey = `foundingos-nav-collapsed-${workspace}`
+  const [collapsedGroups, setCollapsedGroups] = useState<string[]>([])
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(navCollapseKey)
+      if (stored) { setCollapsedGroups(JSON.parse(stored)); return }
+      // First visit to this workspace: collapse every group except the one the current
+      // module lives in, so the sidebar fits in one viewport instead of needing an internal
+      // scrollbar to reach items lower down the list.
+      setCollapsedGroups(groups.filter((group) => group !== current.group))
+    } catch { setCollapsedGroups([]) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspace])
+  const toggleGroup = (group: string) => {
+    setCollapsedGroups((prev) => {
+      const next = prev.includes(group) ? prev.filter((value) => value !== group) : [...prev, group]
+      try { window.localStorage.setItem(navCollapseKey, JSON.stringify(next)) } catch { /* ignore */ }
+      return next
+    })
+  }
+  const activeGroup = current.group
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); setPaletteOpen(true) }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
   if (productionModeEnabled && !productionApiConfigured) return <main className="complete-workspace-access"><section><h1>Production API is not configured</h1><p>Set NEXT_PUBLIC_FOUNDINGOS_API_URL to the deployed API root before publishing this application.</p></section></main>
   if (!hydrated) return <main className="complete-workspace-access"><section><h1>Loading FoundingOS…</h1></section></main>
   if (production && !session) return <ProductionAccess onAuthenticated={setSession} />
@@ -2627,7 +2696,8 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
   else if (current.id === 'settings') content = <SettingsPage config={config} production={production} state={state} update={update} />
   else content = <RecordsPage adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} />
   return <main className="retail-product-shell complete-workspace-shell" style={{ ['--retail-accent' as string]: config.accent }}>
-    <aside className="retail-product-sidebar"><Link className="retail-product-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{config.suite}</small></div></Link><div className="retail-product-store"><span>{config.label.slice(0, 2).toUpperCase()}</span><div><strong>{state.settings.businessName}</strong><small>{config.label} Workspace</small></div><b>⌄</b></div><nav aria-label={`${config.label} workspace navigation`}>{groups.map((group) => <div key={group}><p>{group}</p>{config.modules.filter((item) => item.group === group).map((item) => <Link className={item.id === current.id ? 'active' : ''} href={`${workspaceRoot}/${workspace}${item.id === 'overview' ? '' : `/${item.id}`}`} key={item.id}><i>{item.id === 'overview' ? '⌂' : '◇'}</i><span>{item.label}</span>{state.records[item.id]?.length ? <em>{state.records[item.id].length}</em> : null}{overdueCount(state.records[item.id]) ? <b aria-label={`${overdueCount(state.records[item.id])} follow-ups due`} className="retail-product-nav-dot" title={`${overdueCount(state.records[item.id])} follow-up${overdueCount(state.records[item.id]) === 1 ? '' : 's'} due`} /> : null}</Link>)}</div>)}</nav><Link className="retail-product-switcher" href={workspaceRoot}><span>Switch workspace</span><b>↗</b></Link></aside>
-    <section className="retail-product-main"><header className="retail-product-topbar"><form onSubmit={(event) => event.preventDefault()}><span>⌕</span><input aria-label="Global workspace search" placeholder={`Search ${config.label}, or ask FoundAI…`} /></form><div><span className="complete-workspace-live">● {production ? 'PRODUCTION' : 'SIMULATION'} LIVE</span>{production ? <button className="complete-workspace-signout" onClick={() => void logoutProduction().then(() => setSession(null))} type="button">Sign out</button> : null}<form action="/api/access/logout" method="post"><button className="complete-workspace-signout" type="submit">Log out</button></form><span className="retail-product-user">{session?.user.email.slice(0, 2).toUpperCase() || 'BS'}</span></div></header><div className="retail-product-content"><div className="retail-product-notice"><span>{loading ? '…' : error ? '!' : '✓'}</span>{loading ? 'Loading tenant data…' : error ? error : production ? 'Tenant data is secured in PostgreSQL and every action is audited' : 'Interactive simulation · actions persist in this browser'}</div>{content}</div><footer className="retail-product-footer"><span>{config.label} Workspace · {production ? 'tenant-isolated production data' : 'browser-persistent shared simulation'}</span>{!production ? <button onClick={reset} type="button">Reset {config.label} data</button> : null}</footer></section>
+    <aside className="retail-product-sidebar"><Link className="retail-product-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{config.suite}</small></div></Link><div className="retail-product-store"><span>{config.label.slice(0, 2).toUpperCase()}</span><div><strong>{state.settings.businessName}</strong><small>{config.label} Workspace</small></div><b>⌄</b></div><nav aria-label={`${config.label} workspace navigation`}>{groups.map((group) => { const expanded = group === activeGroup || !collapsedGroups.includes(group); return <div key={group}><button aria-expanded={expanded} className="retail-product-nav-group" onClick={() => toggleGroup(group)} type="button"><p>{group}</p><i className={expanded ? 'retail-product-nav-chevron open' : 'retail-product-nav-chevron'}>›</i></button>{expanded ? config.modules.filter((item) => item.group === group).map((item) => <Link className={item.id === current.id ? 'active' : ''} href={`${workspaceRoot}/${workspace}${item.id === 'overview' ? '' : `/${item.id}`}`} key={item.id}><i>{item.id === 'overview' ? '⌂' : '◇'}</i><span>{item.label}</span>{state.records[item.id]?.length ? <em>{state.records[item.id].length}</em> : null}{overdueCount(state.records[item.id]) ? <b aria-label={`${overdueCount(state.records[item.id])} follow-ups due`} className="retail-product-nav-dot" title={`${overdueCount(state.records[item.id])} follow-up${overdueCount(state.records[item.id]) === 1 ? '' : 's'} due`} /> : null}</Link>) : null}</div> })}</nav><Link className="retail-product-switcher" href={workspaceRoot}><span>Switch workspace</span><b>↗</b></Link></aside>
+    <section className="retail-product-main"><header className="retail-product-topbar"><form onSubmit={(event) => { event.preventDefault(); setPaletteOpen(true) }}><span>⌕</span><input aria-label="Global workspace search" onFocus={(event) => { event.target.blur(); setPaletteOpen(true) }} placeholder={`Search ${config.label}, or ask FoundAI… (⌘K)`} readOnly /></form><div><span className="complete-workspace-live">● {production ? 'PRODUCTION' : 'SIMULATION'} LIVE</span>{production ? <button className="complete-workspace-signout" onClick={() => void logoutProduction().then(() => setSession(null))} type="button">Sign out</button> : null}<form action="/api/access/logout" method="post"><button className="complete-workspace-signout" type="submit">Log out</button></form><span className="retail-product-user">{session?.user.email.slice(0, 2).toUpperCase() || 'BS'}</span></div></header><div className="retail-product-content"><div className="retail-product-notice"><span>{loading ? '…' : error ? '!' : '✓'}</span>{loading ? 'Loading tenant data…' : error ? error : production ? 'Tenant data is secured in PostgreSQL and every action is audited' : 'Interactive simulation · actions persist in this browser'}</div>{content}</div><footer className="retail-product-footer"><span>{config.label} Workspace · {production ? 'tenant-isolated production data' : 'browser-persistent shared simulation'}</span>{!production ? <button onClick={reset} type="button">Reset {config.label} data</button> : null}</footer></section>
+    <CommandPalette onClose={() => setPaletteOpen(false)} open={paletteOpen} state={state} workspace={workspace} />
   </main>
 }
