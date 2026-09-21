@@ -8,7 +8,7 @@ const workspaceRoot = productionModeEnabled ? '/app' : '/test-workspaces'
 
 export type BusinessWorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'marketing' | 'talent' | 'health' | 'intelligence'
 
-type WorkspaceRecord = { id: string; backendId?: string; version?: number; name: string; secondary: string; value: string; status: string; owner: string; updated: string; attachment?: string; attachmentName?: string; quantity?: number; reorderPoint?: number; log?: Array<{ time: string; note: string }>; dueDate?: string }
+type WorkspaceRecord = { id: string; backendId?: string; version?: number; name: string; secondary: string; value: string; status: string; owner: string; updated: string; attachment?: string; attachmentName?: string; quantity?: number; reorderPoint?: number; log?: Array<{ time: string; note: string; kind?: string }>; dueDate?: string }
 type WorkspaceModule = { id: string; label: string; group: string; statuses?: string[] }
 type WorkspaceEvent = { id: string; workspace: BusinessWorkspaceSlug; text: string; time: string; type?: string; payload?: Record<string, unknown> }
 type WorkspaceState = {
@@ -492,11 +492,13 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
     const entry = { time: 'Now', note }
     update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? { ...item, quantity, status, value: `${quantity} units`, updated: 'Now', log: [entry, ...(item.log ?? [])] } : item) } }), `${module}: ${record.name} stock count set to ${quantity}`)
   }
-  // Appends a free-text note to a record's activity log — used for the pipeline deal timeline
-  // and anywhere else a running history of activity is useful, not just inventory counts.
-  const logNote = (module: string, record: WorkspaceRecord, note: string) => {
-    const entry = { time: 'Now', note }
-    update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? { ...item, log: [entry, ...(item.log ?? [])] } : item) } }), `${module}: ${record.name} note added`)
+  // Appends an activity-log entry to a record's timeline — used for the pipeline deal timeline
+  // and anywhere else a running history of activity is useful, not just inventory counts. Every
+  // entry has a kind (Note/Call/Email/Meeting/Task) so the log reads like a real CRM activity
+  // feed instead of a flat note list, matching HubSpot/Pipedrive's activity-type timelines.
+  const logNote = (module: string, record: WorkspaceRecord, note: string, kind: string = 'Note') => {
+    const entry = { time: 'Now', note, kind }
+    update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? { ...item, log: [entry, ...(item.log ?? [])] } : item) } }), `${module}: ${record.name} ${kind.toLowerCase()} logged`)
   }
   // Edits a record's core fields directly from the detail panel — every module gets inline
   // editing of name/secondary/value/owner for free, without any module-specific wiring.
@@ -1462,11 +1464,20 @@ function AttachmentBox({ attachment, attachmentName, onUpload, onRemove }: { att
 
 // A running history of activity on any record — stock counts, notes, deal progress. Generic and
 // reused across inventory (stock take log) and sales pipeline (deal timeline) alike.
-function ActivityLog({ entries, note, onNoteChange, onAdd, placeholder }: { entries: Array<{ time: string; note: string }>; note: string; onNoteChange: (value: string) => void; onAdd: () => void; placeholder: string }) {
+// Icon + tone shown for each activity kind — mirrors the Call/Email/Meeting/Task/Note timeline
+// icons every mainstream CRM (HubSpot, Pipedrive, Close) uses so an operator can scan a
+// record's history at a glance instead of reading every line.
+const activityKinds = ['Note', 'Call', 'Email', 'Meeting', 'Task'] as const
+const activityIcon: Record<string, string> = { Note: '📝', Call: '📞', Email: '✉️', Meeting: '📅', Task: '✅' }
+function ActivityLog({ entries, note, kind, onKindChange, onNoteChange, onAdd, placeholder }: { entries: Array<{ time: string; note: string; kind?: string }>; note: string; kind: string; onKindChange: (value: string) => void; onNoteChange: (value: string) => void; onAdd: () => void; placeholder: string }) {
   return <div className="retail-app-activity-log">
     <p className="retail-app-attachment-label">Activity</p>
-    <div className="retail-app-activity-add"><input onChange={(event) => onNoteChange(event.target.value)} onKeyDown={(event) => event.key === 'Enter' ? onAdd() : undefined} placeholder={placeholder} value={note} /><button className="retail-app-secondary" onClick={onAdd} type="button">Add</button></div>
-    {entries.length ? <ul className="retail-app-activity-list">{entries.slice(0, 6).map((entry, index) => <li key={`${entry.time}-${index}`}><span>{entry.note}</span><small>{entry.time}</small></li>)}</ul> : <p className="retail-app-activity-empty">No activity logged yet.</p>}
+    <div className="retail-app-activity-add">
+      <select aria-label="Activity type" onChange={(event) => onKindChange(event.target.value)} value={kind}>{activityKinds.map((type) => <option key={type} value={type}>{activityIcon[type]} {type}</option>)}</select>
+      <input onChange={(event) => onNoteChange(event.target.value)} onKeyDown={(event) => event.key === 'Enter' ? onAdd() : undefined} placeholder={placeholder} value={note} />
+      <button className="retail-app-secondary" onClick={onAdd} type="button">Add</button>
+    </div>
+    {entries.length ? <ul className="retail-app-activity-list">{entries.slice(0, 6).map((entry, index) => <li key={`${entry.time}-${index}`}><span><i className="retail-app-activity-icon">{activityIcon[entry.kind ?? 'Note'] ?? '📝'}</i>{entry.note}</span><small>{entry.time}</small></li>)}</ul> : <p className="retail-app-activity-empty">No activity logged yet.</p>}
   </div>
 }
 
@@ -1900,7 +1911,7 @@ function DeliveryMapPanel({ records, selectedId, onSelect }: { records: Workspac
   </div>
 }
 
-function RecordsPage({ workspace, config, item, state, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
+function RecordsPage({ workspace, config, item, state, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string, kind?: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
   const records = state.records[item.id] ?? []
   const statuses = statusFor(item)
   const [sourceOpen, setSourceOpen] = useState(false)
@@ -1911,6 +1922,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const [error, setError] = useState('')
   const [stockCount, setStockCount] = useState('')
   const [noteText, setNoteText] = useState('')
+  const [noteKind, setNoteKind] = useState('Note')
   const [statusFilter, setStatusFilter] = useState('all')
   const [sortBy, setSortBy] = useState<'default' | 'name' | 'value' | 'owner'>('default')
   const [checkedIds, setCheckedIds] = useState<string[]>([])
@@ -2009,7 +2021,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   }
   const addNote = () => {
     if (!selected || !noteText.trim()) return
-    logNote(item.id, selected, noteText.trim())
+    logNote(item.id, selected, noteText.trim(), noteKind)
     setNoteText('')
   }
   const create = async (event: FormEvent<HTMLFormElement>) => {
@@ -2247,7 +2259,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
           <footer><button className="retail-app-secondary" onClick={() => setEditing(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} onClick={() => void saveEdit()} type="button">{saving ? 'Saving…' : 'Save changes'}</button></footer>
         </div> : <dl><div><dt>{isDirectory ? 'Category' : 'Workflow'}</dt><dd>{item.label}</dd></div><div><dt>Status</dt><dd>{selected.status}</dd></div><div><dt>Owner</dt><dd>{selected.owner}</dd></div><div><dt>Value</dt><dd>{selected.value}</dd></div><div><dt>Updated</dt><dd>{selected.updated}</dd></div>{!isDirectory && !isCalendar ? <div><dt>Follow-up</dt><dd><input aria-label="Set follow-up date" onChange={(event) => void updateRecord(item.id, selected, { dueDate: event.target.value || undefined })} type="date" value={selected.dueDate ?? ''} />{dueBadge(selected.dueDate) ? <span className={`retail-app-due-badge retail-app-due-${dueBadge(selected.dueDate)!.tone}`}>{dueBadge(selected.dueDate)!.label}</span> : null}</dd></div> : null}</dl>}
         {!editing ? <button className="retail-app-secondary retail-app-edit-toggle" onClick={startEdit} type="button">Edit details</button> : null}
-        {!isContentStudio ? <ActivityLog entries={selected.log ?? []} note={noteText} onAdd={addNote} onNoteChange={setNoteText} placeholder={isInventory ? 'Add a note about this stock' : 'Add an activity note'} /> : null}
+        {!isContentStudio ? <ActivityLog entries={selected.log ?? []} kind={noteKind} note={noteText} onAdd={addNote} onKindChange={setNoteKind} onNoteChange={setNoteText} placeholder={isInventory ? 'Add a note about this stock' : 'Add an activity note'} /> : null}
         <button aria-expanded={sourceOpen} className="retail-app-source-toggle" onClick={() => setSourceOpen((open) => !open)} type="button"><span>Source: {origin.label}</span><b>{sourceOpen ? '−' : '+'}</b></button>
         {sourceOpen ? <p className="retail-app-source-detail">{origin.detail}</p> : null}
         {!isDirectory ? <div className="retail-app-stage">{statuses.map((status) => <span className={status === selected.status ? 'active' : ''} key={status}>{status}</span>)}</div> : null}{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}{productionModeEnabled && item.id === 'payments' && selected.status !== 'Paid' ? <button className="retail-app-primary" disabled={saving || !selected.backendId} onClick={() => void collectPayment()} type="button">Collect with Stripe</button> : !isDirectory && selected.status !== statuses.at(-1) ? <button className="retail-app-primary" disabled={saving} onClick={() => void advance()} type="button">Move to {statuses[Math.min(statuses.indexOf(selected.status) + 1, statuses.length - 1)]}</button> : null}<button className="retail-app-secondary" disabled={saving} onClick={() => void publishHandoff(item.id, selected, handoffTarget).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Handoff could not be published'))} type="button">Handoff to {configs[handoffTarget].label}</button></aside> : null}

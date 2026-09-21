@@ -5770,8 +5770,16 @@ body:has(.complete-workspace-directory) .found-ai-panel {
 
 .retail-app-activity-add {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 8px;
+}
+
+.retail-app-activity-add select {
+  border: 1px solid #d8e1ea;
+  border-radius: 6px;
+  font-size: 11px;
+  padding: 7px 6px;
 }
 
 .retail-app-activity-add input {
@@ -5810,6 +5818,11 @@ body:has(.complete-workspace-directory) .found-ai-panel {
 .retail-app-activity-list li small {
   color: #8795a7;
   font-weight: 600;
+}
+
+.retail-app-activity-icon {
+  font-style: normal;
+  margin-right: 6px;
 }
 
 .retail-app-activity-empty {
