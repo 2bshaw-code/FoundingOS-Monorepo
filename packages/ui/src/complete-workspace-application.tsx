@@ -1071,7 +1071,7 @@ const dueBadge = (dueDate?: string): { label: string; tone: 'overdue' | 'soon' |
   if (days === 0) return { label: 'Due today', tone: 'soon' }
   if (days === 1) return { label: 'Due tomorrow', tone: 'soon' }
   if (days <= 3) return { label: `Due in ${days}d`, tone: 'soon' }
-  return { label: `Due ${due.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`, tone: 'later' }
+  return { label: `Due ${due.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}`, tone: 'later' }
 }
 
 const directoryMetricLabel = (group: string): string => {
@@ -1744,7 +1744,7 @@ function CampaignPerformancePanel({ record }: { record: WorkspaceRecord }) {
   return <div className="retail-app-patient-panel">
     <p className="retail-app-attachment-label">Campaign performance</p>
     <dl className="retail-app-crm-fields">
-      <div><dt>Reach</dt><dd>{reach.toLocaleString()}</dd></div>
+      <div><dt>Reach</dt><dd>{reach.toLocaleString('en-GB')}</dd></div>
       <div><dt>Click-through rate</dt><dd>{ctr}%</dd></div>
       <div><dt>Return on ad spend</dt><dd>{roas}x</dd></div>
       <div><dt>Budget</dt><dd>{formatCurrency(budget)}</dd></div>
