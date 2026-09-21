@@ -1,0 +1,19 @@
+-- Fixes a correctness bug in 20260902100000_tenant_isolation_rls: that
+-- migration ran `ALTER TABLE "User" FORCE ROW LEVEL SECURITY`, which applies
+-- the tenant_isolation policy even to the table owner. NextAuth's
+-- PrismaAdapter (packages/auth/src/index.ts) must be able to look up a user
+-- by email/verification token BEFORE any tenant/brand context is known —
+-- that is the normal, intended login flow, not a bug to close. With FORCE
+-- enabled, any environment where the app's DATABASE_URL role happens to own
+-- the User table would silently make every brand-assigned user
+-- (brandId IS NOT NULL) invisible to that lookup whenever no
+-- app.current_brand_id session setting has been set — i.e. every NextAuth
+-- call — breaking sign-in entirely.
+--
+-- Row Level Security stays fully enabled on "User" (protecting every
+-- tenant-scoped query that goes through withTenantScope), this only removes
+-- the FORCE modifier so the table owner is not itself subject to it — the
+-- same default behavior every other unforced RLS table in Postgres has, and
+-- matches how the pre-existing app-level code already does legitimate
+-- cross-tenant User lookups (login by email, not by brand).
+ALTER TABLE "User" NO FORCE ROW LEVEL SECURITY;

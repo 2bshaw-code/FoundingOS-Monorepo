@@ -123,6 +123,15 @@ All tenant-scoped reads/writes must go through the helpers in
 excluded from RLS — they are cross-brand admin/portfolio rollup tables, not
 per-tenant application data.
 
+`User` is a deliberate, narrower exception: RLS is enabled (protecting every
+tenant-scoped query made through `withTenantScope`), but **not forced**, so
+the table owner role is not itself subject to it (Postgres' normal default
+for RLS-enabled-but-not-forced tables). This is required because
+`packages/auth`'s NextAuth `PrismaAdapter` must look up a user by email or
+verification token *before* any tenant/brand is known — that cross-tenant
+lookup is the intended login flow, not a gap. See migration
+`20260902110000_fix_user_rls_for_auth` for the full rationale.
+
 ### Dedicated database per large tenant (`Brand.dataTier`)
 
 `Brand.dataTier` (`pooled` default, or `dedicated`) is the flag a large or
