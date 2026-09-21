@@ -14,11 +14,13 @@ import {
   updateWorkspaceRecord,
 } from '../../../lib/core-operations-api'
 import { findModule, findWorkspace } from '../../../lib/workspace-modules'
+import { getModuleKpis } from '../../../lib/module-kpis'
 import {
   QuantumButton,
   QuantumCard,
   QuantumHeader,
   QuantumLoadingScreen,
+  QuantumMetric,
   QuantumNotice,
   QuantumPill,
   QuantumScreen,
@@ -113,6 +115,7 @@ export default function WorkspaceModuleScreen() {
   }
 
   const filterOptions = useMemo(() => statuses ?? Array.from(new Set(records.map((record) => record.status))), [statuses, records])
+  const kpis = useMemo(() => (workspace && module ? getModuleKpis(workspace.slug, module.id, records) : null), [workspace, module, records])
 
   if (!workspace || !module) return null
   if (loading) return <QuantumLoadingScreen />
@@ -125,6 +128,16 @@ export default function WorkspaceModuleScreen() {
       <QuantumBackButton label={`‹ ${workspace.label}`} fallbackHref={`/workspace/${workspace.slug}`} />
       <QuantumHeader eyebrow={workspace.label} title={module.label} accent={workspace.accent} />
       {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
+
+      {kpis ? (
+        <View style={styles.kpiRow}>
+          {kpis.map((kpi) => (
+            <QuantumCard key={kpi.label} accent={workspace.accent} style={styles.kpiCard}>
+              <QuantumMetric label={kpi.label} value={kpi.value} tone={kpi.tone} />
+            </QuantumCard>
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.headerRow}>
         <QuantumText variant="caption" color={theme.subtextColor}>
@@ -186,6 +199,8 @@ export default function WorkspaceModuleScreen() {
 
 const styles = StyleSheet.create({
   screen: { gap: quantumSpace.lg },
+  kpiRow: { flexDirection: 'row', gap: quantumSpace.sm },
+  kpiCard: { flex: 1 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
   list: { gap: quantumSpace.md },
