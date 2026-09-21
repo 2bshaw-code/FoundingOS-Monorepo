@@ -245,16 +245,17 @@ async function loadCoreOperationsModule(moduleId: string): Promise<ModuleView> {
     fetchMessagingConnections(),
     fetchMessagingParticipants(),
   ])
+  const sortedConnections = [...connections].sort((a, b) => Number(a.active) - Number(b.active))
   return {
     title: 'Messaging',
-    description: 'WhatsApp connection health and authorized participants for governed conversations.',
+    description: 'WhatsApp connection health and authorized participants for governed conversations, inactive connections first.',
     metrics: [
       { label: 'Operational', value: readiness.operational ? 'Yes' : 'No', tone: readiness.operational ? 'good' : 'risk' },
       { label: 'Authorized', value: String(readiness.authorizedParticipants), tone: 'info' },
       { label: 'Failed (24h)', value: String(readiness.failedDeliveriesLast24Hours), tone: readiness.failedDeliveriesLast24Hours > 0 ? 'risk' : 'good' },
     ],
     items: [
-      ...connections.map((c) => ({ id: `conn-${c.channel}`, title: c.displayName || c.channel, subtitle: c.channel, meta: c.active ? 'Active' : 'Inactive', tone: (c.active ? 'good' : 'watch') as ModuleTone })),
+      ...sortedConnections.map((c) => ({ id: `conn-${c.channel}`, title: c.displayName || c.channel, subtitle: c.channel, meta: c.active ? 'Active' : 'Inactive', tone: (c.active ? 'good' : 'watch') as ModuleTone })),
       ...participants.map((p) => ({ id: p.id, title: p.displayName || p.address, subtitle: `${p.channel} · ${p.role}`, meta: p.active ? 'Active' : 'Inactive', tone: (p.active ? 'good' : 'watch') as ModuleTone })),
     ],
     emptyLabel: 'No messaging connections yet.',
@@ -290,15 +291,17 @@ async function loadCoreWorkforceModule(moduleId: string): Promise<ModuleView> {
   if (moduleId === 'applicants') {
     const candidates = await listCandidates()
     const cities = citiesInUse(candidates.map((c) => c.id))
+    const stageRank: Record<string, number> = { Offer: 0, Interview: 1, Screening: 2, Applied: 3, Hired: 4, Rejected: 5 }
+    const sorted = [...candidates].sort((a, b) => (stageRank[a.stage] ?? 3) - (stageRank[b.stage] ?? 3))
     return {
       title: 'Applicants',
-      description: 'Every candidate across every open role, with current stage and city (matches the web Talent location map).',
+      description: 'Every candidate across every open role, furthest along first, with current stage and city (matches the web Talent location map).',
       metrics: [
         { label: 'Total', value: String(candidates.length), tone: 'info' },
         { label: 'In interview', value: String(candidates.filter((c) => c.stage === 'Interview').length), tone: 'watch' },
         { label: 'Cities', value: String(cities.length), tone: 'info' },
       ],
-      items: candidates.map((c) => ({
+      items: sorted.map((c) => ({
         id: c.id,
         title: c.name,
         subtitle: c.job?.title ?? 'Role unavailable',
