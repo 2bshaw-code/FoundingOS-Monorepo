@@ -28,6 +28,7 @@ import {
   listAgentActions,
   reverseAgentActionExecution,
 } from '../../lib/core-operations-api'
+import { getToken as getLegacyToken } from '../../lib/api'
 import { enqueueOutboxAction } from '../../lib/outbox-sync'
 import { useQuantumStore } from '../../lib/store'
 
@@ -133,8 +134,12 @@ export default function FounderCommandDeck() {
   const [onboarding, setOnboarding] = useState<TenantOnboarding | null>(null)
 
   const loadAll = useCallback(async () => {
-    const session = await getSession()
-    setConnected(Boolean(session))
+    const [session, legacyToken] = await Promise.all([getSession(), getLegacyToken()])
+    // A user who only ever signed in through the legacy tester-login path has no
+    // Core.Operations session, but is still legitimately signed in — treat that as
+    // "connected" too so the auto-redirect below doesn't loop back to login forever
+    // (login treats a valid legacy token as signed-in, home would otherwise disagree).
+    setConnected(Boolean(session) || Boolean(legacyToken))
     if (!session) {
       setLoading(false)
       return
