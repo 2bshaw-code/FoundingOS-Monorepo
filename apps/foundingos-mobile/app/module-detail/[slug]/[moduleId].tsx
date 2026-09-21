@@ -387,11 +387,16 @@ async function loadCoreIntelligenceModule(moduleId: string): Promise<ModuleView>
     }
   }
   if (moduleId === 'signals') {
+    const severityRank: Record<string, number> = { material: 0, watch: 1, positive: 2 }
+    const sorted = [...data.emergingSignals].sort((a, b) => {
+      const rank = (severityRank[a.severity] ?? 1) - (severityRank[b.severity] ?? 1)
+      return rank !== 0 ? rank : b.reliability - a.reliability
+    })
     return {
       title: 'Signals',
-      description: 'Emerging signals surfaced across the governed action ledger.',
+      description: 'Emerging signals surfaced across the governed action ledger, most material and reliable first.',
       metrics: [{ label: 'Active signals', value: String(data.emergingSignals.length), tone: 'info' }],
-      items: data.emergingSignals.map((signal) => ({
+      items: sorted.map((signal) => ({
         id: signal.id,
         title: signal.title,
         subtitle: signal.summary,
@@ -404,11 +409,12 @@ async function loadCoreIntelligenceModule(moduleId: string): Promise<ModuleView>
     }
   }
   // audit-trail
+  const auditSorted = [...data.auditTrail].sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
   return {
     title: 'Audit Trail',
-    description: 'Every governed action stage — suggestion through execution and reversal — with full evidence.',
+    description: 'Every governed action stage — suggestion through execution and reversal — with full evidence, most recent first.',
     metrics: [{ label: 'Recorded events', value: String(data.auditTrail.length), tone: 'info' }],
-    items: data.auditTrail.map((entry) => ({
+    items: auditSorted.map((entry) => ({
       id: entry.id,
       title: entry.actionTitle,
       subtitle: `${entry.stage.toUpperCase()} · ${entry.actor}`,
