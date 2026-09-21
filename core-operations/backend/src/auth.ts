@@ -5,6 +5,7 @@
 import bcrypt from 'bcrypt'
 import { AuthService, createAccessMiddleware, createAuthRouter, createPasswordResetWebhook, createPrismaAuthRepository, groupTokenContract, roles } from '@founder-os/auth'
 import { PrismaClient } from './generated/prisma/index.js'
+import { workspaceSlugs } from './platform.js'
 
 const required = (name: string) => {
   const value = process.env[name]
@@ -64,6 +65,21 @@ const ensureDemoFounderUser = async () => {
     },
     update: {},
   })
+  // Every workspace (retail, logistics, finance, marketing, talent, health,
+  // intelligence) must have an enabled TenantWorkspace row before its generic
+  // module records endpoint (/platform/workspaces/:workspace/:module/records)
+  // will serve this tenant — bootstrapTenant() does this for brand-new
+  // sign-ups, but this seeded demo account predates that flow, so it needs
+  // the same entitlements created explicitly here.
+  await Promise.all(
+    workspaceSlugs.map((workspace) =>
+      prisma.tenantWorkspace.upsert({
+        where: { tenantId_workspace: { tenantId: resolvedTenantId, workspace } },
+        create: { tenantId: resolvedTenantId, workspace, enabled: true, plan: 'growth', modules: [] },
+        update: { enabled: true },
+      }),
+    ),
+  )
 }
 
 if (process.env.APP_MODE === 'demo') {
