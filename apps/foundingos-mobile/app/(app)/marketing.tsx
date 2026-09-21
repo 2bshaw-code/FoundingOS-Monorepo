@@ -2,6 +2,7 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
+import { router } from 'expo-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, RefreshControl, StyleSheet, View } from 'react-native'
 import {
@@ -289,7 +290,12 @@ export default function MarketingScreen() {
       </QuantumCard>
 
       {notice ? <QuantumNotice tone="info">{notice}</QuantumNotice> : null}
-      {!connected ? <QuantumNotice tone="warning">Sign in with your Core.Operations account to manage live marketing records.</QuantumNotice> : null}
+      {!connected ? (
+        <View style={{ gap: quantumSpace.sm }}>
+          <QuantumNotice tone="warning">Sign in with your Core.Operations account to manage live marketing records.</QuantumNotice>
+          <QuantumButton onPress={() => router.push('/')}>Sign in</QuantumButton>
+        </View>
+      ) : null}
       {connected && !workspace ? <QuantumNotice tone="danger">Marketing data could not be loaded. Pull to refresh.</QuantumNotice> : null}
 
       {workspace ? (

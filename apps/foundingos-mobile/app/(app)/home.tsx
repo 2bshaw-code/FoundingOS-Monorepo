@@ -529,9 +529,12 @@ export default function FounderCommandDeck() {
       {notice ? <View style={styles.notice}><Text style={styles.noticeText}>{notice}</Text></View> : null}
 
       {!connected && !loading ? (
-        <QuantumNotice tone="warning">
-          Sign in with your Core.Operations account to see live business data, Core.Intelligence signals, and the governed AI Actions Queue.
-        </QuantumNotice>
+        <View style={styles.signInPrompt}>
+          <QuantumNotice tone="warning">
+            Sign in with your Core.Operations account to see live business data, Core.Intelligence signals, and the governed AI Actions Queue.
+          </QuantumNotice>
+          <QuantumButton onPress={() => router.push('/')}>Sign in</QuantumButton>
+        </View>
       ) : null}
 
       {loading ? (
@@ -668,6 +671,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(56, 189, 248, 0.35)',
   },
   noticeText: { color: '#BEE9FF', fontSize: 14, fontWeight: '700', textAlign: 'center' },
+  signInPrompt: { gap: quantumSpace.sm },
   loadingRow: { alignItems: 'center', justifyContent: 'center', gap: quantumSpace.sm, paddingVertical: 28 },
   loadingText: { color: '#D9E4EF', fontSize: 15 },
   sectionHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: quantumSpace.md },
