@@ -210,7 +210,7 @@ export default function TeamScreen() {
         invitations.map((invitation) => (
           <QuantumCard key={invitation.id} accent={getSemanticColor('watch')}>
             <QuantumText style={styles.title}>{invitation.email}</QuantumText>
-            <QuantumText variant="caption" color="#7F7F7F">
+            <QuantumText variant="caption">
               {roleLabel(invitation.role)} · expires {new Date(invitation.expiresAt).toLocaleDateString('en-GB')}
             </QuantumText>
             <View style={styles.actionRow}>
@@ -232,7 +232,7 @@ export default function TeamScreen() {
         members.map((member) => (
           <QuantumCard key={member.id} accent={member.active ? FOUNDINGOS_ACCENT : getSemanticColor('risk')}>
             <QuantumText style={styles.title}>{member.email}</QuantumText>
-            <QuantumText variant="caption" color="#7F7F7F">
+            <QuantumText variant="caption">
               {roleLabel(member.role)} · {member.active ? 'Active' : 'Suspended'}
             </QuantumText>
             <View style={styles.pillRow}>

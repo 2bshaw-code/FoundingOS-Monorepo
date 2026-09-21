@@ -5,7 +5,7 @@
 import { router } from 'expo-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, RefreshControl, StyleSheet, View } from 'react-native'
-import { getAllOutboxItems } from '../../lib/outbox-sync'
+import { getAllOutboxItems } from '../../../lib/outbox-sync'
 import {
   AgentAction,
   MessagingChannelConnection,
@@ -17,7 +17,7 @@ import {
   getSession,
   listAgentActions,
   sendMessagingIntelligenceBrief,
-} from '../../lib/core-operations-api'
+} from '../../../lib/core-operations-api'
 import {
   QuantumButton,
   QuantumCard,
@@ -28,7 +28,7 @@ import {
   quantumColors,
   quantumSpace,
   useActiveQuantumTheme,
-} from '../../components/QuantumUI'
+} from '../../../components/QuantumUI'
 
 function formatParticipant(participant: MessagingParticipant) {
   return participant.displayName ? `${participant.displayName} · ${participant.address}` : participant.address

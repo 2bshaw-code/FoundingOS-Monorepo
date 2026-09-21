@@ -183,7 +183,7 @@ export default function OnboardingScreen() {
       <QuantumSectionHeader label="WhatsApp connection" />
       <QuantumCard accent={getSemanticColor(whatsappConnected ? 'good' : 'watch')}>
         <QuantumText style={styles.title}>{whatsappConnected ? 'WhatsApp connected' : 'WhatsApp not yet connected'}</QuantumText>
-        <QuantumText variant="caption" color="#7F7F7F">
+        <QuantumText variant="caption">
           {readiness ? `${readiness.authorizedParticipants} authorized participant(s)` : 'Connection status unavailable.'}
         </QuantumText>
         {!whatsappConnected && readiness?.webFallbackUrl ? (

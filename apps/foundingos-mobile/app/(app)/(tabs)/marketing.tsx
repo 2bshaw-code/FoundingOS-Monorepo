@@ -16,7 +16,7 @@ import {
   getSession,
   updateMarketingCampaign,
   updateMarketingSocialPost,
-} from '../../lib/core-operations-api'
+} from '../../../lib/core-operations-api'
 import {
   QuantumButton,
   QuantumCard,
@@ -28,7 +28,7 @@ import {
   QuantumTextInput,
   quantumSpace,
   useActiveQuantumTheme,
-} from '../../components/QuantumUI'
+} from '../../../components/QuantumUI'
 
 type CampaignDraft = {
   status: string
