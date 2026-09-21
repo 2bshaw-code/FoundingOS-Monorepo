@@ -125,11 +125,13 @@ function buildMarketingCalendar(campaigns: { id: string; name: string; status: s
 async function loadCoreOperationsModule(moduleId: string): Promise<ModuleView> {
   if (moduleId === 'crm') {
     const records = buildCrmRecords()
-    const hot = records.filter((r) => computeLeadScore(r, records).tier === 'Hot').length
+    const scored = records.map((r) => ({ record: r, ...computeLeadScore(r, records) }))
+    const hot = scored.filter((s) => s.tier === 'Hot').length
     const overdue = records.filter((r) => r.daysUntilFollowUp < 0).length
+    const sortedRecords = [...scored].sort((a, b) => b.score - a.score).map((s) => s.record)
     return {
       title: 'CRM',
-      description: 'Every contact with an explainable lead score, follow-up status, and a live company credit check.',
+      description: 'Every contact with an explainable lead score, follow-up status, and a live company credit check. Sorted hottest first.',
       metrics: [
         { label: 'Contacts', value: String(records.length), tone: 'info' },
         { label: '🔥 Hot leads', value: String(hot), tone: hot > 0 ? 'good' : 'watch' },
@@ -139,7 +141,7 @@ async function loadCoreOperationsModule(moduleId: string): Promise<ModuleView> {
       emptyLabel: 'No contacts yet.',
       ctaLabel: 'Open Core.Operations',
       ctaRoute: '/(app)/home',
-      crm: { records },
+      crm: { records: sortedRecords },
     }
   }
   if (moduleId === 'orders') {
