@@ -1076,6 +1076,19 @@ const dueBadge = (dueDate?: string): { label: string; tone: 'overdue' | 'soon' |
   return { label: `Due ${due.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' })}`, tone: 'later' }
 }
 
+// Counts how many records in a module are overdue or due today — powers the red follow-up
+// dot in the sidebar nav so a founder can see at a glance which modules need attention,
+// the same "what needs me today" signal HubSpot/Pipedrive surface on their nav rail.
+const overdueCount = (records: WorkspaceRecord[] | undefined): number => {
+  if (!records?.length) return 0
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  return records.filter((record) => {
+    if (!record.dueDate) return false
+    const due = new Date(`${record.dueDate}T00:00:00`)
+    return !Number.isNaN(due.getTime()) && due.getTime() <= today.getTime()
+  }).length
+}
+
 const directoryMetricLabel = (group: string): string => {
   if (group === 'Resources') return 'capacity'
   if (group === 'Commerce' || group === 'Distribution') return 'stock health'
@@ -2609,7 +2622,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
   else if (current.id === 'settings') content = <SettingsPage config={config} production={production} state={state} update={update} />
   else content = <RecordsPage adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} />
   return <main className="retail-product-shell complete-workspace-shell" style={{ ['--retail-accent' as string]: config.accent }}>
-    <aside className="retail-product-sidebar"><Link className="retail-product-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{config.suite}</small></div></Link><div className="retail-product-store"><span>{config.label.slice(0, 2).toUpperCase()}</span><div><strong>{state.settings.businessName}</strong><small>{config.label} Workspace</small></div><b>⌄</b></div><nav aria-label={`${config.label} workspace navigation`}>{groups.map((group) => <div key={group}><p>{group}</p>{config.modules.filter((item) => item.group === group).map((item) => <Link className={item.id === current.id ? 'active' : ''} href={`${workspaceRoot}/${workspace}${item.id === 'overview' ? '' : `/${item.id}`}`} key={item.id}><i>{item.id === 'overview' ? '⌂' : '◇'}</i><span>{item.label}</span>{state.records[item.id]?.length ? <em>{state.records[item.id].length}</em> : null}</Link>)}</div>)}</nav><Link className="retail-product-switcher" href={workspaceRoot}><span>Switch workspace</span><b>↗</b></Link></aside>
+    <aside className="retail-product-sidebar"><Link className="retail-product-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{config.suite}</small></div></Link><div className="retail-product-store"><span>{config.label.slice(0, 2).toUpperCase()}</span><div><strong>{state.settings.businessName}</strong><small>{config.label} Workspace</small></div><b>⌄</b></div><nav aria-label={`${config.label} workspace navigation`}>{groups.map((group) => <div key={group}><p>{group}</p>{config.modules.filter((item) => item.group === group).map((item) => <Link className={item.id === current.id ? 'active' : ''} href={`${workspaceRoot}/${workspace}${item.id === 'overview' ? '' : `/${item.id}`}`} key={item.id}><i>{item.id === 'overview' ? '⌂' : '◇'}</i><span>{item.label}</span>{state.records[item.id]?.length ? <em>{state.records[item.id].length}</em> : null}{overdueCount(state.records[item.id]) ? <b aria-label={`${overdueCount(state.records[item.id])} follow-ups due`} className="retail-product-nav-dot" title={`${overdueCount(state.records[item.id])} follow-up${overdueCount(state.records[item.id]) === 1 ? '' : 's'} due`} /> : null}</Link>)}</div>)}</nav><Link className="retail-product-switcher" href={workspaceRoot}><span>Switch workspace</span><b>↗</b></Link></aside>
     <section className="retail-product-main"><header className="retail-product-topbar"><form onSubmit={(event) => event.preventDefault()}><span>⌕</span><input aria-label="Global workspace search" placeholder={`Search ${config.label}, or ask FoundAI…`} /></form><div><span className="complete-workspace-live">● {production ? 'PRODUCTION' : 'SIMULATION'} LIVE</span>{production ? <button className="complete-workspace-signout" onClick={() => void logoutProduction().then(() => setSession(null))} type="button">Sign out</button> : null}<form action="/api/access/logout" method="post"><button className="complete-workspace-signout" type="submit">Log out</button></form><span className="retail-product-user">{session?.user.email.slice(0, 2).toUpperCase() || 'BS'}</span></div></header><div className="retail-product-content"><div className="retail-product-notice"><span>{loading ? '…' : error ? '!' : '✓'}</span>{loading ? 'Loading tenant data…' : error ? error : production ? 'Tenant data is secured in PostgreSQL and every action is audited' : 'Interactive simulation · actions persist in this browser'}</div>{content}</div><footer className="retail-product-footer"><span>{config.label} Workspace · {production ? 'tenant-isolated production data' : 'browser-persistent shared simulation'}</span>{!production ? <button onClick={reset} type="button">Reset {config.label} data</button> : null}</footer></section>
   </main>
 }
