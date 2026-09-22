@@ -98,9 +98,16 @@ async function refreshSession(): Promise<CoreWorkforceSession | null> {
     const current = await getSession()
     if (!current?.refreshToken) return null
     try {
+      // See matching comment in core-operations-api.ts — the device fingerprint header
+      // is required by the backend or every refresh attempt fails and clears the session.
+      const deviceFingerprint = await getDeviceFingerprint()
       const response = await fetch(`${CORE_WORKFORCE_API_BASE}/api/v1/auth/refresh`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-refresh-token': current.refreshToken },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-refresh-token': current.refreshToken,
+          'X-Device-Fingerprint': deviceFingerprint,
+        },
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok || !data?.success) {

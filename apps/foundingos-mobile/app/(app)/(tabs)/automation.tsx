@@ -117,7 +117,7 @@ export default function AutomationScreen() {
       {!connected && !loading ? (
         <View style={{ gap: quantumSpace.sm }}>
           <QuantumNotice tone="warning">Sign in with your Core.Operations account to inspect real messaging readiness.</QuantumNotice>
-          <QuantumButton onPress={() => router.replace('/')}>Sign in</QuantumButton>
+          <QuantumButton onPress={() => router.replace({ pathname: '/', params: { returnTo: '/(app)/(tabs)/automation' } })}>Sign in</QuantumButton>
         </View>
       ) : null}
 
