@@ -5,11 +5,17 @@
 import { router } from 'expo-router'
 import { useEffect, useMemo, useState } from 'react'
 import { Pressable, View, StyleSheet } from 'react-native'
-import { BRANDS, FOUNDINGOS_ACCENT } from '../../../lib/brands'
+import { FOUNDINGOS_ACCENT } from '../../../lib/brands'
 import { getSession } from '../../../lib/core-operations-api'
+import { SUITE_LINKS } from '../../../lib/nav-directory'
 import { WORKSPACES } from '../../../lib/workspace-modules'
 import { useQuantumStore } from '../../../lib/store'
-import { QuantumButton, QuantumCard, QuantumHeader, QuantumNotice, QuantumScreen, QuantumSectionHeader, QuantumText, quantumSpace } from '../../../components/QuantumUI'
+import { QuantumCard, QuantumHeader, QuantumNotice, QuantumScreen, QuantumSectionHeader, QuantumText, quantumSpace } from '../../../components/QuantumUI'
+
+// Every destination in the app — the suites, their dedicated dashboards, and the
+// live per-workspace module grids — lives on this one directory screen instead of
+// being spread across a crowded 8-item tab bar. This mirrors the web app, where a
+// single workspace picker is the front door and everything else is one tap deeper.
 
 export default function WorkspaceDirectoryScreen() {
   const setActiveBrand = useQuantumStore((state) => state.setActiveBrand)
@@ -19,52 +25,49 @@ export default function WorkspaceDirectoryScreen() {
     getSession().then((session) => setConnected(Boolean(session)))
   }, [])
 
-  const statuses = useMemo(() => ({
-    foundingos: { label: connected ? 'Shell active' : 'Shell ready', tone: 'info' as const, route: '/home' },
-    core_operations: { label: connected ? 'Live Core.Operations data connected' : 'Sign in required', tone: connected ? 'success' as const : 'warning' as const, route: '/home' },
-    core_workforce: { label: 'Not yet connected to a real backend', tone: 'warning' as const, route: null },
-    core_intelligence: { label: connected ? 'Live intelligence via Core.Operations' : 'Sign in required', tone: connected ? 'success' as const : 'warning' as const, route: '/intelligence' },
-  }), [connected])
+  const connectionNotice = useMemo(
+    () => (connected ? { label: 'Signed in · live data', tone: 'success' as const } : { label: 'Sign in required for live data', tone: 'warning' as const }),
+    [connected],
+  )
 
-  const openWorkspace = (slug: string, route: string | null) => {
+  const open = (slug: string, route: string) => {
     setActiveBrand(slug)
-    if (route) router.push(route)
+    router.push(route as never)
   }
 
   return (
     <QuantumScreen>
       <QuantumHeader
-        eyebrow="Unified suite directory"
-        title="Workspace Directory"
-        description="Only the four current suite entries remain in the shell: Home, Core.Operations, Core.Workforce, and Core.Intelligence."
+        eyebrow="Everything, one tap away"
+        title="Workspaces"
+        description="Pick a suite or a live workspace below — this is the single starting point for the whole app."
         accent={FOUNDINGOS_ACCENT}
       />
 
-      {BRANDS.map((brand) => {
-        const state = statuses[brand.slug as keyof typeof statuses]
-        return (
-          <QuantumCard key={brand.slug} accent={brand.accent}>
-            <View style={styles.rowBetween}>
-              <View style={styles.flex}>
-                <QuantumText variant="overline" color={brand.accent}>{brand.homeLabel}</QuantumText>
-                <QuantumText variant="h2">{brand.name}</QuantumText>
-                <QuantumText variant="caption">{brand.tagline}</QuantumText>
-              </View>
-              <QuantumNotice tone={state.tone}>{state.label}</QuantumNotice>
-            </View>
-            <View style={styles.moduleGrid}>
-              {brand.modules.map((module) => (
-                <QuantumButton key={module} tone="ghost" onPress={state.route ? () => openWorkspace(brand.slug, state.route) : undefined}>
-                  {module}
-                </QuantumButton>
-              ))}
-            </View>
-            <QuantumButton onPress={() => openWorkspace(brand.slug, state.route)} disabled={!state.route}>
-              {state.route ? `Open ${brand.shortName}` : 'Backend not connected yet'}
-            </QuantumButton>
-          </QuantumCard>
-        )
-      })}
+      <QuantumSectionHeader label="Suites & dashboards" action={<QuantumNotice tone={connectionNotice.tone}>{connectionNotice.label}</QuantumNotice>} />
+      <View style={styles.suiteGrid}>
+        {SUITE_LINKS.filter((suite) => suite.label !== 'Account').map((suite) => (
+          <Pressable key={suite.slug} style={({ pressed }) => [styles.suiteCard, { opacity: pressed ? 0.7 : 1 }]} onPress={() => open(suite.slug, suite.route)}>
+            <QuantumCard accent={suite.accent}>
+              <QuantumText variant="overline" color={suite.accent}>{suite.label}</QuantumText>
+              <QuantumText variant="h3">{suite.name}</QuantumText>
+              <QuantumText variant="caption">{suite.tagline}</QuantumText>
+            </QuantumCard>
+          </Pressable>
+        ))}
+      </View>
+
+      <QuantumSectionHeader label="Account" />
+      <View style={styles.suiteGrid}>
+        {SUITE_LINKS.filter((suite) => suite.label === 'Account').map((suite) => (
+          <Pressable key={suite.slug} style={({ pressed }) => [styles.suiteCard, { opacity: pressed ? 0.7 : 1 }]} onPress={() => open(suite.slug, suite.route)}>
+            <QuantumCard accent={suite.accent}>
+              <QuantumText variant="h3">{suite.name}</QuantumText>
+              <QuantumText variant="caption">{suite.tagline}</QuantumText>
+            </QuantumCard>
+          </Pressable>
+        ))}
+      </View>
 
       <QuantumSectionHeader label="Live workspaces · full module access" />
       <QuantumText variant="caption">
@@ -73,7 +76,7 @@ export default function WorkspaceDirectoryScreen() {
       </QuantumText>
       <View style={styles.workspaceGrid}>
         {WORKSPACES.map((workspace) => (
-          <Pressable key={workspace.slug} style={styles.workspaceCard} onPress={() => router.push(`/workspace/${workspace.slug}`)}>
+          <Pressable key={workspace.slug} style={({ pressed }) => [styles.workspaceCard, { opacity: pressed ? 0.7 : 1 }]} onPress={() => router.push(`/workspace/${workspace.slug}`)}>
             <QuantumCard accent={workspace.accent}>
               <QuantumText variant="h3">{workspace.label}</QuantumText>
               <QuantumText variant="caption">{workspace.modules.length} modules</QuantumText>
@@ -86,9 +89,8 @@ export default function WorkspaceDirectoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: quantumSpace.md },
-  flex: { flex: 1 },
-  moduleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
+  suiteGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
+  suiteCard: { minWidth: 170, flexGrow: 1 },
   workspaceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
   workspaceCard: { minWidth: 150, flexGrow: 1 },
 })

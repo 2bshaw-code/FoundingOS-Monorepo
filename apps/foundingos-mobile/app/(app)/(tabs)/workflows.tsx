@@ -14,30 +14,40 @@ import {
   QuantumScreen,
   QuantumSectionHeader,
   QuantumText,
+  quantumColors,
   quantumSpace,
   useActiveQuantumTheme,
 } from '../../../components/QuantumUI'
 import {
-  AgentAction,
-  AgentActionStatus,
-  decideAgentAction,
-  executeAgentAction,
-  getSession,
-  listAgentActions,
-  reverseAgentActionExecution,
-} from '../../../lib/core-operations-api'
+  ApprovalsQueueItem,
+  ApprovalsQueueStatus,
+  approveQueueItem,
+  executeQueueItem,
+  fetchApprovalsQueue,
+  fetchQueueItemTrail,
+  outboxActionType,
+  rejectQueueItem,
+  reverseQueueItem,
+} from '../../../lib/approvals-queue'
+import { AgentActionTrailEvent } from '../../../lib/core-operations-api'
 import { enqueueOutboxAction } from '../../../lib/outbox-sync'
 import { useQuantumStore } from '../../../lib/store'
 
-const STATUS_LABEL: Record<AgentActionStatus, string> = {
+const STATUS_LABEL: Record<ApprovalsQueueStatus, string> = {
   proposed: 'Suggested',
   approved: 'Awaiting execution',
   rejected: 'Rejected',
   executing: 'Executing',
   completed: 'Executed',
+  reversed: 'Reversed',
 }
 
-const FILTERS: Array<{ label: string; status?: AgentActionStatus }> = [
+const SOURCE_LABEL: Record<ApprovalsQueueItem['source'], string> = {
+  core_operations: 'Core.Operations',
+  core_workforce: 'Core.Workforce',
+}
+
+const FILTERS: Array<{ label: string; status?: ApprovalsQueueStatus }> = [
   { label: 'All' },
   { label: 'Suggested', status: 'proposed' },
   { label: 'Awaiting execution', status: 'approved' },
@@ -66,19 +76,18 @@ export default function WorkflowsScreen() {
   const [connected, setConnected] = useState(false)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [actions, setActions] = useState<AgentAction[]>([])
+  const [actions, setActions] = useState<ApprovalsQueueItem[]>([])
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>(FILTERS[0])
   const [busyId, setBusyId] = useState<string | null>(null)
   const [notice, setNotice] = useState('')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [trail, setTrail] = useState<AgentActionTrailEvent[]>([])
+  const [trailLoading, setTrailLoading] = useState(false)
 
   const load = useCallback(async () => {
-    const session = await getSession()
-    setConnected(Boolean(session))
-    if (!session) {
-      setLoading(false)
-      return
-    }
-    setActions(await listAgentActions().catch(() => []))
+    const result = await fetchApprovalsQueue()
+    setConnected(result.coreOperationsConnected || result.coreWorkforceConnected)
+    setActions(result.items)
     setLoading(false)
   }, [])
 
@@ -91,17 +100,28 @@ export default function WorkflowsScreen() {
     setTimeout(() => setNotice(''), 3500)
   }
 
-  const run = async (action: AgentAction, outboxType: string, call: () => Promise<AgentAction>) => {
+  const run = async (action: ApprovalsQueueItem, kind: 'APPROVE' | 'REJECT' | 'EXECUTE' | 'REVERSE', call: () => Promise<unknown>) => {
     setBusyId(action.id)
+    // Optimistic UI: reflect the decision immediately so approving/rejecting
+    // feels instant, then reconcile with the server in the background. Only
+    // rolled back if the server genuinely rejects the action (4xx) — a
+    // network failure keeps the optimistic state since it's queued to sync.
+    const optimisticStatus: ApprovalsQueueStatus | null =
+      kind === 'APPROVE' ? 'approved' : kind === 'REJECT' ? 'rejected' : kind === 'EXECUTE' ? 'completed' : kind === 'REVERSE' ? 'reversed' : null
+    const previous = actions
+    if (optimisticStatus) {
+      setActions((current) => current.map((item) => (item.id === action.id ? { ...item, status: optimisticStatus } : item)))
+    }
     try {
       await call()
-      await load()
       showNotice('Done. Recorded in the audit trail.')
+      load()
     } catch (err: any) {
       if (err?.status && err.status < 500) {
+        setActions(previous)
         showNotice(err.message || 'That action could not be completed.')
       } else {
-        await enqueueOutboxAction(outboxType, activeBrandSlug, { actionId: action.id })
+        await enqueueOutboxAction(outboxActionType(action, kind), activeBrandSlug, { actionId: action.id })
         showNotice('Offline — queued for secure sync.')
       }
     } finally {
@@ -122,39 +142,77 @@ export default function WorkflowsScreen() {
     rejected: actions.filter((action) => action.status === 'rejected').length,
   }
 
-  const renderActionCard = (action: AgentAction) => (
-    <QuantumCard key={action.id} accent={theme.accent}>
+  const toggleEvidence = async (action: ApprovalsQueueItem) => {
+    if (expandedId === action.id) {
+      setExpandedId(null)
+      return
+    }
+    setExpandedId(action.id)
+    setTrail([])
+    setTrailLoading(true)
+    try {
+      setTrail(await fetchQueueItemTrail(action))
+    } finally {
+      setTrailLoading(false)
+    }
+  }
+
+  const renderActionCard = (action: ApprovalsQueueItem) => (
+    <QuantumCard key={`${action.source}:${action.id}`} accent={theme.accent}>
       <View style={styles.rowBetween}>
-        <QuantumText variant="h3" style={styles.flex}>{action.title || action.kind}</QuantumText>
+        <QuantumText variant="h3" style={styles.flex}>{action.title}</QuantumText>
         <QuantumText variant="caption" color={theme.accent}>{STATUS_LABEL[action.status]}</QuantumText>
       </View>
       <QuantumText>{action.summary}</QuantumText>
       <QuantumText variant="caption" color={theme.subtextColor}>
-        {formatRelativeTime(action.createdAt)} · {action.requiresApproval ? 'Human approval required' : 'Auto-governed'}
+        {SOURCE_LABEL[action.source]} · {formatRelativeTime(action.createdAt)} · {action.requiresApproval ? 'Human approval required' : 'Auto-governed'}
       </QuantumText>
       {action.estimatedValuePence ? <QuantumText variant="caption" color={theme.accent}>Estimated impact {formatPence(action.estimatedValuePence)}</QuantumText> : null}
       <View style={styles.actionRow}>
         {action.status === 'proposed' ? (
           <>
-            <Pressable disabled={busyId === action.id} onPress={() => run(action, 'GOVERNED_ACTION_DECISION_APPROVE', () => decideAgentAction(action.id, 'approve'))}>
+            <Pressable disabled={busyId === action.id} onPress={() => run(action, 'APPROVE', () => approveQueueItem(action))}>
               <QuantumText variant="caption" color={theme.accent}>Approve</QuantumText>
             </Pressable>
-            <Pressable disabled={busyId === action.id} onPress={() => run(action, 'GOVERNED_ACTION_DECISION_REJECT', () => decideAgentAction(action.id, 'reject'))}>
+            <Pressable disabled={busyId === action.id} onPress={() => run(action, 'REJECT', () => rejectQueueItem(action))}>
               <QuantumText variant="caption" color="#FF5470">Reject</QuantumText>
             </Pressable>
           </>
         ) : null}
         {action.status === 'approved' ? (
-          <Pressable disabled={busyId === action.id} onPress={() => run(action, 'GOVERNED_ACTION_EXECUTE', () => executeAgentAction(action.id))}>
+          <Pressable disabled={busyId === action.id} onPress={() => run(action, 'EXECUTE', () => executeQueueItem(action))}>
             <QuantumText variant="caption" color={theme.accent}>Execute</QuantumText>
           </Pressable>
         ) : null}
-        {action.status === 'completed' && action.execution?.status === 'completed' ? (
-          <Pressable disabled={busyId === action.id} onPress={() => run(action, 'GOVERNED_ACTION_REVERSE', () => reverseAgentActionExecution(action.id))}>
+        {action.canUndo ? (
+          <Pressable disabled={busyId === action.id} onPress={() => run(action, 'REVERSE', () => reverseQueueItem(action))}>
             <QuantumText variant="caption" color="#FF5470">Undo</QuantumText>
           </Pressable>
         ) : null}
+        <Pressable onPress={() => toggleEvidence(action)}>
+          <QuantumText variant="caption" color={theme.accent}>{expandedId === action.id ? 'Hide evidence' : 'View evidence'}</QuantumText>
+        </Pressable>
       </View>
+      {expandedId === action.id ? (
+        <View style={styles.trailBox}>
+          {!action.hasEvidenceTrail ? (
+            <QuantumText variant="caption" color={theme.subtextColor}>
+              Not yet available — Core.Workforce doesn't have a per-action audit trail yet. Every decision is still recorded, just not shown here.
+            </QuantumText>
+          ) : trailLoading ? (
+            <ActivityIndicator color={theme.accent} />
+          ) : trail.length === 0 ? (
+            <QuantumText variant="caption" color={theme.subtextColor}>No audit events recorded yet.</QuantumText>
+          ) : (
+            trail.map((event) => (
+              <View key={event.id} style={styles.rowBetween}>
+                <QuantumText variant="caption" style={styles.flex}>{event.type}</QuantumText>
+                <QuantumText variant="caption" color={theme.subtextColor}>{formatRelativeTime(event.createdAt)}</QuantumText>
+              </View>
+            ))
+          )}
+        </View>
+      ) : null}
     </QuantumCard>
   )
 
@@ -169,12 +227,20 @@ export default function WorkflowsScreen() {
   return (
     <QuantumScreen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false) }} tintColor={theme.accent} />}>
       <QuantumCard accent={theme.accent}>
-        <QuantumText variant="overline" color={theme.accent}>Core.Operations</QuantumText>
-        <QuantumText variant="h1">Work & Approvals</QuantumText>
+        <QuantumText variant="overline" color={theme.accent}>Core.Operations · Core.Workforce</QuantumText>
+        <QuantumText variant="h1">Approvals</QuantumText>
         <QuantumText color={theme.subtextColor}>
-          Governed AI actions grouped by what needs a decision now, what is waiting for execution, and what is already part of the audit history.
+          One queue for every governed AI action across the business — grouped by what needs a decision now, what is waiting for execution, and what is already part of the audit history.
         </QuantumText>
       </QuantumCard>
+
+      <View style={styles.trustStrip}>
+        <QuantumText variant="overline" color={quantumColors.neutral300}>What this can and can't do</QuantumText>
+        <QuantumText variant="caption" color={theme.subtextColor}>
+          Can: approve, reject, execute, and undo AI-proposed actions from Core.Operations and Core.Workforce, with a full audit trail.{'\n'}
+          Can't: approve actions on your behalf automatically — every action here waits for a human decision unless it's explicitly marked auto-governed.
+        </QuantumText>
+      </View>
 
       <View style={styles.metricRow}>
         <QuantumMetric label="Suggested" value={counts.proposed} tone="info" />
@@ -187,7 +253,7 @@ export default function WorkflowsScreen() {
 
       {!connected ? (
         <View style={{ gap: quantumSpace.sm }}>
-          <QuantumNotice tone="warning">Sign in with your Core.Operations account to see governed actions.</QuantumNotice>
+          <QuantumNotice tone="warning">Sign in to see governed actions from Core.Operations and Core.Workforce.</QuantumNotice>
           <QuantumButton onPress={() => router.replace({ pathname: '/', params: { returnTo: '/(app)/(tabs)/workflows' } })}>Sign in</QuantumButton>
         </View>
       ) : (
@@ -228,4 +294,6 @@ const styles = StyleSheet.create({
   metricRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
   filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.xs },
   actionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.lg, marginTop: quantumSpace.xs },
+  trustStrip: { gap: quantumSpace.xs, paddingHorizontal: quantumSpace.xs },
+  trailBox: { gap: quantumSpace.xs, marginTop: quantumSpace.xs, paddingTop: quantumSpace.xs, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.08)' },
 })

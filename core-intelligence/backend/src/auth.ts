@@ -27,21 +27,26 @@ export const requireMarketplaceOwner = createAccessMiddleware(authService, [role
 
 const ensureDemoIntelligenceUser = async () => {
   const email = process.env.DEMO_INTELLIGENCE_EMAIL || 'intelligence.manager@demo.local'
+  // passwordHash must only be set on create — see ensureDemoFounderUser below.
   const passwordHash = await bcrypt.hash(process.env.DEMO_INTELLIGENCE_PASSWORD || 'DemoOnly!2026', 12)
   await prisma.authUser.upsert({
     where: { email },
     create: { email, passwordHash, role: roles.itIntelligence, active: true },
-    update: { passwordHash, role: roles.itIntelligence, active: true },
+    update: { role: roles.itIntelligence, active: true },
   })
 }
 
 const ensureDemoFounderUser = async () => {
   const email = process.env.DEMO_FOUNDER_EMAIL || 'founder@demo.local'
+  // Only hash/set a password when the account doesn't exist yet. Re-hashing and
+  // overwriting passwordHash on every cold start/deploy silently reverted any
+  // password reset (e.g. via the forgot-password flow) back to this fixed demo
+  // value, making manual password changes look like they "didn't stick".
   const passwordHash = await bcrypt.hash(process.env.DEMO_FOUNDER_PASSWORD || 'DemoOnly!2026', 12)
   await prisma.authUser.upsert({
     where: { email },
     create: { email, passwordHash, role: roles.founderMaster, active: true },
-    update: { passwordHash, role: roles.founderMaster, active: true },
+    update: { role: roles.founderMaster, active: true },
   })
 }
 

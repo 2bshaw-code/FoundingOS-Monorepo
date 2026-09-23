@@ -2,7 +2,7 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { Router, type RequestHandler } from 'express'
+import { Router, raw, type RequestHandler } from 'express'
 import { createBobRouter } from '@founder-os/bob'
 import { createModuleAccessMiddleware } from '@founder-os/auth'
 import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess } from './auth.js'
@@ -13,7 +13,7 @@ import { addMerchantStaff, merchantWorkspace, ownerMerchantSummary, removeMercha
 import { listEvents, predictEventPattern, publishEvent, queryEvents, registerEventStreamClient, summarizeEventPattern } from './event-feed.js'
 import { generateInsightsFromRecentEvents, listInsights, registerInsightStreamClient } from './insights.js'
 import { listMessagingConnections, listMessagingParticipants, messagingReadiness, processWhatsAppWebhook, saveMessagingConnection, saveMessagingParticipant, sendMessagingIntelligenceBrief } from './messaging-core.js'
-import { acceptTeamInvitation, assertWorkspaceAccess, bootstrapTenant, checkIntegration, completeStripeCheckout, createWorkspaceRecord, deleteWorkspaceRecord, exportGovernanceCsv, getControlSettings, getIntegrationCredentials, getInvitationDetails, getOnboarding, inviteTeamMember, listAuditEvents, listIntegrations, listPendingInvitations, listTeam, listTenantWorkspaces, listWorkspaceRecords, platformReadiness, recordPaymentCheckout, revokeTeamInvitation, resendTeamInvitation, saveControlSettings, saveIntegration, saveOnboarding, saveTenantWorkspace, updateTeamMember, updateWorkspaceRecord } from './platform.js'
+import { acceptTeamInvitation, assertWorkspaceAccess, bootstrapTenant, checkIntegration, completeStripeCheckout, createWorkspaceRecord, deleteWorkspaceRecord, exportGovernanceCsv, getControlSettings, getIntegrationCredentials, getInvitationDetails, getOnboarding, inviteTeamMember, listAuditEvents, listIntegrations, listPendingInvitations, listTeam, listTenantWorkspaces, listWorkspaceRecords, platformReadiness, recordPaymentCheckout, revokeTeamInvitation, resendTeamInvitation, saveControlSettings, saveIntegration, saveOnboarding, saveTenantWorkspace, updateTeamMember, updateWorkspaceRecord, uploadWorkspaceRecordImage } from './platform.js'
 import { verifyBootstrapToken } from './platform-security.js'
 import { createTenantCheckout, verifyStripeWebhookSignature } from './stripe.js'
 import { decideAgentAction, executeAgentAction, getAgentActionTrail, getAgentIntelligenceSummary, listAgentActions, proposeAgentAction, proposeReplenishmentAction, reverseAgentActionExecution } from './agent-actions.js'
@@ -258,6 +258,16 @@ apiRouter.patch('/platform/records/:id', requireMerchantAccess, requireTenant, a
     res.json({ success: true, data: await updateWorkspaceRecord(tenantId, res.locals.auth.id, res.locals.auth.role, String(req.params.id), req.body || {}, res.locals.requestId) })
   } catch (error) { next(error) }
 })
+apiRouter.post('/platform/records/:id/images', requireMerchantAccess, requireTenant, raw({ type: 'image/*', limit: '15mb' }), async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    const contentType = String(req.headers['content-type'] || '')
+    if (!Buffer.isBuffer(req.body)) return res.status(400).json({ success: false, message: 'Send the image as a raw binary body with an image/* Content-Type header' })
+    const result = await uploadWorkspaceRecordImage(tenantId, res.locals.auth.id, res.locals.auth.role, String(req.params.id), { contentType, bytes: req.body }, res.locals.requestId)
+    res.status(201).json({ success: true, data: result })
+  } catch (error) { next(error) }
+})
 apiRouter.delete('/platform/records/:id', requireOwnerAccess, requireTenant, async (req, res, next) => {
   try {
     const tenantId = readTenant(req, res)
@@ -451,11 +461,11 @@ apiRouter.post('/merchant/changes', requireMerchantAccess, requireTenant, requir
 apiRouter.get('/merchants/:id', requireMerchantAccess, requireTenant, requireCoreOperationsModule, (req, res) => res.json({ merchant: { id: req.params.id, tenantId: res.locals.auth.tenantId } }))
 apiRouter.get('/consoles/:id', requireMerchantAccess, requireTenant, requireCoreOperationsModule, (req, res) => res.json({ console: { id: req.params.id, tenantId: res.locals.auth.tenantId } }))
 apiRouter.get('/packages/:id', requireOwnerAccess, requireTenant, requireCoreOperationsModule, (req, res) => res.json({ package: { id: req.params.id, tenantId: res.locals.auth.tenantId } }))
-apiRouter.get('/owner/overview', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (_req, res, next) => {
-  try { res.json(await pipelineSummary(res.locals.auth?.role === 'founder_master' ? undefined : res.locals.auth?.tenantId)) } catch (error) { next(error) }
+apiRouter.get('/owner/overview', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json(await pipelineSummary(readTenant(req, res))) } catch (error) { next(error) }
 })
-apiRouter.get('/owner/pipeline', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (_req, res, next) => {
-  try { res.json({ success: true, data: await pipelineSummary(res.locals.auth?.role === 'founder_master' ? undefined : res.locals.auth?.tenantId) }) } catch (error) { next(error) }
+apiRouter.get('/owner/pipeline', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await pipelineSummary(readTenant(req, res)) }) } catch (error) { next(error) }
 })
 apiRouter.get('/customers', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { res.json({ success: true, data: await listCustomers(readTenant(req, res)) }) } catch (error) { next(error) }
@@ -473,13 +483,13 @@ apiRouter.delete('/customers/:id', requireOwnerAccess, requireTenant, requireCor
   try { res.json({ success: true, data: await deleteCustomer(String(req.params.id), readTenant(req, res)) }) } catch (error) { next(error) }
 })
 apiRouter.post('/leads', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
-  try { res.status(201).json({ success: true, data: await createLead(req.body || {}, res.locals.auth?.role === 'founder_master' ? undefined : res.locals.auth?.tenantId) }) } catch (error) { next(error) }
+  try { res.status(201).json({ success: true, data: await createLead(req.body || {}, writeTenant(req, res) || undefined) }) } catch (error) { next(error) }
 })
 apiRouter.patch('/leads/:id', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
-  try { res.json({ success: true, data: await updateLeadStage(String(req.params.id), req.body?.stage, res.locals.auth?.role === 'founder_master' ? undefined : res.locals.auth?.tenantId) }) } catch (error) { next(error) }
+  try { res.json({ success: true, data: await updateLeadStage(String(req.params.id), req.body?.stage, readTenant(req, res)) } ) } catch (error) { next(error) }
 })
 apiRouter.post('/leads/:id/convert', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
-  try { res.json({ success: true, data: await convertLead(String(req.params.id), res.locals.auth?.role === 'founder_master' ? undefined : res.locals.auth?.tenantId) }) } catch (error) { next(error) }
+  try { res.json({ success: true, data: await convertLead(String(req.params.id), readTenant(req, res)) }) } catch (error) { next(error) }
 })
 apiRouter.get('/owner/operations', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { res.json({ success: true, data: await operationsSummary(readTenant(req, res)) }) } catch (error) { next(error) }

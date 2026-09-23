@@ -144,7 +144,7 @@ export function QuantumScreen({ children, scroll = true, refreshControl, style, 
         locations={[0, 0.55, 1]}
         style={StyleSheet.absoluteFill}
       />
-      <View pointerEvents="none" style={[styles.screenGlow, { backgroundColor: theme.accent, opacity: 0.16 }]} />
+      <View pointerEvents="none" style={[styles.screenGlow, { backgroundColor: theme.accent, opacity: 0.07 }]} />
       <SafeAreaView style={containerStyle} edges={['left', 'right', 'bottom']}>
         {scroll ? (
           <ScrollView
@@ -236,7 +236,7 @@ export function QuantumButton({ children, onPress, tone = 'primary', disabled, s
     tone === 'primary' ? theme.accent : tone === 'danger' ? quantumColors.danger : tone === 'secondary' ? theme.bgSecondary : 'transparent'
   const borderColor = tone === 'ghost' || tone === 'secondary' ? theme.borderColor : backgroundColor
   const textColor = tone === 'primary' || tone === 'danger' ? quantumColors.neutral900 : theme.textColor
-  const gradientColors = tone === 'primary' ? [shadeColor(theme.accent, 18), theme.accent, shadeColor(theme.accent, -18)] : null
+  const gradientColors = tone === 'primary' ? [shadeColor(theme.accent, 4), shadeColor(theme.accent, -12), shadeColor(theme.accent, -28)] : null
 
   return (
     <Pressable
@@ -277,13 +277,13 @@ export function QuantumPill({ children, active, accent, onPress }: QuantumPillPr
         styles.pill,
         {
           borderColor: resolvedAccent,
-          backgroundColor: active ? resolvedAccent : 'transparent',
+          backgroundColor: active ? shadeColor(resolvedAccent, -22) : 'transparent',
         },
       ]}
       onPress={onPress}
       disabled={!onPress}
     >
-      <QuantumText variant="label" color={active ? quantumColors.neutral900 : theme.textColor}>
+      <QuantumText variant="label" color={active ? quantumColors.neutral0 : theme.textColor}>
         {children}
       </QuantumText>
     </Pressable>
@@ -326,6 +326,16 @@ export function QuantumPasswordInput(props: TextInputProps) {
         placeholderTextColor={quantumColors.neutral500}
         {...props}
         secureTextEntry={!visible}
+        // Passwords must never be auto-capitalized/auto-corrected — the OS keyboard
+        // silently mangling characters (capitalizing after punctuation, "correcting"
+        // words) was causing valid passwords to be sent to the backend incorrectly,
+        // which surfaced as a confusing "sign in succeeds on Home but fails everywhere
+        // else" bug rather than a visible wrong-password error.
+        autoCapitalize="none"
+        autoCorrect={false}
+        autoComplete="password"
+        textContentType="password"
+        spellCheck={false}
         style={[
           styles.input,
           { backgroundColor: theme.bgSecondary, borderColor: theme.borderColor, color: theme.textColor, paddingRight: 56 },
@@ -374,8 +384,9 @@ export function QuantumListItem({
 }) {
   const theme = useActiveQuantumTheme()
   const Wrapper = onPress ? Pressable : View
+  const pressStyle = onPress ? ({ pressed }: { pressed: boolean }) => [styles.listItem, { borderColor: accent ?? theme.borderColor, backgroundColor: theme.cardBg, opacity: pressed ? 0.7 : 1 }] : [styles.listItem, { borderColor: accent ?? theme.borderColor, backgroundColor: theme.cardBg }]
   return (
-    <Wrapper style={[styles.listItem, { borderColor: accent ?? theme.borderColor, backgroundColor: theme.cardBg }]} onPress={onPress}>
+    <Wrapper style={pressStyle} onPress={onPress}>
       <View style={[styles.listDot, { backgroundColor: accent ?? theme.accent }]} />
       <View style={styles.listCopy}>
         <QuantumText variant="h3">{title}</QuantumText>

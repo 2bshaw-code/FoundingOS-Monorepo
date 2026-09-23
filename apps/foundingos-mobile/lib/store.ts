@@ -103,8 +103,6 @@ interface QuantumState {
   role: UserRole
   tier: UserTier
   lowEndMode: boolean
-  commandBarOpen: boolean
-  quantumWheelOpen: boolean
   isOnline: boolean
   pendingSyncCount: number
   licensedSuites: { core_workforce: boolean; core_intelligence: boolean }
@@ -114,8 +112,6 @@ interface QuantumState {
   setTier: (tier: UserTier) => void
   toggleLowEndMode: () => void
   setLowEndMode: (enabled: boolean) => void
-  setCommandBarOpen: (open: boolean) => void
-  setQuantumWheelOpen: (open: boolean) => void
   setIsOnline: (online: boolean) => void
   setPendingSyncCount: (count: number) => void
   setLicensedSuites: (suites: { core_workforce: boolean; core_intelligence: boolean }) => void
@@ -130,8 +126,6 @@ export const useQuantumStore = create<QuantumState>((set, get) => ({
   role: 'founder',
   tier: 'enterprise',
   lowEndMode: false,
-  commandBarOpen: false,
-  quantumWheelOpen: false,
   isOnline: true,
   pendingSyncCount: 0,
   // Defaults to visible so the shell renders instantly; corrected once the real
@@ -144,8 +138,6 @@ export const useQuantumStore = create<QuantumState>((set, get) => ({
   setTier: (tier: UserTier) => set({ tier }),
   toggleLowEndMode: () => set((state) => ({ lowEndMode: !state.lowEndMode })),
   setLowEndMode: (enabled: boolean) => set({ lowEndMode: enabled }),
-  setCommandBarOpen: (open: boolean) => set({ commandBarOpen: open }),
-  setQuantumWheelOpen: (open: boolean) => set({ quantumWheelOpen: open }),
   setIsOnline: (online: boolean) => set({ isOnline: online }),
   setPendingSyncCount: (count: number) => set({ pendingSyncCount: count }),
   setLicensedSuites: (suites) => set({ licensedSuites: suites }),

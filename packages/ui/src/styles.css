@@ -2377,6 +2377,22 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   padding: 6px 9px;
 }
 
+.complete-workspace-trust-strip {
+  background: #f5f7fa;
+  border: 1px solid #e5eaf0;
+  border-radius: 8px;
+  color: #4a5568;
+  font-size: 13px;
+  margin: 0 0 4px;
+  padding: 10px 14px;
+}
+
+.complete-workspace-empty-note {
+  color: #718096;
+  font-size: 13px;
+  margin: 12px 0 0;
+}
+
 .complete-workspace-coverage {
   display: grid;
   gap: 8px;
@@ -2394,6 +2410,12 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   gap: 4px;
   padding: 13px;
   text-decoration: none;
+  transition: border-color 0.12s ease, transform 0.12s ease;
+}
+
+.complete-workspace-coverage a:hover {
+  border-color: #b9c3d1;
+  transform: translateY(-1px);
 }
 
 .complete-workspace-coverage strong,
@@ -3990,6 +4012,10 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   margin-bottom: 14px;
 }
 
+.retail-product-nav-group-sunk {
+  opacity: .68;
+}
+
 .retail-product-sidebar nav p {
   color: #60728a;
   font-size: 10px;
@@ -4242,6 +4268,24 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   font-size: 12px;
   font-weight: 800;
   padding: 10px 14px;
+  transition: transform 0.12s ease, opacity 0.12s ease, box-shadow 0.12s ease;
+}
+
+.retail-app-primary:hover:not(:disabled),
+.retail-app-secondary:hover:not(:disabled) {
+  box-shadow: 0 2px 8px rgba(20, 30, 50, .12);
+}
+
+.retail-app-primary:active:not(:disabled),
+.retail-app-secondary:active:not(:disabled) {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
+
+.retail-app-primary:disabled,
+.retail-app-secondary:disabled {
+  cursor: default;
+  opacity: 0.6;
 }
 
 .retail-app-primary {
@@ -4374,6 +4418,12 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   grid-template-columns: auto 1fr auto;
   padding: 13px 2px;
   text-decoration: none;
+  transition: background-color 0.12s ease, padding-left 0.12s ease;
+}
+
+.retail-app-priorities a:hover {
+  background-color: #f7f9fb;
+  padding-left: 6px;
 }
 
 .retail-app-priorities a > i {

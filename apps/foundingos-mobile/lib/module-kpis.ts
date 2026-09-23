@@ -28,6 +28,14 @@ function countByStatus(records: WorkspaceRecordDTO[], status: string): number {
 }
 
 const registry: Record<string, KpiCalculator> = {
+  'retail/products': (records) => {
+    const withPhoto = records.filter((record) => Array.isArray(record.data?.images) && (record.data!.images as unknown[]).length > 0).length
+    return [
+      { label: 'Total products', value: String(records.length), tone: 'info' },
+      { label: 'With photo', value: String(withPhoto), tone: withPhoto === records.length && records.length > 0 ? 'good' : 'watch' },
+      { label: 'Catalogue value', value: money(sumValue(records)), tone: 'info' },
+    ]
+  },
   'retail/inventory': (records) => {
     const low = countByStatus(records, 'Low stock')
     return [

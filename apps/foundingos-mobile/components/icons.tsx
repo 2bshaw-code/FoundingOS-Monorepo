@@ -148,3 +148,12 @@ export function BriefcaseIcon({ color, size = 22 }: IconProps) {
     </Svg>
   )
 }
+
+export function SearchIcon({ color, size = 22 }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="10.5" cy="10.5" r="6.5" stroke={color} strokeWidth={2} />
+      <Path d="m20 20-4.35-4.35" stroke={color} strokeWidth={2} strokeLinecap="round" />
+    </Svg>
+  )
+}

@@ -18,7 +18,7 @@ const standard = ['New', 'In progress', 'Review', 'Complete']
 
 export const WORKSPACES: WorkspaceDef[] = [
   {
-    slug: 'retail', label: 'Retail', accent: '#24c47a',
+    slug: 'retail', label: 'Retail', accent: '#159151',
     description: 'Run sales, customer relationships, marketing, commerce, service, and finance from one connected workspace.',
     modules: [
       mod('overview', 'Home', 'Workspace'), mod('sales-pipeline', 'Sales pipeline', 'Sales', ['Lead', 'Qualified', 'Proposal', 'Won']), mod('orders', 'Orders', 'Sales', ['New', 'Picking', 'Ready', 'Delivered']), mod('point-of-sale', 'Point of sale', 'Sales', ['Open basket', 'Payment due', 'Paid', 'Closed']),

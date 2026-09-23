@@ -153,7 +153,7 @@ async function authedRequest<T>(path: string, init: RequestInit = {}): Promise<T
     headers.set('Authorization', `Bearer ${activeSession.token}`)
     headers.set('X-Device-Fingerprint', deviceFingerprint)
     if (activeSession.tenantId) headers.set('X-Tenant-Id', activeSession.tenantId)
-    if (init.body) headers.set('Content-Type', 'application/json')
+    if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
     return fetch(`${CORE_OPS_API_BASE}${path}`, { ...init, headers })
   }
 
@@ -641,6 +641,26 @@ export const updateWorkspaceRecord = (
   id: string,
   input: { version: number; status?: string; name?: string; valuePence?: number; data?: Record<string, unknown> },
 ) => authedRequest<WorkspaceRecordDTO>(`/api/v1/ops/platform/records/${id}`, { method: 'PATCH', body: JSON.stringify(input) })
+
+// Uploads a photo captured/picked on-device (via expo-image-picker in the
+// workspace/[module] screen's photo capture button) and attaches it to a
+// workspace record — used for Retail Inventory/Products stock photos. The image
+// is read from its local file URI into a Blob and sent as a raw binary body;
+// the backend stores it in Vercel Blob storage and appends the resulting URL
+// to the record's `data.images` array.
+export async function uploadWorkspaceRecordImage(
+  recordId: string,
+  localUri: string,
+  mimeType: string,
+): Promise<{ record: WorkspaceRecordDTO; url: string }> {
+  const fileResponse = await fetch(localUri)
+  const blob = await fileResponse.blob()
+  return authedRequest<{ record: WorkspaceRecordDTO; url: string }>(`/api/v1/ops/platform/records/${recordId}/images`, {
+    method: 'POST',
+    headers: { 'Content-Type': mimeType || 'image/jpeg' },
+    body: blob,
+  })
+}
 
 export async function fetchEventFeed(limit = 20): Promise<PlatformEvent[]> {
   try {

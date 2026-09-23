@@ -2,57 +2,45 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
+// The "Today" tab. Rebuilt around three questions a founder actually asks each
+// morning: what needs me right now, what happened recently, and where do I go
+// next — instead of the old per-workspace command deck that duplicated the
+// Workspaces tab and buried the actual decision queue.
 import { router } from 'expo-router'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { QuantumMiniBars } from '../../../components/QuantumMiniCharts'
-import { QuantumButton, QuantumCard, QuantumNotice, QuantumScreen, QuantumText, quantumColors, quantumSpace } from '../../../components/QuantumUI'
-import { BRANDS, FOUNDINGOS_ACCENT } from '../../../lib/brands'
+import { useCallback, useEffect, useState } from 'react'
+import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import {
-  AgentAction,
-  AgentActionIntelligence,
-  AgentActionTrailEvent,
-  BusinessPulse,
-  OwnerOperationsData,
-  PlatformEvent,
-  TenantOnboarding,
-  decideAgentAction,
-  executeAgentAction,
-  fetchAgentActionIntelligence,
-  fetchBusinessPulse,
-  fetchEventFeed,
-  fetchOnboarding,
-  fetchOwnerOperations,
-  getAgentActionTrail,
-  getSession,
-  listAgentActions,
-  reverseAgentActionExecution,
-} from '../../../lib/core-operations-api'
+  QuantumButton,
+  QuantumCard,
+  QuantumNotice,
+  QuantumScreen,
+  QuantumSectionHeader,
+  QuantumText,
+  quantumColors,
+  quantumRadius,
+  quantumSpace,
+} from '../../../components/QuantumUI'
 import { getToken as getLegacyToken } from '../../../lib/api'
+import {
+  ApprovalsQueueItem,
+  ApprovalsQueueStatus,
+  approveQueueItem,
+  executeQueueItem,
+  fetchApprovalsQueue,
+  outboxActionType,
+  rejectQueueItem,
+} from '../../../lib/approvals-queue'
+import { PlatformEvent, TenantOnboarding, fetchEventFeed, fetchOnboarding, getSession } from '../../../lib/core-operations-api'
 import { enqueueOutboxAction } from '../../../lib/outbox-sync'
 import { useQuantumStore } from '../../../lib/store'
 
-const WORKSPACES = BRANDS.filter((workspace) => workspace.slug !== 'foundingos')
-
-const STATUS_LABEL: Record<AgentAction['status'], string> = {
+const STATUS_LABEL: Record<ApprovalsQueueStatus, string> = {
   proposed: 'Suggested',
   approved: 'Awaiting execution',
   rejected: 'Rejected',
   executing: 'Executing',
   completed: 'Executed',
-}
-
-const STATUS_COLOR: Record<AgentAction['status'], string> = {
-  proposed: '#38BDF8',
-  approved: '#FBBF24',
-  rejected: '#FF5470',
-  executing: '#A78BFA',
-  completed: quantumColors.success,
-}
-
-function formatPence(pence: number | null | undefined): string {
-  if (!pence) return '£0'
-  return `£${(pence / 100).toLocaleString('en-GB', { maximumFractionDigits: 0 })}`
+  reversed: 'Reversed',
 }
 
 function formatRelativeTime(iso: string): string {
@@ -65,98 +53,44 @@ function formatRelativeTime(iso: string): string {
   return `${Math.round(hours / 24)}d ago`
 }
 
-function isOpenOrder(status: string | null | undefined) {
-  const normalized = String(status || '').toLowerCase()
-  return normalized && !['completed', 'delivered', 'cancelled', 'closed', 'fulfilled'].includes(normalized)
+const QUICK_ACTIONS: Array<{ label: string; caption: string; accent: string; onPress: () => void }> = [
+  { label: 'Approvals', caption: 'Decision queue', accent: '#38BDF8', onPress: () => router.push('/workflows') },
+  { label: 'Workspaces', caption: 'All 7 suites', accent: '#A78BFA', onPress: () => router.push('/brands') },
+  { label: 'Sales pipeline', caption: 'Deals in motion', accent: '#26E07F', onPress: () => router.push('/crm') },
+  { label: 'Search', caption: 'Find anything, fast', accent: '#FBBF24', onPress: () => router.push('/search') },
+]
+
+function pluralize(count: number, noun: string): string {
+  return `${count} ${noun}${count === 1 ? '' : 's'}`
 }
 
-function isUnpaidInvoice(status: string | null | undefined) {
-  return !['paid', 'cancelled'].includes(String(status || '').toLowerCase())
-}
-
-function buildDailySeries<T>(
-  items: T[],
-  readDate: (item: T) => string | null | undefined,
-  readValue: (item: T) => number,
-  days = 7
-) {
-  const buckets = Array.from({ length: days }, (_, index) => {
-    const date = new Date()
-    date.setHours(0, 0, 0, 0)
-    date.setDate(date.getDate() - (days - 1 - index))
-    return { key: date.toISOString().slice(0, 10), value: 0 }
-  })
-  const bucketMap = new Map(buckets.map((bucket) => [bucket.key, bucket]))
-  let hasPoint = false
-  for (const item of items) {
-    const rawDate = readDate(item)
-    if (!rawDate) continue
-    const parsed = new Date(rawDate)
-    if (Number.isNaN(parsed.getTime())) continue
-    const key = parsed.toISOString().slice(0, 10)
-    const bucket = bucketMap.get(key)
-    if (!bucket) continue
-    bucket.value += readValue(item)
-    hasPoint = true
-  }
-  return hasPoint ? buckets.map((bucket) => bucket.value) : []
-}
-
-function buildInventoryAlertSeries(operations: OwnerOperationsData | null) {
-  if (!operations) return []
-  const lowStockItems = operations.inventory
-    .filter((item) => item.stock <= item.lowStockLevel)
-    .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
-    .slice(0, 7)
-  return lowStockItems.map((item) => Math.max(1, item.lowStockLevel - item.stock + 1))
-}
-
-export default function FounderCommandDeck() {
-  const role = useQuantumStore((state) => state.role)
+export default function TodayScreen() {
   const activeWorkspaceSlug = useQuantumStore((state) => state.activeBrandSlug)
-  const setActiveWorkspace = useQuantumStore((state) => state.setActiveBrand)
-  const setCommandBarOpen = useQuantumStore((state) => state.setCommandBarOpen)
   const pendingSyncCount = useQuantumStore((state) => state.pendingSyncCount)
 
   const [connected, setConnected] = useState(false)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [pulse, setPulse] = useState<BusinessPulse | null>(null)
-  const [operations, setOperations] = useState<OwnerOperationsData | null>(null)
-  const [actions, setActions] = useState<AgentAction[]>([])
+  const [queue, setQueue] = useState<ApprovalsQueueItem[]>([])
   const [events, setEvents] = useState<PlatformEvent[]>([])
-  const [intelligence, setIntelligence] = useState<AgentActionIntelligence | null>(null)
-  const [notice, setNotice] = useState('')
-  const [busyActionId, setBusyActionId] = useState<string | null>(null)
-  const [expandedActionId, setExpandedActionId] = useState<string | null>(null)
-  const [trail, setTrail] = useState<AgentActionTrailEvent[]>([])
-  const [trailLoading, setTrailLoading] = useState(false)
   const [onboarding, setOnboarding] = useState<TenantOnboarding | null>(null)
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [notice, setNotice] = useState('')
 
   const loadAll = useCallback(async () => {
     const [session, legacyToken] = await Promise.all([getSession(), getLegacyToken()])
-    // A user who only ever signed in through the legacy tester-login path has no
-    // Core.Operations session, but is still legitimately signed in — treat that as
-    // "connected" too so the auto-redirect below doesn't loop back to login forever
-    // (login treats a valid legacy token as signed-in, home would otherwise disagree).
+    // A legacy tester-login has no Core.Operations session but is still a real
+    // sign-in — treat it as connected too, so this screen doesn't disagree
+    // with the login flow and loop back.
     setConnected(Boolean(session) || Boolean(legacyToken))
-    if (!session) {
-      setLoading(false)
-      return
-    }
-    const [actionsResult, pulseResult, operationsResult, eventsResult, intelligenceResult, onboardingResult] = await Promise.all([
-      listAgentActions().catch(() => []),
-      fetchBusinessPulse().catch(() => null),
-      fetchOwnerOperations().catch(() => null),
-      fetchEventFeed(15).catch(() => []),
-      fetchAgentActionIntelligence().catch(() => null),
-      fetchOnboarding().catch(() => null),
+
+    const [queueResult, eventsResult, onboardingResult] = await Promise.all([
+      fetchApprovalsQueue(),
+      session ? fetchEventFeed(10).catch(() => []) : Promise.resolve([]),
+      session ? fetchOnboarding().catch(() => null) : Promise.resolve(null),
     ])
-    setActions(actionsResult)
-    setPulse(pulseResult)
-    setOperations(operationsResult)
+    setQueue(queueResult.items)
     setEvents(eventsResult)
-    setIntelligence(intelligenceResult)
     setOnboarding(onboardingResult)
     setLoading(false)
   }, [])
@@ -165,10 +99,8 @@ export default function FounderCommandDeck() {
     loadAll()
   }, [loadAll])
 
-  // If this screen is ever reached without a valid session — a stale deep link, an
-  // in-memory app resume after a TestFlight update, or any other edge case — send the
-  // user straight to the real login screen instead of leaving them stuck on a passive
-  // "not connected" banner that looks like the update didn't take effect.
+  // A stale deep link or in-memory resume after a TestFlight update should send
+  // the user to the real login screen, not leave them on a passive banner.
   useEffect(() => {
     if (!loading && !connected) {
       router.replace('/')
@@ -180,449 +112,177 @@ export default function FounderCommandDeck() {
     setTimeout(() => setNotice(''), 3500)
   }
 
-  const withOfflineFallback = async (
-    actionId: string,
-    outboxType: string,
-    payload: Record<string, unknown>,
-    run: () => Promise<AgentAction>
-  ) => {
-    setBusyActionId(actionId)
+  const run = async (item: ApprovalsQueueItem, kind: 'APPROVE' | 'REJECT' | 'EXECUTE', call: () => Promise<unknown>) => {
+    setBusyId(item.id)
+    // Optimistic UI: update the queue immediately so approve/reject/execute
+    // feels instant. Reconciled with the server in the background; only
+    // rolled back on a genuine rejection, not a network hiccup.
+    const optimisticStatus: ApprovalsQueueStatus = kind === 'APPROVE' ? 'approved' : kind === 'REJECT' ? 'rejected' : 'completed'
+    const previousQueue = queue
+    setQueue((current) => current.map((queueItem) => (queueItem.id === item.id ? { ...queueItem, status: optimisticStatus } : queueItem)))
     try {
-      await run()
-      await loadAll()
-      showNotice('Done. Full evidence recorded in the audit trail.')
+      await call()
+      showNotice('Done. Recorded in the audit trail.')
+      loadAll()
     } catch (err: any) {
-      if (err?.status && err.status < 500 && err.status !== 0) {
+      if (err?.status && err.status < 500) {
+        setQueue(previousQueue)
         showNotice(err.message || 'That action could not be completed.')
       } else {
-        await enqueueOutboxAction(outboxType, activeWorkspaceSlug, payload)
-        showNotice('Offline — queued for secure sync and will apply automatically once reconnected.')
+        await enqueueOutboxAction(outboxActionType(item, kind), activeWorkspaceSlug, { actionId: item.id })
+        showNotice('Offline — queued for secure sync.')
       }
     } finally {
-      setBusyActionId(null)
+      setBusyId(null)
     }
   }
 
-  const handleDecision = (action: AgentAction, decision: 'approve' | 'reject') =>
-    withOfflineFallback(action.id, `GOVERNED_ACTION_DECISION_${decision.toUpperCase()}`, { actionId: action.id, decision }, () =>
-      decideAgentAction(action.id, decision)
-    )
+  const needsAttention = queue.filter((item) => item.status === 'proposed' || item.status === 'approved').slice(0, 4)
+  const attentionCount = needsAttention.length + (connected && onboarding && onboarding.goLiveStatus !== 'live' ? 1 : 0)
+  const setupIncomplete = connected && onboarding && onboarding.goLiveStatus !== 'live'
 
-  const handleExecute = (action: AgentAction) =>
-    withOfflineFallback(action.id, 'GOVERNED_ACTION_EXECUTE', { actionId: action.id }, () => executeAgentAction(action.id))
-
-  const handleReverse = (action: AgentAction) =>
-    withOfflineFallback(action.id, 'GOVERNED_ACTION_REVERSE', { actionId: action.id }, () => reverseAgentActionExecution(action.id))
-
-  const handleViewEvidence = async (action: AgentAction) => {
-    if (expandedActionId === action.id) {
-      setExpandedActionId(null)
-      return
+  const quickActions = QUICK_ACTIONS.map((action) => {
+    if (action.label === 'Approvals') {
+      return { ...action, caption: queue.length > 0 ? `${pluralize(queue.length, 'item')} in queue` : 'Decision queue' }
     }
-    setExpandedActionId(action.id)
-    setTrail([])
-    setTrailLoading(true)
-    try {
-      setTrail(await getAgentActionTrail(action.id))
-    } catch {
-      setTrail([])
-    } finally {
-      setTrailLoading(false)
-    }
-  }
-
-  const activeWorkspace = BRANDS.find((workspace) => workspace.slug === activeWorkspaceSlug) ?? BRANDS[0]
-  const pulseZero = pulse && !pulse.orderRevenuePence && !pulse.openOrders && !pulse.unpaidInvoices && !pulse.lowStock
-  const actionableActions = actions.filter((action) => ['proposed', 'approved', 'completed'].includes(action.status)).slice(0, 4)
-
-  const revenueSeries = useMemo(
-    () => buildDailySeries(operations?.orders ?? [], (order) => order.createdAt, (order) => order.totalPence),
-    [operations]
-  )
-  const openOrdersSeries = useMemo(
-    () => buildDailySeries(operations?.orders.filter((order) => isOpenOrder(order.status)) ?? [], (order) => order.createdAt, () => 1),
-    [operations]
-  )
-  const overdueInvoicesSeries = useMemo(
-    () => buildDailySeries(
-      operations?.invoices.filter((invoice) => isUnpaidInvoice(invoice.status)) ?? [],
-      (invoice) => invoice.dueAt ?? invoice.createdAt,
-      () => 1
-    ),
-    [operations]
-  )
-  const inventoryAlertSeries = useMemo(() => buildInventoryAlertSeries(operations), [operations])
-
-  const focusedEvents = useMemo(() => {
-    if (activeWorkspaceSlug === 'core_intelligence') {
-      return events.filter((event) => event.type.includes('agent') || event.source.includes('agent') || event.source.includes('messaging')).slice(0, 8)
-    }
-    return events.slice(0, 8)
-  }, [activeWorkspaceSlug, events])
-
-  const renderKpiGrid = () => (
-    <View style={styles.kpiGrid}>
-      <QuantumCard accent="#22C55E" style={styles.kpiPanel}>
-        <Text style={styles.kpiLabel}>Revenue (orders)</Text>
-        <Text style={styles.kpiValue}>{formatPence(pulse?.orderRevenuePence)}</Text>
-        <QuantumMiniBars
-          values={revenueSeries}
-          accent="#22C55E"
-          emptyLabel="Trend data will appear after order activity is recorded."
-          footerLabel={revenueSeries.length ? 'Last 7 days of real order value' : undefined}
-        />
-      </QuantumCard>
-      <QuantumCard accent="#38BDF8" style={styles.kpiPanel}>
-        <Text style={styles.kpiLabel}>Open orders</Text>
-        <Text style={styles.kpiValue}>{pulse?.openOrders ?? 0}</Text>
-        <QuantumMiniBars
-          values={openOrdersSeries}
-          accent="#38BDF8"
-          emptyLabel="Trend data will appear after orders enter the live queue."
-          footerLabel={openOrdersSeries.length ? 'Last 7 days of open-order intake' : undefined}
-        />
-      </QuantumCard>
-      <QuantumCard accent="#FB7185" style={styles.kpiPanel}>
-        <Text style={styles.kpiLabel}>Overdue payments</Text>
-        <Text style={styles.kpiValue}>{pulse?.unpaidInvoices ?? 0}</Text>
-        <Text style={styles.kpiSub}>{formatPence(pulse?.outstandingPence)} outstanding</Text>
-        <QuantumMiniBars
-          values={overdueInvoicesSeries}
-          accent="#FB7185"
-          emptyLabel="Trend data will appear after invoices age into real payment windows."
-          footerLabel={overdueInvoicesSeries.length ? 'Last 7 days of unpaid invoice dates' : undefined}
-        />
-      </QuantumCard>
-      <QuantumCard accent="#FBBF24" style={styles.kpiPanel}>
-        <Text style={styles.kpiLabel}>Inventory alerts</Text>
-        <Text style={styles.kpiValue}>{pulse?.lowStock ?? 0}</Text>
-        <Text style={styles.kpiSub}>of {pulse?.inventoryItems ?? 0} items tracked</Text>
-        <QuantumMiniBars
-          values={inventoryAlertSeries}
-          accent="#FBBF24"
-          emptyLabel="Bar data will appear when live inventory drops below threshold."
-          footerLabel={inventoryAlertSeries.length ? 'Current stock-gap severity across flagged items' : undefined}
-        />
-      </QuantumCard>
-    </View>
-  )
-
-  const renderActionsQueue = () => (
-    <View style={styles.panel}>
-      {actionableActions.length === 0 ? (
-        <Text style={styles.emptyText}>
-          No governed actions right now. FoundingOS will queue replenishment, receivables, delivery, expense,
-          campaign, and budget decisions here as real activity creates them.
-        </Text>
-      ) : (
-        actionableActions.map((action) => {
-          const isBusy = busyActionId === action.id
-          const expanded = expandedActionId === action.id
-          return (
-            <View key={action.id} style={styles.actionCard}>
-              <View style={styles.actionHeaderRow}>
-                <View style={[styles.statusPill, { backgroundColor: `${STATUS_COLOR[action.status]}22`, borderColor: STATUS_COLOR[action.status] }]}>
-                  <Text style={[styles.statusPillText, { color: STATUS_COLOR[action.status] }]}>{STATUS_LABEL[action.status]}</Text>
-                </View>
-                {action.requiresApproval ? <Text style={styles.approvalBadge}>Requires approval</Text> : null}
-              </View>
-              <Text style={styles.actionTitle}>{action.title || action.kind}</Text>
-              <Text style={styles.actionSummary}>{action.summary}</Text>
-              {action.estimatedValuePence ? <Text style={styles.actionValue}>Estimated impact: {formatPence(action.estimatedValuePence)}</Text> : null}
-
-              <View style={styles.actionButtonRow}>
-                {action.status === 'proposed' ? (
-                  <>
-                    <Pressable disabled={isBusy} style={[styles.actionButton, styles.approveButton]} onPress={() => handleDecision(action, 'approve')}>
-                      <Text style={styles.actionButtonText}>{isBusy ? '…' : 'Approve'}</Text>
-                    </Pressable>
-                    <Pressable disabled={isBusy} style={[styles.actionButton, styles.rejectButton]} onPress={() => handleDecision(action, 'reject')}>
-                      <Text style={styles.actionButtonText}>{isBusy ? '…' : 'Reject'}</Text>
-                    </Pressable>
-                  </>
-                ) : null}
-                {action.status === 'approved' ? (
-                  <Pressable disabled={isBusy} style={[styles.actionButton, styles.approveButton]} onPress={() => handleExecute(action)}>
-                    <Text style={styles.actionButtonText}>{isBusy ? '…' : 'Execute'}</Text>
-                  </Pressable>
-                ) : null}
-                {action.status === 'completed' && action.execution?.status === 'completed' ? (
-                  <Pressable disabled={isBusy} style={[styles.actionButton, styles.rejectButton]} onPress={() => handleReverse(action)}>
-                    <Text style={styles.actionButtonText}>{isBusy ? '…' : 'Undo'}</Text>
-                  </Pressable>
-                ) : null}
-                {action.execution?.status === 'reversed' ? <Text style={styles.reversedText}>Reversed</Text> : null}
-                <Pressable style={[styles.actionButton, styles.evidenceButton]} onPress={() => handleViewEvidence(action)}>
-                  <Text style={styles.evidenceButtonText}>{expanded ? 'Hide evidence' : 'View evidence'}</Text>
-                </Pressable>
-              </View>
-
-              {expanded ? (
-                <View style={styles.trailBox}>
-                  {trailLoading ? (
-                    <ActivityIndicator color="#38BDF8" />
-                  ) : trail.length === 0 ? (
-                    <Text style={styles.emptyText}>No audit events recorded yet.</Text>
-                  ) : (
-                    trail.map((event) => (
-                      <View key={event.id} style={styles.trailRow}>
-                        <Text style={styles.trailType}>{event.type}</Text>
-                        <Text style={styles.trailTime}>{formatRelativeTime(event.createdAt)}</Text>
-                      </View>
-                    ))
-                  )}
-                </View>
-              ) : null}
-            </View>
-          )
-        })
-      )}
-    </View>
-  )
-
-  const renderWorkspaceFocus = () => {
-    if (activeWorkspaceSlug === 'core_workforce') {
-      return (
-        <QuantumCard accent={activeWorkspace.accent}>
-          <QuantumText variant="overline" color={activeWorkspace.accent}>Core.Workforce</QuantumText>
-          <QuantumText variant="h2">Present in the shell, not yet connected</QuantumText>
-          <QuantumText>
-            Core.Workforce is visible in navigation now, but it is not connected to a real backend yet. No workforce records are fabricated here.
-          </QuantumText>
-          <QuantumNotice tone="warning">No jobs, candidates, or staffing metrics are shown until a real backend is live.</QuantumNotice>
-        </QuantumCard>
-      )
-    }
-
-    if (activeWorkspaceSlug === 'core_intelligence') {
-      return (
-        <View style={styles.stack}>
-          <QuantumCard accent={activeWorkspace.accent}>
-            <QuantumText variant="overline" color={activeWorkspace.accent}>Core.Intelligence live</QuantumText>
-            <QuantumText variant="h2">Governed learning snapshot</QuantumText>
-            <QuantumText>{intelligence?.snapshot.learningMomentum.narrative ?? 'Live intelligence appears here once you sign in.'}</QuantumText>
-            {intelligence ? (
-              <View style={styles.intelligenceRow}>
-                <View style={styles.intelligenceMetric}>
-                  <Text style={styles.metricLabel}>Accuracy</Text>
-                  <Text style={styles.metricValue}>{intelligence.snapshot.recentAccuracyTrend.current}%</Text>
-                </View>
-                <View style={styles.intelligenceMetric}>
-                  <Text style={styles.metricLabel}>Momentum</Text>
-                  <Text style={styles.metricValue}>{intelligence.snapshot.learningMomentum.score}</Text>
-                </View>
-                <View style={styles.intelligenceMetric}>
-                  <Text style={styles.metricLabel}>Signals</Text>
-                  <Text style={styles.metricValue}>{intelligence.emergingSignals.length}</Text>
-                </View>
-              </View>
-            ) : null}
-            <QuantumButton onPress={() => router.push('/intelligence')}>Open Intelligence</QuantumButton>
-          </QuantumCard>
-          {intelligence?.emergingSignals.length ? (
-            <QuantumCard accent={activeWorkspace.accent}>
-              <QuantumText variant="h3">Latest advisory</QuantumText>
-              <QuantumText>{intelligence.emergingSignals[0].summary}</QuantumText>
-              <QuantumText variant="caption" color="#d9e4ef">{intelligence.emergingSignals[0].advisory}</QuantumText>
-            </QuantumCard>
-          ) : (
-            <QuantumNotice tone="info">{intelligence?.snapshot.recentAccuracyTrend.narrative ?? 'No intelligence snapshot is available yet.'}</QuantumNotice>
-          )}
-        </View>
-      )
-    }
-
-    if (activeWorkspaceSlug === 'core_operations') {
-      return (
-        <View style={styles.stack}>
-          {renderKpiGrid()}
-          <QuantumCard accent={activeWorkspace.accent}>
-            <QuantumText variant="overline" color={activeWorkspace.accent}>Department launchers</QuantumText>
-            <QuantumText variant="h3">Operations keeps the live system moving</QuantumText>
-            <View style={styles.launcherRow}>
-              <QuantumButton onPress={() => router.push('/workflows')}>Open approvals</QuantumButton>
-              <QuantumButton tone="secondary" onPress={() => router.push('/marketing')}>Open marketing</QuantumButton>
-              <QuantumButton tone="secondary" onPress={() => router.push('/crm')}>Open sales pipeline</QuantumButton>
-            </View>
-          </QuantumCard>
-        </View>
-      )
-    }
-
-    return (
-      <View style={styles.stack}>
-        {renderKpiGrid()}
-        <View style={styles.launcherGrid}>
-          <QuantumCard accent="#26E07F" style={styles.launcherCard}>
-            <View style={styles.launcherHeaderRow}>
-              <View style={[styles.workspaceIconBadge, styles.launcherIconBadge, { backgroundColor: '#26E07F22', borderColor: '#26E07F55' }]}>
-                <Text style={[styles.workspaceIconGlyph, { color: '#26E07F', fontSize: 17 }]}>⚙</Text>
-              </View>
-              <QuantumText variant="h3">Core.Operations</QuantumText>
-            </View>
-            <QuantumText variant="caption">Live orders, inventory, approvals, and campaign controls.</QuantumText>
-            <QuantumButton onPress={() => router.push('/workflows')}>Open work</QuantumButton>
-          </QuantumCard>
-          <QuantumCard accent="#38BDF8" style={styles.launcherCard}>
-            <View style={styles.launcherHeaderRow}>
-              <View style={[styles.workspaceIconBadge, styles.launcherIconBadge, { backgroundColor: '#38BDF822', borderColor: '#38BDF855' }]}>
-                <Text style={[styles.workspaceIconGlyph, { color: '#38BDF8', fontSize: 17 }]}>◎</Text>
-              </View>
-              <QuantumText variant="h3">Sales pipeline</QuantumText>
-            </View>
-            <QuantumText variant="caption">Track deals from lead to won with a real kanban-style pipeline.</QuantumText>
-            <QuantumButton onPress={() => router.push('/crm')}>Open pipeline</QuantumButton>
-          </QuantumCard>
-          <QuantumCard accent="#A78BFA" style={styles.launcherCard}>
-            <View style={styles.launcherHeaderRow}>
-              <View style={[styles.workspaceIconBadge, styles.launcherIconBadge, { backgroundColor: '#A78BFA22', borderColor: '#A78BFA55' }]}>
-                <Text style={[styles.workspaceIconGlyph, { color: '#A78BFA', fontSize: 17 }]}>✦</Text>
-              </View>
-              <QuantumText variant="h3">Core.Intelligence</QuantumText>
-            </View>
-            <QuantumText variant="caption">Accuracy trends, learning momentum, emerging signals, and audit history.</QuantumText>
-            <QuantumButton tone="secondary" onPress={() => router.push('/intelligence')}>Open intelligence</QuantumButton>
-          </QuantumCard>
-        </View>
-      </View>
-    )
-  }
+    return action
+  })
 
   return (
     <QuantumScreen
       contentStyle={styles.screen}
       refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={async () => {
-            setRefreshing(true)
-            await loadAll()
-            setRefreshing(false)
-          }}
-          tintColor="#38BDF8"
-        />
+        <RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await loadAll(); setRefreshing(false) }} tintColor="#38BDF8" />
       }
     >
-      <View style={styles.commandHeader}>
+      <View style={styles.header}>
         <View>
           <Text style={styles.product}>FOUNDINGOS</Text>
-          <Text style={styles.title}>Founder Command Deck</Text>
-          <Text style={styles.subtitle}>
-            {role} view · {connected ? 'Core.Operations live' : 'Not connected'}
-          </Text>
+          <Text style={styles.title}>Today</Text>
         </View>
-        <Pressable style={styles.profile} onPress={() => setCommandBarOpen(true)}>
+        <Pressable style={styles.profile} onPress={() => router.push('/search')}>
           <Text style={styles.profileText}>●</Text>
           {connected ? <View style={styles.online} /> : null}
         </Pressable>
       </View>
 
-      {connected && onboarding && onboarding.goLiveStatus !== 'live' ? (
-        <Pressable onPress={() => router.push('/(app)/onboarding')}>
-          <QuantumNotice tone="info">
-            Setup isn't finished yet — complete your business profile and connect WhatsApp to go live. Tap to continue.
-          </QuantumNotice>
-        </Pressable>
-      ) : null}
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.workspaceRail}>
-        <Pressable
-          style={[styles.workspaceTab, activeWorkspaceSlug === 'foundingos' && styles.workspaceTabActive]}
-          onPress={() => setActiveWorkspace('foundingos')}
-        >
-          <View style={[styles.workspaceIconBadge, { backgroundColor: `${FOUNDINGOS_ACCENT}22`, borderColor: `${FOUNDINGOS_ACCENT}55` }]}>
-            <Text style={[styles.workspaceIconGlyph, { color: FOUNDINGOS_ACCENT }]}>⌂</Text>
-          </View>
-          <Text style={styles.workspaceTabLabel}>Overview</Text>
-        </Pressable>
-        {WORKSPACES.map((workspace) => (
-          <Pressable
-            key={workspace.slug}
-            style={[
-              styles.workspaceTab,
-              activeWorkspaceSlug === workspace.slug && { borderColor: workspace.accent, backgroundColor: `${workspace.accent}18` },
-            ]}
-            onPress={() => setActiveWorkspace(workspace.slug)}
-          >
-            <View style={[styles.workspaceIconBadge, { backgroundColor: `${workspace.accent}22`, borderColor: `${workspace.accent}55` }]}>
-              <Text style={[styles.workspaceIconGlyph, { color: workspace.accent }]}>{workspace.icon}</Text>
-            </View>
-            <Text style={styles.workspaceTabLabel}>{workspace.homeLabel}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+      <View style={styles.trustStrip}>
+        <QuantumText variant="caption" color={quantumColors.neutral300}>
+          FoundingOS shows you what needs attention today. Nothing here is simulated.
+        </QuantumText>
+      </View>
 
       {notice ? <View style={styles.notice}><Text style={styles.noticeText}>{notice}</Text></View> : null}
 
       {!connected && !loading ? (
-        <View style={styles.signInPrompt}>
-          <QuantumNotice tone="warning">
-            Sign in with your Core.Operations account to see live business data, Core.Intelligence signals, and the governed AI Actions Queue.
-          </QuantumNotice>
+        <View style={styles.stack}>
+          <QuantumNotice tone="warning">Sign in to see what needs your attention today.</QuantumNotice>
           <QuantumButton onPress={() => router.replace('/')}>Sign in</QuantumButton>
         </View>
       ) : null}
 
       {loading ? (
-        <View style={styles.loadingRow}>
-          <ActivityIndicator color="#38BDF8" />
-          <Text style={styles.loadingText}>Loading live business data…</Text>
-        </View>
+        <>
+          <QuantumSectionHeader label="Needs your attention" />
+          <View style={styles.panel}>
+            <View style={styles.skeletonRow} />
+            <View style={[styles.skeletonRow, styles.skeletonRowShort]} />
+          </View>
+          <QuantumSectionHeader label="Recent activity" />
+          <View style={styles.panel}>
+            <View style={styles.skeletonRow} />
+          </View>
+        </>
       ) : null}
 
       {connected && !loading ? (
         <>
-          <View style={styles.sectionHeading}>
-            <View>
-              <Text style={styles.sectionTitle}>{activeWorkspace.name}</Text>
-              <Text style={styles.sectionCaption}>{activeWorkspace.tagline}</Text>
-            </View>
-            <Text style={styles.live}>● LIVE</Text>
-          </View>
-
-          {renderWorkspaceFocus()}
-
-          {pulseZero ? (
-            <QuantumNotice tone="info">
-              No transactions recorded yet for this tenant. Real numbers will appear here as soon as orders, invoices,
-              inventory, or governed actions are recorded.
-            </QuantumNotice>
-          ) : null}
-
-          {activeWorkspaceSlug !== 'core_workforce' ? (
-            <>
-              <View style={styles.sectionHeading}>
-                <View>
-                  <Text style={styles.sectionTitle}>Governed AI Actions Queue</Text>
-                  <Text style={styles.sectionCaption}>Suggestion → simulation → approval → execution → outcome</Text>
-                </View>
-              </View>
-              {renderActionsQueue()}
-            </>
-          ) : null}
-
-          <View style={styles.sectionHeading}>
-            <View>
-              <Text style={styles.sectionTitle}>Shared Event Feed</Text>
-              <Text style={styles.sectionCaption}>Real cross-suite activity</Text>
-            </View>
-          </View>
+          <QuantumSectionHeader label={attentionCount > 0 ? `Needs your attention · ${attentionCount}` : 'Needs your attention'} />
           <View style={styles.panel}>
-            {focusedEvents.length === 0 ? (
-              <Text style={styles.emptyText}>No cross-suite events yet.</Text>
+            {setupIncomplete ? (
+              <Pressable onPress={() => router.push('/(app)/onboarding')} style={styles.attentionRow}>
+                <View style={[styles.attentionDot, { backgroundColor: '#FBBF24' }]} />
+                <View style={styles.flex}>
+                  <Text style={styles.attentionTitle}>Finish setup to go live</Text>
+                  <Text style={styles.attentionCaption}>Complete your business profile and connect WhatsApp. Tap to continue.</Text>
+                </View>
+              </Pressable>
+            ) : null}
+            {needsAttention.length === 0 && !setupIncomplete ? (
+              <View style={styles.allCaughtUp}>
+                <Text style={styles.allCaughtUpTitle}>You're all caught up.</Text>
+                <Text style={styles.emptyText}>
+                  Nothing needs a decision right now. Real actions from Core.Operations and Core.Workforce will show
+                  up here the moment something needs your call.
+                </Text>
+              </View>
             ) : (
-              focusedEvents.map((event) => (
+              needsAttention.map((item) => {
+                const isBusy = busyId === item.id
+                return (
+                  <View key={`${item.source}:${item.id}`} style={styles.attentionCard}>
+                    <View style={styles.rowBetween}>
+                      <Text style={styles.attentionTitle}>{item.title}</Text>
+                      <Text style={styles.attentionStatus}>{STATUS_LABEL[item.status]}</Text>
+                    </View>
+                    <Text style={styles.attentionCaption}>{item.summary}</Text>
+                    <View style={styles.actionButtonRow}>
+                      {item.status === 'proposed' ? (
+                        <>
+                          <Pressable disabled={isBusy} style={[styles.actionButton, styles.approveButton]} onPress={() => run(item, 'APPROVE', () => approveQueueItem(item))}>
+                            <Text style={styles.actionButtonText}>{isBusy ? '…' : 'Approve'}</Text>
+                          </Pressable>
+                          <Pressable disabled={isBusy} style={[styles.actionButton, styles.rejectButton]} onPress={() => run(item, 'REJECT', () => rejectQueueItem(item))}>
+                            <Text style={styles.actionButtonText}>{isBusy ? '…' : 'Reject'}</Text>
+                          </Pressable>
+                        </>
+                      ) : null}
+                      {item.status === 'approved' ? (
+                        <Pressable disabled={isBusy} style={[styles.actionButton, styles.approveButton]} onPress={() => run(item, 'EXECUTE', () => executeQueueItem(item))}>
+                          <Text style={styles.actionButtonText}>{isBusy ? '…' : 'Execute'}</Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  </View>
+                )
+              })
+            )}
+            {queue.length > needsAttention.length || needsAttention.length > 0 ? (
+              <Pressable onPress={() => router.push('/workflows')}>
+                <Text style={styles.seeAllText}>See all in Approvals →</Text>
+              </Pressable>
+            ) : null}
+          </View>
+
+          <QuantumSectionHeader label="Recent activity" />
+          <View style={styles.panel}>
+            {events.length === 0 ? (
+              <Text style={styles.emptyText}>
+                Nothing has happened across your workspaces yet. Once your team starts working, real activity — not
+                sample data — will show up here.
+              </Text>
+            ) : (
+              events.slice(0, 10).map((event) => (
                 <View key={event.id} style={styles.activityRow}>
-                  <View style={[styles.activityDot, { backgroundColor: activeWorkspace.accent }]} />
-                  <View style={styles.activityCopy}>
+                  <View style={styles.activityDot} />
+                  <View style={styles.flex}>
                     <Text style={styles.activityText}>{event.type}</Text>
-                    <Text style={styles.activityTime}>
-                      {formatRelativeTime(event.createdAt)} · {event.source}
-                    </Text>
+                    <Text style={styles.activityTime}>{formatRelativeTime(event.createdAt)} · {event.source}</Text>
                   </View>
                 </View>
               ))
             )}
+          </View>
+
+          <QuantumSectionHeader label="Quick actions" />
+          <View style={styles.quickGrid}>
+            {quickActions.map((action) => (
+              <QuantumCard key={action.label} accent={action.accent} style={styles.quickCard}>
+                <Text style={[styles.quickLabel, { color: action.accent }]}>{action.label}</Text>
+                <Text style={styles.quickCaption}>{action.caption}</Text>
+                <QuantumButton tone="secondary" onPress={action.onPress}>Open</QuantumButton>
+              </QuantumCard>
+            ))}
           </View>
         </>
       ) : null}
@@ -634,11 +294,10 @@ export default function FounderCommandDeck() {
 
 const styles = StyleSheet.create({
   screen: { gap: quantumSpace.lg },
-  stack: { gap: quantumSpace.md },
-  commandHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  stack: { gap: quantumSpace.sm },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   product: { color: '#38BDF8', fontSize: 13, fontWeight: '900', letterSpacing: 1.4 },
   title: { color: '#fff', fontSize: 30, fontWeight: '900', marginTop: 2 },
-  subtitle: { color: '#D9E4EF', fontSize: 15, marginTop: 6 },
   profile: {
     width: 44,
     height: 44,
@@ -659,35 +318,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: quantumColors.success,
   },
-  workspaceRail: { gap: quantumSpace.sm, paddingRight: quantumSpace.lg },
-  workspaceTab: {
-    minHeight: 40,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    paddingHorizontal: quantumSpace.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: quantumSpace.sm,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-  },
-  workspaceTabActive: {
-    borderColor: '#38BDF8',
-    backgroundColor: 'rgba(56, 189, 248, 0.14)',
-  },
-  workspaceDot: { width: 8, height: 8, borderRadius: 4 },
-  workspaceIconBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  workspaceIconGlyph: { fontSize: 14, fontWeight: '900' },
-  launcherHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: quantumSpace.sm },
-  launcherIconBadge: { width: 32, height: 32, borderRadius: 16 },
-  workspaceTabLabel: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  trustStrip: { paddingHorizontal: 2 },
   notice: {
     borderRadius: 12,
     backgroundColor: 'rgba(56, 189, 248, 0.12)',
@@ -697,35 +328,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(56, 189, 248, 0.35)',
   },
   noticeText: { color: '#BEE9FF', fontSize: 14, fontWeight: '700', textAlign: 'center' },
-  signInPrompt: { gap: quantumSpace.sm },
-  loadingRow: { alignItems: 'center', justifyContent: 'center', gap: quantumSpace.sm, paddingVertical: 28 },
-  loadingText: { color: '#D9E4EF', fontSize: 15 },
-  sectionHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: quantumSpace.md },
-  sectionTitle: { color: '#fff', fontSize: 21, fontWeight: '900' },
-  sectionCaption: { color: '#9FB3C8', fontSize: 14, marginTop: 4 },
-  live: { color: '#38BDF8', fontSize: 13, fontWeight: '900', letterSpacing: 1 },
-  kpiGrid: { gap: quantumSpace.md },
-  kpiPanel: { gap: quantumSpace.sm },
-  kpiLabel: { color: '#B6D7EA', fontSize: 14, fontWeight: '700' },
-  kpiValue: { color: '#fff', fontSize: 28, fontWeight: '900' },
-  kpiSub: { color: '#9FB3C8', fontSize: 14 },
-  intelligenceRow: { flexDirection: 'row', gap: quantumSpace.sm, flexWrap: 'wrap' },
-  intelligenceMetric: {
-    flex: 1,
-    minWidth: 88,
-    padding: quantumSpace.sm,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  metricLabel: { color: '#9FB3C8', fontSize: 13, fontWeight: '700' },
-  metricValue: { color: '#fff', fontSize: 22, fontWeight: '900', marginTop: 4 },
-  launcherGrid: { gap: quantumSpace.md },
-  launcherCard: { gap: quantumSpace.sm },
-  launcherRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
+  skeletonRow: { height: 52, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', marginBottom: quantumSpace.sm },
+  skeletonRowShort: { width: '70%' },
+  flex: { flex: 1 },
+  rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: quantumSpace.md },
   panel: {
-    borderRadius: 20,
+    borderRadius: quantumRadius.lg,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
     backgroundColor: 'rgba(0, 26, 61, 0.78)',
@@ -733,24 +341,24 @@ const styles = StyleSheet.create({
     gap: quantumSpace.md,
   },
   emptyText: { color: '#B8C8D8', fontSize: 15, lineHeight: 19 },
-  actionCard: {
-    borderRadius: 16,
+  allCaughtUp: { gap: 4 },
+  allCaughtUpTitle: { color: quantumColors.success, fontSize: 15, fontWeight: '800' },
+  attentionRow: { flexDirection: 'row', gap: quantumSpace.sm, alignItems: 'flex-start' },
+  attentionDot: { width: 10, height: 10, borderRadius: 5, marginTop: 5 },
+  attentionCard: {
+    borderRadius: quantumRadius.md,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
     backgroundColor: 'rgba(255,255,255,0.03)',
     padding: quantumSpace.md,
     gap: quantumSpace.sm,
   },
-  actionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: quantumSpace.sm },
-  statusPill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
-  statusPillText: { fontSize: 13, fontWeight: '900' },
-  approvalBadge: { color: '#DDEFFF', fontSize: 13, fontWeight: '800' },
-  actionTitle: { color: '#fff', fontSize: 18, fontWeight: '900' },
-  actionSummary: { color: '#D9E4EF', fontSize: 15, lineHeight: 19 },
-  actionValue: { color: '#9DE6BA', fontSize: 14, fontWeight: '800' },
-  actionButtonRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm, alignItems: 'center' },
+  attentionTitle: { color: '#fff', fontSize: 16, fontWeight: '900' },
+  attentionStatus: { color: '#38BDF8', fontSize: 13, fontWeight: '800' },
+  attentionCaption: { color: '#D9E4EF', fontSize: 14, lineHeight: 18 },
+  actionButtonRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
   actionButton: {
-    minHeight: 34,
+    minHeight: 32,
     borderRadius: 999,
     paddingHorizontal: 14,
     alignItems: 'center',
@@ -759,25 +367,15 @@ const styles = StyleSheet.create({
   },
   approveButton: { backgroundColor: '#26E07F', borderColor: '#26E07F' },
   rejectButton: { backgroundColor: '#FF5470', borderColor: '#FF5470' },
-  evidenceButton: { borderColor: '#38BDF8', backgroundColor: 'transparent' },
-  actionButtonText: { color: '#05060A', fontSize: 14, fontWeight: '900' },
-  evidenceButtonText: { color: '#38BDF8', fontSize: 14, fontWeight: '900' },
-  reversedText: { color: '#FCA5A5', fontSize: 14, fontWeight: '800' },
-  trailBox: {
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    padding: quantumSpace.md,
-    gap: quantumSpace.sm,
-  },
-  trailRow: { flexDirection: 'row', justifyContent: 'space-between', gap: quantumSpace.md },
-  trailType: { color: '#DDEFFF', fontSize: 14, fontWeight: '700', flex: 1 },
-  trailTime: { color: '#8AA0B5', fontSize: 13, fontWeight: '700' },
+  actionButtonText: { color: '#05060A', fontSize: 13, fontWeight: '900' },
+  seeAllText: { color: '#38BDF8', fontSize: 14, fontWeight: '800', textAlign: 'center' },
   activityRow: { flexDirection: 'row', gap: quantumSpace.sm, alignItems: 'flex-start' },
-  activityDot: { width: 10, height: 10, borderRadius: 5, marginTop: 4 },
-  activityCopy: { flex: 1, gap: 2 },
+  activityDot: { width: 8, height: 8, borderRadius: 4, marginTop: 5, backgroundColor: '#38BDF8' },
   activityText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   activityTime: { color: '#8AA0B5', fontSize: 13 },
+  quickGrid: { gap: quantumSpace.md },
+  quickCard: { gap: quantumSpace.xs },
+  quickLabel: { fontSize: 17, fontWeight: '900' },
+  quickCaption: { color: '#9FB3C8', fontSize: 14 },
   syncText: { color: '#BEE9FF', fontSize: 14, textAlign: 'center', fontWeight: '700' },
 })

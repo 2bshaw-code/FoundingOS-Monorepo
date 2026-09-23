@@ -4,6 +4,7 @@
 */
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import bcrypt from 'bcrypt'
+import { put } from '@vercel/blob'
 import { roles } from '@founder-os/auth'
 import { Prisma } from './generated/prisma/index.js'
 import { prisma } from './auth.js'
@@ -205,6 +206,41 @@ export async function updateWorkspaceRecord(tenantId: string, actorId: string, r
     publishEvent({ tenantId, type: 'workspace.record.updated', source: record.workspace, payload: { module: record.module, recordId: record.id, reference: record.reference, status: record.status } }),
   ])
   return record
+}
+
+const allowedImageTypes: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/heic': 'heic',
+}
+
+export async function uploadWorkspaceRecordImage(tenantId: string, actorId: string, role: string, id: string, input: { contentType: string; bytes: Buffer }, requestId?: string) {
+  const extension = allowedImageTypes[input.contentType]
+  if (!extension) throw Object.assign(new Error('Unsupported image type. Use JPEG, PNG, WEBP, or HEIC.'), { status: 400 })
+  if (input.bytes.byteLength === 0) throw Object.assign(new Error('Image is empty'), { status: 400 })
+  if (input.bytes.byteLength > 15 * 1024 * 1024) throw Object.assign(new Error('Image must be smaller than 15MB'), { status: 400 })
+
+  const existing = await prisma.workspaceRecord.findFirst({ where: { id, tenantId, deletedAt: null } })
+  if (!existing) throw Object.assign(new Error('Workspace record not found'), { status: 404 })
+  await assertWorkspaceAccess(tenantId, actorId, role, existing.workspace)
+
+  const pathname = `${tenantId}/${existing.workspace}/${existing.module}/${existing.id}/${randomUUID()}.${extension}`
+  const blob = await put(pathname, input.bytes, { access: 'public', contentType: input.contentType, addRandomSuffix: false })
+
+  const data = (existing.data && typeof existing.data === 'object' ? existing.data : {}) as Record<string, unknown>
+  const images = Array.isArray(data.images) ? [...data.images] : []
+  images.push({ url: blob.url, uploadedAt: new Date().toISOString(), uploadedBy: actorId })
+
+  const record = await prisma.workspaceRecord.update({
+    where: { id },
+    data: { data: json({ ...data, images }), version: { increment: 1 }, updatedBy: actorId },
+  })
+  await Promise.all([
+    audit({ tenantId, actorId, action: 'record.image.uploaded', workspace: record.workspace, module: record.module, entityId: record.id, requestId, metadata: { url: blob.url } }),
+    publishEvent({ tenantId, type: 'workspace.record.updated', source: record.workspace, payload: { module: record.module, recordId: record.id, reference: record.reference, status: record.status } }),
+  ])
+  return { record, url: blob.url }
 }
 
 export async function deleteWorkspaceRecord(tenantId: string, actorId: string, role: string, id: string, requestId?: string) {

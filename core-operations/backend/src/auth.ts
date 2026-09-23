@@ -30,11 +30,15 @@ export const requireTenantOwnerAccess = createAccessMiddleware(authService, [rol
 
 const ensureDemoRetailUser = async () => {
   const email = process.env.DEMO_RETAIL_EMAIL || 'retail.manager@demo.local'
+  // Only hash/set a password when the account doesn't exist yet. Re-hashing and
+  // overwriting passwordHash on every cold start/deploy silently reverted any
+  // password reset (e.g. via the forgot-password flow) back to this fixed demo
+  // value, making manual password changes look like they "didn't stick".
   const passwordHash = await bcrypt.hash(process.env.DEMO_RETAIL_PASSWORD || 'DemoOnly!2026', 12)
   await prisma.authUser.upsert({
     where: { email },
     create: { email, passwordHash, role: roles.retailManager, active: true },
-    update: { passwordHash, role: roles.retailManager, active: true },
+    update: { role: roles.retailManager, active: true },
   })
 }
 
@@ -44,12 +48,15 @@ const ensureDemoRetailUser = async () => {
 // empty Command Deck, since every tenant-scoped query filters by tenantId.
 const ensureDemoFounderUser = async () => {
   const email = process.env.DEMO_FOUNDER_EMAIL || 'founder@demo.local'
+  // See ensureDemoRetailUser above: passwordHash must only be set on create, not
+  // on every update, or any password reset for this account gets silently undone
+  // the next time this seeder runs (every cold start while APP_MODE=demo).
   const passwordHash = await bcrypt.hash(process.env.DEMO_FOUNDER_PASSWORD || 'DemoOnly!2026', 12)
   const tenantId = process.env.DEMO_FOUNDER_TENANT_ID || 'demo-founder-tenant'
   const user = await prisma.authUser.upsert({
     where: { email },
     create: { email, passwordHash, role: roles.founderMaster, tenantId, active: true },
-    update: { passwordHash, role: roles.founderMaster, active: true },
+    update: { role: roles.founderMaster, active: true },
   })
   const resolvedTenantId = user.tenantId || tenantId
   await prisma.tenantOnboarding.upsert({
