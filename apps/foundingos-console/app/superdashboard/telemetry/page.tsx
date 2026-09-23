@@ -13,6 +13,14 @@ function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`
 }
 
+// Explicit locale + timeZone — a bare toLocaleString call with no arguments
+// renders differently on the server (build/runtime locale) vs. a visitor's
+// browser (their local locale/timezone), causing a confirmed React error
+// #425 hydration mismatch.
+function formatEventTime(iso: string): string {
+  return new Date(iso).toLocaleString('en-GB', { timeZone: 'Europe/London' })
+}
+
 export default async function TelemetryDashboardRoute({
   searchParams,
 }: {
@@ -51,7 +59,7 @@ export default async function TelemetryDashboardRoute({
         <Table title="Top event names" rows={summary.byName.slice(0, 15).map((r) => [r.name, r.count])} />
         <Table
           title="Recent events"
-          rows={summary.recent.slice(0, 15).map((r) => [`${r.suite}/${r.name}`, new Date(r.occurredAt).toLocaleString()])}
+          rows={summary.recent.slice(0, 15).map((r) => [`${r.suite}/${r.name}`, formatEventTime(r.occurredAt)])}
         />
       </section>
     </main>
