@@ -16,7 +16,22 @@ const SUITE_KEY_BY_NAME: Record<string, SuiteKey> = {
   'Core.Intelligence': 'core_intelligence',
 }
 
-function ActualSidebar({ config, planTier }: { config?: BrandConsoleConfig; planTier?: PlanTier }) {
+function ActualSidebar({
+  config,
+  planTier,
+  featureFlags,
+}: {
+  config?: BrandConsoleConfig
+  planTier?: PlanTier
+  // Phase 34: flag key -> on/off, already evaluated server-side (via
+  // isFeatureEnabled in core-operations/backend/src/feature-flags.ts) for
+  // the current tenant/environment. Keyed by the same nav-item label used
+  // in moduleMinTier below, e.g. { Marketing: false } hides that item
+  // regardless of plan tier. Omitted keys default to visible, matching
+  // moduleMinTier's "unknown defaults to visible, never silently hidden"
+  // convention — a flag is an additional gate, not a second gating system.
+  featureFlags?: Record<string, boolean>
+}) {
   const theme = { '--accent': config?.colors.accent ?? '#4A90E2' } as React.CSSProperties
   const grouped: Record<string, Array<{ label: string; href: string; icon: string }>> = {
     'Core.Operations': [
@@ -48,7 +63,9 @@ function ActualSidebar({ config, planTier }: { config?: BrandConsoleConfig; plan
   // session/license; see docs/permissions.md and docs/restructure-summary.md),
   // every module stays visible exactly as before this change.
   const suiteKey = SUITE_KEY_BY_NAME[suiteName]
-  const visibleItems = planTier && suiteKey ? items.filter((item) => isModuleVisibleAtTier(suiteKey, item.label, planTier)) : items
+  const visibleItems = (planTier && suiteKey ? items.filter((item) => isModuleVisibleAtTier(suiteKey, item.label, planTier)) : items).filter(
+    (item) => featureFlags?.[item.label] !== false,
+  )
 
   return (
     <aside className="sidebar" style={theme}>
@@ -78,9 +95,17 @@ function ActualSidebar({ config, planTier }: { config?: BrandConsoleConfig; plan
   )
 }
 
-export function Sidebar({ config, planTier }: { config?: BrandConsoleConfig; planTier?: PlanTier }) {
+export function Sidebar({
+  config,
+  planTier,
+  featureFlags,
+}: {
+  config?: BrandConsoleConfig
+  planTier?: PlanTier
+  featureFlags?: Record<string, boolean>
+}) {
   try {
-    return <ActualSidebar config={config} planTier={planTier} />
+    return <ActualSidebar config={config} planTier={planTier} featureFlags={featureFlags} />
   } catch {
     return <div className="p-4 text-red-500">Sidebar failed to load</div>
   }

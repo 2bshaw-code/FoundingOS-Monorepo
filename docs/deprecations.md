@@ -18,11 +18,14 @@ a strikethrough on `prisma.brand`, `prisma.crmDeal`, `prisma.brandFinance`,
 
 - **Still actively read** by the SuperDashboard in
   `apps/foundingos-console/app/superdashboard/` (`brand-metric-store.server.ts`,
-  `scraping-store.server.ts`, `server/tester-metrics.server.ts`) — do not
-  delete these models until that surface is migrated off them.
-- **Replacement path**: the unified `Tenant`/`TenantSuiteLicense` model
-  described in [shared-schema.md](./shared-schema.md), to be implemented
-  per the Phase 32–33 single-schema migration plan.
+  `scraping-store.server.ts`, `server/tester-metrics.server.ts`), plus 12
+  per-brand console cron routes (`apps/*-console*/app/api/scrape/refresh/route.ts`)
+  that write synthetic engagement data into `BrandMetric` — do not delete
+  these models until that surface is migrated off them.
+- **Replacement path**: the unified `wros` schema's existing
+  `WorkspaceRecord`/`TenantSuiteLicense`/`TelemetryEvent` models (not a new
+  model family) — see [single-schema-migration.md](./single-schema-migration.md)
+  (Phase 32) for the full audit, model mapping, and phased cutover plan.
 - **Timeline**: no removal date is set. These models stay in place, marked
   deprecated, until the SuperDashboard's brand-panel/CRM/finance widgets
   are re-pointed at the unified schema. No ESLint rule was added to block

@@ -18,7 +18,8 @@ import { verifyBootstrapToken } from './platform-security.js'
 import { createTenantCheckout, verifyStripeWebhookSignature } from './stripe.js'
 import { decideAgentAction, executeAgentAction, getAgentActionTrail, getAgentIntelligenceSummary, listAgentActions, proposeAgentAction, proposeReplenishmentAction, reverseAgentActionExecution } from './agent-actions.js'
 import { isSuiteLicensed, listTenantSuiteLicenses, setTenantSuiteLicense } from './licensing.js'
-import { createTelemetryRateLimiter, emitBackendTelemetry, ingestTelemetryEvents, parseTelemetryBatch, queryTelemetryEvents, resolveOptionalTenantId } from './telemetry.js'
+import { createTelemetryRateLimiter, emitBackendTelemetry, ingestTelemetryEvents, parseTelemetryBatch, queryTelemetryEvents, queryTelemetrySummary, resolveOptionalTenantId } from './telemetry.js'
+import { listFeatureFlags, upsertFeatureFlag, validateFeatureFlagInput, validateFeatureFlagKey } from './feature-flags.js'
 
 const requireTenant: RequestHandler = (_req, res, next) => {
   if (res.locals.auth?.role === 'founder_master') return next()
@@ -28,6 +29,14 @@ const requireTenant: RequestHandler = (_req, res, next) => {
 const requireCoreOperationsModule = createModuleAccessMiddleware('core_operations')
 const readTenant = (req: { header(name: string): string | undefined }, res: { locals: Record<string, any> }) => res.locals.auth?.role === 'founder_master' ? req.header('x-tenant-id') || undefined : res.locals.auth?.tenantId
 const writeTenant = (req: { body?: Record<string, unknown>; header(name: string): string | undefined }, res: { locals: Record<string, any> }) => readTenant(req, res) || String(req.body?.tenantId || '')
+// Phase 34 — FeatureFlag rows are global (not tenant-scoped: `key` is
+// unique across the whole deployment), so this is an internal/FoundingOS
+// staff admin surface, not a tenant-owner one — gated more strictly than
+// requireOwnerAccess (which authorizes tenant owners over their own tenant).
+const requireFounderMaster: RequestHandler = (_req, res, next) => {
+  if (res.locals.auth?.role !== 'founder_master') return res.status(403).json({ success: false, message: 'Internal access required' })
+  next()
+}
 const telemetryRateLimit = createTelemetryRateLimiter()
 export const apiRouter = Router()
 apiRouter.get('/status', (_req, res) => res.json({ app: 'core_operations', status: 'operational' }))
@@ -359,6 +368,28 @@ apiRouter.get('/platform/telemetry', requireOwnerAccess, requireTenant, async (r
     const tenantId = readTenant(req, res)
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
     res.json({ success: true, data: await queryTelemetryEvents(tenantId, req.query) })
+  } catch (error) { next(error) }
+})
+// Phase 36 — cross-tenant aggregate for the internal telemetry dashboard.
+// Internal-only (founder_master), unlike the tenant-scoped route above.
+apiRouter.get('/platform/telemetry/summary', requireFounderMaster, async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await queryTelemetrySummary(req.query) })
+  } catch (error) { next(error) }
+})
+// Phase 34 — feature flag admin. Internal/FoundingOS-staff only (see
+// requireFounderMaster) since FeatureFlag rows are global, not per-tenant.
+apiRouter.get('/platform/feature-flags', requireFounderMaster, async (_req, res, next) => {
+  try {
+    res.json({ success: true, data: await listFeatureFlags() })
+  } catch (error) { next(error) }
+})
+apiRouter.put('/platform/feature-flags/:key', requireFounderMaster, async (req, res, next) => {
+  try {
+    const key = validateFeatureFlagKey(req.params.key)
+    const input = validateFeatureFlagInput(req.body || {})
+    const data = await upsertFeatureFlag(key, input, res.locals.auth.id)
+    res.json({ success: true, data })
   } catch (error) { next(error) }
 })
 apiRouter.get('/platform/agent-actions', requireMerchantAccess, requireTenant, async (req, res, next) => {

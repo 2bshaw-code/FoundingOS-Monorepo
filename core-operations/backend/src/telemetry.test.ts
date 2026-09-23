@@ -4,7 +4,7 @@
 */
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createTelemetryRateLimiter, parseTelemetryBatch, validateTelemetryEvent } from './telemetry.js'
+import { createTelemetryRateLimiter, parseTelemetryBatch, summarizeTelemetryEvents, validateTelemetryEvent } from './telemetry.js'
 
 test('validateTelemetryEvent accepts a well-formed event and normalizes optional fields', () => {
   const event = validateTelemetryEvent({
@@ -74,3 +74,37 @@ test('createTelemetryRateLimiter allows up to max requests per window, then reje
   // A different key has its own independent bucket.
   assert.equal(limiter('tenant-2').allowed, true)
 })
+
+test('summarizeTelemetryEvents counts by suite/name/tenant and classifies errors/offline events', () => {
+  const now = new Date('2026-01-01T00:00:00Z')
+  const events = [
+    { tenantId: 'tenant-a', suite: 'core_operations', name: 'record.created', occurredAt: now, properties: {} },
+    { tenantId: 'tenant-a', suite: 'core_operations', name: 'record.created', occurredAt: now, properties: {} },
+    { tenantId: 'tenant-b', suite: 'platform', name: 'mobile.sync_error', occurredAt: now, properties: {} },
+    { tenantId: 'tenant-b', suite: 'platform', name: 'mobile.approve', occurredAt: now, properties: { outcome: 'failure' } },
+    { tenantId: null, suite: 'platform', name: 'mobile.offline_queue_flush', occurredAt: now, properties: {} },
+  ]
+  const summary = summarizeTelemetryEvents(events)
+  assert.equal(summary.totalEvents, 5)
+  assert.equal(summary.errorCount, 2) // name match + outcome match
+  assert.equal(summary.errorRate, 0.4)
+  assert.equal(summary.offlineEventCount, 1)
+  assert.deepEqual(summary.bySuite, [
+    { suite: 'platform', count: 3 },
+    { suite: 'core_operations', count: 2 },
+  ])
+  assert.deepEqual(summary.byTenant, [
+    { tenantId: 'tenant-a', count: 2 },
+    { tenantId: 'tenant-b', count: 2 },
+  ])
+  // Events with no tenantId are excluded from byTenant but still counted in totalEvents.
+  assert.equal(summary.byTenant.reduce((sum, entry) => sum + entry.count, 0), 4)
+})
+
+test('summarizeTelemetryEvents handles an empty event list without dividing by zero', () => {
+  const summary = summarizeTelemetryEvents([])
+  assert.equal(summary.totalEvents, 0)
+  assert.equal(summary.errorRate, 0)
+  assert.deepEqual(summary.recent, [])
+})
+

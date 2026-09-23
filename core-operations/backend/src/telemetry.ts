@@ -170,6 +170,110 @@ export function buildTelemetryQuery(tenantId: string | undefined, query: Telemet
 export const queryTelemetryEvents = (tenantId: string | undefined, query: TelemetryQuery = {}) =>
   prisma.telemetryEvent.findMany(buildTelemetryQuery(tenantId, query))
 
+// --- Phase 36: internal-only telemetry summary (no per-tenant scoping) ------
+//
+// Deliberately separate from queryTelemetryEvents/buildTelemetryQuery above:
+// that one is tenant-scoped (an owner viewing their own events) and returns
+// raw rows; this is a founder_master-only cross-tenant aggregate for the
+// internal dashboard. `since`/`suite`/`limit` reuse the same validation, but
+// `tenantId` here is an optional *filter*, not an enforced scope.
+export type TelemetrySummaryQuery = { suite?: unknown; since?: unknown; limit?: unknown; tenantId?: unknown }
+
+/** Minimal event shape the summary needs — matches the persisted TelemetryEvent row. */
+export type SummarizableTelemetryEvent = {
+  tenantId: string | null
+  suite: string
+  name: string
+  occurredAt: Date
+  properties: unknown
+}
+
+// Best-effort classification, not a guaranteed taxonomy: no event-name or
+// properties convention is currently enforced across the mobile client,
+// web client, and three backend emitters (see docs/telemetry.md), so this
+// intentionally matches on either an explicit `properties.outcome ===
+// 'failure'` (used by some emitters) or a loose name substring, rather than
+// requiring every producer to agree on a schema retroactively. Revisit once
+// a real taxonomy is standardized.
+const ERROR_NAME_PATTERN = /error|fail/i
+const OFFLINE_NAME_PATTERN = /offline/i
+
+function isErrorEvent(event: SummarizableTelemetryEvent): boolean {
+  const outcome = (event.properties as Record<string, unknown> | null)?.outcome
+  if (outcome === 'failure') return true
+  return ERROR_NAME_PATTERN.test(event.name)
+}
+
+export type TelemetrySummary = {
+  totalEvents: number
+  errorCount: number
+  errorRate: number
+  offlineEventCount: number
+  bySuite: Array<{ suite: string; count: number }>
+  byName: Array<{ name: string; count: number }>
+  byTenant: Array<{ tenantId: string; count: number }>
+  recent: SummarizableTelemetryEvent[]
+}
+
+/**
+ * Pure aggregation over an already-fetched event list — kept separate from
+ * the Prisma query below so it can be unit-tested without a database,
+ * matching this file's existing validation/rate-limit functions.
+ */
+export function summarizeTelemetryEvents(events: SummarizableTelemetryEvent[]): TelemetrySummary {
+  const bySuite = new Map<string, number>()
+  const byName = new Map<string, number>()
+  const byTenant = new Map<string, number>()
+  let errorCount = 0
+  let offlineEventCount = 0
+
+  for (const event of events) {
+    bySuite.set(event.suite, (bySuite.get(event.suite) ?? 0) + 1)
+    byName.set(event.name, (byName.get(event.name) ?? 0) + 1)
+    if (event.tenantId) byTenant.set(event.tenantId, (byTenant.get(event.tenantId) ?? 0) + 1)
+    if (isErrorEvent(event)) errorCount += 1
+    if (OFFLINE_NAME_PATTERN.test(event.name)) offlineEventCount += 1
+  }
+
+  const toSortedCounts = <T extends string>(map: Map<T, number>, keyName: 'suite' | 'name' | 'tenantId') =>
+    [...map.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([key, count]) => ({ [keyName]: key, count }) as never)
+
+  return {
+    totalEvents: events.length,
+    errorCount,
+    errorRate: events.length ? Number((errorCount / events.length).toFixed(4)) : 0,
+    offlineEventCount,
+    bySuite: toSortedCounts(bySuite, 'suite'),
+    byName: toSortedCounts(byName, 'name'),
+    byTenant: toSortedCounts(byTenant, 'tenantId'),
+    recent: [...events].sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime()).slice(0, 25),
+  }
+}
+
+export function buildTelemetrySummaryQuery(query: TelemetrySummaryQuery = {}): Prisma.TelemetryEventFindManyArgs {
+  const suite = String(query.suite || '').trim()
+  const tenantId = String(query.tenantId || '').trim()
+  const since = query.since ? new Date(String(query.since)) : undefined
+  if (since && Number.isNaN(since.getTime())) throw new TelemetryValidationError('since must be a valid ISO date')
+  const requestedLimit = Number(query.limit || 500)
+  const limit = Number.isFinite(requestedLimit) ? Math.min(2000, Math.max(1, Math.round(requestedLimit))) : 500
+  return {
+    where: {
+      ...(suite ? { suite } : {}),
+      ...(tenantId ? { tenantId } : {}),
+      ...(since ? { occurredAt: { gte: since } } : {}),
+    },
+    orderBy: { occurredAt: 'desc' },
+    take: limit,
+  }
+}
+
+export const queryTelemetrySummary = async (query: TelemetrySummaryQuery = {}): Promise<TelemetrySummary> =>
+  summarizeTelemetryEvents(await prisma.telemetryEvent.findMany(buildTelemetrySummaryQuery(query)))
+
+
 // --- Per-tenant (falling back to per-IP) rate limiting -----------------------
 //
 // Distinct from the global per-IP `createRateLimit` already applied to all

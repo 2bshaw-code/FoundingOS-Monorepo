@@ -144,3 +144,46 @@ verified via `tsc --noEmit` (mobile + all three backends), the existing
 `telemetry.test.ts` unit suite (still 9/9 passing), and a bundle rebuild
 (`scripts/build-core-operations-api.mjs`) only.
 
+## Internal telemetry dashboard (Phase 36)
+
+A read-only, founder/internal-only view of the data collected above:
+
+- **`GET /platform/telemetry/summary`** (`core-operations/backend/src/telemetry.ts`
+  `queryTelemetrySummary`/`summarizeTelemetryEvents`, wired in `routes.ts`) —
+  cross-tenant aggregate, gated by `requireFounderMaster` (the same
+  internal-only guard added for Phase 34's `FeatureFlag` routes), unlike the
+  existing tenant-scoped `GET /platform/telemetry`. Accepts optional
+  `suite`/`since`/`tenantId`/`limit` query params and returns:
+  `totalEvents`, `errorCount`/`errorRate`, `offlineEventCount`, and
+  `bySuite`/`byName`/`byTenant` counts plus the most recent 25 raw events.
+- **Error/offline classification is a heuristic, not a guaranteed schema**:
+  since no event-name or `properties` convention is enforced across the
+  mobile client, web client, and three backend emitters today, an event
+  counts as an error if either `properties.outcome === 'failure'` or its
+  `name` contains "error"/"fail" (case-insensitive), and as offline if its
+  `name` contains "offline". Revisit once/if a real taxonomy is
+  standardized (see the "Event taxonomy" section above for what exists
+  today).
+- **UI**: `apps/foundingos-console/app/superdashboard/telemetry/page.tsx`, a
+  server component under the existing `/superdashboard` FounderOS-only area
+  (same "do not link from any brand console" convention as its sibling
+  `page.tsx`). Fetches via
+  `telemetry-summary-store.server.ts`, which calls the summary endpoint over
+  HTTP — **not** a direct Prisma import — because `TelemetryEvent` lives in
+  `core-operations/backend`'s own `wros` schema/generated client, which this
+  console app doesn't depend on (unlike `brand-metric-store.server.ts`,
+  which reads this app's own legacy `packages/db` schema directly).
+- **Known blocker, same shape as Phase 34's admin UI**: this page requires
+  `CORE_OPERATIONS_API_BASE` and a `CORE_OPERATIONS_INTERNAL_TOKEN` (a
+  founder_master-role service token) to be configured in this app's
+  deployment environment — there is no login/session flow wiring it
+  automatically. Missing either env var degrades to an empty "no data yet"
+  state rather than a hard error, but issuing and rotating that internal
+  token is an ops/deployment step outside this pass's scope.
+- **Verified**: `summarizeTelemetryEvents` has dedicated unit tests in
+  `telemetry.test.ts` (counting, error/offline classification, empty-input
+  edge case); `tsc --noEmit` is clean for both `core-operations/backend` and
+  `apps/foundingos-console`. Not exercised against a live deployment or a
+  populated `TelemetryEvent` table in this pass.
+
+

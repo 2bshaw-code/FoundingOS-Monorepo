@@ -797,3 +797,33 @@ model TelemetryEvent {
   @@index([receivedAt])
   @@schema("wros")
 }
+
+/// Phase 34 — structured feature flag store, replacing ad-hoc booleans.
+/// `key` is a flag identifier (e.g. "core_operations.advanced_marketing").
+/// `enabled` is the flag's own kill switch — false always wins regardless
+/// of rollout/overrides. `rolloutPercent` (0-100) gates a *default*
+/// audience deterministically by tenantId+key hash (see feature-flags.ts),
+/// so the same tenant always gets a stable answer without needing to store
+/// a row per tenant for simple gradual rollouts. `tenantOverrides` is a
+/// JSON map of tenantId -> boolean for exceptions that must not depend on
+/// the rollout hash (e.g. an internal test tenant force-enabled ahead of a
+/// wider rollout, or a specific tenant force-disabled after a support
+/// escalation) — checked before the percentage rollout. `environment`
+/// scopes a flag to `production`/`staging`/`all` so the same key can behave
+/// differently outside production without needing separate keys.
+model FeatureFlag {
+  id              String   @id @default(cuid())
+  key             String   @unique
+  description     String?
+  enabled         Boolean  @default(true)
+  environment     String   @default("all")
+  rolloutPercent  Int      @default(100)
+  tenantOverrides Json     @default("{}")
+  createdBy       String
+  updatedBy       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([environment, enabled])
+  @@schema("wros")
+}

@@ -248,10 +248,35 @@ this pass.
    in [shared-schema.md](./shared-schema.md) (single schema,
    `core_ops_*`/`core_workforce_*`/`core_intel_*` prefixes, `Tenant`,
    `TenantSuiteLicense`), write backfill scripts, and run a reviewed
-   migration. No migration was created or run in this pass.
+   migration. No migration was created or run in this pass. **Phase 32
+   (this pass)**: a full audit + phased cutover plan for the remaining
+   `packages/db` legacy per-brand models now exists at
+   [single-schema-migration.md](./single-schema-migration.md) — key finding:
+   the target unified models (`WorkspaceRecord`/`TenantSuiteLicense`/
+   `TelemetryEvent`) already exist and are already the live schema for all
+   three core services; only the SuperDashboard (3 files) and 12 per-brand
+   console cron routes still write to the legacy tables, and most of those
+   legacy tables (`Brand`, `BrandSubscription`, `CrmDeal`) appear to have no
+   live readers left to migrate at all. **This plan requires an explicit
+   decision (documented in its §4) before any schema/code changes proceed**
+   — Phases 33/35 are gated on that answer, not yet implemented.
 5. **Console shell wiring** — implement `getEnabledSuites()`-driven module
    registration in the actual console app (`apps/foundingos-console` /
    `packages/ui`), replacing the current per-brand console apps.
+5b. ~~**Feature flag system hardening**~~ — **Phase 34 complete:** a
+   structured `wros.FeatureFlag` table (global, not per-tenant rows) with
+   kill switch, environment pinning, deterministic percentage rollout, and
+   per-tenant overrides (`core-operations/backend/src/feature-flags.ts`,
+   11 unit tests), `GET`/`PUT /platform/feature-flags` routes (internal
+   `founder_master`-only), and an optional `featureFlags` prop on
+   `packages/ui/src/sidebar.tsx` alongside the existing `planTier`
+   tier-gating. See [feature-flags.md](./feature-flags.md) §"Structured
+   feature flags (Phase 34)". **Scoped down**, and flagged as such in that
+   doc: the phase spec's "console-only admin interface to toggle flags per
+   tenant" was not built as a UI — none of the three per-suite consoles have
+   real session/tenant plumbing yet (same pre-existing blocker `planTier`
+   already has), so a toggle UI would have nothing real to authenticate
+   against. The API contract is the complete, tested deliverable instead.
 6. **Website/docs rewrite (implementation)** — this pass wrote the
    strategy docs; the actual `apps/foundingos-web` marketing pages,
    `apps/*-web` legacy sites, and their copy still need to be
@@ -265,9 +290,14 @@ this pass.
    core services (`core-operations` in-process, `core-workforce`/
    `core-intelligence` over HTTP), and `/health` (liveness) + `/ready`
    (readiness) on all three backends plus a live status view in the mobile
-   debug screen. See [telemetry.md](./telemetry.md) for the full contract.
-   Remaining: an actual internal dashboard (Phase 36) and live-device/
-   live-database verification (untestable in this environment).
+   debug screen. **Phase 36 also complete:** a cross-tenant
+   `GET /platform/telemetry/summary` aggregate (founder_master-only) and a
+   read-only dashboard page at
+   `apps/foundingos-console/app/superdashboard/telemetry`. See
+   [telemetry.md](./telemetry.md) for the full contract. Remaining:
+   live-device/live-database verification (untestable in this environment),
+   and issuing the `CORE_OPERATIONS_INTERNAL_TOKEN` service token the
+   dashboard needs in a real deployment.
 8. **Targeted tests/builds after code changes land** — once the
    existing test suites named in
    [MARKET_LAUNCH_GATE.md](../MARKET_LAUNCH_GATE.md) ("Release commands":

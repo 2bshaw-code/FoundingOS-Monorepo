@@ -105,3 +105,94 @@ building session/auth plumbing for these apps (a materially larger effort
 than this pass's scope). The capability above is real and tested, but
 wiring it to a live tenant session is left as follow-up work, not faked with
 a hardcoded tenant.
+
+## Structured feature flags (Phase 34)
+
+`TenantSuiteLicense`/`moduleMinTier` above answer *"which suite/module tier
+is this tenant entitled to"* — a commercial/licensing question. Phase 34
+adds a second, orthogonal mechanism for *"is this specific capability live
+right now"* — an engineering/rollout question (gradual rollouts, kill
+switches, per-tenant exceptions) that doesn't belong in the licensing table.
+
+### Data model
+
+New `wros.FeatureFlag` table (`core-operations/backend/prisma/schema.prisma`,
+migration `20260924090000_feature_flag`):
+
+```prisma
+model FeatureFlag {
+  id              String   @id @default(cuid())
+  key             String   @unique
+  description     String?
+  enabled         Boolean  @default(true)
+  environment     String?
+  rolloutPercent  Int      @default(100)
+  tenantOverrides Json     @default("{}")
+  createdBy       String?
+  updatedBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+```
+
+Flags are **global**, not tenant rows — `key` is unique across the whole
+deployment. Per-tenant behavior comes from `tenantOverrides` (a JSON map of
+`tenantId -> boolean`) and the deterministic `rolloutPercent` bucketing
+below, not from one row per tenant per flag.
+
+### Evaluation precedence (`evaluateFeatureFlag`, highest wins)
+
+1. `enabled: false` — kill switch, always off regardless of anything else.
+2. `environment` mismatch — if the flag is pinned to an environment
+   (`production`/`staging`/etc.) and the current environment doesn't match,
+   off.
+3. `tenantOverrides[tenantId]` — an explicit per-tenant exception, if
+   present, wins over the rollout percentage.
+4. `rolloutPercent` — a deterministic FNV-1a hash of `${key}:${tenantId}`
+   buckets each tenant into 0-99; the tenant is "on" if its bucket is below
+   `rolloutPercent`. No row is written per tenant — the same tenant always
+   lands in the same bucket for a given key. Global (no-`tenantId`)
+   evaluation requires `rolloutPercent >= 100` to be "on" — a partial
+   global percentage has no tenant to bucket against, so it defaults off
+   rather than silently exposing the feature broadly.
+
+`isFeatureEnabled(key, tenantId?)` **fails closed**: if `key` doesn't exist
+in the table at all (e.g. typo, not yet created), it returns `false` rather
+than throwing or defaulting to on.
+
+### API (internal only — see access note below)
+
+- `GET /platform/feature-flags` — list all flags.
+- `PUT /platform/feature-flags/:key` — upsert a flag (creates it if new).
+  Body: `{ description?, enabled?, environment?, rolloutPercent?, tenantOverrides? }`.
+
+Both routes require `role === 'founder_master'`
+(`requireFounderMaster` in `core-operations/backend/src/routes.ts`) — a
+stricter check than the tenant-owner `requireOwnerAccess` used elsewhere in
+this file, because `FeatureFlag` rows are global platform configuration,
+not a resource scoped to one tenant's own data. There is deliberately no
+per-tenant-owner self-service flag UI.
+
+### Client-side consumption
+
+`packages/ui/src/sidebar.tsx`'s `Sidebar` accepts an optional
+`featureFlags?: Record<string, boolean>` prop (evaluated server-side per
+request via `isFeatureEnabled`, keyed by the same nav-item label used by
+`moduleMinTier`) and filters nav items by both `planTier` and `featureFlags`
+together. Same fallback convention as `planTier`: an omitted map, or an
+omitted key within it, leaves that item visible — a flag is an *additional*
+gate on top of tier-gating, not a second silently-defaulting-to-hidden
+system.
+
+### Scoped-down admin UI
+
+The phase spec called for "a lightweight admin interface (console-only) to
+toggle flags per tenant." Given the blocker already documented above — none
+of the three per-suite consoles have real session/tenant plumbing yet — a
+console UI would have nothing real to authenticate against today. This pass
+ships the API contract (`GET`/`PUT /platform/feature-flags`) and the
+client-side filtering hook as the complete, testable, and honestly-scoped
+deliverable; the actual toggle UI is deferred until console session/auth
+plumbing exists (same blocker as `planTier` above), rather than building a
+UI backed by a fake or hardcoded tenant.
+

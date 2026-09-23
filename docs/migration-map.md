@@ -62,6 +62,15 @@ See full detail in [shared-schema.md](./shared-schema.md). Summary:
 | `foundcrypto.*` | *(dropped after export)* |
 | `founder_os.*` | unprefixed shared/platform tables |
 
+**`packages/db` legacy per-brand tables** (`Brand`, `BrandMetric`,
+`BrandSubscription`, `CrmDeal`, `BrandFinance` — default/public Postgres
+schema, no dedicated schema name): not yet renamed or dropped. See
+[single-schema-migration.md](./single-schema-migration.md) (Phase 32) for
+the full audit of remaining readers/writers and the planned cutover to the
+`wros` schema's `WorkspaceRecord`/`TenantSuiteLicense`/`TelemetryEvent`
+models — no new table-prefix scheme is planned for these; they are being
+retired into the existing `wros` shape, not renamed in place.
+
 ## Package mapping
 
 Completed in Phase 23. `packages/config`, `packages/auth`, `packages/ui`,
