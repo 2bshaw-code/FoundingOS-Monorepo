@@ -47,8 +47,15 @@ export function AiCreationsPanel({
 }) {
   const [openTitle, setOpenTitle] = useState<string | null>(items[0]?.title ?? null)
   const [decisions, setDecisions] = useState<Record<string, 'approved' | 'changes'>>({})
+  const [justDecided, setJustDecided] = useState<string | null>(null)
 
   if (!items.length) return null
+
+  const decide = (title: string, decision: 'approved' | 'changes') => {
+    setDecisions((prev) => ({ ...prev, [title]: decision }))
+    setJustDecided(title)
+    window.setTimeout(() => setJustDecided((current) => (current === title ? null : current)), 700)
+  }
 
   return (
     <article className="ai-creations-panel" aria-label={title}>
@@ -65,7 +72,7 @@ export function AiCreationsPanel({
           const decision = decisions[item.title]
           const statusLabel = decision === 'approved' ? 'Approved' : decision === 'changes' ? 'Changes requested' : item.status
           return (
-            <div className={`ai-creation-item${isOpen ? ' open' : ''}`} key={item.title}>
+            <div className={`ai-creation-item${isOpen ? ' open' : ''}${justDecided === item.title ? ' just-decided' : ''}`} key={item.title}>
               <button
                 aria-expanded={isOpen}
                 className="ai-creation-summary"
@@ -78,31 +85,34 @@ export function AiCreationsPanel({
                   <small>{item.channel} · {item.summary}</small>
                 </span>
                 <small className={`ai-creation-status${decision ? ` ai-creation-status-${decision}` : ''}`}>{statusLabel}</small>
+                <span className="ai-creation-chevron" aria-hidden="true" />
               </button>
-              {isOpen ? (
-                <div className="ai-creation-preview">
-                  <p className="eyebrow">What FoundAI created</p>
-                  <h4>{item.preview.heading}</h4>
-                  <p>{item.preview.body}</p>
-                  {item.preview.meta ? <span className="ai-creation-meta">{item.preview.meta}</span> : null}
-                  <div className="ai-creation-actions">
-                    <button
-                      className="btn btn-primary"
-                      onClick={() => setDecisions((prev) => ({ ...prev, [item.title]: 'approved' }))}
-                      type="button"
-                    >
-                      Approve &amp; publish
-                    </button>
-                    <button
-                      className="btn btn-secondary"
-                      onClick={() => setDecisions((prev) => ({ ...prev, [item.title]: 'changes' }))}
-                      type="button"
-                    >
-                      Request changes
-                    </button>
+              <div className="ai-creation-collapse">
+                <div className="ai-creation-collapse-inner">
+                  <div className="ai-creation-preview">
+                    <p className="eyebrow">What FoundAI created</p>
+                    <h4>{item.preview.heading}</h4>
+                    <p>{item.preview.body}</p>
+                    {item.preview.meta ? <span className="ai-creation-meta">{item.preview.meta}</span> : null}
+                    <div className="ai-creation-actions">
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => decide(item.title, 'approved')}
+                        type="button"
+                      >
+                        {decision === 'approved' ? '✓ Approved' : 'Approve & publish'}
+                      </button>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => decide(item.title, 'changes')}
+                        type="button"
+                      >
+                        Request changes
+                      </button>
+                    </div>
                   </div>
                 </div>
-              ) : null}
+              </div>
             </div>
           )
         })}

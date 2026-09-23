@@ -7499,15 +7499,20 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.02);
   overflow: hidden;
+  transition: border-color 0.25s ease, background-color 0.6s ease;
 }
 
 .ai-creation-item.open {
   border-color: rgba(124, 58, 237, 0.35);
 }
 
+.ai-creation-item.just-decided {
+  background: rgba(120, 214, 163, 0.08);
+}
+
 .ai-creation-summary {
   display: grid;
-  grid-template-columns: 9px minmax(0, 1fr) auto;
+  grid-template-columns: 9px minmax(0, 1fr) auto auto;
   gap: 12px;
   align-items: center;
   width: 100%;
@@ -7517,6 +7522,10 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   text-align: left;
   color: inherit;
   cursor: pointer;
+}
+
+.ai-creation-summary:hover .ai-creation-chevron {
+  opacity: 1;
 }
 
 .ai-creation-copy {
@@ -7537,6 +7546,7 @@ body:has(.complete-workspace-directory) .found-ai-panel {
 .ai-creation-status {
   white-space: nowrap;
   color: #a9b5c6;
+  transition: color 0.3s ease;
 }
 
 .ai-creation-status-approved {
@@ -7547,9 +7557,47 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   color: #f59e0b;
 }
 
+.ai-creation-chevron {
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid #a9b5c6;
+  border-bottom: 1.5px solid #a9b5c6;
+  transform: rotate(45deg);
+  opacity: 0.6;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.ai-creation-item.open .ai-creation-chevron {
+  transform: rotate(-135deg);
+  opacity: 1;
+}
+
+.ai-creation-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease;
+}
+
+.ai-creation-item.open .ai-creation-collapse {
+  grid-template-rows: 1fr;
+}
+
+.ai-creation-collapse-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
 .ai-creation-preview {
   padding: 0 16px 18px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.3s ease 0.05s, transform 0.3s ease 0.05s;
+}
+
+.ai-creation-item.open .ai-creation-preview {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .ai-creation-preview h4 {
@@ -7576,6 +7624,16 @@ body:has(.complete-workspace-directory) .found-ai-panel {
 
 .ai-creation-actions .btn {
   flex: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-creation-item,
+  .ai-creation-chevron,
+  .ai-creation-collapse,
+  .ai-creation-preview,
+  .ai-creation-status {
+    transition: none;
+  }
 }
 
 .product-explainer {
@@ -8019,6 +8077,10 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   }
 
   .ai-creation-summary .status-dot {
+    display: none;
+  }
+
+  .ai-creation-chevron {
     display: none;
   }
 
