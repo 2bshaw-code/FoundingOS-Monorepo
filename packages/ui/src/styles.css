@@ -33,6 +33,9 @@
   --muted: #b9c2cf;
   --shadow: rgba(0, 0, 0, 0.22);
   --shell-shadow: rgba(0, 0, 0, 0.28);
+  /* Shared hover-state border color for the calm entrance/hover pass (CRM pipeline cards,
+     etc.) — one token so every card-hover rule stays visually consistent. */
+  --fo-border-hover: color-mix(in srgb, var(--accent, var(--q-accent)) 32%, var(--line));
   font-family: Inter, "Segoe UI", sans-serif;
   color-scheme: dark;
 }
@@ -9356,6 +9359,25 @@ body[data-sidebar-collapsed='true'] .nav-card {
   box-shadow: 0 20px 48px var(--shadow);
 }
 
+.crm-stage-card,
+.crm-task-card,
+.crm-mini-column {
+  /* Calm, intentional entrance — easeOutQuint, no scale/overshoot, so the pipeline reads as
+     professional data rather than a playful widget. */
+  animation: fo-rise-in 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.crm-stage-card:hover,
+.crm-task-card:hover,
+.crm-mini-column:hover {
+  transform: translateY(-3px);
+  border-color: var(--fo-border-hover);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
 .crm-stat {
   display: grid;
   gap: 6px;
@@ -9636,6 +9658,29 @@ body[data-sidebar-collapsed='true'] .nav-card {
   color: #061018;
   font-weight: 900;
   box-shadow: 0 18px 40px var(--found-ai-glow), 0 10px 24px rgba(0, 0, 0, 0.28);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Very gentle idle "breathing" — only while the panel is closed (see the `open` state in
+   found-ai.tsx, which drops this class once the panel opens), so it reads as an ambient,
+   idle presence rather than fighting with the hover/press feedback below. */
+.found-ai-fab.breathing {
+  animation: fo-fab-breathe 4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@keyframes fo-fab-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
+}
+
+.found-ai-fab:hover {
+  animation-play-state: paused;
+  transform: scale(1.06);
+}
+
+.found-ai-fab:active {
+  animation-play-state: paused;
+  transform: scale(0.96);
 }
 
 .found-ai-fab span {
@@ -9722,6 +9767,7 @@ body[data-sidebar-collapsed='true'] .nav-card {
   border-radius: 16px;
   font-size: 14px;
   line-height: 1.55;
+  animation: fo-rise-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .found-ai-message.user {
@@ -9733,6 +9779,39 @@ body[data-sidebar-collapsed='true'] .nav-card {
 .found-ai-message.assistant {
   background: var(--surface-soft);
   color: var(--text);
+}
+
+/* Animated "FoundAI is typing…" dots, shown instead of the previous static sentence while a
+   real response is loading — reuses the assistant bubble's own background/shape. */
+.found-ai-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.found-ai-typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  animation: foTypingBounce 1.2s infinite ease-in-out;
+}
+
+.found-ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+.found-ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+/* =========================================
+   Shared single sources of truth — reused by CRM cards, FoundAI messages, and the messaging
+   bubble stack below, so every entrance/typing animation in the app stays visually consistent.
+   ========================================= */
+@keyframes fo-rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes foTypingBounce {
+  0%, 100% { transform: scale(0.6); opacity: 0.4; }
+  50% { transform: scale(1); opacity: 1; }
 }
 
 /* Animated message flow — a purely visual, self-contained "demo banter" preview (see
@@ -9764,16 +9843,30 @@ body[data-sidebar-collapsed='true'] .nav-card {
   font-size: 13.5px;
   line-height: 1.4;
   border-radius: 16px;
-  animation: foundaBubbleIn 260ms ease both;
-}
-
-@keyframes foundaBubbleIn {
-  from { opacity: 0; transform: translateY(6px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  /* Snappy, slightly spring-like arrival (a back-out curve overshoots the shared fo-rise-in
+     keyframe's translateY briefly past 0 before settling) — modelled on how WhatsApp's own
+     bubbles pop in. */
+  animation: fo-rise-in 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  will-change: transform, opacity;
 }
 
 .founda-bubble.from-user { justify-self: end; }
 .founda-bubble.from-assistant { justify-self: start; }
+
+/* "Message sent" micro-interaction — applied only to the newest bubble on the user's side
+   right as it arrives (see animated-message-flow.tsx), giving outgoing messages one extra,
+   very light scale+opacity beat the way a real send confirmation would. Starts once the base
+   entrance has finished, so the two never visually overlap. */
+.founda-bubble.from-user.sent-pulse {
+  animation: fo-rise-in 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    fo-sent-pulse 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both;
+}
+
+@keyframes fo-sent-pulse {
+  0% { transform: scale(0.92); }
+  60% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
 
 .founda-flow--whatsapp .founda-bubble.from-user { background: #DCF8C6; color: #111; border-bottom-right-radius: 4px; }
 .founda-flow--whatsapp .founda-bubble.from-assistant { background: #FFFFFF; color: #111; border: 1px solid #E5E5E5; border-bottom-left-radius: 4px; }
@@ -9786,6 +9879,27 @@ body[data-sidebar-collapsed='true'] .nav-card {
 
 .founda-flow--messenger .founda-bubble.from-user { background: linear-gradient(135deg, #00C6FF, #0078FF); color: #fff; border-bottom-right-radius: 4px; }
 .founda-flow--messenger .founda-bubble.from-assistant { background: #F0F0F0; color: #111; border-bottom-left-radius: 4px; }
+
+/* "Someone is typing…" indicator shown while the next demo-banter bubble is still pending —
+   reuses each platform skin's existing bubble background, just swaps the text for 3 dots. */
+.founda-bubble.founda-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 14px;
+}
+
+.founda-typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  animation: foTypingBounce 1.2s infinite ease-in-out;
+  will-change: transform, opacity;
+}
+
+.founda-typing span:nth-child(2) { animation-delay: 0.2s; }
+.founda-typing span:nth-child(3) { animation-delay: 0.4s; }
 
 .found-ai-prompts,
 .found-ai-actions {
@@ -11816,7 +11930,7 @@ body.superdash-heatmap-off .quantum-heatmap {
   display: grid;
   place-items: center;
   padding: 20px;
-  animation: quantumModalFadeIn 180ms ease;
+  animation: quantumModalFadeIn 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Browsers/devices without backdrop-filter support (or where it's disabled, e.g. reduced-
@@ -11844,6 +11958,10 @@ body.superdash-heatmap-off .quantum-heatmap {
   color: #edf7ff;
   padding: 28px 28px 28px;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.3);
+  /* Reuses the shared fo-rise-in keyframe (defined alongside the messaging/CRM animations
+     above) — a soft, scale-free rise so the panel feels cohesive with the rest of the app
+     rather than introducing its own one-off entrance. */
+  animation: fo-rise-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .quantum-console-modal-close {
@@ -12855,6 +12973,27 @@ html[data-accessibility-simplified='true'] .btn {
   .ai-onboarding-card.ai-onboarding-glow,
   .btn-premium:active,
   .quantum-btn:active { animation: none; transition: none; }
+}
+
+/* Animation pass (messaging/CRM priority) — one shared reduced-motion guard for every
+   entrance/typing animation added below, so a single query disables all of them at once.
+   transform: none additionally freezes hover-lift and idle-breathing offsets (not just their
+   transition), so nothing moves at all in this mode — not merely "moves instantly". */
+@media (prefers-reduced-motion: reduce) {
+  .founda-bubble,
+  .founda-typing span,
+  .found-ai-message,
+  .found-ai-fab,
+  .found-ai-typing span,
+  .crm-stage-card,
+  .crm-task-card,
+  .crm-mini-column,
+  .quantum-console-modal,
+  .quantum-console-modal-backdrop {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
 }
 
 /* ==========================================================================
