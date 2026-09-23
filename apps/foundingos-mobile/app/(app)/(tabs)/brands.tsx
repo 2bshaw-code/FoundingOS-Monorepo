@@ -10,6 +10,7 @@ import { getSession } from '../../../lib/core-operations-api'
 import { SUITE_LINKS } from '../../../lib/nav-directory'
 import { WORKSPACES } from '../../../lib/workspace-modules'
 import { useQuantumStore } from '../../../lib/store'
+import { logAction } from '../../../lib/action-logger'
 import { QuantumCard, QuantumHeader, QuantumNotice, QuantumScreen, QuantumSectionHeader, QuantumText, quantumSpace } from '../../../components/QuantumUI'
 
 // Every destination in the app — the suites, their dedicated dashboards, and the
@@ -32,6 +33,7 @@ export default function WorkspaceDirectoryScreen() {
 
   const open = (slug: string, route: string) => {
     setActiveBrand(slug)
+    logAction('workspace_switch', 'success', { workspace: slug })
     router.push(route as never)
   }
 

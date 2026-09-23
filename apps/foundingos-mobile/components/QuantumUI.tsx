@@ -422,18 +422,30 @@ export function QuantumModalSurface({ children, style }: { children: ReactNode; 
 export function QuantumNotice({
   children,
   tone = 'info',
+  onRetry,
 }: {
   children: ReactNode
   tone?: 'success' | 'warning' | 'danger' | 'info'
+  // When set, renders a "Retry" affordance next to the message — used for
+  // genuine (4xx) action failures so the user can immediately try again
+  // instead of hunting for the control that failed.
+  onRetry?: () => void
 }) {
   const theme = useActiveQuantumTheme()
   const color =
     tone === 'success' ? quantumColors.success : tone === 'warning' ? quantumColors.warning : tone === 'danger' ? quantumColors.danger : theme.accent
   return (
-    <View style={[styles.notice, { borderColor: color, backgroundColor: `${color}18` }]}>
-      <QuantumText variant="caption" color={color} align="center">
+    <View style={[styles.notice, { borderColor: color, backgroundColor: `${color}18` }, onRetry ? styles.noticeRow : null]}>
+      <QuantumText variant="caption" color={color} align="center" style={onRetry ? { flex: 1 } : undefined}>
         {children}
       </QuantumText>
+      {onRetry ? (
+        <Pressable onPress={onRetry} hitSlop={8}>
+          <QuantumText variant="caption" color={color} style={styles.noticeRetry}>
+            Retry
+          </QuantumText>
+        </Pressable>
+      ) : null}
     </View>
   )
 }
@@ -592,6 +604,15 @@ const styles = StyleSheet.create({
     borderRadius: quantumRadius.md,
     paddingVertical: quantumSpace.md,
     paddingHorizontal: quantumSpace.lg,
+  },
+  noticeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: quantumSpace.sm,
+  },
+  noticeRetry: {
+    textDecorationLine: 'underline',
+    fontWeight: '600',
   },
   metric: {
     flex: 1,

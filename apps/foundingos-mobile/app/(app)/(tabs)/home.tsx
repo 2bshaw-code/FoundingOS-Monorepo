@@ -7,7 +7,7 @@
 // next — instead of the old per-workspace command deck that duplicated the
 // Workspaces tab and buried the actual decision queue.
 import { router } from 'expo-router'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import {
   QuantumButton,
@@ -33,6 +33,7 @@ import {
 import { PlatformEvent, TenantOnboarding, fetchEventFeed, fetchOnboarding, getSession } from '../../../lib/core-operations-api'
 import { enqueueOutboxAction } from '../../../lib/outbox-sync'
 import { useQuantumStore } from '../../../lib/store'
+import { useActionFeedback } from '../../../lib/use-action-feedback'
 
 const STATUS_LABEL: Record<ApprovalsQueueStatus, string> = {
   proposed: 'Suggested',
@@ -67,6 +68,7 @@ function pluralize(count: number, noun: string): string {
 export default function TodayScreen() {
   const activeWorkspaceSlug = useQuantumStore((state) => state.activeBrandSlug)
   const pendingSyncCount = useQuantumStore((state) => state.pendingSyncCount)
+  const isOnline = useQuantumStore((state) => state.isOnline)
 
   const [connected, setConnected] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -75,7 +77,8 @@ export default function TodayScreen() {
   const [events, setEvents] = useState<PlatformEvent[]>([])
   const [onboarding, setOnboarding] = useState<TenantOnboarding | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
-  const [notice, setNotice] = useState('')
+  const { feedback, showSuccess, showOffline, showError } = useActionFeedback()
+  const inFlight = useRef<Set<string>>(new Set())
 
   const loadAll = useCallback(async () => {
     const [session, legacyToken] = await Promise.all([getSession(), getLegacyToken()])
@@ -107,12 +110,10 @@ export default function TodayScreen() {
     }
   }, [loading, connected])
 
-  const showNotice = (text: string) => {
-    setNotice(text)
-    setTimeout(() => setNotice(''), 3500)
-  }
-
   const run = async (item: ApprovalsQueueItem, kind: 'APPROVE' | 'REJECT' | 'EXECUTE', call: () => Promise<unknown>) => {
+    const key = `${item.id}:${kind}`
+    if (inFlight.current.has(key)) return
+    inFlight.current.add(key)
     setBusyId(item.id)
     // Optimistic UI: update the queue immediately so approve/reject/execute
     // feels instant. Reconciled with the server in the background; only
@@ -122,18 +123,19 @@ export default function TodayScreen() {
     setQueue((current) => current.map((queueItem) => (queueItem.id === item.id ? { ...queueItem, status: optimisticStatus } : queueItem)))
     try {
       await call()
-      showNotice('Done. Recorded in the audit trail.')
+      showSuccess('Done. Recorded in the audit trail.')
       loadAll()
     } catch (err: any) {
       if (err?.status && err.status < 500) {
         setQueue(previousQueue)
-        showNotice(err.message || 'That action could not be completed.')
+        showError(err, () => run(item, kind, call))
       } else {
         await enqueueOutboxAction(outboxActionType(item, kind), activeWorkspaceSlug, { actionId: item.id })
-        showNotice('Offline — queued for secure sync.')
+        showOffline()
       }
     } finally {
       setBusyId(null)
+      inFlight.current.delete(key)
     }
   }
 
@@ -157,7 +159,9 @@ export default function TodayScreen() {
     >
       <View style={styles.header}>
         <View>
-          <Text style={styles.product}>FOUNDINGOS</Text>
+          <Pressable onLongPress={() => router.push('/debug-log')} delayLongPress={2000}>
+            <Text style={styles.product}>FOUNDINGOS</Text>
+          </Pressable>
           <Text style={styles.title}>Today</Text>
         </View>
         <Pressable style={styles.profile} onPress={() => router.push('/search')}>
@@ -172,7 +176,9 @@ export default function TodayScreen() {
         </QuantumText>
       </View>
 
-      {notice ? <View style={styles.notice}><Text style={styles.noticeText}>{notice}</Text></View> : null}
+      {!isOnline ? <QuantumNotice tone="warning">Working offline — changes will sync later.</QuantumNotice> : null}
+
+      {feedback ? <QuantumNotice tone={feedback.tone} onRetry={feedback.onRetry}>{feedback.message}</QuantumNotice> : null}
 
       {!connected && !loading ? (
         <View style={styles.stack}>
@@ -319,15 +325,6 @@ const styles = StyleSheet.create({
     backgroundColor: quantumColors.success,
   },
   trustStrip: { paddingHorizontal: 2 },
-  notice: {
-    borderRadius: 12,
-    backgroundColor: 'rgba(56, 189, 248, 0.12)',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(56, 189, 248, 0.35)',
-  },
-  noticeText: { color: '#BEE9FF', fontSize: 14, fontWeight: '700', textAlign: 'center' },
   skeletonRow: { height: 52, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', marginBottom: quantumSpace.sm },
   skeletonRowShort: { width: '70%' },
   flex: { flex: 1 },

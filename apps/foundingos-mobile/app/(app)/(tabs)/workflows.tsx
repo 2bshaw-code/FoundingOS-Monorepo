@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { router } from 'expo-router'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Pressable, RefreshControl, StyleSheet, View } from 'react-native'
 import {
   QuantumButton,
@@ -32,6 +32,8 @@ import {
 import { AgentActionTrailEvent } from '../../../lib/core-operations-api'
 import { enqueueOutboxAction } from '../../../lib/outbox-sync'
 import { useQuantumStore } from '../../../lib/store'
+import { useActionFeedback } from '../../../lib/use-action-feedback'
+import { logAction } from '../../../lib/action-logger'
 
 const STATUS_LABEL: Record<ApprovalsQueueStatus, string> = {
   proposed: 'Suggested',
@@ -73,16 +75,20 @@ function formatRelativeTime(iso: string) {
 export default function WorkflowsScreen() {
   const theme = useActiveQuantumTheme()
   const activeBrandSlug = useQuantumStore((state) => state.activeBrandSlug)
+  const isOnline = useQuantumStore((state) => state.isOnline)
   const [connected, setConnected] = useState(false)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [actions, setActions] = useState<ApprovalsQueueItem[]>([])
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>(FILTERS[0])
   const [busyId, setBusyId] = useState<string | null>(null)
-  const [notice, setNotice] = useState('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [trail, setTrail] = useState<AgentActionTrailEvent[]>([])
   const [trailLoading, setTrailLoading] = useState(false)
+  const { feedback, showSuccess, showOffline, showError } = useActionFeedback()
+  // Guards against a double-tap firing the same action twice before the
+  // first tap's state update (busyId) has re-rendered and disabled it.
+  const inFlight = useRef<Set<string>>(new Set())
 
   const load = useCallback(async () => {
     const result = await fetchApprovalsQueue()
@@ -95,12 +101,10 @@ export default function WorkflowsScreen() {
     load()
   }, [load])
 
-  const showNotice = (text: string) => {
-    setNotice(text)
-    setTimeout(() => setNotice(''), 3500)
-  }
-
   const run = async (action: ApprovalsQueueItem, kind: 'APPROVE' | 'REJECT' | 'EXECUTE' | 'REVERSE', call: () => Promise<unknown>) => {
+    const key = `${action.id}:${kind}`
+    if (inFlight.current.has(key)) return
+    inFlight.current.add(key)
     setBusyId(action.id)
     // Optimistic UI: reflect the decision immediately so approving/rejecting
     // feels instant, then reconcile with the server in the background. Only
@@ -114,18 +118,22 @@ export default function WorkflowsScreen() {
     }
     try {
       await call()
-      showNotice('Done. Recorded in the audit trail.')
+      logAction('approval_action', 'success', { kind, actionId: action.id })
+      showSuccess('Done. Recorded in the audit trail.')
       load()
     } catch (err: any) {
       if (err?.status && err.status < 500) {
         setActions(previous)
-        showNotice(err.message || 'That action could not be completed.')
+        logAction('approval_action', 'failure', { kind, actionId: action.id, status: err.status })
+        showError(err, () => run(action, kind, call))
       } else {
         await enqueueOutboxAction(outboxActionType(action, kind), activeBrandSlug, { actionId: action.id })
-        showNotice('Offline — queued for secure sync.')
+        logAction('approval_action', 'failure', { kind, actionId: action.id, queued: true })
+        showOffline()
       }
     } finally {
       setBusyId(null)
+      inFlight.current.delete(key)
     }
   }
 
@@ -242,6 +250,8 @@ export default function WorkflowsScreen() {
         </QuantumText>
       </View>
 
+      {!isOnline ? <QuantumNotice tone="warning">Working offline — changes will sync later.</QuantumNotice> : null}
+
       <View style={styles.metricRow}>
         <QuantumMetric label="Suggested" value={counts.proposed} tone="info" />
         <QuantumMetric label="Awaiting execution" value={counts.approved} tone="watch" />
@@ -249,7 +259,7 @@ export default function WorkflowsScreen() {
         <QuantumMetric label="Rejected" value={counts.rejected} tone="risk" />
       </View>
 
-      {notice ? <QuantumNotice tone="info">{notice}</QuantumNotice> : null}
+      {feedback ? <QuantumNotice tone={feedback.tone} onRetry={feedback.onRetry}>{feedback.message}</QuantumNotice> : null}
 
       {!connected ? (
         <View style={{ gap: quantumSpace.sm }}>

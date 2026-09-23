@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { router } from 'expo-router'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Pressable, RefreshControl, StyleSheet, View } from 'react-native'
 import {
   QuantumButton,
@@ -41,6 +41,8 @@ import {
 import { getSession as getCoreOpsSession } from '../../../lib/core-operations-api'
 import { enqueueOutboxAction } from '../../../lib/outbox-sync'
 import { useQuantumStore } from '../../../lib/store'
+import { useActionFeedback } from '../../../lib/use-action-feedback'
+import { logAction } from '../../../lib/action-logger'
 
 const ACTION_STATUS_LABEL: Record<WorkforceActionStatus, string> = {
   proposed: 'Suggested',
@@ -77,7 +79,8 @@ export default function WorkforceScreen() {
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [actions, setActions] = useState<WorkforceAction[]>([])
   const [busyId, setBusyId] = useState<string | null>(null)
-  const [notice, setNotice] = useState('')
+  const { feedback, showSuccess, showWarning, showOffline, showError } = useActionFeedback()
+  const inFlight = useRef<Set<string>>(new Set())
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
   const [newJobTitle, setNewJobTitle] = useState('')
   const [newCandidateName, setNewCandidateName] = useState('')
@@ -130,47 +133,49 @@ export default function WorkforceScreen() {
     load()
   }, [load])
 
-  const showNotice = (text: string) => {
-    setNotice(text)
-    setTimeout(() => setNotice(''), 3500)
-  }
-
   const runAction = async (action: WorkforceAction, outboxType: string, call: () => Promise<WorkforceAction>) => {
+    const key = `${action.id}:${outboxType}`
+    if (inFlight.current.has(key)) return
+    inFlight.current.add(key)
     setBusyId(action.id)
     try {
       await call()
       await load()
-      showNotice('Done. Recorded in the audit trail.')
+      logAction('workforce_action', 'success', { type: outboxType, actionId: action.id })
+      showSuccess('Done. Recorded in the audit trail.')
     } catch (err: any) {
       if (err?.status && err.status < 500) {
-        showNotice(err.message || 'That action could not be completed.')
+        showError(err, () => runAction(action, outboxType, call))
       } else {
         await enqueueOutboxAction(outboxType, activeBrandSlug, { actionId: action.id })
-        showNotice('Offline — queued for secure sync.')
+        logAction('workforce_action', 'failure', { type: outboxType, actionId: action.id, queued: true })
+        showOffline()
       }
     } finally {
       setBusyId(null)
+      inFlight.current.delete(key)
     }
   }
 
   const handleCreateJob = async () => {
     if (!newJobTitle.trim()) {
-      showNotice('Enter a role title first.')
+      showWarning('Enter a role title first.')
       return
     }
     try {
       await createJob({ title: newJobTitle.trim(), status: 'open' })
       setNewJobTitle('')
       await load()
-      showNotice('Role created.')
+      logAction('record_created', 'success', { type: 'job' })
+      showSuccess('Role created.')
     } catch (err: any) {
-      showNotice(err?.message || 'Could not create role.')
+      showError(err, handleCreateJob)
     }
   }
 
   const handleAddCandidate = async (jobId: string) => {
     if (!newCandidateName.trim() || !newCandidateEmail.trim()) {
-      showNotice('Enter the candidate name and email.')
+      showWarning('Enter the candidate name and email.')
       return
     }
     try {
@@ -178,9 +183,10 @@ export default function WorkforceScreen() {
       setNewCandidateName('')
       setNewCandidateEmail('')
       await load()
-      showNotice('Candidate added to the pipeline.')
+      logAction('record_created', 'success', { type: 'candidate' })
+      showSuccess('Candidate added to the pipeline.')
     } catch (err: any) {
-      showNotice(err?.message || 'Could not add candidate.')
+      showError(err, () => handleAddCandidate(jobId))
     }
   }
 
@@ -191,9 +197,10 @@ export default function WorkforceScreen() {
     try {
       await proposeShortlistingAction({ jobId: candidate.jobId, candidateId: candidate.id, targetStage: nextStage })
       await load()
-      showNotice('Shortlisting action proposed — awaiting approval.')
+      logAction('record_status_change', 'success', { type: 'candidate_shortlist_proposed' })
+      showSuccess('Shortlisting action proposed — awaiting approval.')
     } catch (err: any) {
-      showNotice(err?.message || 'Could not propose shortlisting.')
+      showError(err, () => handleProposeShortlist(candidate))
     } finally {
       setBusyId(null)
     }
@@ -270,7 +277,7 @@ export default function WorkforceScreen() {
         </QuantumText>
       </QuantumCard>
 
-      {notice ? <QuantumNotice tone="info">{notice}</QuantumNotice> : null}
+      {feedback ? <QuantumNotice tone={feedback.tone} onRetry={feedback.onRetry}>{feedback.message}</QuantumNotice> : null}
 
       {!connected ? (
         coreOpsEmail ? (

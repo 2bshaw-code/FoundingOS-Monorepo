@@ -1985,12 +1985,32 @@ body:has(.complete-workspace-directory) .found-ai-panel {
 }
 
 .complete-workspace-error {
+  align-items: center;
   background: #fff0f3;
   border: 1px solid #f5b7c3;
   border-radius: 7px;
   color: #a92842;
+  display: flex;
   font-size: 11px;
+  gap: 10px;
+  justify-content: space-between;
   padding: 10px 12px;
+}
+
+.complete-workspace-error__retry {
+  background: #a92842;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 10px;
+}
+
+.complete-workspace-error__retry:hover {
+  background: #8a2036;
 }
 
 .complete-workspace-save-message {

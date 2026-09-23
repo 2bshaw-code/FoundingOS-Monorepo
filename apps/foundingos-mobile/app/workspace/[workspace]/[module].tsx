@@ -2,7 +2,7 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import { useLocalSearchParams } from 'expo-router'
@@ -18,6 +18,9 @@ import {
 import { findModule, findWorkspace, WorkspaceModuleDef } from '../../../lib/workspace-modules'
 import { getGroupCopy } from '../../../lib/workspace-copy'
 import { getModuleKpis } from '../../../lib/module-kpis'
+import { useActionFeedback } from '../../../lib/use-action-feedback'
+import { useQuantumStore } from '../../../lib/store'
+import { logAction } from '../../../lib/action-logger'
 import {
   QuantumButton,
   QuantumCard,
@@ -87,25 +90,53 @@ export default function WorkspaceModuleScreen() {
   const [records, setRecords] = useState<WorkspaceRecordDTO[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [error, setError] = useState('')
+  const [loadError, setLoadError] = useState('')
+  const isOnline = useQuantumStore((state) => state.isOnline)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [filter, setFilter] = useState<string>('All')
   const [photoBusyId, setPhotoBusyId] = useState<string | null>(null)
   const photoEnabled = module ? PHOTO_ENABLED_MODULES.has(module.id) : false
+  const { feedback, showError } = useActionFeedback()
+  const inFlight = useRef<Set<string>>(new Set())
+  const latestRequestKey = useRef<string>('')
+  // Rendering 500+ record cards in one pass is what actually causes jank on
+  // large datasets (this screen uses a plain ScrollView, not a windowed
+  // list), so cap the initial paint and let the user reveal more on demand
+  // rather than migrating every render branch to FlatList.
+  const RENDER_PAGE_SIZE = 60
+  const [renderLimit, setRenderLimit] = useState(RENDER_PAGE_SIZE)
 
   const load = useCallback(
     async (isRefresh = false) => {
       if (!workspace || !module) return
-      if (isRefresh) setRefreshing(true)
-      setError('')
+      // Route params can change while a request from a previous module is
+      // still in flight (expo-router reuses this screen instance across
+      // navigations within the same route pattern). Guard against a stale
+      // response landing after the user has already moved to another module.
+      const requestKey = `${workspace.slug}:${module.id}`
+      latestRequestKey.current = requestKey
+      if (isRefresh) {
+        setRefreshing(true)
+      } else {
+        // A fresh navigation into this module, not a pull-to-refresh — clear
+        // the previous module's records so they don't briefly flash under
+        // the new module's header while the request is in flight.
+        setLoading(true)
+        setRecords([])
+      }
+      setLoadError('')
       try {
         const data = await fetchWorkspaceRecords(workspace.slug, module.id)
+        if (latestRequestKey.current !== requestKey) return
         setRecords(data)
       } catch (err) {
-        setError(err instanceof CoreOpsApiError ? err.message : 'Could not load this module. Pull to refresh to try again.')
+        if (latestRequestKey.current !== requestKey) return
+        setLoadError(err instanceof CoreOpsApiError ? err.message : 'Could not load this module. Pull to refresh to try again.')
       } finally {
-        setLoading(false)
-        setRefreshing(false)
+        if (latestRequestKey.current === requestKey) {
+          setLoading(false)
+          setRefreshing(false)
+        }
       }
     },
     [workspace, module],
@@ -115,7 +146,13 @@ export default function WorkspaceModuleScreen() {
     load()
   }, [load])
 
+  useEffect(() => {
+    setRenderLimit(RENDER_PAGE_SIZE)
+  }, [filter, workspaceSlug, moduleId])
+
   const visibleRecords = filter === 'All' ? records : records.filter((record) => record.status === filter)
+  const pagedRecords = visibleRecords.slice(0, renderLimit)
+  const hasMoreRecords = visibleRecords.length > pagedRecords.length
 
   function nextStatus(status: string): string | null {
     if (!statuses) return null
@@ -127,8 +164,10 @@ export default function WorkspaceModuleScreen() {
   async function advance(record: WorkspaceRecordDTO) {
     const next = nextStatus(record.status)
     if (!next || !module) return
+    const key = `advance:${record.id}`
+    if (inFlight.current.has(key)) return
+    inFlight.current.add(key)
     setBusyId(record.id)
-    setError('')
     // Optimistic: move the record to its next status immediately so the tap
     // feels instant, then reconcile with the server response. Roll back only
     // on a genuine failure — not a transient one, since the UI should stay
@@ -138,17 +177,18 @@ export default function WorkspaceModuleScreen() {
     try {
       const updated = await updateWorkspaceRecord(record.id, { version: record.version, status: next })
       setRecords((current) => current.map((item) => (item.id === record.id ? updated : item)))
+      logAction('record_status_change', 'success', { module: module.id, status: next })
     } catch (err) {
       setRecords(previousRecords)
-      setError(err instanceof CoreOpsApiError ? err.message : 'Could not update this record — try again.')
+      showError(err, () => advance(record))
     } finally {
       setBusyId(null)
+      inFlight.current.delete(key)
     }
   }
 
   async function addRecord() {
     if (!workspace || !module) return
-    setError('')
     // Optimistic: show the new record in the list immediately with a
     // temporary id, then swap in the server's real record once it responds.
     const tempId = `temp-${Date.now()}`
@@ -171,9 +211,10 @@ export default function WorkspaceModuleScreen() {
         status: optimisticRecord.status,
       })
       setRecords((current) => current.map((item) => (item.id === tempId ? created : item)))
+      logAction('record_created', 'success', { module: module.id })
     } catch (err) {
       setRecords((current) => current.filter((item) => item.id !== tempId))
-      setError(err instanceof CoreOpsApiError ? err.message : 'Could not add a record — try again.')
+      showError(err, addRecord)
     }
   }
 
@@ -189,15 +230,18 @@ export default function WorkspaceModuleScreen() {
       : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 })
     if (result.canceled || !result.assets?.[0]) return
     const asset = result.assets[0]
+    const key = `photo:${record.id}`
+    if (inFlight.current.has(key)) return
+    inFlight.current.add(key)
     setPhotoBusyId(record.id)
-    setError('')
     try {
       const { record: updated } = await uploadWorkspaceRecordImage(record.id, asset.uri, asset.mimeType || 'image/jpeg')
       setRecords((current) => current.map((item) => (item.id === record.id ? updated : item)))
     } catch (err) {
-      setError(err instanceof CoreOpsApiError ? err.message : 'Could not upload that photo — try again.')
+      showError(err, () => addPhoto(record, source))
     } finally {
       setPhotoBusyId(null)
+      inFlight.current.delete(key)
     }
   }
 
@@ -300,6 +344,19 @@ export default function WorkspaceModuleScreen() {
     )
   }
 
+  function renderShowMore() {
+    if (!hasMoreRecords) return null
+    return (
+      <QuantumButton
+        key="show-more"
+        tone="secondary"
+        onPress={() => setRenderLimit((limit) => limit + RENDER_PAGE_SIZE)}
+      >
+        Show {Math.min(RENDER_PAGE_SIZE, visibleRecords.length - pagedRecords.length)} more (of {visibleRecords.length - pagedRecords.length} remaining)
+      </QuantumButton>
+    )
+  }
+
   function renderBody() {
     if (records.length === 0) {
       const copy = module ? getGroupCopy(module.group, [module]) : null
@@ -336,7 +393,14 @@ export default function WorkspaceModuleScreen() {
                 {columnRecords.length === 0 ? (
                   <QuantumNotice>Nothing in this stage yet.</QuantumNotice>
                 ) : (
-                  columnRecords.map((record) => renderRecordCard(record))
+                  <>
+                    {columnRecords.slice(0, renderLimit).map((record) => renderRecordCard(record))}
+                    {columnRecords.length > renderLimit ? (
+                      <QuantumButton tone="secondary" onPress={() => setRenderLimit((limit) => limit + RENDER_PAGE_SIZE)}>
+                        Show {Math.min(RENDER_PAGE_SIZE, columnRecords.length - renderLimit)} more
+                      </QuantumButton>
+                    ) : null}
+                  </>
                 )}
               </View>
             )
@@ -345,9 +409,9 @@ export default function WorkspaceModuleScreen() {
       )
     }
 
-    if (kind === 'inbox') return <View style={styles.list}>{visibleRecords.map(renderInboxRow)}</View>
-    if (kind === 'config' || kind === 'dashboard') return <View style={styles.list}>{visibleRecords.map(renderQuietRow)}</View>
-    return <View style={styles.list}>{visibleRecords.map(renderRecordCard)}</View>
+    if (kind === 'inbox') return <View style={styles.list}>{pagedRecords.map(renderInboxRow)}{renderShowMore()}</View>
+    if (kind === 'config' || kind === 'dashboard') return <View style={styles.list}>{pagedRecords.map(renderQuietRow)}{renderShowMore()}</View>
+    return <View style={styles.list}>{pagedRecords.map(renderRecordCard)}{renderShowMore()}</View>
   }
 
   return (
@@ -357,7 +421,9 @@ export default function WorkspaceModuleScreen() {
     >
       <QuantumBackButton label={`‹ ${workspace.label}`} fallbackHref={`/workspace/${workspace.slug}`} />
       <QuantumHeader eyebrow={workspace.label} title={module.label} accent={workspace.accent} />
-      {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
+      {!isOnline ? <QuantumNotice tone="warning">Working offline — changes will sync later.</QuantumNotice> : null}
+      {loadError ? <QuantumNotice tone="danger">{loadError}</QuantumNotice> : null}
+      {feedback ? <QuantumNotice tone={feedback.tone} onRetry={feedback.onRetry}>{feedback.message}</QuantumNotice> : null}
 
       {kpis ? (
         <View style={styles.kpiRow}>
