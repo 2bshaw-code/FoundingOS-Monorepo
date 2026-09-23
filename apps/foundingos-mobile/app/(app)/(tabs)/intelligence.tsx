@@ -4,20 +4,19 @@
 */
 import { router } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
-import { ActivityIndicator, RefreshControl, StyleSheet, View } from 'react-native'
+import { RefreshControl, StyleSheet, View } from 'react-native'
 import { QuantumComparisonBars } from '../../../components/QuantumMiniCharts'
-import {
-  AgentActionIntelligence,
-  fetchAgentActionIntelligence,
-  getSession,
-} from '../../../lib/core-operations-api'
+import { AgentActionIntelligence } from '../../../lib/core-operations-api'
+import { getIntelligenceService } from '../../../lib/services/intelligenceService'
 import {
   QuantumButton,
   QuantumCard,
+  QuantumEmptyState,
   QuantumMetric,
   QuantumNotice,
   QuantumScreen,
   QuantumSectionHeader,
+  QuantumSkeletonList,
   QuantumText,
   quantumColors,
   quantumSpace,
@@ -47,13 +46,9 @@ export default function IntelligenceScreen() {
   const [summary, setSummary] = useState<AgentActionIntelligence | null>(null)
 
   const load = useCallback(async () => {
-    const session = await getSession()
-    setConnected(Boolean(session))
-    if (!session) {
-      setLoading(false)
-      return
-    }
-    setSummary(await fetchAgentActionIntelligence().catch(() => null))
+    const overview = await getIntelligenceService().fetchOverview()
+    setConnected(overview.connected)
+    setSummary(overview.summary)
     setLoading(false)
   }, [])
 
@@ -63,8 +58,9 @@ export default function IntelligenceScreen() {
 
   if (loading) {
     return (
-      <QuantumScreen scroll={false} contentStyle={styles.center}>
-        <ActivityIndicator color={theme.accent} />
+      <QuantumScreen>
+        <QuantumText variant="overline" color={theme.accent}>Core.Intelligence</QuantumText>
+        <QuantumSkeletonList count={3} />
       </QuantumScreen>
     )
   }
@@ -136,7 +132,7 @@ export default function IntelligenceScreen() {
 
           <QuantumSectionHeader label="Emerging signals" />
           {summary.emergingSignals.length === 0 ? (
-            <QuantumNotice tone="info">No emerging signals are published yet. Live signals will appear here once governed outcomes accumulate.</QuantumNotice>
+            <QuantumEmptyState glyph="◇" title="No emerging signals yet" subtitle="Live signals will appear here once governed outcomes accumulate." />
           ) : (
             summary.emergingSignals.map((signal) => (
               <QuantumCard key={signal.id} accent={signal.severity === 'positive' ? quantumColors.success : signal.severity === 'material' ? quantumColors.warning : theme.accent}>
@@ -170,7 +166,7 @@ export default function IntelligenceScreen() {
 
           <QuantumSectionHeader label="Execution audit trail" />
           {summary.auditTrail.length === 0 ? (
-            <QuantumNotice tone="info">No intelligence audit entries are available yet.</QuantumNotice>
+            <QuantumEmptyState glyph="⌕" title="No audit entries yet" subtitle="Governed actions will leave a trail here as they're proposed, approved, and executed." />
           ) : (
             summary.auditTrail.map((entry) => (
               <QuantumCard key={entry.id} accent={theme.accent}>
@@ -188,7 +184,7 @@ export default function IntelligenceScreen() {
           )}
         </>
       ) : connected ? (
-        <QuantumNotice tone="danger">The live intelligence summary could not be loaded. Pull to refresh.</QuantumNotice>
+        <QuantumEmptyState glyph="⚠" title="Intelligence summary unavailable" subtitle="The live intelligence summary could not be loaded." action={<QuantumButton onPress={() => { setLoading(true); load() }}>Try again</QuantumButton>} />
       ) : null}
     </QuantumScreen>
   )

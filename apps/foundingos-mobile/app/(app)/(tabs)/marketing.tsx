@@ -4,26 +4,19 @@
 */
 import { router } from 'expo-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Pressable, RefreshControl, StyleSheet, View } from 'react-native'
-import {
-  MarketingCampaign,
-  MarketingWorkspace,
-  SocialPost,
-  createMarketingCampaign,
-  createMarketingSocialPost,
-  fetchMarketingWorkspace,
-  generateMarketingMedia,
-  getSession,
-  updateMarketingCampaign,
-  updateMarketingSocialPost,
-} from '../../../lib/core-operations-api'
+import { Pressable, RefreshControl, StyleSheet, View } from 'react-native'
+import { MarketingCampaign, MarketingWorkspace, SocialPost, getSession } from '../../../lib/core-operations-api'
+import { getMarketingService } from '../../../lib/services/marketingService'
+import { useQuantumStore } from '../../../lib/store'
 import {
   QuantumButton,
   QuantumCard,
+  QuantumEmptyState,
   QuantumMetric,
   QuantumNotice,
   QuantumScreen,
   QuantumSectionHeader,
+  QuantumSkeletonList,
   QuantumText,
   QuantumTextInput,
   quantumSpace,
@@ -119,13 +112,25 @@ export default function MarketingScreen() {
   const [expandedPostId, setExpandedPostId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
+    if (useQuantumStore.getState().demoMode) {
+      setConnected(true)
+      const nextWorkspace = await getMarketingService().fetchWorkspace()
+      setWorkspace(nextWorkspace)
+      if (nextWorkspace) {
+        setCampaignDrafts(Object.fromEntries(nextWorkspace.campaigns.map((campaign) => [campaign.id, buildCampaignDraft(campaign)])))
+        setPostDrafts(Object.fromEntries(nextWorkspace.socialPosts.map((post) => [post.id, buildPostDraft(post)])))
+        if (!selectedCampaignId && nextWorkspace.campaigns[0]) setSelectedCampaignId(nextWorkspace.campaigns[0].id)
+      }
+      setLoading(false)
+      return
+    }
     const session = await getSession()
     setConnected(Boolean(session))
     if (!session) {
       setLoading(false)
       return
     }
-    const nextWorkspace = await fetchMarketingWorkspace().catch(() => null)
+    const nextWorkspace = await getMarketingService().fetchWorkspace().catch(() => null)
     setWorkspace(nextWorkspace)
     if (nextWorkspace) {
       setCampaignDrafts(Object.fromEntries(nextWorkspace.campaigns.map((campaign) => [campaign.id, buildCampaignDraft(campaign)])))
@@ -165,7 +170,7 @@ export default function MarketingScreen() {
     }
     setBusy('create-campaign')
     try {
-      await createMarketingCampaign({
+      await getMarketingService().createCampaign({
         name: campaignName.trim(),
         objective: campaignObjective.trim() || undefined,
         audience: campaignAudience.trim() || undefined,
@@ -176,7 +181,7 @@ export default function MarketingScreen() {
       setCampaignObjective('')
       setCampaignAudience('')
       setCampaignScheduledAt('')
-      setNotice('Campaign created.')
+      setNotice(useQuantumStore.getState().demoMode ? 'Campaign created. (Demo mode — not persisted.)' : 'Campaign created.')
       await load()
     } catch (error: any) {
       setNotice(error?.message || 'Campaign could not be created.')
@@ -190,15 +195,15 @@ export default function MarketingScreen() {
     if (!draft) return
     setBusy(`campaign-${campaign.id}`)
     try {
-      await updateMarketingCampaign(campaign.id, {
+      await getMarketingService().updateCampaign(campaign.id, {
         status: draft.status,
-        scheduledAt: draft.scheduledAt.trim() ? parseOptionalIso(draft.scheduledAt) : null,
+        scheduledAt: draft.scheduledAt.trim() ? parseOptionalIso(draft.scheduledAt) ?? null : null,
         impressions: Number(draft.impressions || 0),
         engagements: Number(draft.engagements || 0),
         conversions: Number(draft.conversions || 0),
         revenuePence: Math.round(Number(draft.revenuePounds || 0) * 100),
       })
-      setNotice('Campaign updated.')
+      setNotice(useQuantumStore.getState().demoMode ? 'Campaign updated. (Demo mode — not persisted.)' : 'Campaign updated.')
       await load()
     } catch (error: any) {
       setNotice(error?.message || 'Campaign update failed.')
@@ -214,7 +219,7 @@ export default function MarketingScreen() {
     }
     setBusy('create-post')
     try {
-      await createMarketingSocialPost({
+      await getMarketingService().createSocialPost({
         campaignId: selectedCampaignId || undefined,
         content: postContent.trim(),
         platforms: parsePlatforms(postPlatforms),
@@ -224,7 +229,7 @@ export default function MarketingScreen() {
       setPostContent('')
       setPostScheduledAt('')
       setPostAutoPost(false)
-      setNotice('Social post created.')
+      setNotice(useQuantumStore.getState().demoMode ? 'Social post created. (Demo mode — not persisted.)' : 'Social post created.')
       await load()
     } catch (error: any) {
       setNotice(error?.message || 'Social post could not be created.')
@@ -238,13 +243,13 @@ export default function MarketingScreen() {
     if (!draft) return
     setBusy(`post-${post.id}`)
     try {
-      await updateMarketingSocialPost(post.id, {
+      await getMarketingService().updateSocialPost(post.id, {
         content: draft.content,
         status: draft.status,
-        scheduledAt: draft.scheduledAt.trim() ? parseOptionalIso(draft.scheduledAt) : null,
+        scheduledAt: draft.scheduledAt.trim() ? parseOptionalIso(draft.scheduledAt) ?? null : null,
         autoPost: draft.autoPost,
       })
-      setNotice('Social post updated.')
+      setNotice(useQuantumStore.getState().demoMode ? 'Social post updated. (Demo mode — not persisted.)' : 'Social post updated.')
       await load()
     } catch (error: any) {
       setNotice(error?.message || 'Social post update failed.')
@@ -260,9 +265,9 @@ export default function MarketingScreen() {
     }
     setBusy('generate-media')
     try {
-      await generateMarketingMedia({ format: generationFormat.trim() || 'Campaign copy', brief: generationBrief.trim() })
+      await getMarketingService().generateMedia({ format: generationFormat.trim() || 'Campaign copy', brief: generationBrief.trim() })
       setGenerationBrief('')
-      setNotice('Content generated and saved to history.')
+      setNotice(useQuantumStore.getState().demoMode ? 'Content generated and saved to history. (Demo mode — not persisted.)' : 'Content generated and saved to history.')
       await load()
     } catch (error: any) {
       setNotice(error?.message || 'Content generation failed.')
@@ -273,8 +278,9 @@ export default function MarketingScreen() {
 
   if (loading) {
     return (
-      <QuantumScreen scroll={false} contentStyle={styles.center}>
-        <ActivityIndicator color={theme.accent} />
+      <QuantumScreen>
+        <QuantumText variant="overline" color={theme.accent}>Core.Operations · Marketing</QuantumText>
+        <QuantumSkeletonList count={3} />
       </QuantumScreen>
     )
   }
@@ -296,7 +302,9 @@ export default function MarketingScreen() {
           <QuantumButton onPress={() => router.replace({ pathname: '/', params: { returnTo: '/(app)/(tabs)/marketing' } })}>Sign in</QuantumButton>
         </View>
       ) : null}
-      {connected && !workspace ? <QuantumNotice tone="danger">Marketing data could not be loaded. Pull to refresh.</QuantumNotice> : null}
+      {connected && !workspace ? (
+        <QuantumEmptyState glyph="⚠" title="Marketing data unavailable" subtitle="Marketing data could not be loaded." action={<QuantumButton onPress={() => load()}>Try again</QuantumButton>} />
+      ) : null}
 
       {workspace ? (
         <>
@@ -321,7 +329,7 @@ export default function MarketingScreen() {
 
           <QuantumSectionHeader label="Live campaigns" />
           {campaigns.length === 0 ? (
-            <QuantumNotice>No campaigns have been created yet for this tenant.</QuantumNotice>
+            <QuantumEmptyState glyph="◇" title="No campaigns yet" subtitle="Campaigns you create for this tenant will show up here." />
           ) : (
             campaigns.map((campaign) => {
               const draft = campaignDrafts[campaign.id] ?? buildCampaignDraft(campaign)
@@ -385,7 +393,7 @@ export default function MarketingScreen() {
 
           <QuantumSectionHeader label="Social publishing queue" />
           {socialPosts.length === 0 ? (
-            <QuantumNotice>No social posts have been created yet.</QuantumNotice>
+            <QuantumEmptyState glyph="◇" title="Nothing queued to publish" subtitle="Social posts you create will appear here before they go out." />
           ) : (
             socialPosts.map((post) => {
               const draft = postDrafts[post.id] ?? buildPostDraft(post)
@@ -431,7 +439,7 @@ export default function MarketingScreen() {
 
           <QuantumSectionHeader label="Generated copy history" />
           {mediaHistory.length === 0 ? (
-            <QuantumNotice>No generated copy is stored yet.</QuantumNotice>
+            <QuantumEmptyState glyph="◇" title="No generated copy yet" subtitle="Copy you generate will be saved here for reuse." />
           ) : (
             mediaHistory.map((entry) => (
               <QuantumCard key={entry.id} accent={theme.accent}>

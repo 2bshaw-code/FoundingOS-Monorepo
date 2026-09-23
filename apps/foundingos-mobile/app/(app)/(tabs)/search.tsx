@@ -4,9 +4,19 @@
 */
 import { useMemo, useState } from 'react'
 import { router } from 'expo-router'
+import Animated, { FadeInDown } from 'react-native-reanimated'
 import { FOUNDINGOS_ACCENT } from '../../../lib/brands'
 import { searchCatalogue } from '../../../lib/nav-directory'
-import { QuantumHeader, QuantumListItem, QuantumNotice, QuantumScreen, QuantumSectionHeader, QuantumTextInput, quantumColors } from '../../../components/QuantumUI'
+import { ENTRANCE_DURATION_MS, staggerDelay, useReducedMotionPreference } from '../../../lib/motion'
+import {
+  QuantumEmptyState,
+  QuantumHeader,
+  QuantumListItem,
+  QuantumScreen,
+  QuantumSectionHeader,
+  QuantumTextInput,
+  quantumColors,
+} from '../../../components/QuantumUI'
 
 // Real, live search over every suite dashboard and every one of the 7 workspaces'
 // 120+ modules (see lib/nav-directory.ts) — replaces the old Command Bar modal,
@@ -15,6 +25,7 @@ import { QuantumHeader, QuantumListItem, QuantumNotice, QuantumScreen, QuantumSe
 export default function SearchScreen() {
   const [query, setQuery] = useState('')
   const results = useMemo(() => searchCatalogue(query), [query])
+  const reduceMotion = useReducedMotionPreference()
 
   const goToPhotoIntake = () => router.push('/workspace/retail/inventory')
 
@@ -35,29 +46,33 @@ export default function SearchScreen() {
         placeholder="Search workspaces, modules, or actions..."
         value={query}
         onChangeText={setQuery}
+        autoFocus
       />
 
       {!query.trim() ? (
         <>
           <QuantumSectionHeader label="Quick actions" />
-          {quickActions.map((action) => (
-            <QuantumListItem key={action.id} title={action.label} subtitle={action.subtitle} onPress={action.action} accent={quantumColors.neutral200} />
+          {quickActions.map((action, i) => (
+            <Animated.View key={action.id} entering={reduceMotion ? undefined : FadeInDown.delay(staggerDelay(i)).duration(ENTRANCE_DURATION_MS).springify().damping(18)}>
+              <QuantumListItem title={action.label} subtitle={action.subtitle} onPress={action.action} accent={quantumColors.neutral200} />
+            </Animated.View>
           ))}
-          <QuantumNotice tone="info">Start typing above to search every module across all 7 workspaces.</QuantumNotice>
+          <QuantumEmptyState glyph="⌕" title="Search everything" subtitle="Start typing above to search every module across all 7 workspaces." />
         </>
       ) : results.length === 0 ? (
-        <QuantumNotice tone="warning">No matches for "{query}".</QuantumNotice>
+        <QuantumEmptyState glyph="⌕" title="No matches" subtitle={`Nothing found for "${query}". Try a different word, or browse Workspaces instead.`} />
       ) : (
         <>
           <QuantumSectionHeader label={`${results.length} result${results.length === 1 ? '' : 's'}`} />
-          {results.map((result) => (
-            <QuantumListItem
-              key={result.id}
-              title={result.title}
-              subtitle={result.subtitle}
-              accent={result.accent}
-              onPress={() => router.push(result.route as never)}
-            />
+          {results.map((result, i) => (
+            <Animated.View key={result.id} entering={reduceMotion ? undefined : FadeInDown.delay(staggerDelay(i)).duration(ENTRANCE_DURATION_MS).springify().damping(18)}>
+              <QuantumListItem
+                title={result.title}
+                subtitle={result.subtitle}
+                accent={result.accent}
+                onPress={() => router.push(result.route as never)}
+              />
+            </Animated.View>
           ))}
         </>
       )}

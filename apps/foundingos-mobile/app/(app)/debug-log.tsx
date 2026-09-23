@@ -24,6 +24,7 @@ import {
   QuantumText,
   getSemanticColor,
 } from '../../components/QuantumUI'
+import { useQuantumStore } from '../../lib/store'
 
 type ServiceStatus = 'checking' | 'ok' | 'down'
 
@@ -56,12 +57,26 @@ function useServiceStatus() {
 export default function DebugLogScreen() {
   const [entries, setEntries] = useState<ActionLogEntry[]>(getActionLog())
   const serviceStatus = useServiceStatus()
+  const demoMode = useQuantumStore((state) => state.demoMode)
+  const setDemoMode = useQuantumStore((state) => state.setDemoMode)
 
   useEffect(() => subscribeToActionLog(() => setEntries(getActionLog())), [])
 
   return (
     <QuantumScreen>
       <QuantumHeader eyebrow="Diagnostics" title="Action Log" accent={FOUNDINGOS_ACCENT} />
+
+      <QuantumText variant="overline">Demo mode</QuantumText>
+      <QuantumCard accent={demoMode ? getSemanticColor('watch') : undefined}>
+        <QuantumText variant="caption">
+          Populates Today and Approvals with realistic sample data — no real backend, workspace, or tenant required.
+          Ideal for investor and buyer demos. Off by default and never affects real data.
+        </QuantumText>
+        <QuantumButton tone={demoMode ? 'danger' : 'primary'} onPress={() => setDemoMode(!demoMode)} style={styles.demoButton}>
+          {demoMode ? 'Turn off demo mode' : 'Turn on demo mode'}
+        </QuantumButton>
+      </QuantumCard>
+
       <QuantumText variant="overline">Service status</QuantumText>
       {SERVICES.map(({ label }) => {
         const state = serviceStatus[label]
@@ -105,4 +120,5 @@ export default function DebugLogScreen() {
 
 const styles = StyleSheet.create({
   metadata: { opacity: 0.7 },
+  demoButton: { marginTop: 10 },
 })

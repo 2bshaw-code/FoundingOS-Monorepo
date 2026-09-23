@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { LinearGradient } from 'expo-linear-gradient'
-import { ReactElement, ReactNode, useState } from 'react'
+import { ReactElement, ReactNode, useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   Pressable,
@@ -19,10 +19,23 @@ import {
   View,
   ViewStyle,
 } from 'react-native'
+import Animated, {
+  Easing,
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ensureReadableText } from '../lib/colour-audit'
+import { ENTRANCE_DURATION_MS, PRESS_SPRING, staggerDelay, useReducedMotionPreference } from '../lib/motion'
 import { QuantumTheme, getShellSafeTheme, useQuantumStore } from '../lib/store'
 import { QuantumHeader as QuantumHeaderV1 } from './QuantumHeader'
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
 
 export const quantumSpace = {
   xs: 4,
@@ -103,6 +116,19 @@ type QuantumCardProps = {
   accent?: string
   elevated?: boolean
   style?: StyleProp<ViewStyle>
+  // Optional — supplying this turns the card into a pressable surface with a
+  // premium spring press-in (subtle scale + lift), replacing the old pattern
+  // of wrapping QuantumCard in a separate <Pressable style={{opacity}}>.
+  onPress?: () => void
+  disabled?: boolean
+  // Position of this card within a list/grid — when set, its mount animation
+  // is delayed by a small, capped amount per index so a grid of cards
+  // cascades in rather than all appearing at once.
+  index?: number
+  // Escape hatch for cards that shouldn't animate on mount at all (rare —
+  // defaults to true everywhere else). Always ignored when the user has
+  // Reduce Motion enabled, which already disables the animation outright.
+  animateEntrance?: boolean
 }
 
 type QuantumButtonProps = {
@@ -183,9 +209,49 @@ export function QuantumText({ children, variant = 'body', color, align, style, .
   )
 }
 
-export function QuantumCard({ children, accent, elevated = true, style }: QuantumCardProps) {
+export function QuantumCard({
+  children,
+  accent,
+  elevated = true,
+  style,
+  onPress,
+  disabled,
+  index,
+  animateEntrance = true,
+}: QuantumCardProps) {
   const theme = useActiveQuantumTheme()
-  return (
+  const reduceMotion = useReducedMotionPreference()
+  // 0 = resting, 1 = fully pressed — driven by withSpring on press in/out,
+  // read by the animated style below to derive both the scale-down and the
+  // small lift, so the two always stay perfectly in sync with one spring.
+  const press = useSharedValue(0)
+
+  const pressStyle = useAnimatedStyle(() => ({
+    transform: [
+      // 0.965 rest scale floor sits in the "subtle, tactile" range the brief
+      // asked for (0.96–0.97) without reading as a heavy squash.
+      { scale: 1 - press.value * 0.035 },
+      { translateY: -press.value * 2 },
+    ],
+  }))
+
+  const handlePressIn = () => {
+    if (reduceMotion) return
+    press.value = withSpring(1, PRESS_SPRING)
+  }
+  const handlePressOut = () => {
+    if (reduceMotion) return
+    press.value = withSpring(0, PRESS_SPRING)
+  }
+
+  // `style` is applied here too (not just on the outermost wrapper below) —
+  // callers pass layout props through it for two different purposes: grid
+  // sizing (minWidth/flexGrow, needed on the outermost element so it
+  // participates correctly in a wrapping row) and internal content layout
+  // (gap/alignItems, needed here so it actually affects the real children).
+  // Applying it at both levels keeps every existing call site working
+  // unchanged regardless of which kind of prop it passed.
+  const cardBody = (
     <View
       style={[
         styles.card,
@@ -208,6 +274,33 @@ export function QuantumCard({ children, accent, elevated = true, style }: Quantu
       ) : null}
       {children}
     </View>
+  )
+
+  const pressableBody = onPress ? (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      disabled={disabled}
+      style={reduceMotion ? undefined : pressStyle}
+    >
+      {cardBody}
+    </AnimatedPressable>
+  ) : (
+    cardBody
+  )
+
+  if (reduceMotion || !animateEntrance) {
+    return <View style={style}>{pressableBody}</View>
+  }
+
+  return (
+    <Animated.View
+      style={style}
+      entering={FadeInDown.delay(staggerDelay(index)).duration(ENTRANCE_DURATION_MS).springify().damping(18)}
+    >
+      {pressableBody}
+    </Animated.View>
   )
 }
 
@@ -472,6 +565,113 @@ export function QuantumMetric({
   )
 }
 
+// A labelled fill bar used anywhere the app needs to visualize an AI
+// confidence/reliability/decision score (Guardian's health card, the
+// Approvals AI preview panel). The fill animates in with withTiming rather
+// than mounting at full width, so it reads as the number actually being
+// computed/settling rather than a static, static-feeling stat — this is the
+// single visual most responsible for the "intelligent" feel the AI preview
+// is meant to convey. Respects Reduce Motion (mounts already-filled instead).
+export function QuantumConfidenceBar({
+  label,
+  percent,
+  tone = 'info',
+}: {
+  label: string
+  percent: number
+  tone?: 'good' | 'watch' | 'risk' | 'info'
+}) {
+  const reduceMotion = useReducedMotionPreference()
+  const clamped = Math.max(0, Math.min(100, Math.round(percent)))
+  const color = getSemanticColor(tone)
+  const fill = useSharedValue(reduceMotion ? clamped : 0)
+
+  useEffect(() => {
+    fill.value = reduceMotion ? clamped : withTiming(clamped, { duration: 700, easing: Easing.out(Easing.cubic) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clamped, reduceMotion])
+
+  const fillStyle = useAnimatedStyle(() => ({ width: `${fill.value}%` }))
+
+  return (
+    <View style={styles.confidenceRow}>
+      <View style={styles.confidenceLabelRow}>
+        <QuantumText variant="caption">{label}</QuantumText>
+        <QuantumText variant="caption" color={color}>{clamped}%</QuantumText>
+      </View>
+      <View style={styles.confidenceTrack}>
+        <Animated.View style={[styles.confidenceFill, { backgroundColor: color }, fillStyle]} />
+      </View>
+    </View>
+  )
+}
+
+// A single shimmering placeholder block — the building block for every
+// skeleton loading state in the app (replaces a bare spinner with a preview
+// of the real layout that's about to appear, which reads as faster and more
+// premium). Respects Reduce Motion by holding a static, softly-visible tone
+// instead of animating.
+export function QuantumSkeleton({ style }: { style?: StyleProp<ViewStyle> }) {
+  const theme = useActiveQuantumTheme()
+  const reduceMotion = useReducedMotionPreference()
+  const shimmer = useSharedValue(reduceMotion ? 0.5 : 0.35)
+
+  useEffect(() => {
+    if (reduceMotion) return
+    shimmer.value = withRepeat(withSequence(withTiming(0.65, { duration: 900, easing: Easing.inOut(Easing.sin) }), withTiming(0.35, { duration: 900, easing: Easing.inOut(Easing.sin) })), -1, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reduceMotion])
+
+  const shimmerStyle = useAnimatedStyle(() => ({ opacity: shimmer.value }))
+
+  return <Animated.View style={[styles.skeletonBlock, { backgroundColor: theme.borderColor }, shimmerStyle, style]} />
+}
+
+// A ready-made skeleton for a vertical stack of card-shaped placeholders —
+// used anywhere a screen's real content is a list of QuantumCards (Guardian's
+// signal cards, the Approvals queue, module record lists) so the loading
+// state's shape matches what's about to replace it.
+export function QuantumSkeletonList({ count = 3 }: { count?: number }) {
+  return (
+    <View style={styles.skeletonList}>
+      {Array.from({ length: count }).map((_, i) => (
+        <View key={i} style={styles.skeletonCard}>
+          <QuantumSkeleton style={styles.skeletonTitle} />
+          <QuantumSkeleton style={styles.skeletonLineWide} />
+          <QuantumSkeleton style={styles.skeletonLineNarrow} />
+        </View>
+      ))}
+    </View>
+  )
+}
+
+// A consistent, considered "nothing here (yet)" state — used instead of a
+// bare QuantumNotice wherever a whole section is empty, so the app never
+// reads as broken or unfinished. `glyph` is a single character/emoji kept
+// deliberately restrained (no illustration library), `action` is optional
+// for the rare case a retry/next-step control belongs here.
+export function QuantumEmptyState({
+  glyph = '◇',
+  title,
+  subtitle,
+  action,
+}: {
+  glyph?: string
+  title: string
+  subtitle?: string
+  action?: ReactNode
+}) {
+  const theme = useActiveQuantumTheme()
+  return (
+    <View style={[styles.emptyStateBox, { borderColor: theme.borderColor }]}>
+      <QuantumText variant="h2" color={theme.subtextColor} style={styles.emptyStateGlyph}>{glyph}</QuantumText>
+      <QuantumText variant="h3" align="center">{title}</QuantumText>
+      {subtitle ? <QuantumText variant="caption" align="center" color={theme.subtextColor}>{subtitle}</QuantumText> : null}
+      {action ? <View style={styles.emptyStateAction}>{action}</View> : null}
+    </View>
+  )
+}
+
 export function quantumShadow(accent: string): ViewStyle {
   return {
     shadowColor: accent,
@@ -620,5 +820,63 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: quantumSpace.xs,
+  },
+  confidenceRow: {
+    gap: 4,
+  },
+  confidenceLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  confidenceTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    overflow: 'hidden',
+  },
+  confidenceFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  skeletonBlock: {
+    borderRadius: quantumRadius.sm,
+  },
+  skeletonList: {
+    gap: quantumSpace.sm,
+  },
+  skeletonCard: {
+    borderRadius: quantumRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    padding: quantumSpace.lg,
+    gap: quantumSpace.sm,
+  },
+  skeletonTitle: {
+    height: 16,
+    width: '55%',
+  },
+  skeletonLineWide: {
+    height: 11,
+    width: '92%',
+  },
+  skeletonLineNarrow: {
+    height: 11,
+    width: '68%',
+  },
+  emptyStateBox: {
+    alignItems: 'center',
+    gap: quantumSpace.xs,
+    paddingVertical: quantumSpace.xl,
+    paddingHorizontal: quantumSpace.lg,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: quantumRadius.lg,
+  },
+  emptyStateGlyph: {
+    opacity: 0.5,
+    marginBottom: quantumSpace.xs,
+  },
+  emptyStateAction: {
+    marginTop: quantumSpace.sm,
   },
 })

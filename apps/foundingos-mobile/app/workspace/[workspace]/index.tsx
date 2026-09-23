@@ -88,17 +88,17 @@ export default function WorkspaceModulesScreen() {
             </View>
           ) : null}
           <View style={styles.moduleGrid}>
-            {group.items.map((item) => (
-              <Pressable
+            {group.items.map((item, i) => (
+              <QuantumCard
                 key={item.id}
-                style={({ pressed }) => [styles.moduleCard, { opacity: pressed ? 0.7 : 1 }]}
+                accent={workspace.accent}
+                style={styles.moduleCard}
+                index={i}
                 onPress={() => router.push(`/workspace/${workspace.slug}/${item.id}`)}
               >
-                <QuantumCard accent={workspace.accent}>
-                  <QuantumText variant="h3">{item.label}</QuantumText>
-                  <QuantumText variant="caption">{item.statuses ? item.statuses.join(' · ') : 'Records'}</QuantumText>
-                </QuantumCard>
-              </Pressable>
+                <QuantumText variant="h3">{item.label}</QuantumText>
+                <QuantumText variant="caption">{item.statuses ? item.statuses.join(' · ') : 'Records'}</QuantumText>
+              </QuantumCard>
             ))}
           </View>
         </View>

@@ -4,7 +4,7 @@
 */
 import { router } from 'expo-router'
 import { useEffect, useMemo, useState } from 'react'
-import { Pressable, View, StyleSheet } from 'react-native'
+import { View, StyleSheet } from 'react-native'
 import { FOUNDINGOS_ACCENT } from '../../../lib/brands'
 import { getSession } from '../../../lib/core-operations-api'
 import { SUITE_LINKS } from '../../../lib/nav-directory'
@@ -48,26 +48,22 @@ export default function WorkspaceDirectoryScreen() {
 
       <QuantumSectionHeader label="Suites & dashboards" action={<QuantumNotice tone={connectionNotice.tone}>{connectionNotice.label}</QuantumNotice>} />
       <View style={styles.suiteGrid}>
-        {SUITE_LINKS.filter((suite) => suite.label !== 'Account').map((suite) => (
-          <Pressable key={suite.slug} style={({ pressed }) => [styles.suiteCard, { opacity: pressed ? 0.7 : 1 }]} onPress={() => open(suite.slug, suite.route)}>
-            <QuantumCard accent={suite.accent}>
-              <QuantumText variant="overline" color={suite.accent}>{suite.label}</QuantumText>
-              <QuantumText variant="h3">{suite.name}</QuantumText>
-              <QuantumText variant="caption">{suite.tagline}</QuantumText>
-            </QuantumCard>
-          </Pressable>
+        {SUITE_LINKS.filter((suite) => suite.label !== 'Account').map((suite, i) => (
+          <QuantumCard key={suite.slug} accent={suite.accent} style={styles.suiteCard} index={i} onPress={() => open(suite.slug, suite.route)}>
+            <QuantumText variant="overline" color={suite.accent}>{suite.label}</QuantumText>
+            <QuantumText variant="h3">{suite.name}</QuantumText>
+            <QuantumText variant="caption">{suite.tagline}</QuantumText>
+          </QuantumCard>
         ))}
       </View>
 
       <QuantumSectionHeader label="Account" />
       <View style={styles.suiteGrid}>
-        {SUITE_LINKS.filter((suite) => suite.label === 'Account').map((suite) => (
-          <Pressable key={suite.slug} style={({ pressed }) => [styles.suiteCard, { opacity: pressed ? 0.7 : 1 }]} onPress={() => open(suite.slug, suite.route)}>
-            <QuantumCard accent={suite.accent}>
-              <QuantumText variant="h3">{suite.name}</QuantumText>
-              <QuantumText variant="caption">{suite.tagline}</QuantumText>
-            </QuantumCard>
-          </Pressable>
+        {SUITE_LINKS.filter((suite) => suite.label === 'Account').map((suite, i) => (
+          <QuantumCard key={suite.slug} accent={suite.accent} style={styles.suiteCard} index={i} onPress={() => open(suite.slug, suite.route)}>
+            <QuantumText variant="h3">{suite.name}</QuantumText>
+            <QuantumText variant="caption">{suite.tagline}</QuantumText>
+          </QuantumCard>
         ))}
       </View>
 
@@ -77,13 +73,11 @@ export default function WorkspaceDirectoryScreen() {
         inventory, campaigns, payroll, and more.
       </QuantumText>
       <View style={styles.workspaceGrid}>
-        {WORKSPACES.map((workspace) => (
-          <Pressable key={workspace.slug} style={({ pressed }) => [styles.workspaceCard, { opacity: pressed ? 0.7 : 1 }]} onPress={() => router.push(`/workspace/${workspace.slug}`)}>
-            <QuantumCard accent={workspace.accent}>
-              <QuantumText variant="h3">{workspace.label}</QuantumText>
-              <QuantumText variant="caption">{workspace.modules.length} modules</QuantumText>
-            </QuantumCard>
-          </Pressable>
+        {WORKSPACES.map((workspace, i) => (
+          <QuantumCard key={workspace.slug} accent={workspace.accent} style={styles.workspaceCard} index={i} onPress={() => router.push(`/workspace/${workspace.slug}`)}>
+            <QuantumText variant="h3">{workspace.label}</QuantumText>
+            <QuantumText variant="caption">{workspace.modules.length} modules</QuantumText>
+          </QuantumCard>
         ))}
       </View>
     </QuantumScreen>

@@ -9,11 +9,12 @@ import { getAllOutboxItems, processOutboxSync } from '../../../lib/outbox-sync'
 import {
   QuantumButton,
   QuantumCard,
-  QuantumLoadingScreen,
+  QuantumEmptyState,
   QuantumMetric,
   QuantumNotice,
   QuantumScreen,
   QuantumSectionHeader,
+  QuantumSkeletonList,
   QuantumText,
   getSemanticColor,
   quantumSpace,
@@ -59,7 +60,14 @@ export default function DataScreen() {
   const failedItems = useMemo(() => items.filter((item) => item.status === 'failed'), [items])
   const latestFailure = failedItems[0]
 
-  if (loading) return <QuantumLoadingScreen />
+  if (loading) {
+    return (
+      <QuantumScreen>
+        <QuantumText variant="overline" color={theme.accent}>Offline-first data plane</QuantumText>
+        <QuantumSkeletonList count={3} />
+      </QuantumScreen>
+    )
+  }
 
   return (
     <QuantumScreen refreshControl={<RefreshControl refreshing={syncing} onRefresh={loadData} tintColor={theme.accent} />}>
@@ -101,7 +109,7 @@ export default function DataScreen() {
 
       <QuantumSectionHeader label="Needs sync" />
       {pendingItems.length === 0 ? (
-        <QuantumNotice>No offline actions are waiting right now.</QuantumNotice>
+        <QuantumEmptyState glyph="✓" title="Nothing waiting to sync" subtitle="Offline actions queued on this device will show up here." />
       ) : (
         pendingItems.map((item) => {
           const tone = item.status === 'failed' ? 'risk' : 'watch'
@@ -121,7 +129,7 @@ export default function DataScreen() {
 
       <QuantumSectionHeader label="Synced ledger" />
       {syncedItems.length === 0 ? (
-        <QuantumNotice>No synced offline actions have been recorded yet.</QuantumNotice>
+        <QuantumEmptyState glyph="◇" title="No synced actions yet" subtitle="Actions that finish syncing to the server will be recorded here." />
       ) : (
         syncedItems.slice(0, 12).map((item) => (
           <QuantumCard key={item.id} accent={getSemanticColor('good')}>

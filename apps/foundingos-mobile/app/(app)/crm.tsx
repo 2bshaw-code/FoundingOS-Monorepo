@@ -4,22 +4,24 @@
 */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { RefreshControl, StyleSheet, View } from 'react-native'
+import Animated, { FadeInDown } from 'react-native-reanimated'
 import {
   CoreOpsApiError,
   PipelineLead,
-  createPipelineLead,
-  fetchPipelineLeads,
-  updatePipelineLeadStage,
 } from '../../lib/core-operations-api'
+import { ENTRANCE_DURATION_MS, staggerDelay, useReducedMotionPreference } from '../../lib/motion'
+import { getPipelineService } from '../../lib/services/pipelineService'
 import {
   QuantumButton,
   QuantumCard,
-  QuantumLoadingScreen,
+  QuantumEmptyState,
   QuantumMetric,
   QuantumNotice,
   QuantumPill,
   QuantumScreen,
   QuantumSectionHeader,
+  QuantumSkeleton,
+  QuantumSkeletonList,
   QuantumText,
   quantumSpace,
   useActiveQuantumTheme,
@@ -64,12 +66,13 @@ export default function CrmScreen() {
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [filter, setFilter] = useState<Stage | 'All'>('All')
+  const reduceMotion = useReducedMotionPreference()
 
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true)
     setError('')
     try {
-      const data = await fetchPipelineLeads()
+      const data = await getPipelineService().fetchLeads()
       setLeads(data)
     } catch (err) {
       setError(err instanceof CoreOpsApiError ? err.message : 'Could not load the sales pipeline. Pull to refresh to try again.')
@@ -110,7 +113,7 @@ export default function CrmScreen() {
     setBusyId(lead.id)
     setError('')
     try {
-      const updated = await updatePipelineLeadStage(lead.id, next)
+      const updated = await getPipelineService().updateLeadStage(lead.id, next)
       setLeads((current) => current.map((item) => (item.id === lead.id ? updated : item)))
     } catch (err) {
       setError(err instanceof CoreOpsApiError ? err.message : 'Could not update this deal — try again.')
@@ -123,7 +126,7 @@ export default function CrmScreen() {
     setBusyId(lead.id)
     setError('')
     try {
-      const updated = await updatePipelineLeadStage(lead.id, LOST_STAGE)
+      const updated = await getPipelineService().updateLeadStage(lead.id, LOST_STAGE)
       setLeads((current) => current.map((item) => (item.id === lead.id ? updated : item)))
     } catch (err) {
       setError(err instanceof CoreOpsApiError ? err.message : 'Could not update this deal — try again.')
@@ -135,21 +138,43 @@ export default function CrmScreen() {
   async function addDeal() {
     setError('')
     try {
-      const created = await createPipelineLead({ companyName: 'New deal', stage: 'Lead', valuePence: 0 })
+      const created = await getPipelineService().createLead({ companyName: 'New deal', stage: 'Lead', valuePence: 0 })
       setLeads((current) => [created, ...current])
     } catch (err) {
       setError(err instanceof CoreOpsApiError ? err.message : 'Could not add a deal — try again.')
     }
   }
 
-  if (loading) return <QuantumLoadingScreen />
+  if (loading) {
+    return (
+      <QuantumScreen contentStyle={styles.screen}>
+        <QuantumText variant="overline" color={theme.accent}>Sales Pipeline</QuantumText>
+        <View style={styles.kpiRow}>
+          <QuantumSkeleton style={styles.kpiSkeleton} />
+          <QuantumSkeleton style={styles.kpiSkeleton} />
+          <QuantumSkeleton style={styles.kpiSkeleton} />
+        </View>
+        <QuantumSkeletonList count={4} />
+      </QuantumScreen>
+    )
+  }
+
+  if (error && leads.length === 0) {
+    return (
+      <QuantumScreen>
+        <QuantumEmptyState glyph="⚠" title="Pipeline is unavailable" subtitle={error} action={<QuantumButton onPress={() => load()}>Try again</QuantumButton>} />
+      </QuantumScreen>
+    )
+  }
+
+  const fade = (index: number) => (reduceMotion ? undefined : FadeInDown.delay(staggerDelay(index)).duration(ENTRANCE_DURATION_MS).springify().damping(18))
 
   return (
     <QuantumScreen
       contentStyle={styles.screen}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={theme.accent} />}
     >
-      {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
+      {error ? <QuantumNotice tone="danger" onRetry={() => load()}>{error}</QuantumNotice> : null}
 
       <View style={styles.kpiRow}>
         <QuantumCard accent="#38BDF8" style={styles.kpiCard}>
@@ -182,15 +207,16 @@ export default function CrmScreen() {
 
       <View style={styles.dealList}>
         {visibleDeals.length === 0 ? (
-          <QuantumNotice>No deals in this stage yet.</QuantumNotice>
+          <QuantumEmptyState glyph="◇" title="No deals in this stage" subtitle="Move a deal here, or add a new one with the button above." />
         ) : (
-          visibleDeals.map((lead) => {
+          visibleDeals.map((lead, i) => {
             const stage = dealStage(lead)
             const stageAccent = STAGE_ACCENT[stage]
             const next = nextStage(stage)
             const busy = busyId === lead.id
             return (
-              <QuantumCard key={lead.id} accent={stageAccent} style={styles.dealCard}>
+              <Animated.View key={lead.id} entering={fade(i)}>
+              <QuantumCard accent={stageAccent} style={styles.dealCard}>
                 <View style={styles.dealHeaderRow}>
                   <View style={{ flex: 1 }}>
                     <QuantumText variant="h3">{lead.companyName}</QuantumText>
@@ -215,6 +241,7 @@ export default function CrmScreen() {
                   ) : null}
                 </View>
               </QuantumCard>
+              </Animated.View>
             )
           })
         )}
@@ -227,6 +254,7 @@ const styles = StyleSheet.create({
   screen: { gap: quantumSpace.lg },
   kpiRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
   kpiCard: { flex: 1, minWidth: 140, alignItems: 'center' },
+  kpiSkeleton: { flex: 1, minWidth: 140, height: 72, borderRadius: 16 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
   dealList: { gap: quantumSpace.md },

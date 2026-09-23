@@ -4,26 +4,24 @@
 */
 import { router } from 'expo-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, RefreshControl, StyleSheet, View } from 'react-native'
+import { RefreshControl, StyleSheet, View } from 'react-native'
 import { getAllOutboxItems } from '../../../lib/outbox-sync'
 import {
   AgentAction,
   MessagingChannelConnection,
   MessagingParticipant,
   MessagingReadiness,
-  fetchMessagingConnections,
-  fetchMessagingParticipants,
-  fetchMessagingReadiness,
-  getSession,
-  listAgentActions,
-  sendMessagingIntelligenceBrief,
 } from '../../../lib/core-operations-api'
+import { getAutomationService } from '../../../lib/services/automationService'
+import { useQuantumStore } from '../../../lib/store'
 import {
   QuantumButton,
   QuantumCard,
+  QuantumEmptyState,
   QuantumNotice,
   QuantumScreen,
   QuantumSectionHeader,
+  QuantumSkeletonList,
   QuantumText,
   quantumColors,
   quantumSpace,
@@ -53,23 +51,18 @@ export default function AutomationScreen() {
   const [notice, setNotice] = useState('')
 
   const load = useCallback(async () => {
-    const session = await getSession()
-    setConnected(Boolean(session))
-    if (!session) {
+    const overview = await getAutomationService().fetchOverview()
+    setConnected(overview.connected)
+    setReadiness(overview.readiness)
+    setConnections(overview.connections)
+    setParticipants(overview.participants)
+    setActions(overview.actions)
+    if (!overview.connected || useQuantumStore.getState().demoMode) {
+      setQueuedCommands([])
       setLoading(false)
       return
     }
-    const [readinessResult, connectionsResult, participantsResult, actionsResult, outboxItems] = await Promise.all([
-      fetchMessagingReadiness().catch(() => null),
-      fetchMessagingConnections().catch(() => []),
-      fetchMessagingParticipants().catch(() => []),
-      listAgentActions().catch(() => []),
-      getAllOutboxItems(),
-    ])
-    setReadiness(readinessResult)
-    setConnections(connectionsResult)
-    setParticipants(participantsResult)
-    setActions(actionsResult)
+    const outboxItems = await getAllOutboxItems()
     setQueuedCommands(
       outboxItems
         .filter((item) => item.actionType.startsWith('GOVERNED_ACTION_') || item.actionType.startsWith('WHATSAPP_'))
@@ -91,10 +84,15 @@ export default function AutomationScreen() {
   const deliverBrief = async (participantId: string) => {
     setBusyParticipantId(participantId)
     try {
+      const isDemo = useQuantumStore.getState().demoMode
       const latestAction = actionable[0]
-      const result = await sendMessagingIntelligenceBrief(participantId, latestAction?.id)
-      setNotice(result.sent ? 'Intelligence brief handed to WhatsApp delivery.' : 'Delivery was attempted but not confirmed by the provider.')
-      await load()
+      const result = await getAutomationService().deliverBrief(participantId, latestAction?.id)
+      if (isDemo) {
+        setNotice('Intelligence brief handed to WhatsApp delivery. (Demo mode — not sent.)')
+      } else {
+        setNotice(result.sent ? 'Intelligence brief handed to WhatsApp delivery.' : 'Delivery was attempted but not confirmed by the provider.')
+        await load()
+      }
     } catch (error: any) {
       setNotice(error?.message || 'Could not deliver the intelligence brief.')
     } finally {
@@ -122,9 +120,7 @@ export default function AutomationScreen() {
       ) : null}
 
       {loading ? (
-        <QuantumCard accent={theme.accent}>
-          <ActivityIndicator color={theme.accent} />
-        </QuantumCard>
+        <QuantumSkeletonList count={3} />
       ) : null}
 
       {connected && !loading ? (
@@ -152,7 +148,7 @@ export default function AutomationScreen() {
 
           <QuantumSectionHeader label="Channel state" />
           {connections.length === 0 ? (
-            <QuantumNotice tone="warning">No active messaging connection is configured for this business yet.</QuantumNotice>
+            <QuantumEmptyState glyph="◇" title="No connection configured" subtitle="No active messaging connection is configured for this business yet." />
           ) : (
             connections.map((connection) => (
               <QuantumCard key={`${connection.channel}-${connection.externalAccountId}`} accent={quantumColors.whatsapp}>
@@ -167,7 +163,7 @@ export default function AutomationScreen() {
 
           <QuantumSectionHeader label="Authorized recipients" />
           {participants.length === 0 ? (
-            <QuantumNotice tone="warning">No messaging participants have been linked to this tenant yet.</QuantumNotice>
+            <QuantumEmptyState glyph="◇" title="No recipients linked" subtitle="No messaging participants have been linked to this tenant yet." />
           ) : (
             participants.map((participant) => (
               <QuantumCard key={participant.id} accent={quantumColors.whatsapp}>
@@ -190,7 +186,7 @@ export default function AutomationScreen() {
 
           <QuantumSectionHeader label="Governed command bridge" />
           {queuedCommands.length === 0 ? (
-            <QuantumNotice>No offline messaging or governed command actions are queued locally right now.</QuantumNotice>
+            <QuantumEmptyState glyph="◇" title="Queue is empty" subtitle="No offline messaging or governed command actions are queued locally right now." />
           ) : (
             queuedCommands.map((item) => (
               <QuantumCard key={item.id} accent={item.actionType.startsWith('GOVERNED_ACTION_') ? theme.accent : quantumColors.whatsapp}>

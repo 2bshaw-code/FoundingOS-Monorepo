@@ -2,11 +2,13 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { useState } from 'react'
-import { View, Text, Pressable, StyleSheet, Modal, Animated } from 'react-native'
+import { useEffect, useState } from 'react'
+import { View, Text, Pressable, StyleSheet, Modal } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
+import Animated, { interpolate, runOnJS, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 import type { BottomTabBarProps } from 'expo-router/build/react-navigation/bottom-tabs/types'
+import { PRESS_SPRING, SETTLE_SPRING, useReducedMotionPreference } from '../lib/motion'
 
 // Compact enterprise tab bar. Shows at
 // most `maxVisible` primary tabs plus a "More" tab that opens a bottom sheet listing any
@@ -27,7 +29,37 @@ export function QuantumTabBar({
   icons: Record<string, (props: { color: string; size?: number }) => React.ReactNode>
 } & BottomTabBarProps) {
   const insets = useSafeAreaInsets()
-  const [moreOpen, setMoreOpen] = useState(false)
+  const reduceMotion = useReducedMotionPreference()
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [sheetMounted, setSheetMounted] = useState(false)
+  const sheetProgress = useSharedValue(0)
+
+  const openMore = () => {
+    setSheetMounted(true)
+    setSheetOpen(true)
+  }
+  const closeMore = () => setSheetOpen(false)
+
+  useEffect(() => {
+    if (sheetOpen) {
+      sheetProgress.value = reduceMotion ? 1 : withSpring(1, SETTLE_SPRING)
+    } else if (sheetMounted) {
+      if (reduceMotion) {
+        sheetProgress.value = 0
+        setSheetMounted(false)
+      } else {
+        sheetProgress.value = withSpring(0, SETTLE_SPRING, (finished) => {
+          if (finished) runOnJS(setSheetMounted)(false)
+        })
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sheetOpen, reduceMotion])
+
+  const backdropStyle = useAnimatedStyle(() => ({ opacity: sheetProgress.value }))
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: interpolate(sheetProgress.value, [0, 1], [420, 0]) }],
+  }))
 
   const routes = state.routes.filter((route) => {
     const options = descriptors[route.key]?.options as { href?: unknown; tabBarShowLabel?: boolean } | undefined
@@ -59,37 +91,33 @@ export function QuantumTabBar({
               }
 
               return (
-                <Pressable key={route.key} onPress={onPress} style={styles.item} hitSlop={6}>
-                  <View style={[styles.iconWrap, isFocused && { backgroundColor: `${accent}22` }]}>
-                    {Icon ? Icon({ color: isFocused ? accent : '#7c8797', size: 20 }) : null}
-                  </View>
-                  <Text
-                    numberOfLines={1}
-                    style={[styles.label, { color: isFocused ? accent : '#7c8797' }, isFocused && styles.labelActive]}
-                  >
-                    {label}
-                  </Text>
-                </Pressable>
+                <TabIcon
+                  key={route.key}
+                  onPress={onPress}
+                  isFocused={isFocused}
+                  accent={accent}
+                  label={label}
+                  reduceMotion={reduceMotion}
+                >
+                  {Icon ? Icon({ color: isFocused ? accent : '#7c8797', size: 20 }) : null}
+                </TabIcon>
               )
             })}
 
             {hasOverflow ? (
-              <Pressable onPress={() => setMoreOpen(true)} style={styles.item} hitSlop={6}>
-                <View style={styles.iconWrap}>
-                  <MoreDots color="#7c8797" />
-                </View>
-                <Text style={[styles.label, { color: '#7c8797' }]}>More</Text>
-              </Pressable>
+              <TabIcon onPress={openMore} isFocused={false} accent={accent} label="More" reduceMotion={reduceMotion}>
+                <MoreDots color="#7c8797" />
+              </TabIcon>
             ) : null}
           </View>
         </View>
 
         {hasOverflow ? (
-          <Modal visible={moreOpen} transparent animationType="fade" onRequestClose={() => setMoreOpen(false)}>
-            <Pressable style={styles.backdrop} onPress={() => setMoreOpen(false)}>
-              <View />
-            </Pressable>
-            <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+          <Modal visible={sheetMounted} transparent animationType="none" onRequestClose={closeMore}>
+            <Animated.View style={[styles.backdrop, backdropStyle]}>
+              <Pressable style={StyleSheet.absoluteFill} onPress={closeMore} />
+            </Animated.View>
+            <Animated.View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 20) }, sheetStyle]}>
               <View style={styles.sheetHandle} />
               <Text style={styles.sheetTitle}>More</Text>
               {overflow.map((route) => {
@@ -103,7 +131,7 @@ export function QuantumTabBar({
                     key={route.key}
                     style={styles.sheetItem}
                     onPress={() => {
-                      setMoreOpen(false)
+                      closeMore()
                       navigation.navigate(route.name)
                     }}
                   >
@@ -114,11 +142,58 @@ export function QuantumTabBar({
                   </Pressable>
                 )
               })}
-            </View>
+            </Animated.View>
           </Modal>
         ) : null}
       </>
     )
+}
+
+// Extracted so each tab item owns its own press shared value (a hook can't be
+// called once-per-iteration inside a parent's .map(), only inside its own
+// component). Drives a subtle scale-down on the icon chip on press-in,
+// springing back on release — skipped entirely under Reduce Motion.
+function TabIcon({
+  onPress,
+  isFocused,
+  accent,
+  label,
+  reduceMotion,
+  children,
+}: {
+  onPress: () => void
+  isFocused: boolean
+  accent: string
+  label: string
+  reduceMotion: boolean
+  children: React.ReactNode
+}) {
+  const press = useSharedValue(0)
+  const animatedIconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 - press.value * 0.12 }],
+  }))
+
+  const handlePressIn = () => {
+    if (reduceMotion) return
+    press.value = withSpring(1, PRESS_SPRING)
+  }
+  const handlePressOut = () => {
+    press.value = reduceMotion ? 0 : withSpring(0, PRESS_SPRING)
+  }
+
+  return (
+    <Pressable onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut} style={styles.item} hitSlop={6}>
+      <Animated.View style={[styles.iconWrap, isFocused && { backgroundColor: `${accent}22` }, animatedIconStyle]}>
+        {children}
+      </Animated.View>
+      <Text
+        numberOfLines={1}
+        style={[styles.label, { color: isFocused ? accent : '#7c8797' }, isFocused && styles.labelActive]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  )
 }
 
 // tabBar in expo-router/react-navigation is invoked as a plain function call inside a

@@ -5,15 +5,20 @@
 import { router } from 'expo-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Pressable, RefreshControl, StyleSheet, View } from 'react-native'
+import Animated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated'
 import {
   QuantumButton,
   QuantumCard,
+  QuantumConfidenceBar,
+  QuantumEmptyState,
   QuantumMetric,
   QuantumNotice,
   QuantumPill,
   QuantumScreen,
   QuantumSectionHeader,
+  QuantumSkeletonList,
   QuantumText,
+  getSemanticColor,
   quantumColors,
   quantumSpace,
   useActiveQuantumTheme,
@@ -30,6 +35,7 @@ import {
   reverseQueueItem,
 } from '../../../lib/approvals-queue'
 import { AgentActionTrailEvent } from '../../../lib/core-operations-api'
+import { ENTRANCE_DURATION_MS, staggerDelay, useReducedMotionPreference } from '../../../lib/motion'
 import { enqueueOutboxAction } from '../../../lib/outbox-sync'
 import { useQuantumStore } from '../../../lib/store'
 import { useActionFeedback } from '../../../lib/use-action-feedback'
@@ -48,6 +54,13 @@ const STATUS_LABEL: Record<ApprovalsQueueStatus, string> = {
 const SOURCE_LABEL: Record<ApprovalsQueueItem['source'], string> = {
   core_operations: 'Core.Operations',
   core_workforce: 'Core.Workforce',
+}
+
+function riskTone(riskLevel?: string): 'good' | 'watch' | 'risk' {
+  const level = (riskLevel || '').toLowerCase()
+  if (level === 'high') return 'risk'
+  if (level === 'low') return 'good'
+  return 'watch'
 }
 
 const FILTERS: Array<{ label: string; status?: ApprovalsQueueStatus }> = [
@@ -75,6 +88,7 @@ function formatRelativeTime(iso: string) {
 
 export default function WorkflowsScreen() {
   const theme = useActiveQuantumTheme()
+  const reduceMotion = useReducedMotionPreference()
   const activeBrandSlug = useQuantumStore((state) => state.activeBrandSlug)
   const isOnline = useQuantumStore((state) => state.isOnline)
   const role = useQuantumStore((state) => state.role)
@@ -88,6 +102,7 @@ export default function WorkflowsScreen() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>(FILTERS[0])
   const [busyId, setBusyId] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [previewId, setPreviewId] = useState<string | null>(null)
   const [trail, setTrail] = useState<AgentActionTrailEvent[]>([])
   const [trailLoading, setTrailLoading] = useState(false)
   const { feedback, showSuccess, showOffline, showError } = useActionFeedback()
@@ -170,8 +185,23 @@ export default function WorkflowsScreen() {
     }
   }
 
-  const renderActionCard = (action: ApprovalsQueueItem) => (
-    <QuantumCard key={`${action.source}:${action.id}`} accent={theme.accent}>
+  const renderActionCard = (action: ApprovalsQueueItem, index?: number) => (
+    <Animated.View
+      key={`${action.source}:${action.id}`}
+      // Handles the three motion moments this list needs: a staggered rise-in
+      // when the queue first loads, a smooth fade-out-and-up when an item
+      // leaves this section entirely (approved/rejected/executed moves it to
+      // a different .map() below), and a spring re-flow of the remaining
+      // cards into their new positions — all disabled together under Reduce
+      // Motion instead of each needing its own check.
+      entering={reduceMotion ? undefined : FadeInDown.delay(staggerDelay(index)).duration(ENTRANCE_DURATION_MS).springify().damping(18)}
+      exiting={reduceMotion ? undefined : FadeOutUp.duration(220)}
+      layout={reduceMotion ? undefined : LinearTransition.springify().damping(20).stiffness(200)}
+    >
+      {/* animateEntrance=false — the Animated.View above already owns this
+          card's mount/unmount/reorder animation; QuantumCard's own entrance
+          would otherwise double up and fight it. */}
+      <QuantumCard accent={theme.accent} animateEntrance={false}>
       <View style={styles.rowBetween}>
         <QuantumText variant="h3" style={styles.flex}>{action.title}</QuantumText>
         <QuantumText variant="caption" color={theme.accent}>{STATUS_LABEL[action.status]}</QuantumText>
@@ -181,6 +211,11 @@ export default function WorkflowsScreen() {
         {SOURCE_LABEL[action.source]} · {formatRelativeTime(action.createdAt)} · {action.requiresApproval ? 'Human approval required' : 'Auto-governed'}
       </QuantumText>
       {action.estimatedValuePence ? <QuantumText variant="caption" color={theme.accent}>Estimated impact {formatPence(action.estimatedValuePence)}</QuantumText> : null}
+      {action.riskLevel ? (
+        <QuantumText variant="caption" color={getSemanticColor(riskTone(action.riskLevel))}>
+          {action.riskLevel.toUpperCase()} RISK{action.aiPreview?.confidence !== undefined ? ` · ${Math.round(action.aiPreview.confidence)}% AI confidence` : ''}
+        </QuantumText>
+      ) : null}
       {!canDecide ? (
         <QuantumText variant="caption" color={theme.subtextColor}>Your role can view this queue but not decide on it.</QuantumText>
       ) : null}
@@ -205,10 +240,64 @@ export default function WorkflowsScreen() {
             <QuantumText variant="caption" color="#FF5470">Undo</QuantumText>
           </Pressable>
         ) : null}
+        {(action.aiPreview || action.rationale) && (action.status === 'proposed' || action.status === 'approved') ? (
+          <Pressable onPress={() => setPreviewId(previewId === action.id ? null : action.id)}>
+            <QuantumText variant="caption" color={theme.accent}>{previewId === action.id ? 'Hide AI preview' : 'AI preview'}</QuantumText>
+          </Pressable>
+        ) : null}
         <Pressable onPress={() => toggleEvidence(action)}>
           <QuantumText variant="caption" color={theme.accent}>{expandedId === action.id ? 'Hide evidence' : 'View evidence'}</QuantumText>
         </Pressable>
       </View>
+      {previewId === action.id ? (
+        <Animated.View
+          style={styles.aiPreviewBox}
+          entering={reduceMotion ? undefined : FadeInDown.duration(220)}
+        >
+          {action.rationale ? (
+            <View style={styles.aiPreviewBlock}>
+              <QuantumText variant="overline" color={theme.accent}>Why the AI proposed this</QuantumText>
+              <QuantumText variant="caption">{action.rationale}</QuantumText>
+            </View>
+          ) : null}
+          {action.aiPreview?.confidence !== undefined ? (
+            <QuantumConfidenceBar label="Prediction confidence" percent={action.aiPreview.confidence} tone={riskTone(action.riskLevel)} />
+          ) : null}
+          {action.aiPreview?.decisionScore !== undefined ? (
+            <QuantumConfidenceBar label="Decision score" percent={action.aiPreview.decisionScore} tone="info" />
+          ) : null}
+          {action.aiPreview?.reliabilityScore !== undefined ? (
+            <QuantumConfidenceBar label="Pattern reliability" percent={action.aiPreview.reliabilityScore} tone="good" />
+          ) : null}
+          {(action.aiPreview?.similarSignals !== undefined || action.aiPreview?.completionRate !== undefined) ? (
+            <QuantumText variant="caption" color={theme.subtextColor}>
+              {action.aiPreview?.similarSignals !== undefined ? `${action.aiPreview.similarSignals} similar signal(s) observed` : ''}
+              {action.aiPreview?.similarSignals !== undefined && action.aiPreview?.completionRate !== undefined ? ' · ' : ''}
+              {action.aiPreview?.completionRate !== undefined ? `${Math.round(action.aiPreview.completionRate)}% historical completion rate` : ''}
+            </QuantumText>
+          ) : null}
+          {action.aiPreview?.scoreExplanation?.length ? (
+            <View style={styles.aiPreviewBlock}>
+              <QuantumText variant="overline" color={theme.accent}>Decision score breakdown</QuantumText>
+              {action.aiPreview.scoreExplanation.map((line, i) => (
+                <QuantumText key={i} variant="caption">• {line}</QuantumText>
+              ))}
+            </View>
+          ) : null}
+          {action.aiPreview?.simulation?.length ? (
+            <View style={styles.aiPreviewBlock}>
+              <QuantumText variant="overline" color={theme.accent}>What happens if approved</QuantumText>
+              {action.aiPreview.simulation.map((step, i) => (
+                <View key={i} style={styles.simulationStep}>
+                  <QuantumText variant="caption" color={theme.subtextColor}>Before: {step.before}</QuantumText>
+                  <QuantumText variant="caption">After: {step.after}</QuantumText>
+                  {step.effect ? <QuantumText variant="caption" color={theme.accent}>{step.effect}</QuantumText> : null}
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </Animated.View>
+      ) : null}
       {expandedId === action.id ? (
         <View style={styles.trailBox}>
           {!action.hasEvidenceTrail ? (
@@ -229,13 +318,16 @@ export default function WorkflowsScreen() {
           )}
         </View>
       ) : null}
-    </QuantumCard>
+      </QuantumCard>
+    </Animated.View>
   )
 
   if (loading) {
     return (
-      <QuantumScreen scroll={false} contentStyle={styles.center}>
-        <ActivityIndicator color={theme.accent} />
+      <QuantumScreen>
+        <QuantumText variant="overline" color={theme.accent}>Core.Operations · Core.Workforce</QuantumText>
+        <QuantumText variant="h1">Approvals</QuantumText>
+        <QuantumSkeletonList count={3} />
       </QuantumScreen>
     )
   }
@@ -286,16 +378,20 @@ export default function WorkflowsScreen() {
 
           <QuantumSectionHeader label="Decision queue" />
           {priority.length === 0 ? (
-            <QuantumNotice>No actions currently need approval or execution.</QuantumNotice>
+            <QuantumEmptyState glyph="✓" title="Nothing needs a decision" subtitle="No actions currently need approval or execution." />
           ) : (
             priority.map(renderActionCard)
           )}
 
           <QuantumSectionHeader label={filter.status ? `${visible.length} matching action(s)` : 'Audit history'} />
           {filter.status ? (
-            visible.length === 0 ? <QuantumNotice>No governed actions match this filter yet.</QuantumNotice> : visible.map(renderActionCard)
+            visible.length === 0 ? (
+              <QuantumEmptyState glyph="◇" title="No matches" subtitle="No governed actions match this filter yet." />
+            ) : (
+              visible.map(renderActionCard)
+            )
           ) : history.length === 0 ? (
-            <QuantumNotice>No completed or rejected history yet.</QuantumNotice>
+            <QuantumEmptyState glyph="◇" title="No history yet" subtitle="Completed and rejected actions will build up here as your team makes decisions." />
           ) : (
             history.map(renderActionCard)
           )}
@@ -314,4 +410,7 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.lg, marginTop: quantumSpace.xs },
   trustStrip: { gap: quantumSpace.xs, paddingHorizontal: quantumSpace.xs },
   trailBox: { gap: quantumSpace.xs, marginTop: quantumSpace.xs, paddingTop: quantumSpace.xs, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.08)' },
+  aiPreviewBox: { gap: quantumSpace.sm, marginTop: quantumSpace.xs, padding: quantumSpace.sm, borderRadius: 10, backgroundColor: 'rgba(167,139,250,0.08)' },
+  aiPreviewBlock: { gap: 2 },
+  simulationStep: { gap: 2, marginBottom: quantumSpace.xs },
 })

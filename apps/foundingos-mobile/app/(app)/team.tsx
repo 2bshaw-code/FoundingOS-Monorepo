@@ -4,29 +4,28 @@
 */
 import { useCallback, useEffect, useState } from 'react'
 import { RefreshControl, StyleSheet, View } from 'react-native'
+import Animated, { FadeInDown } from 'react-native-reanimated'
 import {
   CoreOpsApiError,
   PendingInvitation,
   TeamMember,
   TeamRole,
-  fetchPendingInvitations,
-  fetchTeam,
   getSession,
-  inviteTeamMember,
-  resendTeamInvitation,
-  revokeTeamInvitation,
-  updateTeamMember,
 } from '../../lib/core-operations-api'
 import { FOUNDINGOS_ACCENT } from '../../lib/brands'
+import { ENTRANCE_DURATION_MS, staggerDelay, useReducedMotionPreference } from '../../lib/motion'
+import { getTeamService } from '../../lib/services/teamService'
+import { useQuantumStore } from '../../lib/store'
 import {
   QuantumButton,
   QuantumCard,
+  QuantumEmptyState,
   QuantumFormField,
-  QuantumLoadingScreen,
   QuantumNotice,
   QuantumPill,
   QuantumScreen,
   QuantumSectionHeader,
+  QuantumSkeletonList,
   QuantumText,
   QuantumTextInput,
   getSemanticColor,
@@ -60,16 +59,28 @@ export default function TeamScreen() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<TeamRole>('business_staff')
   const [inviting, setInviting] = useState(false)
+  const reduceMotion = useReducedMotionPreference()
 
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true)
     setError('')
     try {
+      // Demo mode always shows the founder-tier view (manage rights + a
+      // realistic small team) so the screen is never blank/403 while demoing.
+      if (useQuantumStore.getState().demoMode) {
+        setCanManage(true)
+        const service = getTeamService()
+        const [team, pending] = await Promise.all([service.fetchTeam(), service.fetchPendingInvitations()])
+        setMembers(team)
+        setInvitations(pending)
+        return
+      }
       const session = await getSession()
       const isManager = MANAGE_ROLES.has(session?.role || '')
       setCanManage(isManager)
       if (isManager) {
-        const [team, pending] = await Promise.all([fetchTeam(), fetchPendingInvitations()])
+        const service = getTeamService()
+        const [team, pending] = await Promise.all([service.fetchTeam(), service.fetchPendingInvitations()])
         setMembers(team)
         setInvitations(pending)
       }
@@ -101,8 +112,9 @@ export default function TeamScreen() {
     setError('')
     setNotice('')
     try {
-      const result = await inviteTeamMember({ email, role: inviteRole })
-      setNotice(`Invitation sent to ${email}. ${result.delivery.message}`)
+      const demoMode = useQuantumStore.getState().demoMode
+      const result = await getTeamService().inviteMember({ email, role: inviteRole })
+      setNotice(demoMode ? `Invitation sent to ${email}. (Demo mode — not persisted.)` : `Invitation sent to ${email}. ${result.delivery.message}`)
       setInviteEmail('')
       await load()
     } catch (err) {
@@ -116,7 +128,7 @@ export default function TeamScreen() {
     setBusyId(member.id)
     setError('')
     try {
-      await updateTeamMember(member.id, { role })
+      await getTeamService().updateMember(member.id, { role })
       await load()
     } catch (err) {
       setError(err instanceof CoreOpsApiError ? err.message : 'Could not update role.')
@@ -129,7 +141,7 @@ export default function TeamScreen() {
     setBusyId(member.id)
     setError('')
     try {
-      await updateTeamMember(member.id, { active: !member.active })
+      await getTeamService().updateMember(member.id, { active: !member.active })
       await load()
     } catch (err) {
       setError(err instanceof CoreOpsApiError ? err.message : 'Could not update access.')
@@ -142,7 +154,7 @@ export default function TeamScreen() {
     setBusyId(invitation.id)
     setError('')
     try {
-      await revokeTeamInvitation(invitation.id)
+      await getTeamService().revokeInvitation(invitation.id)
       await load()
     } catch (err) {
       setError(err instanceof CoreOpsApiError ? err.message : 'Could not revoke invitation.')
@@ -156,8 +168,9 @@ export default function TeamScreen() {
     setError('')
     setNotice('')
     try {
-      const result = await resendTeamInvitation(invitation.id)
-      setNotice(`Invitation re-sent to ${invitation.email}. ${result.delivery.message}`)
+      const demoMode = useQuantumStore.getState().demoMode
+      const result = await getTeamService().resendInvitation(invitation.id)
+      setNotice(demoMode ? `Invitation re-sent to ${invitation.email}. (Demo mode — not persisted.)` : `Invitation re-sent to ${invitation.email}. ${result.delivery.message}`)
       await load()
     } catch (err) {
       setError(err instanceof CoreOpsApiError ? err.message : 'Could not resend invitation.')
@@ -166,7 +179,23 @@ export default function TeamScreen() {
     }
   }
 
-  if (loading) return <QuantumLoadingScreen />
+  if (loading) {
+    return (
+      <QuantumScreen>
+        <QuantumText variant="overline" color={FOUNDINGOS_ACCENT}>Team & Roles</QuantumText>
+        <QuantumText variant="h1">Team</QuantumText>
+        <QuantumSkeletonList count={3} />
+      </QuantumScreen>
+    )
+  }
+
+  if (error && !members.length && !invitations.length) {
+    return (
+      <QuantumScreen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={FOUNDINGOS_ACCENT} />}>
+        <QuantumEmptyState glyph="⚠" title="Team is unavailable" subtitle={error} action={<QuantumButton onPress={() => load()}>Try again</QuantumButton>} />
+      </QuantumScreen>
+    )
+  }
 
   if (!canManage) {
     return (
@@ -178,9 +207,11 @@ export default function TeamScreen() {
     )
   }
 
+  const fade = (index: number) => (reduceMotion ? undefined : FadeInDown.delay(staggerDelay(index)).duration(ENTRANCE_DURATION_MS).springify().damping(18))
+
   return (
     <QuantumScreen refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={FOUNDINGOS_ACCENT} />}>
-      {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
+      {error ? <QuantumNotice tone="danger" onRetry={() => load()}>{error}</QuantumNotice> : null}
       {notice ? <QuantumNotice tone="success">{notice}</QuantumNotice> : null}
 
       <QuantumSectionHeader label="Invite a team member" />
@@ -209,32 +240,35 @@ export default function TeamScreen() {
 
       <QuantumSectionHeader label="Pending invitations" />
       {invitations.length === 0 ? (
-        <QuantumNotice>No pending invitations.</QuantumNotice>
+        <QuantumEmptyState glyph="◇" title="No pending invitations" subtitle="Invitations you send will show up here until they're accepted or revoked." />
       ) : (
-        invitations.map((invitation) => (
-          <QuantumCard key={invitation.id} accent={getSemanticColor('watch')}>
-            <QuantumText style={styles.title}>{invitation.email}</QuantumText>
-            <QuantumText variant="caption">
-              {roleLabel(invitation.role)} · expires {new Date(invitation.expiresAt).toLocaleDateString('en-GB')}
-            </QuantumText>
-            <View style={styles.actionRow}>
-              <QuantumButton tone="secondary" onPress={() => handleResend(invitation)} disabled={busyId === invitation.id}>
-                Resend
-              </QuantumButton>
-              <QuantumButton tone="danger" onPress={() => handleRevoke(invitation)} disabled={busyId === invitation.id}>
-                Revoke
-              </QuantumButton>
-            </View>
-          </QuantumCard>
+        invitations.map((invitation, i) => (
+          <Animated.View key={invitation.id} entering={fade(i)}>
+            <QuantumCard accent={getSemanticColor('watch')}>
+              <QuantumText style={styles.title}>{invitation.email}</QuantumText>
+              <QuantumText variant="caption">
+                {roleLabel(invitation.role)} · expires {new Date(invitation.expiresAt).toLocaleDateString('en-GB')}
+              </QuantumText>
+              <View style={styles.actionRow}>
+                <QuantumButton tone="secondary" onPress={() => handleResend(invitation)} disabled={busyId === invitation.id}>
+                  Resend
+                </QuantumButton>
+                <QuantumButton tone="danger" onPress={() => handleRevoke(invitation)} disabled={busyId === invitation.id}>
+                  Revoke
+                </QuantumButton>
+              </View>
+            </QuantumCard>
+          </Animated.View>
         ))
       )}
 
       <QuantumSectionHeader label="Team members" />
       {members.length === 0 ? (
-        <QuantumNotice>No team members yet beyond the founder account.</QuantumNotice>
+        <QuantumEmptyState glyph="◇" title="Just you for now" subtitle="No team members yet beyond the founder account. Invite one above." />
       ) : (
-        members.map((member) => (
-          <QuantumCard key={member.id} accent={member.active ? FOUNDINGOS_ACCENT : getSemanticColor('risk')}>
+        members.map((member, i) => (
+          <Animated.View key={member.id} entering={fade(invitations.length + i)}>
+          <QuantumCard accent={member.active ? FOUNDINGOS_ACCENT : getSemanticColor('risk')}>
             <QuantumText style={styles.title}>{member.email}</QuantumText>
             <QuantumText variant="caption">
               {roleLabel(member.role)} · {member.active ? 'Active' : 'Suspended'}
@@ -255,6 +289,7 @@ export default function TeamScreen() {
               {member.active ? 'Suspend access' : 'Reinstate access'}
             </QuantumButton>
           </QuantumCard>
+          </Animated.View>
         ))
       )}
     </QuantumScreen>

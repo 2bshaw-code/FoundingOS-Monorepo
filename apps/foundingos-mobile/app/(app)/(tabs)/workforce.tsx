@@ -8,6 +8,7 @@ import { ActivityIndicator, Pressable, RefreshControl, StyleSheet, View } from '
 import {
   QuantumButton,
   QuantumCard,
+  QuantumEmptyState,
   QuantumFormField,
   QuantumMetric,
   QuantumNotice,
@@ -15,6 +16,7 @@ import {
   QuantumPill,
   QuantumScreen,
   QuantumSectionHeader,
+  QuantumSkeletonList,
   QuantumText,
   QuantumTextInput,
   quantumSpace,
@@ -26,20 +28,12 @@ import {
   Job,
   WorkforceAction,
   WorkforceActionStatus,
-  createCandidate,
-  createJob,
-  decideWorkforceAction,
-  executeWorkforceAction,
   getSession,
-  listCandidates,
-  listJobs,
-  listWorkforceActions,
   login as workforceLogin,
-  proposeShortlistingAction,
-  reverseWorkforceActionExecution,
 } from '../../../lib/core-workforce-api'
 import { getSession as getCoreOpsSession } from '../../../lib/core-operations-api'
 import { enqueueOutboxAction } from '../../../lib/outbox-sync'
+import { getWorkforceService } from '../../../lib/services/workforceService'
 import { useQuantumStore } from '../../../lib/store'
 import { useActionFeedback } from '../../../lib/use-action-feedback'
 import { logAction } from '../../../lib/action-logger'
@@ -87,6 +81,17 @@ export default function WorkforceScreen() {
   const [newCandidateEmail, setNewCandidateEmail] = useState('')
 
   const load = useCallback(async () => {
+    // Demo mode bypasses the separate Core.Workforce auth/reconnect flow
+    // entirely — the tab should always show a populated pipeline.
+    if (useQuantumStore.getState().demoMode) {
+      setConnected(true)
+      const { jobs: jobList, candidates: candidateList, actions: actionList } = await getWorkforceService().fetchWorkspace()
+      setJobs(jobList)
+      setCandidates(candidateList)
+      setActions(actionList)
+      setLoading(false)
+      return
+    }
     const session = await getSession()
     setConnected(Boolean(session))
     if (!session) {
@@ -100,11 +105,10 @@ export default function WorkforceScreen() {
       setLoading(false)
       return
     }
-    const [jobList, candidateList, actionList] = await Promise.all([
-      listJobs().catch(() => []),
-      listCandidates().catch(() => []),
-      listWorkforceActions().catch(() => []),
-    ])
+    const service = getWorkforceService()
+    const { jobs: jobList, candidates: candidateList, actions: actionList } = await service
+      .fetchWorkspace()
+      .catch(() => ({ jobs: [], candidates: [], actions: [] }))
     setJobs(jobList)
     setCandidates(candidateList)
     setActions(actionList)
@@ -163,7 +167,7 @@ export default function WorkforceScreen() {
       return
     }
     try {
-      await createJob({ title: newJobTitle.trim(), status: 'open' })
+      await getWorkforceService().createJob({ title: newJobTitle.trim(), status: 'open' })
       setNewJobTitle('')
       await load()
       logAction('record_created', 'success', { type: 'job' })
@@ -179,7 +183,7 @@ export default function WorkforceScreen() {
       return
     }
     try {
-      await createCandidate({ jobId, name: newCandidateName.trim(), email: newCandidateEmail.trim(), stage: 'Applied' })
+      await getWorkforceService().createCandidate({ jobId, name: newCandidateName.trim(), email: newCandidateEmail.trim(), stage: 'Applied' })
       setNewCandidateName('')
       setNewCandidateEmail('')
       await load()
@@ -195,7 +199,7 @@ export default function WorkforceScreen() {
     const nextStage = STAGE_ORDER[Math.min(currentIndex + 1, STAGE_ORDER.length - 2)]
     setBusyId(candidate.id)
     try {
-      await proposeShortlistingAction({ jobId: candidate.jobId, candidateId: candidate.id, targetStage: nextStage })
+      await getWorkforceService().proposeShortlist({ jobId: candidate.jobId, candidateId: candidate.id, targetStage: nextStage })
       await load()
       logAction('record_status_change', 'success', { type: 'candidate_shortlist_proposed' })
       showSuccess('Shortlisting action proposed — awaiting approval.')
@@ -237,21 +241,21 @@ export default function WorkforceScreen() {
       <View style={styles.actionRow}>
         {action.status === 'proposed' ? (
           <>
-            <Pressable disabled={busyId === action.id} onPress={() => runAction(action, 'WORKFORCE_ACTION_DECISION_APPROVE', () => decideWorkforceAction(action.id, 'approve'))}>
+            <Pressable disabled={busyId === action.id} onPress={() => runAction(action, 'WORKFORCE_ACTION_DECISION_APPROVE', () => getWorkforceService().decideAction(action.id, 'approve'))}>
               <QuantumText variant="caption" color={theme.accent}>Approve</QuantumText>
             </Pressable>
-            <Pressable disabled={busyId === action.id} onPress={() => runAction(action, 'WORKFORCE_ACTION_DECISION_REJECT', () => decideWorkforceAction(action.id, 'reject'))}>
+            <Pressable disabled={busyId === action.id} onPress={() => runAction(action, 'WORKFORCE_ACTION_DECISION_REJECT', () => getWorkforceService().decideAction(action.id, 'reject'))}>
               <QuantumText variant="caption" color="#FF5470">Reject</QuantumText>
             </Pressable>
           </>
         ) : null}
         {action.status === 'approved' ? (
-          <Pressable disabled={busyId === action.id} onPress={() => runAction(action, 'WORKFORCE_ACTION_EXECUTE', () => executeWorkforceAction(action.id))}>
+          <Pressable disabled={busyId === action.id} onPress={() => runAction(action, 'WORKFORCE_ACTION_EXECUTE', () => getWorkforceService().executeAction(action.id))}>
             <QuantumText variant="caption" color={theme.accent}>Execute</QuantumText>
           </Pressable>
         ) : null}
         {action.status === 'completed' ? (
-          <Pressable disabled={busyId === action.id} onPress={() => runAction(action, 'WORKFORCE_ACTION_REVERSE', () => reverseWorkforceActionExecution(action.id))}>
+          <Pressable disabled={busyId === action.id} onPress={() => runAction(action, 'WORKFORCE_ACTION_REVERSE', () => getWorkforceService().reverseAction(action.id))}>
             <QuantumText variant="caption" color="#FF5470">Undo</QuantumText>
           </Pressable>
         ) : null}
@@ -261,8 +265,9 @@ export default function WorkforceScreen() {
 
   if (loading) {
     return (
-      <QuantumScreen scroll={false} contentStyle={styles.center}>
-        <ActivityIndicator color={theme.accent} />
+      <QuantumScreen>
+        <QuantumText variant="overline" color={theme.accent}>Core.Workforce</QuantumText>
+        <QuantumSkeletonList count={3} />
       </QuantumScreen>
     )
   }
@@ -310,14 +315,14 @@ export default function WorkforceScreen() {
 
           <QuantumSectionHeader label="Decision queue" />
           {priorityActions.length === 0 ? (
-            <QuantumNotice>No shortlisting actions currently need approval or execution.</QuantumNotice>
+            <QuantumEmptyState glyph="✓" title="All caught up" subtitle="No shortlisting actions currently need approval or execution." />
           ) : (
             priorityActions.map(renderActionCard)
           )}
 
           <QuantumSectionHeader label="Open roles" />
           {jobs.length === 0 ? (
-            <QuantumNotice>No roles yet. Add the first open role below.</QuantumNotice>
+            <QuantumEmptyState glyph="◇" title="No open roles yet" subtitle="Add the first open role below to start building a pipeline." />
           ) : (
             <View style={styles.filterRow}>
               <QuantumPill active={!selectedJobId} accent={theme.accent} onPress={() => setSelectedJobId(null)}>All roles</QuantumPill>
@@ -352,7 +357,7 @@ export default function WorkforceScreen() {
 
           <QuantumSectionHeader label="Pipeline" />
           {candidates.length === 0 ? (
-            <QuantumNotice>No candidates yet. Add one above to see the pipeline move through stages.</QuantumNotice>
+            <QuantumEmptyState glyph="◇" title="Pipeline is empty" subtitle="Add a candidate above to see the pipeline move through stages." />
           ) : (
             STAGE_ORDER.map((stage) => {
               const stageCandidates = pipelineByStage.get(stage) || []

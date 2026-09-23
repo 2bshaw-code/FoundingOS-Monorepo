@@ -26,11 +26,11 @@ import {
   QuantumCard,
   QuantumHeader,
   QuantumListItem,
-  QuantumLoadingScreen,
   QuantumMetric,
   QuantumNotice,
   QuantumPill,
   QuantumScreen,
+  QuantumSkeletonList,
   QuantumText,
   quantumColors,
   quantumSpace,
@@ -252,7 +252,15 @@ export default function WorkspaceModuleScreen() {
   const showStatusPills = kind === 'records' || kind === 'inbox'
 
   if (!workspace || !module) return null
-  if (loading) return <QuantumLoadingScreen />
+  if (loading) {
+    return (
+      <QuantumScreen>
+        <QuantumBackButton label="‹ Workspaces" fallbackHref={`/workspace/${workspace.slug}`} />
+        <QuantumHeader eyebrow={workspace.label} title={module.label} accent={workspace.accent} />
+        <QuantumSkeletonList count={4} />
+      </QuantumScreen>
+    )
+  }
 
   function renderRecordCard(record: WorkspaceRecordDTO) {
     const next = nextStatus(record.status)

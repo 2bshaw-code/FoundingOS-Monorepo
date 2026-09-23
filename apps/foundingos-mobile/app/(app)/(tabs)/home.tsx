@@ -9,12 +9,17 @@
 import { router } from 'expo-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
+import Animated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated'
 import {
   QuantumButton,
   QuantumCard,
+  QuantumEmptyState,
+  QuantumMetric,
   QuantumNotice,
   QuantumScreen,
   QuantumSectionHeader,
+  QuantumSkeleton,
+  QuantumSkeletonList,
   QuantumText,
   quantumColors,
   quantumRadius,
@@ -31,6 +36,8 @@ import {
   rejectQueueItem,
 } from '../../../lib/approvals-queue'
 import { PlatformEvent, TenantOnboarding, fetchEventFeed, fetchOnboarding, getSession } from '../../../lib/core-operations-api'
+import { DEMO_EVENTS, DEMO_ONBOARDING } from '../../../lib/demo-data'
+import { ENTRANCE_DURATION_MS, staggerDelay, useReducedMotionPreference } from '../../../lib/motion'
 import { enqueueOutboxAction } from '../../../lib/outbox-sync'
 import { useQuantumStore } from '../../../lib/store'
 import { useActionFeedback } from '../../../lib/use-action-feedback'
@@ -69,6 +76,8 @@ export default function TodayScreen() {
   const activeWorkspaceSlug = useQuantumStore((state) => state.activeBrandSlug)
   const pendingSyncCount = useQuantumStore((state) => state.pendingSyncCount)
   const isOnline = useQuantumStore((state) => state.isOnline)
+  const demoMode = useQuantumStore((state) => state.demoMode)
+  const reduceMotion = useReducedMotionPreference()
 
   const [connected, setConnected] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -81,6 +90,20 @@ export default function TodayScreen() {
   const inFlight = useRef<Set<string>>(new Set())
 
   const loadAll = useCallback(async () => {
+    // Demo mode: skip both session checks and every network call, and serve
+    // the canned dataset so the full Today experience — KPIs, decision
+    // queue, activity feed — renders identically to a real signed-in
+    // session with zero backend connection.
+    if (useQuantumStore.getState().demoMode) {
+      const queueResult = await fetchApprovalsQueue()
+      setConnected(true)
+      setQueue(queueResult.items)
+      setEvents(DEMO_EVENTS)
+      setOnboarding(DEMO_ONBOARDING)
+      setLoading(false)
+      return
+    }
+
     const [session, legacyToken] = await Promise.all([getSession(), getLegacyToken()])
     // A legacy tester-login has no Core.Operations session but is still a real
     // sign-in — treat it as connected too, so this screen doesn't disagree
@@ -143,6 +166,19 @@ export default function TodayScreen() {
   const attentionCount = needsAttention.length + (connected && onboarding && onboarding.goLiveStatus !== 'live' ? 1 : 0)
   const setupIncomplete = connected && onboarding && onboarding.goLiveStatus !== 'live'
 
+  // Real, derived-from-live-data KPIs for the command-center strip — never
+  // fabricated. "Executed today" only counts completed items whose
+  // createdAt falls in the last 24h, since ApprovalsQueueItem doesn't carry
+  // a separate executedAt on the Workforce side.
+  const executedToday = queue.filter(
+    (item) => item.status === 'completed' && Date.now() - new Date(item.createdAt).getTime() < 24 * 60 * 60 * 1000,
+  ).length
+  const kpis = [
+    { label: 'Needs attention', value: attentionCount, tone: attentionCount > 0 ? ('watch' as const) : ('good' as const) },
+    { label: 'Executed today', value: executedToday, tone: 'good' as const },
+    { label: 'Recent events', value: events.length, tone: 'info' as const },
+  ]
+
   const quickActions = QUICK_ACTIONS.map((action) => {
     if (action.label === 'Approvals') {
       return { ...action, caption: queue.length > 0 ? `${pluralize(queue.length, 'item')} in queue` : 'Decision queue' }
@@ -164,17 +200,36 @@ export default function TodayScreen() {
           </Pressable>
           <Text style={styles.title}>Today</Text>
         </View>
-        <Pressable style={styles.profile} onPress={() => router.push('/search')}>
-          <Text style={styles.profileText}>●</Text>
-          {connected ? <View style={styles.online} /> : null}
-        </Pressable>
+        <View style={styles.headerRight}>
+          {demoMode ? (
+            <View style={styles.demoBadge}>
+              <QuantumText variant="caption" color={quantumColors.neutral900} style={styles.demoBadgeText}>DEMO</QuantumText>
+            </View>
+          ) : null}
+          <Pressable style={styles.profile} onPress={() => router.push('/search')}>
+            <Text style={styles.profileText}>●</Text>
+            {connected ? <View style={styles.online} /> : null}
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.trustStrip}>
         <QuantumText variant="caption" color={quantumColors.neutral300}>
-          FoundingOS shows you what needs attention today. Nothing here is simulated.
+          {demoMode
+            ? 'Demo mode is on — everything below is illustrative sample data, not a live tenant.'
+            : 'FoundingOS shows you what needs attention today. Nothing here is simulated.'}
         </QuantumText>
       </View>
+
+      {connected && !loading ? (
+        <View style={styles.kpiRow}>
+          {kpis.map((kpi, i) => (
+            <QuantumCard key={kpi.label} style={styles.kpiCard} index={i}>
+              <QuantumMetric label={kpi.label} value={kpi.value} tone={kpi.tone} />
+            </QuantumCard>
+          ))}
+        </View>
+      ) : null}
 
       {!isOnline ? <QuantumNotice tone="warning">Working offline — changes will sync later.</QuantumNotice> : null}
 
@@ -189,15 +244,17 @@ export default function TodayScreen() {
 
       {loading ? (
         <>
+          <View style={styles.kpiRow}>
+            {[0, 1, 2].map((i) => (
+              <View key={i} style={styles.kpiCard}>
+                <QuantumSkeleton style={styles.kpiSkeleton} />
+              </View>
+            ))}
+          </View>
           <QuantumSectionHeader label="Needs your attention" />
-          <View style={styles.panel}>
-            <View style={styles.skeletonRow} />
-            <View style={[styles.skeletonRow, styles.skeletonRowShort]} />
-          </View>
+          <QuantumSkeletonList count={2} />
           <QuantumSectionHeader label="Recent activity" />
-          <View style={styles.panel}>
-            <View style={styles.skeletonRow} />
-          </View>
+          <QuantumSkeletonList count={2} />
         </>
       ) : null}
 
@@ -215,18 +272,22 @@ export default function TodayScreen() {
               </Pressable>
             ) : null}
             {needsAttention.length === 0 && !setupIncomplete ? (
-              <View style={styles.allCaughtUp}>
-                <Text style={styles.allCaughtUpTitle}>You're all caught up.</Text>
-                <Text style={styles.emptyText}>
-                  Nothing needs a decision right now. Real actions from Core.Operations and Core.Workforce will show
-                  up here the moment something needs your call.
-                </Text>
-              </View>
+              <QuantumEmptyState
+                glyph="✓"
+                title="You're all caught up"
+                subtitle="Nothing needs a decision right now. Real actions from Core.Operations and Core.Workforce will show up here the moment something needs your call."
+              />
             ) : (
-              needsAttention.map((item) => {
+              needsAttention.map((item, i) => {
                 const isBusy = busyId === item.id
                 return (
-                  <View key={`${item.source}:${item.id}`} style={styles.attentionCard}>
+                  <Animated.View
+                    key={`${item.source}:${item.id}`}
+                    style={styles.attentionCard}
+                    entering={reduceMotion ? undefined : FadeInDown.delay(staggerDelay(i)).duration(ENTRANCE_DURATION_MS).springify().damping(18)}
+                    exiting={reduceMotion ? undefined : FadeOutUp.duration(220)}
+                    layout={reduceMotion ? undefined : LinearTransition.springify().damping(20).stiffness(200)}
+                  >
                     <View style={styles.rowBetween}>
                       <Text style={styles.attentionTitle}>{item.title}</Text>
                       <Text style={styles.attentionStatus}>{STATUS_LABEL[item.status]}</Text>
@@ -249,7 +310,7 @@ export default function TodayScreen() {
                         </Pressable>
                       ) : null}
                     </View>
-                  </View>
+                  </Animated.View>
                 )
               })
             )}
@@ -263,27 +324,32 @@ export default function TodayScreen() {
           <QuantumSectionHeader label="Recent activity" />
           <View style={styles.panel}>
             {events.length === 0 ? (
-              <Text style={styles.emptyText}>
-                Nothing has happened across your workspaces yet. Once your team starts working, real activity — not
-                sample data — will show up here.
-              </Text>
+              <QuantumEmptyState
+                glyph="◇"
+                title="Nothing has happened yet"
+                subtitle="Once your team starts working, real activity — not sample data — will show up here."
+              />
             ) : (
-              events.slice(0, 10).map((event) => (
-                <View key={event.id} style={styles.activityRow}>
+              events.slice(0, 10).map((event, i) => (
+                <Animated.View
+                  key={event.id}
+                  style={styles.activityRow}
+                  entering={reduceMotion ? undefined : FadeInDown.delay(staggerDelay(i)).duration(ENTRANCE_DURATION_MS).springify().damping(18)}
+                >
                   <View style={styles.activityDot} />
                   <View style={styles.flex}>
                     <Text style={styles.activityText}>{event.type}</Text>
                     <Text style={styles.activityTime}>{formatRelativeTime(event.createdAt)} · {event.source}</Text>
                   </View>
-                </View>
+                </Animated.View>
               ))
             )}
           </View>
 
           <QuantumSectionHeader label="Quick actions" />
           <View style={styles.quickGrid}>
-            {quickActions.map((action) => (
-              <QuantumCard key={action.label} accent={action.accent} style={styles.quickCard}>
+            {quickActions.map((action, i) => (
+              <QuantumCard key={action.label} accent={action.accent} style={styles.quickCard} index={i}>
                 <Text style={[styles.quickLabel, { color: action.accent }]}>{action.label}</Text>
                 <Text style={styles.quickCaption}>{action.caption}</Text>
                 <QuantumButton tone="secondary" onPress={action.onPress}>Open</QuantumButton>
@@ -302,6 +368,14 @@ const styles = StyleSheet.create({
   screen: { gap: quantumSpace.lg },
   stack: { gap: quantumSpace.sm },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  demoBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: quantumColors.warning,
+  },
+  demoBadgeText: { fontWeight: '900', letterSpacing: 0.6 },
   product: { color: '#38BDF8', fontSize: 13, fontWeight: '900', letterSpacing: 1.4 },
   title: { color: '#fff', fontSize: 30, fontWeight: '900', marginTop: 2 },
   profile: {
@@ -325,8 +399,9 @@ const styles = StyleSheet.create({
     backgroundColor: quantumColors.success,
   },
   trustStrip: { paddingHorizontal: 2 },
-  skeletonRow: { height: 52, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.05)', marginBottom: quantumSpace.sm },
-  skeletonRowShort: { width: '70%' },
+  kpiRow: { flexDirection: 'row', gap: quantumSpace.sm },
+  kpiCard: { flex: 1 },
+  kpiSkeleton: { height: 64, borderRadius: quantumRadius.lg, width: '100%' },
   flex: { flex: 1 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: quantumSpace.md },
   panel: {
@@ -337,9 +412,6 @@ const styles = StyleSheet.create({
     padding: quantumSpace.lg,
     gap: quantumSpace.md,
   },
-  emptyText: { color: '#B8C8D8', fontSize: 15, lineHeight: 19 },
-  allCaughtUp: { gap: 4 },
-  allCaughtUpTitle: { color: quantumColors.success, fontSize: 15, fontWeight: '800' },
   attentionRow: { flexDirection: 'row', gap: quantumSpace.sm, alignItems: 'flex-start' },
   attentionDot: { width: 10, height: 10, borderRadius: 5, marginTop: 5 },
   attentionCard: {

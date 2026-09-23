@@ -108,6 +108,17 @@ interface QuantumState {
   isOnline: boolean
   pendingSyncCount: number
   licensedSuites: { core_workforce: boolean; core_intelligence: boolean }
+  // Live system "Reduce Motion" preference (see lib/reduced-motion.ts) — every
+  // custom press/entrance/list animation in the app reads this one flag so a
+  // single accessibility setting disables all of them at once, consistently.
+  reducedMotion: boolean
+  // Investor/buyer demo mode — when true, the Today and Approvals screens
+  // (lib/approvals-queue.ts, lib/demo-data.ts) serve realistic canned data
+  // instead of calling the real backends, so anyone can demo the full app
+  // experience with no live tenant/backend connection. Never persisted
+  // across app restarts and never affects any write path — approve/reject/
+  // execute on demo data only ever mutates local in-memory state.
+  demoMode: boolean
   setActiveBrand: (slug: string) => void
   setActiveConsoleModule: (moduleName: string | null) => void
   setRole: (role: UserRole) => void
@@ -117,6 +128,8 @@ interface QuantumState {
   setIsOnline: (online: boolean) => void
   setPendingSyncCount: (count: number) => void
   setLicensedSuites: (suites: { core_workforce: boolean; core_intelligence: boolean }) => void
+  setReducedMotion: (enabled: boolean) => void
+  setDemoMode: (enabled: boolean) => void
   getActiveBrand: () => Brand | undefined
   getActiveTheme: () => QuantumTheme
   getVisibleBrands: () => Brand[]
@@ -133,6 +146,11 @@ export const useQuantumStore = create<QuantumState>((set, get) => ({
   // Defaults to visible so the shell renders instantly; corrected once the real
   // TenantSuiteLicense-backed /module-access check resolves (see _layout.tsx).
   licensedSuites: { core_workforce: true, core_intelligence: true },
+  // Corrected almost immediately by startReducedMotionListener() on app boot;
+  // defaults to false (motion on) so there's no flash of disabled animation
+  // for the overwhelming majority of users who don't have this set.
+  reducedMotion: false,
+  demoMode: false,
 
   setActiveBrand: (slug: string) => set({ activeBrandSlug: getValidBrandSlug(slug) }),
   setActiveConsoleModule: (moduleName: string | null) => set({ activeConsoleModule: moduleName }),
@@ -143,6 +161,8 @@ export const useQuantumStore = create<QuantumState>((set, get) => ({
   setIsOnline: (online: boolean) => set({ isOnline: online }),
   setPendingSyncCount: (count: number) => set({ pendingSyncCount: count }),
   setLicensedSuites: (suites) => set({ licensedSuites: suites }),
+  setReducedMotion: (enabled: boolean) => set({ reducedMotion: enabled }),
+  setDemoMode: (enabled: boolean) => set({ demoMode: enabled }),
 
   getActiveBrand: () => BRANDS.find((b) => b.slug === getValidBrandSlug(get().activeBrandSlug)),
   getActiveTheme: () => getShellSafeTheme(get().activeBrandSlug),
