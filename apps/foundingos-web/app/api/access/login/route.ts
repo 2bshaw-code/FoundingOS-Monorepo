@@ -26,13 +26,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.redirect(retry, 303)
   }
 
-  await recordPreviewVisit({
-    email,
-    returnPath: returnTo,
-    referrer: request.headers.get('referer'),
-    userAgent: request.headers.get('user-agent'),
-    clientAddress: client,
-  })
+  try {
+    await recordPreviewVisit({
+      email,
+      returnPath: returnTo,
+      referrer: request.headers.get('referer'),
+      userAgent: request.headers.get('user-agent'),
+      clientAddress: client,
+    })
+  } catch (error) {
+    console.error('[site-access] Preview visitor tracking failed; access was still granted', error)
+  }
 
   attempts.delete(client)
   const response = NextResponse.redirect(new URL(returnTo, request.url), 303)
