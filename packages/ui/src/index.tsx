@@ -8,7 +8,7 @@ import { commercialAddOns, commercialPlans, marketingPlanFeatures } from '@found
 import { GlobalisationControls, GlobalisationProvider, LocalizedGbp } from './globalisation'
 import { ThemeToggle } from './theme'
 import { WorkflowWalkthrough } from './workflow-walkthrough'
-import { WorkspacePreview, type WorkspacePreviewProduct } from './workspace-preview'
+import { WorkspacePreview, type WorkspacePreviewProduct, AiCreationsPanel, type WorkspaceAiCreation } from './workspace-preview'
 import { MessagingDemo } from './messaging-demo'
 
 export { BrandDashboard as ConsoleDashboard, BrandModulePage as ModulePage, BrandSettingsPage as SettingsPage } from './console'
@@ -75,6 +75,30 @@ const workspaceProducts: WorkspaceProduct[] = [
     workflow: ['Order received', 'Stock reserved', 'Pick and pack', 'Dispatch', 'Payment reconciled'],
     automation: 'Low-stock rules prepare replenishment recommendations using sales velocity and lead time.',
     insight: 'Demand for the 5 kg staple bundle is forecast to exceed available stock within four days.',
+    aiCreations: [
+      {
+        title: 'Weekend restock bundle promo',
+        channel: 'WhatsApp broadcast',
+        status: 'Ready to approve',
+        summary: 'Drafted for 340 customers who bought the 5 kg staple bundle',
+        preview: {
+          heading: '🛒 Back in stock: your favourite bundle',
+          body: 'Hi {{first_name}}, the 5 kg staple bundle you loved is back in stock. Order before Sunday to lock in the same price — reply YES to reorder.',
+          meta: 'Estimated reach 340 · Reply-to-reorder enabled',
+        },
+      },
+      {
+        title: 'Low-stock supplier reorder',
+        channel: 'Purchase order draft',
+        status: 'Needs review',
+        summary: 'AI-drafted PO for Northgate Distributors based on a 4-day stockout forecast',
+        preview: {
+          heading: 'Draft PO #4021 — Northgate Distributors',
+          body: '120 units of 5 kg staple bundle, 80 units of cooking oil 2L, delivery requested within 3 business days at standard terms.',
+          meta: 'Estimated cost £2,140 · Based on 14-day sales velocity',
+        },
+      },
+    ],
   },
   {
     slug: 'logistics',
@@ -97,6 +121,30 @@ const workspaceProducts: WorkspaceProduct[] = [
     workflow: ['Order ready', 'Route assigned', 'Driver dispatched', 'Proof captured', 'Invoice released'],
     automation: 'Exception rules flag late stops and recommend reassignment based on location and capacity.',
     insight: 'Combining tomorrow’s East routes could reduce distance by 18% without affecting delivery windows.',
+    aiCreations: [
+      {
+        title: 'Delayed delivery customer update',
+        channel: 'SMS',
+        status: 'Ready to approve',
+        summary: 'Drafted for 41 customers on delayed East routes',
+        preview: {
+          heading: 'Your delivery is running late',
+          body: 'Hi {{customer_name}}, your delivery is delayed due to traffic and now expected by {{new_eta}}. Sorry for the inconvenience — track live status here: {{tracking_link}}.',
+          meta: 'Auto-triggered by exception rule · 41 recipients',
+        },
+      },
+      {
+        title: 'Route consolidation plan',
+        channel: 'Ops recommendation',
+        status: 'Draft',
+        summary: 'AI-drafted plan to merge two low-load East routes',
+        preview: {
+          heading: 'Merge Route 12 and Route 15 tomorrow',
+          body: 'Combining these routes reduces total distance by 18% and frees one vehicle for peak-hour dispatch, without affecting any delivery window.',
+          meta: 'Confidence: high · Based on 30-day route history',
+        },
+      },
+    ],
   },
   {
     slug: 'finance',
@@ -119,6 +167,30 @@ const workspaceProducts: WorkspaceProduct[] = [
     workflow: ['Delivery confirmed', 'Invoice issued', 'Payment received', 'Transaction matched', 'Ledger updated'],
     automation: 'Payment matching links bank and mobile money references to open invoices and flags exceptions.',
     insight: 'Three customers account for 62% of overdue value; prioritised follow-up could release £11,800.',
+    aiCreations: [
+      {
+        title: 'Overdue account outreach',
+        channel: 'Email',
+        status: 'Ready to approve',
+        summary: 'Drafted for 7 customers past agreed payment terms',
+        preview: {
+          heading: 'Friendly reminder: invoice #INV-2291 is now overdue',
+          body: 'Hi {{customer_name}}, our records show invoice #INV-2291 (£1,240) is 12 days past the agreed 30-day term. Let us know if you would like a payment plan or if there is an issue with the invoice.',
+          meta: 'Tone: firm but courteous · Escalation stage 1 of 3',
+        },
+      },
+      {
+        title: 'Cash forecast summary',
+        channel: 'Internal report',
+        status: 'Draft',
+        summary: 'Weekly board-ready cash position summary',
+        preview: {
+          heading: '14-day cash position: improving',
+          body: 'Collections are outperforming forecast by 9%, driven by faster mobile-money reconciliation. Recommend releasing the held supplier payment for Northgate Distributors.',
+          meta: 'Generated from 1,204 reconciled transactions',
+        },
+      },
+    ],
   },
   {
     slug: 'talent',
@@ -141,6 +213,30 @@ const workspaceProducts: WorkspaceProduct[] = [
     workflow: ['Candidate selected', 'Documents verified', 'Worker onboarded', 'Shift completed', 'Payroll approved'],
     automation: 'Readiness checks identify missing documents, schedule gaps, and payroll exceptions before deadlines.',
     insight: 'Promoting qualified internal candidates could fill four priority roles 19 days faster than external hiring.',
+    aiCreations: [
+      {
+        title: 'Warehouse Supervisor job post',
+        channel: 'Job board + LinkedIn',
+        status: 'Ready to approve',
+        summary: 'Drafted from the role brief and 3 similar filled roles',
+        preview: {
+          heading: 'Warehouse Supervisor — [Location]',
+          body: 'We are looking for an experienced Warehouse Supervisor to lead a team of 12, own daily dispatch accuracy, and reduce pick errors. £[salary] + shift allowance.',
+          meta: 'Matched against 4 similar past hires',
+        },
+      },
+      {
+        title: 'Structured interview scorecard',
+        channel: 'Candidate pipeline',
+        status: 'Needs review',
+        summary: 'AI-drafted interview guide for Warehouse Supervisor',
+        preview: {
+          heading: 'Structured interview: Warehouse Supervisor',
+          body: 'Five competency questions covering team leadership, safety compliance, inventory accuracy, and conflict resolution, with a 1–5 scoring rubric for each.',
+          meta: 'Aligned to your last 6 successful hires',
+        },
+      },
+    ],
   },
   {
     slug: 'health',
@@ -163,6 +259,30 @@ const workspaceProducts: WorkspaceProduct[] = [
     workflow: ['Appointment booked', 'Patient checked in', 'Care delivered', 'Stock recorded', 'Payment reconciled'],
     automation: 'Capacity and stock rules flag pressure early and prepare follow-up actions for the operations team.',
     insight: 'Moving six flexible appointments to the afternoon would cut the morning wait forecast by 11 minutes.',
+    aiCreations: [
+      {
+        title: 'Appointment reminder script',
+        channel: 'SMS + WhatsApp',
+        status: 'Ready to approve',
+        summary: 'Drafted for 164 patients with appointments this week',
+        preview: {
+          heading: 'Appointment reminder',
+          body: 'Hi {{patient_name}}, this is a reminder of your appointment with Dr. {{clinician}} on {{date}} at {{time}}. Reply C to confirm or R to reschedule.',
+          meta: 'Estimated to reduce no-shows by ~15%',
+        },
+      },
+      {
+        title: 'Critical stock reorder note',
+        channel: 'Supply team alert',
+        status: 'Needs review',
+        summary: '2 treatment items below minimum safe level',
+        preview: {
+          heading: 'Urgent restock: IV fluid sets & antiseptic wipes',
+          body: 'Current stock will be exhausted within 2 days at current usage. Recommend an expedited order from the approved supplier.',
+          meta: 'Based on 7-day consumption trend',
+        },
+      },
+    ],
   },
 ]
 
@@ -171,6 +291,42 @@ const workspaceCards = workspaceProducts.map(({ slug, name, summary }) => ({
   href: `/workspaces/${slug}`,
   summary,
 }))
+
+const marketingAiCreations: WorkspaceAiCreation[] = [
+  {
+    title: 'Restock announcement',
+    channel: 'WhatsApp',
+    status: 'Ready to approve',
+    summary: 'Drafted for 340 returning customers',
+    preview: {
+      heading: '🛒 Back in stock: your favourite bundle',
+      body: 'Hi {{first_name}}, the 5 kg staple bundle you loved is back in stock. Order before Sunday to lock in the same price — reply YES to reorder.',
+      meta: 'Estimated reach 340 · Reply-to-reorder enabled',
+    },
+  },
+  {
+    title: 'Weekend bundle',
+    channel: 'Instagram + Facebook',
+    status: 'Needs review',
+    summary: 'Local audience · scheduled for Friday',
+    preview: {
+      heading: 'This weekend only: bundle & save',
+      body: 'Stock up for the weekend — grab our best-selling bundle at a special price, while supplies last. Tap to shop now.',
+      meta: 'Estimated reach: 12,400 · Local radius 8km',
+    },
+  },
+  {
+    title: 'Customer win-back',
+    channel: 'Email',
+    status: 'Draft',
+    summary: 'Inactive 30+ days segment',
+    preview: {
+      heading: 'We miss you — here is 10% off your next order',
+      body: 'It has been a month since your last order. Come back this week and enjoy 10% off, on us.',
+      meta: 'Segment size: 412 customers',
+    },
+  },
+]
 
 const operatingLayers = [
   { label: 'Event Feed', value: 'Live', detail: 'Shared event backbone across all suites and workflows.' },
@@ -345,15 +501,8 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
             <article><p>Conversion</p><strong>3.8%</strong><span>Revenue connected</span></article>
           </div>
           <div className="preview-panels">
-            <article>
-              <div className="panel-heading"><div><p className="eyebrow">Publishing calendar</p><h3>Campaign queue</h3></div><span>3 ready</span></div>
-              <div className="work-queue">
-                <div><span className="status-dot status-insight" /><div><strong>Restock announcement</strong><p>WhatsApp · Returning customers · Today 14:00</p></div><small>Approved</small></div>
-                <div><span className="status-dot" /><div><strong>Weekend bundle</strong><p>Instagram + Facebook · Local audience · Friday</p></div><small>Review</small></div>
-                <div><span className="status-dot status-action" /><div><strong>Customer win-back</strong><p>Email · Inactive 30 days · Draft</p></div><small>Draft</small></div>
-              </div>
-            </article>
             <article className="insight-card"><p className="eyebrow">Core Intelligence</p><h3>Recommended campaign</h3><p>Promote the newly replenished staple bundle to 186 customers who previously purchased it and have not ordered this month.</p><button type="button">Create campaign draft</button></article>
+            <AiCreationsPanel eyebrow="FoundAI" items={marketingAiCreations} title="Campaigns AI created for you" />
           </div>
         </div>
       </section>

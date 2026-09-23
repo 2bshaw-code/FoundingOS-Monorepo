@@ -7484,6 +7484,100 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   font-weight: 800;
 }
 
+.ai-creations-panel {
+  grid-column: 1 / -1;
+}
+
+.ai-creation-list {
+  display: grid;
+  margin-top: 14px;
+  gap: 10px;
+}
+
+.ai-creation-item {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+}
+
+.ai-creation-item.open {
+  border-color: rgba(124, 58, 237, 0.35);
+}
+
+.ai-creation-summary {
+  display: grid;
+  grid-template-columns: 9px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 14px 16px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.ai-creation-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ai-creation-copy strong {
+  font-size: 13px;
+}
+
+.ai-creation-copy small {
+  color: #91a0b4;
+  font-size: 12px;
+}
+
+.ai-creation-status {
+  white-space: nowrap;
+  color: #a9b5c6;
+}
+
+.ai-creation-status-approved {
+  color: #78d6a3;
+}
+
+.ai-creation-status-changes {
+  color: #f59e0b;
+}
+
+.ai-creation-preview {
+  padding: 0 16px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ai-creation-preview h4 {
+  margin: 6px 0 8px;
+}
+
+.ai-creation-preview > p:not(.eyebrow) {
+  color: #c5cfdd;
+  line-height: 1.65;
+  margin: 0 0 10px;
+}
+
+.ai-creation-meta {
+  display: inline-block;
+  color: #a9b5c6;
+  font-size: 12px;
+  margin-bottom: 14px;
+}
+
+.ai-creation-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.ai-creation-actions .btn {
+  flex: 1;
+}
+
 .product-explainer {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -7917,6 +8011,23 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   .preview-panels,
   .product-explainer {
     grid-template-columns: 1fr;
+  }
+
+  .ai-creation-summary {
+    grid-template-columns: 1fr;
+    row-gap: 6px;
+  }
+
+  .ai-creation-summary .status-dot {
+    display: none;
+  }
+
+  .ai-creation-status {
+    justify-self: start;
+  }
+
+  .ai-creation-actions {
+    flex-direction: column;
   }
 
   .product-explainer {

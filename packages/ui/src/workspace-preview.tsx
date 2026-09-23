@@ -17,6 +17,98 @@ export type WorkspacePreviewProduct = {
   workflow: string[]
   automation: string
   insight: string
+  aiCreations?: WorkspaceAiCreation[]
+}
+
+export type WorkspaceAiCreationStatus = 'Ready to approve' | 'Needs review' | 'Draft'
+
+export type WorkspaceAiCreation = {
+  title: string
+  channel: string
+  status: WorkspaceAiCreationStatus
+  summary: string
+  preview: { heading: string; body: string; meta?: string }
+}
+
+function aiCreationDotClass(status: WorkspaceAiCreationStatus) {
+  if (status === 'Ready to approve') return 'status-insight'
+  if (status === 'Needs review') return 'status-action'
+  return ''
+}
+
+export function AiCreationsPanel({
+  eyebrow = 'FoundAI',
+  title = 'AI creations awaiting your review',
+  items,
+}: {
+  eyebrow?: string
+  title?: string
+  items: WorkspaceAiCreation[]
+}) {
+  const [openTitle, setOpenTitle] = useState<string | null>(items[0]?.title ?? null)
+  const [decisions, setDecisions] = useState<Record<string, 'approved' | 'changes'>>({})
+
+  if (!items.length) return null
+
+  return (
+    <article className="ai-creations-panel" aria-label={title}>
+      <div className="panel-heading">
+        <div>
+          <p className="eyebrow">{eyebrow}</p>
+          <h3>{title}</h3>
+        </div>
+        <span>{items.length} generated</span>
+      </div>
+      <div className="ai-creation-list">
+        {items.map((item) => {
+          const isOpen = openTitle === item.title
+          const decision = decisions[item.title]
+          const statusLabel = decision === 'approved' ? 'Approved' : decision === 'changes' ? 'Changes requested' : item.status
+          return (
+            <div className={`ai-creation-item${isOpen ? ' open' : ''}`} key={item.title}>
+              <button
+                aria-expanded={isOpen}
+                className="ai-creation-summary"
+                onClick={() => setOpenTitle(isOpen ? null : item.title)}
+                type="button"
+              >
+                <span className={`status-dot ${aiCreationDotClass(item.status)}`} />
+                <span className="ai-creation-copy">
+                  <strong>{item.title}</strong>
+                  <small>{item.channel} · {item.summary}</small>
+                </span>
+                <small className={`ai-creation-status${decision ? ` ai-creation-status-${decision}` : ''}`}>{statusLabel}</small>
+              </button>
+              {isOpen ? (
+                <div className="ai-creation-preview">
+                  <p className="eyebrow">What FoundAI created</p>
+                  <h4>{item.preview.heading}</h4>
+                  <p>{item.preview.body}</p>
+                  {item.preview.meta ? <span className="ai-creation-meta">{item.preview.meta}</span> : null}
+                  <div className="ai-creation-actions">
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => setDecisions((prev) => ({ ...prev, [item.title]: 'approved' }))}
+                      type="button"
+                    >
+                      Approve &amp; publish
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => setDecisions((prev) => ({ ...prev, [item.title]: 'changes' }))}
+                      type="button"
+                    >
+                      Request changes
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )
+        })}
+      </div>
+    </article>
+  )
 }
 
 const moduleDescriptions: Record<string, string> = {
@@ -148,6 +240,7 @@ export function WorkspacePreview({ product }: { product: WorkspacePreviewProduct
                 <p>{product.insight}</p>
                 <button type="button">Review recommendation</button>
               </article>
+              {product.aiCreations?.length ? <AiCreationsPanel items={product.aiCreations} /> : null}
             </div>
           ) : (
             <div className="preview-panels">
