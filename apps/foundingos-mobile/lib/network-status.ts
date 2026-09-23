@@ -5,6 +5,7 @@
 import NetInfo from '@react-native-community/netinfo'
 import { useQuantumStore } from './store'
 import { processOutboxSync } from './outbox-sync'
+import { flushTelemetry } from './telemetry-client'
 
 let unsubscribe: (() => void) | null = null
 
@@ -20,9 +21,11 @@ export function startNetworkStatusListener() {
     const wasOnline = useQuantumStore.getState().isOnline
     useQuantumStore.getState().setIsOnline(online)
 
-    // Flush any queued offline actions the moment we transition back online.
+    // Flush any queued offline actions/telemetry the moment we transition
+    // back online.
     if (online && !wasOnline) {
       void processOutboxSync()
+      void flushTelemetry()
     }
   })
 

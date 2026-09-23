@@ -772,3 +772,28 @@ model TenantSuiteLicense {
   @@index([tenantId, enabled])
   @@schema("wros")
 }
+
+/// Shared cross-suite telemetry sink (Phase 28). Implements the
+/// `TelemetryEvent` envelope documented in /docs/telemetry.md. Distinct from
+/// `Event` above: `Event` is the operational, tenant-facing cross-suite
+/// event feed shown in-product (Insights, agent-action history); this model
+/// is the observability/analytics sink intended for internal use
+/// (dashboards, error-rate monitoring) and is never rendered directly to a
+/// tenant. `tenantId` is nullable because pre-login/anonymous telemetry
+/// (e.g. marketing-site funnel events) has no tenant yet.
+model TelemetryEvent {
+  id         String   @id @default(cuid())
+  tenantId   String?
+  suite      String
+  name       String
+  actorType  String
+  actorId    String?
+  occurredAt DateTime
+  properties Json
+  receivedAt DateTime @default(now())
+
+  @@index([tenantId, occurredAt])
+  @@index([suite, name, occurredAt])
+  @@index([receivedAt])
+  @@schema("wros")
+}

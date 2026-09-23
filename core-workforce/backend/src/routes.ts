@@ -7,6 +7,7 @@ import { createModuleAccessMiddleware } from '@foundingos/service-auth'
 import { requireDecisionApprovalAccess, requireExecutionAccess, requireWorkforceAccess } from './auth.js'
 import { createCandidate, createInterview, createJob, deleteCandidate, deleteInterview, deleteJob, getCandidate, getInterview, getJob, listCandidates, listInterviews, listJobs, updateCandidate, updateInterview, updateJob } from './workforce.js'
 import { decideWorkforceAction, executeWorkforceAction, getWorkforceActionTrail, listWorkforceActions, proposeApplicantShortlistingAction, proposeWorkforceAction, reverseWorkforceActionExecution } from './workforce-actions.js'
+import { emitTelemetry } from './telemetry-emitter.js'
 
 const requireTenant: RequestHandler = (_req, res, next) => {
   if (res.locals.auth?.role === 'founder_master') return next()
@@ -33,7 +34,9 @@ apiRouter.post('/jobs', requireWorkforceAccess, requireTenant, requireCoreWorkfo
   try {
     const tenantId = writeTenant(req, res)
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
-    res.status(201).json({ success: true, data: await createJob(tenantId, req.body || {}) })
+    const data = await createJob(tenantId, req.body || {})
+    emitTelemetry(tenantId, 'record.created', { module: 'jobs' })
+    res.status(201).json({ success: true, data })
   } catch (error) { next(error) }
 })
 apiRouter.get('/jobs/:id', requireWorkforceAccess, requireTenant, requireCoreWorkforceModule, async (req, res, next) => {
@@ -167,7 +170,9 @@ apiRouter.post('/platform/workforce-actions/:id/decision', requireDecisionApprov
   try {
     const tenantId = readTenant(req, res)
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
-    res.json({ success: true, data: await decideWorkforceAction(tenantId, res.locals.auth.id, String(req.params.id), req.body?.decision, res.locals.requestId) })
+    const data = await decideWorkforceAction(tenantId, res.locals.auth.id, String(req.params.id), req.body?.decision, res.locals.requestId)
+    emitTelemetry(tenantId, 'workforce_action.decision', { actionId: String(req.params.id), decision: String(req.body?.decision || '') })
+    res.json({ success: true, data })
   } catch (error) { next(error) }
 })
 apiRouter.post('/platform/workforce-actions/:id/execute', requireExecutionAccess, requireTenant, requireCoreWorkforceModule, async (req, res, next) => {

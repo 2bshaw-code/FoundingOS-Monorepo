@@ -257,9 +257,17 @@ this pass.
    `apps/*-web` legacy sites, and their copy still need to be
    rewritten/retired to match [positioning.md](./positioning.md) and
    [pricing.md](./pricing.md).
-7. **Telemetry pipeline implementation** — schema/catalog defined in
-   [telemetry.md](./telemetry.md); ingestion (queue, batching, storage
-   wiring) not implemented.
+7. ~~**Telemetry pipeline implementation**~~ — **Phases 28–31 complete:**
+   ingestion endpoint (`POST/GET /platform/telemetry` on `core-operations`,
+   backed by the `TelemetryEvent` table), client-side flushing from
+   `action-logger.ts` (`telemetry-client.ts`, periodic + lifecycle +
+   reconnect + on-error triggers), backend emission points in all three
+   core services (`core-operations` in-process, `core-workforce`/
+   `core-intelligence` over HTTP), and `/health` (liveness) + `/ready`
+   (readiness) on all three backends plus a live status view in the mobile
+   debug screen. See [telemetry.md](./telemetry.md) for the full contract.
+   Remaining: an actual internal dashboard (Phase 36) and live-device/
+   live-database verification (untestable in this environment).
 8. **Targeted tests/builds after code changes land** — once the
    existing test suites named in
    [MARKET_LAUNCH_GATE.md](../MARKET_LAUNCH_GATE.md) ("Release commands":

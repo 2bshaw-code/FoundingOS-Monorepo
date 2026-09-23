@@ -10,13 +10,18 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { enableScreens } from 'react-native-screens'
 import { QuantumBackground } from '../components/QuantumBackground'
 import { startNetworkStatusListener } from '../lib/network-status'
+import { startTelemetryFlushLoop } from '../lib/telemetry-client'
 
 enableScreens(true)
 
 export default function RootLayout() {
   useEffect(() => {
-    const unsubscribe = startNetworkStatusListener()
-    return unsubscribe
+    const unsubscribeNetwork = startNetworkStatusListener()
+    const stopTelemetry = startTelemetryFlushLoop()
+    return () => {
+      unsubscribeNetwork()
+      stopTelemetry()
+    }
   }, [])
 
   return (

@@ -5,10 +5,10 @@
 // Minimal, dependency-free client-side action logger. Records only action
 // type, outcome, and small non-sensitive metadata (ids, counts) — never
 // record bodies, names, or anything else that could carry customer data.
-// Kept in-memory (ring buffer) and surfaced via a hidden debug screen; not
-// persisted or sent anywhere yet. Structured so each entry can later be
-// forwarded as-is into the TelemetryEvent envelope described in
-// docs/telemetry.md once a real sink exists.
+// Kept in-memory (ring buffer) and surfaced via a hidden debug screen.
+// Entries are forwarded in batches into the real TelemetryEvent envelope
+// described in docs/telemetry.md by telemetry-client.ts (Phase 29), which
+// subscribes via subscribeToActionLog() below.
 export type ActionLogOutcome = 'success' | 'failure'
 
 export type ActionLogEntry = {

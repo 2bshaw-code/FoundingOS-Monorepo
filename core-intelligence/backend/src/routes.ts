@@ -2,7 +2,7 @@ import { Router, type RequestHandler } from 'express'
 import { createBobRouter } from '@foundingos/bob'
 import { createAuthenticatedServiceProxy, createModuleAccessMiddleware } from '@foundingos/service-auth'
 import { requireMarketplaceAccount, requireMarketplaceOwner } from './auth.js'
-import { recordIdentityResolution, recordMappingQuery, recordMessagingRouteSuccess, recordOrchestrationEvent, recordSuiteActivation } from './telemetry.js'
+import { recordIdentityResolution, recordIntelligenceEvent, recordMappingQuery, recordMessagingRouteSuccess, recordOrchestrationEvent, recordSuiteActivation } from './telemetry.js'
 import { listAnomalies, listRisks, listSignals } from './signals.js'
 import { decideRecommendation, executeRecommendation, getRecommendationTrail, listOutcomes, listRecommendations, reverseRecommendation } from './recommendations.js'
 import { getCommandCentreSummary } from './command-centre.js'
@@ -57,7 +57,13 @@ governed.get('/anomalies', forward((req) => listAnomalies(req)))
 
 governed.get('/recommendations', forward((req) => listRecommendations(req, typeof req.query.status === 'string' ? req.query.status : undefined)))
 governed.get('/recommendations/:id/trail', forward((req) => getRecommendationTrail(req, String(req.params.id))))
-governed.post('/recommendations/:id/decision', requireMarketplaceOwner, forward((req) => decideRecommendation(req, String(req.params.id), req.body?.decision === 'reject' ? 'reject' : 'approve')))
+governed.post('/recommendations/:id/decision', requireMarketplaceOwner, forward((req, res) => {
+  const decision = req.body?.decision === 'reject' ? 'reject' : 'approve'
+  return decideRecommendation(req, String(req.params.id), decision).then((data) => {
+    recordIntelligenceEvent('orchestration.event', { action: 'recommendation.decision', recommendationId: req.params.id, decision }, tenantOf(res))
+    return data
+  })
+}))
 governed.post('/recommendations/:id/execute', requireMarketplaceOwner, forward((req) => executeRecommendation(req, String(req.params.id))))
 governed.post('/recommendations/:id/reverse', requireMarketplaceOwner, forward((req) => reverseRecommendation(req, String(req.params.id))))
 

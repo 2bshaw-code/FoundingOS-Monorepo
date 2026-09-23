@@ -13,6 +13,8 @@ import { useEffect, useState } from 'react'
 import { StyleSheet } from 'react-native'
 import { FOUNDINGOS_ACCENT } from '../../lib/brands'
 import { ActionLogEntry, clearActionLog, getActionLog, subscribeToActionLog } from '../../lib/action-logger'
+import { CORE_OPS_API_BASE } from '../../lib/core-operations-api'
+import { CORE_WORKFORCE_API_BASE } from '../../lib/core-workforce-api'
 import {
   QuantumButton,
   QuantumCard,
@@ -23,14 +25,54 @@ import {
   getSemanticColor,
 } from '../../components/QuantumUI'
 
+type ServiceStatus = 'checking' | 'ok' | 'down'
+
+const SERVICES: { label: string; url: string }[] = [
+  { label: 'Core.Operations', url: `${CORE_OPS_API_BASE}/health` },
+  { label: 'Core.Workforce', url: `${CORE_WORKFORCE_API_BASE}/health` },
+]
+
+// Phase 31 — minimal internal status view. Pings each backend's fast /health
+// endpoint (never /ready, which is heavier and DB-dependent) so this never
+// blocks or slows down opening the debug screen.
+function useServiceStatus() {
+  const [status, setStatus] = useState<Record<string, ServiceStatus>>(
+    Object.fromEntries(SERVICES.map((s) => [s.label, 'checking'])),
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    SERVICES.forEach(({ label, url }) => {
+      fetch(url, { signal: AbortSignal.timeout(4_000) })
+        .then((res) => { if (!cancelled) setStatus((prev) => ({ ...prev, [label]: res.ok ? 'ok' : 'down' })) })
+        .catch(() => { if (!cancelled) setStatus((prev) => ({ ...prev, [label]: 'down' })) })
+    })
+    return () => { cancelled = true }
+  }, [])
+
+  return status
+}
+
 export default function DebugLogScreen() {
   const [entries, setEntries] = useState<ActionLogEntry[]>(getActionLog())
+  const serviceStatus = useServiceStatus()
 
   useEffect(() => subscribeToActionLog(() => setEntries(getActionLog())), [])
 
   return (
     <QuantumScreen>
       <QuantumHeader eyebrow="Diagnostics" title="Action Log" accent={FOUNDINGOS_ACCENT} />
+      <QuantumText variant="overline">Service status</QuantumText>
+      {SERVICES.map(({ label }) => {
+        const state = serviceStatus[label]
+        return (
+          <QuantumCard key={label} accent={getSemanticColor(state === 'ok' ? 'good' : state === 'down' ? 'risk' : 'watch')}>
+            <QuantumText variant="caption">
+              {label} · {state === 'checking' ? 'checking…' : state === 'ok' ? 'operational' : 'unreachable'}
+            </QuantumText>
+          </QuantumCard>
+        )
+      })}
       <QuantumText variant="caption">
         In-memory only — clears on app restart, never leaves this device. Records action type and outcome, no record
         contents.

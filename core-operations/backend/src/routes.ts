@@ -18,6 +18,7 @@ import { verifyBootstrapToken } from './platform-security.js'
 import { createTenantCheckout, verifyStripeWebhookSignature } from './stripe.js'
 import { decideAgentAction, executeAgentAction, getAgentActionTrail, getAgentIntelligenceSummary, listAgentActions, proposeAgentAction, proposeReplenishmentAction, reverseAgentActionExecution } from './agent-actions.js'
 import { isSuiteLicensed, listTenantSuiteLicenses, setTenantSuiteLicense } from './licensing.js'
+import { createTelemetryRateLimiter, emitBackendTelemetry, ingestTelemetryEvents, parseTelemetryBatch, queryTelemetryEvents, resolveOptionalTenantId } from './telemetry.js'
 
 const requireTenant: RequestHandler = (_req, res, next) => {
   if (res.locals.auth?.role === 'founder_master') return next()
@@ -27,6 +28,7 @@ const requireTenant: RequestHandler = (_req, res, next) => {
 const requireCoreOperationsModule = createModuleAccessMiddleware('core_operations')
 const readTenant = (req: { header(name: string): string | undefined }, res: { locals: Record<string, any> }) => res.locals.auth?.role === 'founder_master' ? req.header('x-tenant-id') || undefined : res.locals.auth?.tenantId
 const writeTenant = (req: { body?: Record<string, unknown>; header(name: string): string | undefined }, res: { locals: Record<string, any> }) => readTenant(req, res) || String(req.body?.tenantId || '')
+const telemetryRateLimit = createTelemetryRateLimiter()
 export const apiRouter = Router()
 apiRouter.get('/status', (_req, res) => res.json({ app: 'core_operations', status: 'operational' }))
 // Real, cross-suite suite-licensing gate. Core.Workforce and
@@ -205,7 +207,9 @@ apiRouter.put('/platform/workspaces/:workspace', requireOwnerAccess, requireTena
   try {
     const tenantId = writeTenant(req, res)
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
-    res.json({ success: true, data: await saveTenantWorkspace(tenantId, res.locals.auth.id, req.params.workspace, req.body || {}, res.locals.requestId) })
+    const data = await saveTenantWorkspace(tenantId, res.locals.auth.id, req.params.workspace, req.body || {}, res.locals.requestId)
+    emitBackendTelemetry(tenantId, 'workspace.access', { workspace: req.params.workspace })
+    res.json({ success: true, data })
   } catch (error) { next(error) }
 })
 apiRouter.get('/platform/workspaces/:workspace/:module/records', requireMerchantAccess, requireTenant, async (req, res, next) => {
@@ -222,6 +226,7 @@ apiRouter.post('/platform/workspaces/:workspace/:module/records', requireMerchan
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
     await assertWorkspaceAccess(tenantId, res.locals.auth.id, res.locals.auth.role, req.params.workspace)
     const data = await createWorkspaceRecord(tenantId, res.locals.auth.id, req.params.workspace, req.params.module, req.body || {}, req.header('idempotency-key'), res.locals.requestId)
+    emitBackendTelemetry(tenantId, 'record.created', { workspace: req.params.workspace, module: req.params.module })
     res.status(201).json({ success: true, data })
   } catch (error) { next(error) }
 })
@@ -255,7 +260,9 @@ apiRouter.patch('/platform/records/:id', requireMerchantAccess, requireTenant, a
   try {
     const tenantId = readTenant(req, res)
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
-    res.json({ success: true, data: await updateWorkspaceRecord(tenantId, res.locals.auth.id, res.locals.auth.role, String(req.params.id), req.body || {}, res.locals.requestId) })
+    const data = await updateWorkspaceRecord(tenantId, res.locals.auth.id, res.locals.auth.role, String(req.params.id), req.body || {}, res.locals.requestId)
+    emitBackendTelemetry(tenantId, 'record.status_change', { recordId: String(req.params.id) })
+    res.json({ success: true, data })
   } catch (error) { next(error) }
 })
 apiRouter.post('/platform/records/:id/images', requireMerchantAccess, requireTenant, raw({ type: 'image/*', limit: '15mb' }), async (req, res, next) => {
@@ -331,6 +338,29 @@ apiRouter.post('/platform/events', requireMerchantAccess, requireTenant, async (
     res.status(201).json({ success: true, data: await publishEvent({ tenantId, type: String(req.body?.type || 'workspace.event'), source: String(req.body?.source || 'system'), payload: req.body?.payload }) })
   } catch (error) { next(error) }
 })
+// Phase 28 — telemetry ingestion. Intentionally reachable without auth (see
+// resolveOptionalTenantId) so pre-login/marketing-site events can be sent;
+// an invalid bearer token is still rejected rather than silently ignored.
+apiRouter.post('/platform/telemetry', async (req, res, next) => {
+  try {
+    const decision = telemetryRateLimit(req.header('x-tenant-id') || `ip:${req.ip}`)
+    res.setHeader('RateLimit-Limit', '60')
+    res.setHeader('RateLimit-Remaining', String(decision.remaining))
+    res.setHeader('RateLimit-Reset', String(Math.ceil(decision.resetAt / 1000)))
+    if (!decision.allowed) return res.status(429).json({ success: false, message: 'Too many telemetry events' })
+    const authenticatedTenantId = resolveOptionalTenantId(req.header('authorization'))
+    const events = parseTelemetryBatch(req.body).map((event) => ({ ...event, tenantId: authenticatedTenantId ?? undefined }))
+    const count = await ingestTelemetryEvents(events)
+    res.status(201).json({ success: true, data: { accepted: count } })
+  } catch (error) { next(error) }
+})
+apiRouter.get('/platform/telemetry', requireOwnerAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.json({ success: true, data: await queryTelemetryEvents(tenantId, req.query) })
+  } catch (error) { next(error) }
+})
 apiRouter.get('/platform/agent-actions', requireMerchantAccess, requireTenant, async (req, res, next) => {
   try {
     const tenantId = readTenant(req, res)
@@ -374,7 +404,9 @@ apiRouter.post('/platform/agent-actions/:id/decision', requireDecisionApprovalAc
   try {
     const tenantId = readTenant(req, res)
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
-    res.json({ success: true, data: await decideAgentAction(tenantId, res.locals.auth.id, String(req.params.id), req.body?.decision, res.locals.requestId) })
+    const data = await decideAgentAction(tenantId, res.locals.auth.id, String(req.params.id), req.body?.decision, res.locals.requestId)
+    emitBackendTelemetry(tenantId, 'agent_action.decision', { actionId: String(req.params.id), decision: String(req.body?.decision || '') })
+    res.json({ success: true, data })
   } catch (error) { next(error) }
 })
 apiRouter.post('/platform/agent-actions/:id/execute', requireExecutionAccess, requireTenant, async (req, res, next) => {
