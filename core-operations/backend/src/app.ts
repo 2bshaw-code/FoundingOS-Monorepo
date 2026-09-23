@@ -32,6 +32,33 @@ app.get('/ready', async (_req, res) => {
     res.status(503).json({ app: 'core_operations', status: 'not_ready', dependencies: { database: false } })
   }
 })
+// TEMPORARY: manual admin account reactivation, gated by a secret env var, used
+// once to unlock a founder account that has no self-service recovery flow yet.
+// Remove this route (and the ADMIN_RESET_TOKEN env var) once done. Password is
+// left untouched — this only flips `active` back on and optionally sets `role`.
+app.post('/admin/reactivate-user', createRateLimit({ windowMs: 15 * 60_000, max: 5 }), async (req, res) => {
+  const token = req.header('x-admin-reset-token')
+  if (!process.env.ADMIN_RESET_TOKEN || !token || token !== process.env.ADMIN_RESET_TOKEN) {
+    res.status(404).json({ error: 'not found' })
+    return
+  }
+  const { email, role } = (req.body ?? {}) as { email?: string; role?: string }
+  if (!email) {
+    res.status(400).json({ error: 'email is required' })
+    return
+  }
+  try {
+    const existing = await prisma.authUser.findUnique({ where: { email } })
+    if (!existing) {
+      res.status(404).json({ error: 'user not found' })
+      return
+    }
+    const updated = await prisma.authUser.update({ where: { email }, data: { active: true, ...(role ? { role } : {}) } })
+    res.json({ ok: true, role: updated.role, active: updated.active })
+  } catch {
+    res.status(500).json({ error: 'reactivation failed' })
+  }
+})
 app.use('/api/v1/auth', createRateLimit({ windowMs: 15 * 60_000, max: 20 }))
 app.use('/api/v1', createRateLimit({ max: 240 }))
 app.use('/api/v1/auth', authRouter)
