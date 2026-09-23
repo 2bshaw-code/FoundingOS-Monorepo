@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { NextResponse } from 'next/server'
-import { getPrismaClient } from '@foundingos/db'
+import { emitEngagementSnapshot, isEngagementTelemetryConfigured, readLatestEngagementSnapshotForBrand } from '@foundingos/config/engagement-telemetry'
 
 // Force dynamic rendering — this handler writes to the database on every call and must
 // never be statically cached/prerendered.
@@ -74,13 +74,12 @@ export async function GET() {
   // given tick always produces the same result (genuinely "synthetic", not flaky).
   const isSpike = hashSeed(`scrape:${BRAND_SLUG}:${tick}:spike`) < PROFILE.anomalySpikeProbability
 
-  const prisma = getPrismaClient()
-  if (!prisma) {
-    // Demo Mode — no DATABASE_URL configured. Report the computed signal without writing.
+  if (!isEngagementTelemetryConfigured()) {
+    // Demo Mode — no CORE_OPERATIONS_API_BASE configured. Report the computed signal without writing.
     return NextResponse.json({ mode: 'demo' as const, brand: BRAND_SLUG, written: false, itemCount, category, isSpike })
   }
 
-  const existing = await prisma.brandMetric.findUnique({ where: { brandName: BRAND_NAME } })
+  const existing = await readLatestEngagementSnapshotForBrand(BRAND_NAME)
   const totalEngagement = (existing?.totalEngagement ?? 0) + itemCount
   const existingBreakdown = (existing?.categoryBreakdown as Record<string, number> | null) ?? {}
   const categoryBreakdown = { ...existingBreakdown, [category]: (existingBreakdown[category] ?? 0) + itemCount }
@@ -88,11 +87,7 @@ export async function GET() {
   let anomalyScore = computeAnomalyScore(totalEngagement)
   if (isSpike) anomalyScore = Number(Math.min(1.4, anomalyScore + PROFILE.anomalySpikeMagnitude).toFixed(2))
 
-  await prisma.brandMetric.upsert({
-    where: { brandName: BRAND_NAME },
-    create: { brandName: BRAND_NAME, totalEngagement, anomalyScore, categoryBreakdown },
-    update: { totalEngagement, anomalyScore, categoryBreakdown, lastUpdated: new Date() },
-  })
+  await emitEngagementSnapshot({ brandName: BRAND_NAME, totalEngagement, anomalyScore, categoryBreakdown })
 
   return NextResponse.json({
     mode: 'live' as const,

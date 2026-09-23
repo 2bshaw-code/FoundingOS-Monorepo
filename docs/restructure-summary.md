@@ -248,18 +248,27 @@ this pass.
    in [shared-schema.md](./shared-schema.md) (single schema,
    `core_ops_*`/`core_workforce_*`/`core_intel_*` prefixes, `Tenant`,
    `TenantSuiteLicense`), write backfill scripts, and run a reviewed
-   migration. No migration was created or run in this pass. **Phase 32
-   (this pass)**: a full audit + phased cutover plan for the remaining
-   `packages/db` legacy per-brand models now exists at
-   [single-schema-migration.md](./single-schema-migration.md) — key finding:
-   the target unified models (`WorkspaceRecord`/`TenantSuiteLicense`/
-   `TelemetryEvent`) already exist and are already the live schema for all
-   three core services; only the SuperDashboard (3 files) and 12 per-brand
-   console cron routes still write to the legacy tables, and most of those
-   legacy tables (`Brand`, `BrandSubscription`, `CrmDeal`) appear to have no
-   live readers left to migrate at all. **This plan requires an explicit
-   decision (documented in its §4) before any schema/code changes proceed**
-   — Phases 33/35 are gated on that answer, not yet implemented.
+   migration. **Phases 32/33/35 (this pass, revised):** the original Phase
+   32 audit incorrectly assumed `Brand`, `BrandSubscription`, and `CrmDeal`
+   were all dead — a corrected pass found `BrandSubscription`, `CrmDeal`,
+   and `BrandFinance` actually back real, currently-displayed console UI
+   (commercial panel, CRM pipeline, finance/accounting). Only `Brand` and
+   `BrandMetric` had zero live readers. Scope was narrowed accordingly and
+   **completed** for that narrower scope: `Brand` (plus its dead
+   pre-FoundingOS NextAuth/billing scaffold — `User`, `Module`,
+   `Subscription`, `ActivityLog`, `Account`, `Session`,
+   `VerificationToken`, `SurveyResult`) was dropped outright, and
+   `BrandMetric`'s 3 SuperDashboard readers + 12 per-brand cron-route
+   writers were repointed to the `core-operations` `TelemetryEvent`
+   pipeline (`packages/config/src/engagement-telemetry.ts`) instead of a
+   tenant-scoped table, since brand slugs never had a real tenant mapping.
+   See [single-schema-migration.md](./single-schema-migration.md) for the
+   full corrected audit. **Remaining, explicitly deferred:**
+   `BrandSubscription`/`CrmDeal`/`BrandFinance` are still deprecated but
+   untouched — migrating them needs a tenant-identity decision per model
+   plus a proper multi-tenant-aware replacement design, not a
+   repoint-and-drop pass; tracked as a separate future initiative, not
+   bundled into Phase 35.
 5. **Console shell wiring** — implement `getEnabledSuites()`-driven module
    registration in the actual console app (`apps/foundingos-console` /
    `packages/ui`), replacing the current per-brand console apps.

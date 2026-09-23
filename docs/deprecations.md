@@ -8,33 +8,53 @@ for the current suite model these deprecations were folded into.
 
 ## Legacy per-brand schema models (`packages/db`)
 
-**Phase 25.** `packages/db/prisma/schema.prisma` still defines five legacy
-per-brand Prisma models left over from the pre-FoundingOS multi-brand era:
-`Brand`, `BrandMetric`, `BrandSubscription`, `CrmDeal`, and `BrandFinance`.
-All five now carry a `/// @deprecated` Prisma doc comment, which Prisma
-Client propagates into the generated TypeScript types — editors will show
-a strikethrough on `prisma.brand`, `prisma.crmDeal`, `prisma.brandFinance`,
-`prisma.brandMetric`, and `prisma.brandSubscription` wherever they're used.
+**Phase 25.** `packages/db/prisma/schema.prisma` originally defined five
+legacy per-brand Prisma models left over from the pre-FoundingOS multi-brand
+era: `Brand`, `BrandMetric`, `BrandSubscription`, `CrmDeal`, and
+`BrandFinance`. **Phase 32/35 update:** a corrected code audit (see
+[single-schema-migration.md](./single-schema-migration.md)) found that only
+two of the five — `Brand` and `BrandMetric` — actually had zero live
+production readers; the other three back real, currently-displayed console
+UI. Scope was narrowed accordingly:
 
-- **Still actively read** by the SuperDashboard in
-  `apps/foundingos-console/app/superdashboard/` (`brand-metric-store.server.ts`,
-  `scraping-store.server.ts`, `server/tester-metrics.server.ts`), plus 12
-  per-brand console cron routes (`apps/*-console*/app/api/scrape/refresh/route.ts`)
-  that write synthetic engagement data into `BrandMetric` — do not delete
-  these models until that surface is migrated off them.
-- **Replacement path**: the unified `wros` schema's existing
-  `WorkspaceRecord`/`TenantSuiteLicense`/`TelemetryEvent` models (not a new
-  model family) — see [single-schema-migration.md](./single-schema-migration.md)
-  (Phase 32) for the full audit, model mapping, and phased cutover plan.
-- **Timeline**: no removal date is set. These models stay in place, marked
-  deprecated, until the SuperDashboard's brand-panel/CRM/finance widgets
-  are re-pointed at the unified schema. No ESLint rule was added to block
-  new usage — this repo currently has no ESLint config for any active app
-  (`next lint` falls back to Next's defaults with no local override), so a
-  new lint rule would be new tooling investment rather than a small
-  addition; the Prisma `@deprecated` JSDoc was judged the lower-cost,
-  immediately-effective alternative. Revisit if/when ESLint config is
-  added for these apps.
+- **`Brand` and `BrandMetric` — removed (Phase 33/35).** `Brand` had zero
+  live readers (confirmed twice) and was dropped outright, along with its
+  now-dead pre-FoundingOS NextAuth/billing scaffold (`User`, `Module`,
+  `Subscription`, `ActivityLog`, `Account`, `Session`, `VerificationToken`,
+  `SurveyResult` — none of these had any live importer either; see the
+  `20260925090000_legacy_scaffold_removal` migration for the full list and
+  rationale). `BrandMetric`'s 3 SuperDashboard readers
+  (`brand-metric-store.server.ts`, `scraping-store.server.ts`,
+  `server/tester-metrics.server.ts`) and 12 per-brand console cron routes
+  (`apps/*-console*/app/api/scrape/refresh/route.ts`) were repointed to the
+  `core-operations` `TelemetryEvent` pipeline instead
+  (`packages/config/src/engagement-telemetry.ts`) — brand slugs never had a
+  real tenant mapping, so this data now flows through the existing
+  tenant-optional telemetry ingestion endpoint rather than a dedicated
+  table. `AnomalyLog`/`EngagementLog` themselves were **not** dropped —
+  only `BrandMetric`'s brand-level writes into them moved; both tables stay
+  for their still-active category-level anomaly-detection use.
+- **`BrandSubscription`, `CrmDeal`, `BrandFinance` — still deprecated,
+  still untouched.** Confirmed live: `BrandSubscription` backs SuperDash's
+  commercial panel (real admin-set subscription tier/price/MRR/ARR),
+  `CrmDeal` backs the real per-brand CRM pipeline value panel, and
+  `BrandFinance` backs the real per-brand finance/accounting panel. None of
+  the three have a removal date — see
+  [single-schema-migration.md](./single-schema-migration.md) §4 for what a
+  real migration for these three would require (a tenant-identity decision
+  per model, plus a proper multi-tenant-aware replacement design, not a
+  simple repoint-and-drop).
+- **Replacement path** for any future work on the remaining three: the
+  unified `wros` schema's existing `WorkspaceRecord`/`TenantSuiteLicense`
+  models (not a new model family) — see
+  [single-schema-migration.md](./single-schema-migration.md) for the full
+  audit, model mapping, and phased cutover plan.
+- No ESLint rule was added to block new usage — this repo currently has no
+  ESLint config for any active app (`next lint` falls back to Next's
+  defaults with no local override), so a new lint rule would be new
+  tooling investment rather than a small addition; the Prisma
+  `@deprecated` JSDoc was judged the lower-cost, immediately-effective
+  alternative. Revisit if/when ESLint config is added for these apps.
 
 ## Removed brands
 

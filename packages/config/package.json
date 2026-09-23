@@ -23,6 +23,7 @@
     "./quantum-brand-uplift": "./src/quantum-brand-uplift.ts",
     "./commercial-mode": "./src/commercial-mode.ts",
     "./tester-profile": "./src/tester-profile.ts",
+    "./engagement-telemetry": "./src/engagement-telemetry.ts",
     "./surveys/survey-definitions": "./src/surveys/survey-definitions.ts",
     "./surveys/survey-engine": "./src/surveys/survey-engine.ts",
     "./surveys/survey-storage": "./src/surveys/survey-storage.ts",

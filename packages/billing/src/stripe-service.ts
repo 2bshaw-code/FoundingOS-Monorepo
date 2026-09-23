@@ -26,6 +26,7 @@ export async function createStripeCustomer(params: { email: string; name: string
 export async function createCheckoutSession(params: {
   customerId: string
   priceId: string
+  brandSlug: string
   successUrl: string
   cancelUrl: string
 }): Promise<CommercialResult<{ checkoutUrl: string }>> {
@@ -36,6 +37,11 @@ export async function createCheckoutSession(params: {
       mode: 'subscription',
       customer: params.customerId,
       line_items: [{ price: params.priceId, quantity: 1 }],
+      // Propagated onto the resulting Subscription object itself (not just this
+      // Checkout Session) so the webhook handler can read brandSlug back off
+      // subscription.metadata once the subscription is created — see
+      // webhook-handler.ts.
+      subscription_data: { metadata: { brandSlug: params.brandSlug } },
       success_url: params.successUrl,
       cancel_url: params.cancelUrl,
     })
@@ -47,40 +53,39 @@ export async function createCheckoutSession(params: {
 }
 
 // Called by the webhook handler once a subscription event is verified. Writes the
-// resulting billing state into the Subscription row — only runs in Commercial Mode.
+// resulting billing state into the brand's BrandSubscription row — only runs in
+// Commercial Mode. Repointed from a dropped per-user Subscription model (see
+// docs/single-schema-migration.md, 20260925090000_legacy_scaffold_removal) to the
+// live, brandSlug-keyed BrandSubscription — Stripe subscriptions/customers in this
+// checkout flow are already scoped per-brand, not per-user, so brandSlug is the
+// correct (and only available) key here.
 export async function syncSubscriptionFromStripe(params: {
-  brandId: string
-  userId: string
+  brandSlug: string
   stripeCustomerId: string
   stripeSubscriptionId: string
   status: 'trialing' | 'active' | 'past_due' | 'canceled'
   plan: string
-}): Promise<CommercialResult<{ subscriptionId: string }>> {
+}): Promise<CommercialResult<{ brandSlug: string }>> {
   if (!isDatabaseConfigured() || !isCommercialMode()) return notConfigured()
 
-  const billingState = params.status === 'trialing' ? 'trial' : params.status === 'canceled' ? 'cancelled' : params.status === 'past_due' ? 'past_due' : 'active'
-
-  const subscription = await withTenantScope({ brandId: params.brandId }, (tx) =>
-    tx.subscription.upsert({
-      where: { id: params.stripeSubscriptionId },
+  await withTenantScope({ brandSlug: params.brandSlug }, (tx) =>
+    tx.brandSubscription.upsert({
+      where: { brandSlug: params.brandSlug },
       update: {
         status: params.status,
-        billingState,
+        baseTier: params.plan,
         stripeCustomerId: params.stripeCustomerId,
         stripeSubscriptionId: params.stripeSubscriptionId,
       },
       create: {
-        id: params.stripeSubscriptionId,
-        brandId: params.brandId,
-        userId: params.userId,
-        plan: params.plan,
+        brandSlug: params.brandSlug,
         status: params.status,
-        billingState,
+        baseTier: params.plan,
         stripeCustomerId: params.stripeCustomerId,
         stripeSubscriptionId: params.stripeSubscriptionId,
       },
     }),
   )
 
-  return { ok: true, data: { subscriptionId: subscription.id } }
+  return { ok: true, data: { brandSlug: params.brandSlug } }
 }

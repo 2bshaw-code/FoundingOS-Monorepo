@@ -377,6 +377,19 @@ apiRouter.get('/platform/telemetry/summary', requireFounderMaster, async (req, r
     res.json({ success: true, data: await queryTelemetrySummary(req.query) })
   } catch (error) { next(error) }
 })
+// Phase 35 — cross-tenant *raw* event read, internal-only. Reuses
+// queryTelemetryEvents with an undefined tenantId (buildTelemetryQuery
+// already treats that as "no tenant filter", not "no results") so
+// internal/demo tooling with no real tenant to scope to — e.g. the
+// migrated BrandMetric replacement, see docs/single-schema-migration.md
+// §6 — can read its own events back without a fake tenantId. Distinct
+// from /summary above (aggregate counts) since some callers need the raw
+// `properties` payload (e.g. per-brand categoryBreakdown JSON).
+apiRouter.get('/platform/telemetry/events', requireFounderMaster, async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await queryTelemetryEvents(undefined, req.query) })
+  } catch (error) { next(error) }
+})
 // Phase 34 — feature flag admin. Internal/FoundingOS-staff only (see
 // requireFounderMaster) since FeatureFlag rows are global, not per-tenant.
 apiRouter.get('/platform/feature-flags', requireFounderMaster, async (_req, res, next) => {

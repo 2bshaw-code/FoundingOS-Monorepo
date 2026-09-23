@@ -64,12 +64,16 @@ See full detail in [shared-schema.md](./shared-schema.md). Summary:
 
 **`packages/db` legacy per-brand tables** (`Brand`, `BrandMetric`,
 `BrandSubscription`, `CrmDeal`, `BrandFinance` — default/public Postgres
-schema, no dedicated schema name): not yet renamed or dropped. See
-[single-schema-migration.md](./single-schema-migration.md) (Phase 32) for
-the full audit of remaining readers/writers and the planned cutover to the
-`wros` schema's `WorkspaceRecord`/`TenantSuiteLicense`/`TelemetryEvent`
-models — no new table-prefix scheme is planned for these; they are being
-retired into the existing `wros` shape, not renamed in place.
+schema, no dedicated schema name): **Phase 33/35 update** — `Brand` and
+`BrandMetric` have been dropped (`20260925090000_legacy_scaffold_removal`
+migration); their former readers/writers now go through the `wros`
+schema's `TelemetryEvent` model via
+`packages/config/src/engagement-telemetry.ts`. `BrandSubscription`,
+`CrmDeal`, and `BrandFinance` remain in place, unrenamed and unmigrated —
+confirmed to back real, currently-displayed console UI (see
+[single-schema-migration.md](./single-schema-migration.md) §2/§4), so no
+table-prefix scheme is planned for them yet; any future migration is a
+separate initiative pending a tenant-identity decision for each.
 
 ## Package mapping
 

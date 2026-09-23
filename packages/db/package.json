@@ -4,8 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./survey-service": "./src/survey-service.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
     "postinstall": "prisma generate",

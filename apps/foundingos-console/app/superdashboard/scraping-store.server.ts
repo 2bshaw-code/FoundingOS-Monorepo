@@ -12,8 +12,12 @@
 // seeded pseudo-random engagement data, not real external market/competitor scraping. This
 // dashboard surfaces that same real (but synthetic) data plainly, labeled as such throughout
 // — it does not claim or imply real external scraping is happening.
-import { getPrismaClient } from '@foundingos/db'
+//
+// Phase 35 — the underlying BrandMetric/EngagementLog/AnomalyLog reads below now go through
+// the core-operations TelemetryEvent pipeline instead of packages/db directly; see
+// brand-metric-store.server.ts's Phase 35 note and docs/single-schema-migration.md §5-6.
 import { brands, type BrandSlug } from '@foundingos/config'
+import { readLatestEngagementSnapshots, readRecentEngagementAnomalies } from '@foundingos/config/engagement-telemetry'
 
 // Every brand slug with a real, deployed /api/scrape/refresh endpoint today. Kept as an
 // explicit allowlist (rather than "all brands") so this dashboard never silently claims a
@@ -39,8 +43,7 @@ function slugForBrandName(brandName: string): BrandSlug | null {
 // yet (never scraped) show as zeroed-out rather than being omitted, so the dashboard always
 // lists all 8 honestly instead of silently hiding brands with no data yet.
 export async function readBrandScrapeRows(): Promise<BrandScrapeRow[]> {
-  const prisma = getPrismaClient()
-  const rows = prisma ? await prisma.brandMetric.findMany({ orderBy: { brandName: 'asc' } }) : []
+  const rows = await readLatestEngagementSnapshots()
   const byBrandName = new Map(rows.map((row) => [row.brandName, row]))
 
   return SCRAPER_CONNECTED_BRANDS.map((slug) => {
@@ -51,8 +54,8 @@ export async function readBrandScrapeRows(): Promise<BrandScrapeRow[]> {
       brandName,
       totalEngagement: row?.totalEngagement ?? 0,
       anomalyScore: row?.anomalyScore ?? 1.0,
-      categoryBreakdown: (row?.categoryBreakdown as Record<string, number> | null) ?? {},
-      lastUpdated: row?.lastUpdated ? row.lastUpdated.toISOString() : null,
+      categoryBreakdown: row?.categoryBreakdown ?? {},
+      lastUpdated: row?.lastUpdated ?? null,
       hasScraperConnected: true,
     }
   })
@@ -72,15 +75,13 @@ export type EngagementLogRow = {
 // writes a log row — only ones crossing the real high-engagement threshold do — so this is
 // a genuine "notable events" history, not a padded/fabricated full timeline.
 export async function readRecentEngagementLog(limit = 30): Promise<EngagementLogRow[]> {
-  const prisma = getPrismaClient()
-  if (!prisma) return []
-  const rows = await prisma.engagementLog.findMany({ orderBy: { recordedAt: 'desc' }, take: limit })
+  const rows = await readRecentEngagementAnomalies(limit)
   return rows.map((row) => ({
     brandName: row.brandName,
     score: row.score,
     totalEngagement: row.totalEngagement,
-    categoryBreakdown: (row.categoryBreakdown as Record<string, number> | null) ?? null,
-    recordedAt: row.recordedAt.toISOString(),
+    categoryBreakdown: row.categoryBreakdown,
+    recordedAt: row.occurredAt,
   }))
 }
 
@@ -93,15 +94,13 @@ export type AnomalyLogRow = {
 }
 
 export async function readRecentAnomalyLog(limit = 30): Promise<AnomalyLogRow[]> {
-  const prisma = getPrismaClient()
-  if (!prisma) return []
-  const rows = await prisma.anomalyLog.findMany({ orderBy: { detectedAt: 'desc' }, take: limit })
+  const rows = await readRecentEngagementAnomalies(limit)
   return rows.map((row) => ({
     brandName: row.brandName,
-    message: row.message,
+    message: row.message ?? '',
     score: row.score,
     totalEngagement: row.totalEngagement,
-    detectedAt: row.detectedAt.toISOString(),
+    detectedAt: row.occurredAt,
   }))
 }
 
