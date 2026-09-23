@@ -213,19 +213,37 @@ this pass.
    [shared-schema.md](./shared-schema.md) before any production database
    drops those schemas — this repo pass only touched source code, no
    database exists to export from in this environment.
-2. **`founder-os` lead-sync integration removal** — the
-   `core_operationsLeadSync.ts` module still references FoundMeat/FoundCrypto
-   models, per [api-review.md](./api-review.md) and the schema-migration
-   note above. The founder-os aggregator's routing still depends on that
-   model — removing it without a schema migration would break the
-   service entirely.
-3. **Directory/package renames** — execute
-   [migration-map.md](./migration-map.md): `core_operations/` →
-   `core-operations/`, `core_workforce/` → `core-workforce/`,
-   `@founder-os/*` → `@foundingos/*` everywhere (currently
-   `packages/config` already uses the new scope; `packages/auth`,
-   `packages/ui` still need the same rename applied to their own
-   `package.json`/imports).
+2. ~~**`founder-os` lead-sync integration removal**~~ — **Re-audited in
+   Phase 24: the premise no longer applies.** There is no
+   `core_operationsLeadSync.ts` file in the current tree, and the
+   `founder-os/` aggregator's own legacy models (`Company`,
+   `CompanyModule`, `PackageApplication`) are separate from the
+   `Brand`/`CrmDeal`/`BrandFinance` models this note originally meant.
+   `founder-os/` is not in the npm `workspaces` array, runs against its
+   own isolated `founder_os` Postgres schema, and nothing in the active
+   workspace depends on it. **Decision: retire, don't migrate** — see
+   [deprecations.md](./deprecations.md) for the full audit and the
+   follow-up action (delete after schema export/confirmation of no
+   production data).
+3. **Directory/package renames** — `core_operations/` → `core-operations/`
+   and `core_workforce/` → `core-workforce/` are done. The `@founder-os/*`
+   → `@foundingos/*` package rename is now **complete for every package
+   consumed by the active workspace** (Phase 23): `packages/config`,
+   `packages/auth`, `packages/ui`, `packages/db`, and `packages/billing`
+   were already on the new scope; `shared/auth`, `shared/bob`,
+   `shared/ui`, `shared/brand-assets`, and `shared/media` (still consumed
+   by the three `core-*` backends) have been renamed too. Because
+   `@foundingos/auth` and `@foundingos/ui` were already taken by the newer
+   `packages/auth`/`packages/ui`, the renamed `shared/*` packages use
+   distinguishing names instead — `@foundingos/service-auth` (session/
+   token/role middleware used by the backends) and `@foundingos/legacy-ui`
+   (the old per-brand `BrandLogo`/`BrandCard` components, not currently
+   consumed by any active app). See [migration-map.md](./migration-map.md)
+   for the full before/after table. The one remaining holdout is the
+   `founder-os/` aggregator directory itself (`founder-os/frontend`,
+   `founder-os/backend`, `founder-os/desktop`) — it isn't in the npm
+   workspaces list, still imports the old `@founder-os/*` names, and is
+   tracked separately as the Phase 24 legacy-aggregator cleanup.
 4. **Database migration** — implement the Prisma schema changes described
    in [shared-schema.md](./shared-schema.md) (single schema,
    `core_ops_*`/`core_workforce_*`/`core_intel_*` prefixes, `Tenant`,

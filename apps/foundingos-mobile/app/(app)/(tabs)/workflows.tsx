@@ -34,6 +34,7 @@ import { enqueueOutboxAction } from '../../../lib/outbox-sync'
 import { useQuantumStore } from '../../../lib/store'
 import { useActionFeedback } from '../../../lib/use-action-feedback'
 import { logAction } from '../../../lib/action-logger'
+import { canPerformAction } from '../../../lib/permissions'
 
 const STATUS_LABEL: Record<ApprovalsQueueStatus, string> = {
   proposed: 'Suggested',
@@ -76,6 +77,10 @@ export default function WorkflowsScreen() {
   const theme = useActiveQuantumTheme()
   const activeBrandSlug = useQuantumStore((state) => state.activeBrandSlug)
   const isOnline = useQuantumStore((state) => state.isOnline)
+  const role = useQuantumStore((state) => state.role)
+  // Phase 26 — client-side UX gate only; the backend re-checks the real
+  // session role on every request and rolls back on a real 403 regardless.
+  const canDecide = canPerformAction(role, 'approveOrReject')
   const [connected, setConnected] = useState(false)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -176,8 +181,11 @@ export default function WorkflowsScreen() {
         {SOURCE_LABEL[action.source]} · {formatRelativeTime(action.createdAt)} · {action.requiresApproval ? 'Human approval required' : 'Auto-governed'}
       </QuantumText>
       {action.estimatedValuePence ? <QuantumText variant="caption" color={theme.accent}>Estimated impact {formatPence(action.estimatedValuePence)}</QuantumText> : null}
+      {!canDecide ? (
+        <QuantumText variant="caption" color={theme.subtextColor}>Your role can view this queue but not decide on it.</QuantumText>
+      ) : null}
       <View style={styles.actionRow}>
-        {action.status === 'proposed' ? (
+        {action.status === 'proposed' && canDecide ? (
           <>
             <Pressable disabled={busyId === action.id} onPress={() => run(action, 'APPROVE', () => approveQueueItem(action))}>
               <QuantumText variant="caption" color={theme.accent}>Approve</QuantumText>
@@ -187,12 +195,12 @@ export default function WorkflowsScreen() {
             </Pressable>
           </>
         ) : null}
-        {action.status === 'approved' ? (
+        {action.status === 'approved' && canDecide ? (
           <Pressable disabled={busyId === action.id} onPress={() => run(action, 'EXECUTE', () => executeQueueItem(action))}>
             <QuantumText variant="caption" color={theme.accent}>Execute</QuantumText>
           </Pressable>
         ) : null}
-        {action.canUndo ? (
+        {action.canUndo && canDecide ? (
           <Pressable disabled={busyId === action.id} onPress={() => run(action, 'REVERSE', () => reverseQueueItem(action))}>
             <QuantumText variant="caption" color="#FF5470">Undo</QuantumText>
           </Pressable>

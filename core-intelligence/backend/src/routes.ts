@@ -1,6 +1,6 @@
 import { Router, type RequestHandler } from 'express'
-import { createBobRouter } from '@founder-os/bob'
-import { createAuthenticatedServiceProxy, createModuleAccessMiddleware } from '@founder-os/auth'
+import { createBobRouter } from '@foundingos/bob'
+import { createAuthenticatedServiceProxy, createModuleAccessMiddleware } from '@foundingos/service-auth'
 import { requireMarketplaceAccount, requireMarketplaceOwner } from './auth.js'
 import { recordIdentityResolution, recordMappingQuery, recordMessagingRouteSuccess, recordOrchestrationEvent, recordSuiteActivation } from './telemetry.js'
 import { listAnomalies, listRisks, listSignals } from './signals.js'

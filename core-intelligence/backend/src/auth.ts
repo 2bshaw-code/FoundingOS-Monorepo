@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import bcrypt from 'bcrypt'
-import { AuthService, createAccessMiddleware, createAuthRouter, createPasswordResetWebhook, createPrismaAuthRepository, groupTokenContract, roles } from '@founder-os/auth'
+import { AuthService, createAccessMiddleware, createAuthRouter, createPasswordResetWebhook, createPrismaAuthRepository, groupTokenContract, roles } from '@foundingos/service-auth'
 import { PrismaClient } from './generated/prisma/index.js'
 
 const required = (name: string) => {

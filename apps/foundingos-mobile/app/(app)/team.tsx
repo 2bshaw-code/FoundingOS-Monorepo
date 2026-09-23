@@ -41,6 +41,10 @@ function roleLabel(role: TeamRole | string) {
 
 // Only Founder/Owner and Manager roles can view or manage team membership —
 // mirrors the backend's requireTenantOwnerAccess guard on every /platform/team route.
+// Deliberately NOT expressed via lib/permissions.ts's `manageWorkspace` action:
+// that matrix entry requires 'admin' tier only (owner-equivalent), whereas this
+// screen's existing, correct behavior also allows 'manager' tier — reusing the
+// shared helper here would have silently narrowed who can manage the team.
 const MANAGE_ROLES = new Set<string>(['business_owner', 'business_manager'])
 
 export default function TeamScreen() {

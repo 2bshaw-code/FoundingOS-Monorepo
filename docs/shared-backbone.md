@@ -30,7 +30,9 @@ See [deprecations.md](./deprecations.md) for the full removal list and
 
 Every suite consumes the same backbone; suites must not fork these:
 
-1. **Identity & Auth** (`@founder-os/auth` → renamed `@foundingos/auth`)
+1. **Identity & Auth** (`@founder-os/auth` → renamed `@foundingos/service-auth`
+   in Phase 23; `@foundingos/auth` was already taken by the newer
+   `packages/auth` access-policy package)
    - One issuer (`founding-os`), one audience (`founding-os-apps`).
    - Shared `AuthUser`, `AuthSession`, `PasswordReset` tables per suite
      schema (see [shared-schema.md](./shared-schema.md)).

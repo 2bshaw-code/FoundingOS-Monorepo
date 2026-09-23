@@ -5,7 +5,7 @@
 import cors from 'cors'
 import express from 'express'
 import type { Request } from 'express'
-import { createCorsOptions, createRateLimit, malformedJsonHandler, requestContext, securityHeaders, structuredErrorHandler } from '@founder-os/auth'
+import { createCorsOptions, createRateLimit, malformedJsonHandler, requestContext, securityHeaders, structuredErrorHandler } from '@foundingos/service-auth'
 import { authRouter, prisma } from './auth.js'
 import { apiRouter } from './routes.js'
 

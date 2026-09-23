@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { createCipheriv, createDecipheriv, randomBytes, timingSafeEqual } from 'node:crypto'
-import { roles } from '@founder-os/auth'
+import { roles } from '@foundingos/service-auth'
 
 export type EncryptedCredentials = {
   credentialsCiphertext: string

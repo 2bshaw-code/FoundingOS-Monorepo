@@ -753,7 +753,7 @@ model AgentActionExecution {
 
 // Real, persisted record of which suite(s) a tenant is licensed to use.
 // This is the single source of truth `createModuleAccessMiddleware`
-// (see @founder-os/auth) checks before allowing non-founder_master
+// (see @foundingos/service-auth) checks before allowing non-founder_master
 // access to any suite's gated routes — across Core.Operations,
 // Core.Workforce, and Core.Intelligence. `suite` holds one of
 // 'core_operations' | 'core_workforce' | 'core_intelligence'.

@@ -6,6 +6,33 @@ superseded during the FoundingOS restructure. See
 rename tables and [suite-and-module-architecture.md](./suite-and-module-architecture.md)
 for the current suite model these deprecations were folded into.
 
+## Legacy per-brand schema models (`packages/db`)
+
+**Phase 25.** `packages/db/prisma/schema.prisma` still defines five legacy
+per-brand Prisma models left over from the pre-FoundingOS multi-brand era:
+`Brand`, `BrandMetric`, `BrandSubscription`, `CrmDeal`, and `BrandFinance`.
+All five now carry a `/// @deprecated` Prisma doc comment, which Prisma
+Client propagates into the generated TypeScript types — editors will show
+a strikethrough on `prisma.brand`, `prisma.crmDeal`, `prisma.brandFinance`,
+`prisma.brandMetric`, and `prisma.brandSubscription` wherever they're used.
+
+- **Still actively read** by the SuperDashboard in
+  `apps/foundingos-console/app/superdashboard/` (`brand-metric-store.server.ts`,
+  `scraping-store.server.ts`, `server/tester-metrics.server.ts`) — do not
+  delete these models until that surface is migrated off them.
+- **Replacement path**: the unified `Tenant`/`TenantSuiteLicense` model
+  described in [shared-schema.md](./shared-schema.md), to be implemented
+  per the Phase 32–33 single-schema migration plan.
+- **Timeline**: no removal date is set. These models stay in place, marked
+  deprecated, until the SuperDashboard's brand-panel/CRM/finance widgets
+  are re-pointed at the unified schema. No ESLint rule was added to block
+  new usage — this repo currently has no ESLint config for any active app
+  (`next lint` falls back to Next's defaults with no local override), so a
+  new lint rule would be new tooling investment rather than a small
+  addition; the Prisma `@deprecated` JSDoc was judged the lower-cost,
+  immediately-effective alternative. Revisit if/when ESLint config is
+  added for these apps.
+
 ## Removed brands
 
 | Legacy brand | Status | Notes |
@@ -16,6 +43,34 @@ for the current suite model these deprecations were folded into.
 
 ## Superseded (not removed, but no longer primary)
 
+- **`founder-os/` aggregator** (`founder-os/frontend`, `founder-os/backend`,
+  `founder-os/desktop`) — **Phase 24 decision: retire, do not migrate.**
+  Audited and confirmed:
+  - Not listed in the root `package.json` npm `workspaces` array — already
+    excluded from `npm install`, `tsc --noEmit`, and every build/CI script
+    that targets the active monorepo.
+  - Runs against its own isolated Postgres schema (`founder_os`, see
+    `founder-os/backend/.env.example`), fully separate from the `wros`
+    schema used by `core-operations`/`core-workforce`/`core-intelligence`
+    and from `packages/db`'s shared schema.
+  - Its own legacy models (`Company`, `CompanyModule`, `PackageApplication`)
+    are a *different* legacy system from the `Brand`/`CrmDeal`/
+    `BrandFinance` models in `packages/db` (see Phase 25 below) — there is
+    no "lead-sync" module by that name in this codebase today; the earlier
+    [api-review.md](./api-review.md) note describing one is stale and
+    should be treated as historical, not actionable.
+  - No app in the active workspace (`apps/foundingos-web`,
+    `apps/foundingos-console`, or any `core-*-web`/`core-*-console`)
+    imports from or proxies to `founder-os/backend` or
+    `founder-os/frontend`.
+  - Its dependency on the old `@founder-os/*` package scope was
+    intentionally **not** updated in the Phase 23 rename — renaming it
+    would imply it's still active tooling; it is left pointing at the
+    pre-rename names as a passive signal that it is out of scope.
+  - **Action for a future pass:** delete `founder-os/` from the repo once
+    its `founder_os` Postgres schema (if any production data exists there)
+    has been exported or confirmed empty. Until then it is inert dead code,
+    not a running or reachable service.
 - **Per-brand consoles** (`apps/*-console`, `apps/*-console-starter`) — superseded
   by the unified FoundingOS console shell (`apps/foundingos-web`) with
   suite-based, feature-flagged navigation. Legacy per-brand console

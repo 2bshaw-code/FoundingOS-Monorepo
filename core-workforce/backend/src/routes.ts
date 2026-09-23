@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { Router, type RequestHandler } from 'express'
-import { createModuleAccessMiddleware } from '@founder-os/auth'
+import { createModuleAccessMiddleware } from '@foundingos/service-auth'
 import { requireDecisionApprovalAccess, requireExecutionAccess, requireWorkforceAccess } from './auth.js'
 import { createCandidate, createInterview, createJob, deleteCandidate, deleteInterview, deleteJob, getCandidate, getInterview, getJob, listCandidates, listInterviews, listJobs, updateCandidate, updateInterview, updateJob } from './workforce.js'
 import { decideWorkforceAction, executeWorkforceAction, getWorkforceActionTrail, listWorkforceActions, proposeApplicantShortlistingAction, proposeWorkforceAction, reverseWorkforceActionExecution } from './workforce-actions.js'

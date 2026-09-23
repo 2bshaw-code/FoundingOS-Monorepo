@@ -11,6 +11,8 @@ import { login as legacyLogin, getToken as getLegacyToken, verifyLegacyToken } f
 import { login as coreOpsLogin, getSession as getCoreOpsSession, verifySession as verifyCoreOpsSession } from '../lib/core-operations-api'
 import { login as coreWorkforceLogin, getSession as getCoreWorkforceSession } from '../lib/core-workforce-api'
 import { FOUNDINGOS_ACCENT, FOUNDINGOS_BASE } from '../lib/brands'
+import { normalizeRole } from '../lib/permissions'
+import { useQuantumStore } from '../lib/store'
 import { QuantumSphere } from '../components/QuantumSphere'
 import { QuantumButton, QuantumCard, QuantumFormField, QuantumNotice, QuantumPasswordInput, QuantumText, QuantumTextInput, quantumSpace, shadeColor } from '../components/QuantumUI'
 
@@ -47,6 +49,10 @@ export default function LoginScreen() {
       // back to the overview, looking like a login/overview loop.
       void legacyValid
       if (coreOpsValid) {
+        // Hydrate the real permission tier from the stored session's raw backend
+        // role — previously this field was left at its 'founder' default forever,
+        // making the Phase 26 permission matrix inert for existing sessions.
+        if (coreOpsSession) useQuantumStore.getState().setRole(normalizeRole(coreOpsSession.role))
         // Keep checkingSession true (spinner stays up) until navigation actually
         // completes, instead of flashing the login form for a frame first. Return to
         // whichever tab sent the user here (via ?returnTo=...) instead of always
@@ -80,6 +86,7 @@ export default function LoginScreen() {
       // if this account has no Core.Workforce identity yet, Workforce screens show
       // an honest "not connected" state rather than blocking Core.Operations sign-in.
       coreWorkforceLogin(email.trim(), password.trim()).catch(() => undefined)
+      useQuantumStore.getState().setRole(normalizeRole(realResult.session.role))
       setLoading(false)
       router.replace(destination as any)
       return

@@ -5,7 +5,7 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import bcrypt from 'bcrypt'
 import { put } from '@vercel/blob'
-import { roles } from '@founder-os/auth'
+import { roles } from '@foundingos/service-auth'
 import { Prisma } from './generated/prisma/index.js'
 import { prisma } from './auth.js'
 import { publishEvent } from './event-feed.js'

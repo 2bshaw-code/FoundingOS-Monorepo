@@ -3,8 +3,8 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { Router, raw, type RequestHandler } from 'express'
-import { createBobRouter } from '@founder-os/bob'
-import { createModuleAccessMiddleware } from '@founder-os/auth'
+import { createBobRouter } from '@foundingos/bob'
+import { createModuleAccessMiddleware } from '@foundingos/service-auth'
 import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess } from './auth.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'

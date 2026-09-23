@@ -2,7 +2,7 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { answerBob } from '@founder-os/bob'
+import { answerBob } from '@foundingos/bob'
 import { prisma } from './auth.js'
 import { Prisma } from './generated/prisma/index.js'
 

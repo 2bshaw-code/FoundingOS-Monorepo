@@ -5,7 +5,9 @@
 import { create } from 'zustand'
 import { BRANDS, Brand, FOUNDINGOS_ACCENT, FOUNDINGOS_BASE, FOUNDINGOS_GLOW, FOUNDINGOS_SURFACE, FOUNDINGOS_SURFACE_GRADIENT } from './brands'
 
-export type UserRole = 'founder' | 'admin' | 'manager' | 'operator'
+// 'viewer' added in Phase 26 for the permission matrix (lib/permissions.ts) —
+// the lowest tier, mapped from the backend's `business_viewer` role.
+export type UserRole = 'founder' | 'admin' | 'manager' | 'operator' | 'viewer'
 export type UserTier = 'enterprise' | 'growth' | 'starter'
 
 export type QuantumTheme = {

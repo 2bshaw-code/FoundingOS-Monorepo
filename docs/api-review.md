@@ -79,6 +79,12 @@ Core.Workforce with no functional risk identified.
 
 ## Action items (not yet executed — see restructure-summary.md)
 
+**Update (Phase 24):** the `core_operationsLeadSync.ts` file referenced
+below does not exist in the current tree, and the `founder-os/` aggregator
+has been assessed and marked for retirement rather than migration — see
+[deprecations.md](./deprecations.md). Treat the numbered items below as
+historical/superseded unless re-verified against the current source.
+
    before deleting `core_operationsLeadSync.ts`.
 4. Re-point `core_intelligenceFeed.ts` at first-party Core.Intelligence data.
 5. Rename route prefixes per [migration-map.md](./migration-map.md).

@@ -100,6 +100,56 @@ export function isSuiteDeployable(suite: SuiteKey): boolean {
   return value === undefined ? true : value !== 'false'
 }
 
+// --- Phase 27: console-shell module tier gating -----------------------------
+//
+// `TenantSuiteLicense.planTier` (see the type above and
+// `core-operations/backend/prisma/schema.prisma`) is a single tier per
+// *suite*, not per module. There is no per-module gate persisted anywhere
+// today. The mapping below is this project's first attempt at translating
+// docs/pricing.md's prose tier descriptions ("Lite: basic records";
+// "Starter: core workflows"; "Growth: automation, advanced reporting";
+// "Enterprise: custom") into concrete per-module minimums, so the console
+// shell (packages/ui/src/sidebar.tsx) has something real to filter against.
+// Treat this as an initial, adjustable policy — not a commercial commitment —
+// and update docs/pricing.md alongside any change here.
+export const PLAN_TIER_RANK: Record<PlanTier, number> = { lite: 0, starter: 1, growth: 2, enterprise: 3 }
+
+/** Minimum plan tier required to see a given nav module, keyed by suite then module label. */
+export const moduleMinTier: Record<SuiteKey, Record<string, PlanTier>> = {
+  core_operations: {
+    Dashboard: 'lite',
+    Orders: 'lite',
+    Inventory: 'lite',
+    Customers: 'lite',
+    CRM: 'starter',
+    Accounting: 'starter',
+    Delivery: 'starter',
+    Messaging: 'starter',
+    Marketing: 'growth',
+    Monitoring: 'growth',
+    'Brand Studio': 'growth',
+    'Fulfilment-to-Cash': 'growth',
+    Intelligence: 'enterprise',
+  },
+  core_workforce: {
+    Talent: 'lite',
+    Workers: 'starter',
+    Payroll: 'growth',
+  },
+  core_intelligence: {
+    'Event Feed': 'lite',
+    Insights: 'starter',
+    'Predictive Ops': 'growth',
+  },
+}
+
+/** Whether a tenant on `planTier` may see a nav item labelled `moduleLabel` within `suite`. */
+export function isModuleVisibleAtTier(suite: SuiteKey, moduleLabel: string, planTier: PlanTier): boolean {
+  const requiredTier = moduleMinTier[suite]?.[moduleLabel]
+  if (!requiredTier) return true // unknown modules default to visible, never silently hidden
+  return PLAN_TIER_RANK[planTier] >= PLAN_TIER_RANK[requiredTier]
+}
+
 // Deprecated legacy brands. Not part of the suite model — kept only so
 // existing brand-registry consumers (see ./index.ts) can detect and warn
 // on legacy usage during the migration window. Do not add new brands

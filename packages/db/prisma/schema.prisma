@@ -25,6 +25,14 @@ enum DataTier {
   dedicated
 }
 
+/// @deprecated Legacy per-brand model from the pre-FoundingOS multi-brand
+/// era. New code must use the FoundingOS suite/tenant model
+/// (`Tenant`/`TenantSuiteLicense`, see docs/shared-schema.md) instead of
+/// creating or reading Brand rows. Still read by the SuperDashboard
+/// (`apps/foundingos-console/app/superdashboard/**`) during the migration
+/// window — do not delete without checking that surface first. Scheduled
+/// for removal once the unified schema migration (docs/migration-map.md,
+/// Phase 32+) lands. See docs/deprecations.md for the full timeline.
 model Brand {
   id            String         @id @default(cuid())
   slug          String         @unique
@@ -301,11 +309,14 @@ model EngagementLog {
   @@map("engagement_logs")
 }
 
-// Persisted, live per-brand engagement snapshot backing the new real-data SuperDash brand
-// panel — one row per brand, updated on every survey submission for that brand. Kept
-// separate from (additive to) the existing mock portfolio table in SuperDashboardPage.tsx,
-// since only brands with a working survey-feed pipeline (currently just retail) have any
-// real data source; the other 7 brands would otherwise show as blank/zero.
+/// Persisted, live per-brand engagement snapshot backing the new real-data SuperDash brand
+/// panel — one row per brand, updated on every survey submission for that brand. Kept
+/// separate from (additive to) the existing mock portfolio table in SuperDashboardPage.tsx,
+/// since only brands with a working survey-feed pipeline (currently just retail) have any
+/// real data source; the other 7 brands would otherwise show as blank/zero.
+/// @deprecated Legacy per-brand model — see the `Brand` model's deprecation
+/// note and docs/deprecations.md. Still read by the SuperDashboard brand
+/// panel; do not add new writers.
 model BrandMetric {
   id                String   @id @default(cuid())
   brandName         String   @unique
@@ -349,10 +360,13 @@ model DriftLog {
 // different brands may reasonably bill in different currencies later) — FX conversion is a
 // read-only DISPLAY layer on top (see /api/fx/rates) and never writes back here.
 
-// Package Model D — one row per brand's real subscription state (base tier + industry pack),
-// replacing the previous "activation tracked client-side only" note in package-model-d.ts.
-// price/mrr/arr are snapshots captured at the real admin action that set this row, not live
-// recalculations, matching how real billing systems snapshot price at subscription time.
+/// Package Model D — one row per brand's real subscription state (base tier + industry pack),
+/// replacing the previous "activation tracked client-side only" note in package-model-d.ts.
+/// price/mrr/arr are snapshots captured at the real admin action that set this row, not live
+/// recalculations, matching how real billing systems snapshot price at subscription time.
+/// @deprecated Legacy per-brand billing model — see the `Brand` model's
+/// deprecation note and docs/deprecations.md. New billing must use
+/// `TenantSuiteLicense`/`Subscription` (see docs/shared-schema.md).
 model BrandSubscription {
   id           String   @id @default(cuid())
   brandSlug    String   @unique
@@ -369,10 +383,13 @@ model BrandSubscription {
   @@map("brand_subscriptions")
 }
 
-// CRM Deals — one row per real deal, replacing the previous hardcoded sample text (e.g.
-// "£3.2k") in packages/ui/src/console.tsx's makeRows. Also serves as the real source for the
-// SuperDash cross-brand pipeline rollup (probabilityWeightedValue = dealValue * (probability
-// implied by stage), computed at read time in the store — not duplicated into a second table).
+/// CRM Deals — one row per real deal, replacing the previous hardcoded sample text (e.g.
+/// "£3.2k") in packages/ui/src/console.tsx's makeRows. Also serves as the real source for the
+/// SuperDash cross-brand pipeline rollup (probabilityWeightedValue = dealValue * (probability
+/// implied by stage), computed at read time in the store — not duplicated into a second table).
+/// @deprecated Legacy per-brand CRM model — see the `Brand` model's
+/// deprecation note and docs/deprecations.md. Scheduled for removal once
+/// the unified schema migration lands.
 model CrmDeal {
   id                       String   @id @default(cuid())
   brandSlug                String
@@ -390,11 +407,13 @@ model CrmDeal {
   @@map("crm_deals")
 }
 
-// Finance module (per brand) AND Brand-console earnings — the same real numbers serve both
-// roles (one source of truth, not two near-duplicate tables): "Finance module: revenue,
-// expenses, profit" and "Brand consoles: brandRevenue, brandProfit" are the identical real
-// figures viewed from two different pages, so brandRevenue/brandProfit are read as aliases of
-// revenue/profit rather than stored a second time.
+/// Finance module (per brand) AND Brand-console earnings — the same real numbers serve both
+/// roles (one source of truth, not two near-duplicate tables): "Finance module: revenue,
+/// expenses, profit" and "Brand consoles: brandRevenue, brandProfit" are the identical real
+/// figures viewed from two different pages, so brandRevenue/brandProfit are read as aliases of
+/// revenue/profit rather than stored a second time.
+/// @deprecated Legacy per-brand finance model — see the `Brand` model's
+/// deprecation note and docs/deprecations.md.
 model BrandFinance {
   id        String   @id @default(cuid())
   brandSlug String   @unique
