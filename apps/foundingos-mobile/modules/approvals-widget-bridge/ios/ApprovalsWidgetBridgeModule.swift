@@ -1,6 +1,7 @@
 import ExpoModulesCore
 import ActivityKit
 import WidgetKit
+import ApprovalsActivityAttributes
 
 // Bridges the JS approvals-queue facade to iOS Live Activities (Lock Screen / Dynamic Island)
 // and the ApprovalsWidget home screen widget. `ApprovalsActivityAttributes` (this pod's own

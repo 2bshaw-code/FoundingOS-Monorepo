@@ -2,10 +2,8 @@ import ActivityKit
 
 // Shared between the main app target (which starts/updates/ends the Live Activity via
 // ApprovalsWidgetBridgeModule) and the `widget` extension target (which renders it on the
-// Lock Screen / Dynamic Island). Lives in this Expo module's own pod so both targets can
-// `import ApprovalsWidgetBridge` and get the exact same compiled type — ActivityKit requires
-// that, not just a structurally-identical duplicate. The widget extension target links this
-// pod via targets/widget/pods.rb (a @bacons/apple-targets extension point for the Podfile).
+// Lock Screen / Dynamic Island). This stays in a dependency-free pod so the widget does not
+// need to link the React Native/Expo bridge just to render the ActivityKit type.
 public struct ApprovalsActivityAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
         public var pendingCount: Int

@@ -1,5 +1,6 @@
 import WidgetKit
 import SwiftUI
+import ApprovalsActivityAttributes
 
 // Home screen widget showing the live Approvals queue (pending count + the oldest/top item).
 // Data is written from the running React Native app via `@bacons/apple-targets`'s

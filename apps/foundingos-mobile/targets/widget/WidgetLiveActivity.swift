@@ -1,11 +1,10 @@
 import ActivityKit
 import WidgetKit
 import SwiftUI
-import ApprovalsWidgetBridge
+import ApprovalsActivityAttributes
 
 // Lock Screen / Dynamic Island presentation for the Approvals queue. `ApprovalsActivityAttributes`
-// lives in the ApprovalsWidgetBridge pod (imported here and by the main app target) so both
-// processes share the exact same compiled type — see targets/widget/pods.rb.
+// is imported here and by the main app target from the same shared pod.
 struct ApprovalsLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: ApprovalsActivityAttributes.self) { context in
