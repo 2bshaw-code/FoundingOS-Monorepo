@@ -4,6 +4,7 @@
 */
 import { NextResponse, type NextRequest } from 'next/server'
 import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from './app/tester/session'
+import { TENANT_SESSION_COOKIE } from './app/lib/tenant-session'
 
 // Real brand slugs this hub can be tinted for — matches @foundingos/config's brand registry.
 // Kept as a plain list here (not imported from config) so this Edge middleware stays free of
@@ -69,10 +70,23 @@ export async function middleware(request: NextRequest) {
   // tool, neither is a tester-facing surface) — previously /founder had no auth check at all
   // here or in its own page code, meaning anyone with the URL could reach it. Real fix, not a
   // demo/manual-only workaround.
-  if (pathname.startsWith('/founder') || pathname.startsWith('/ecosystem-demo')) {
+  // "/console" (and, by extension, "/" which redirects to it) renders this exact same
+  // FounderConsolePage component (see app/console/page.tsx) but was missing from this gate
+  // entirely — meaning the internal master control centre was reachable, unauthenticated, at
+  // this app's own root URL. Folded into the same admin check as a real fix, not a demo one.
+  if (pathname.startsWith('/founder') || pathname.startsWith('/ecosystem-demo') || pathname.startsWith('/console')) {
     const adminToken = request.cookies.get(ADMIN_COOKIE)?.value
     const adminId = adminToken ? await verifyToken('admin', adminToken) : null
     if (!adminId) return NextResponse.redirect(new URL('/tester/login', request.url))
+    return NextResponse.next()
+  }
+
+  // Real tenant account area — separate from the tester/admin program above. This is only a
+  // presence check (does the real session cookie exist at all); the page itself
+  // (app/workspace/page.tsx) does the actual verification against Core.Operations, since that
+  // requires a network call this edge middleware intentionally avoids making on every request.
+  if (pathname.startsWith('/workspace')) {
+    if (!request.cookies.get(TENANT_SESSION_COOKIE)?.value) return NextResponse.redirect(new URL('/login', request.url))
     return NextResponse.next()
   }
 
@@ -117,6 +131,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/tester/dashboard/:path*', '/tester/survey/:path*', '/tester/demo/:path*', '/tester/admin/:path*', '/founder/:path*', '/ecosystem-demo/:path*', '/finance/:path*', '/crypto/:path*', '/retail/:path*', '/meat/:path*', '/talent/:path*', '/foundthat/:path*', '/health/:path*', '/logistics/:path*', '/investor/:path*', '/legal/:path*', '/superdashboard/:path*', '/system/guardian/:path*'],
+  matcher: ['/tester/dashboard/:path*', '/tester/survey/:path*', '/tester/demo/:path*', '/tester/admin/:path*', '/founder/:path*', '/ecosystem-demo/:path*', '/console/:path*', '/workspace/:path*', '/finance/:path*', '/crypto/:path*', '/retail/:path*', '/meat/:path*', '/talent/:path*', '/foundthat/:path*', '/health/:path*', '/logistics/:path*', '/investor/:path*', '/legal/:path*', '/superdashboard/:path*', '/system/guardian/:path*'],
 }
 
