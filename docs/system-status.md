@@ -52,6 +52,34 @@ step-by-step trace this report is built on.
 
 ## 3. Fixed this session
 
+- **Real WhatsApp delivery/read receipts.** `CustomerMessage` now has a
+  real `status` column (`sent`/`delivered`/`read`/`failed`/`received`)
+  and a `providerMessageId` to match WhatsApp's own `statuses[]` webhook
+  back to the exact row that was sent. The Pipeline conversation panel
+  shows the real status ("Sent ✓" → "Delivered ✓✓" → "Read ✓✓"), never a
+  simulated progression — if no status webhook has landed yet, it just
+  stays at "Sent ✓".
+- **Real inbound media storage.** Photos, voice notes, documents, and
+  videos a customer sends are now downloaded from WhatsApp's Graph API
+  and stored via Vercel Blob (the same storage already used for workspace
+  record image uploads), with the resulting URL and media type saved on
+  `CustomerMessage`. The conversation panel renders real inline images or
+  an "Open attachment" link — download/storage failures fall back to the
+  existing honest text placeholder rather than breaking message ingestion.
+- **Per-agent/team activity tracking.** Outbound `CustomerMessage` rows
+  now record `senderUserId` (the FoundingOS user who sent the quick
+  reply), and a new `GET /owner/team-performance` endpoint returns real
+  message counts per agent. The post-login workspace page shows a "Team
+  activity" card with this — no fabricated numbers, and unattributed
+  sends (from before this field existed) are grouped honestly rather than
+  guessed at.
+- **Bulk assign, tag, and delete in the Pipeline.** The existing
+  multi-select bulk action bar (previously only "Mark selected as lost")
+  now also supports "Assign to me" (resolved server-side from the
+  authenticated session, so the console never needs to know its own user
+  ID), tagging (merges into each lead's existing tags), and permanent
+  delete (confirmed before sending). `Lead` and `Customer` both gained
+  `tags` and `assignedUserId` columns for this.
 - **Records module now has real search and status filtering** (it
   previously had none at all) — search by reference/name/message
   preview, plus status-count pills, mirroring the same client-side
@@ -282,23 +310,11 @@ working tree, pending your go-ahead to commit and push.
 
 ## 4. Known issues still open (from the customer-journey audit)
 
-- **No typing indicators or bulk actions in the conversation panel.**
-  Typing indicators would need a new realtime signal (e.g. a webhook/
-  websocket event for "customer is typing"), which WhatsApp's Cloud API
-  doesn't expose today, and bulk actions (multi-select reply/mark-lost)
-  weren't attempted this pass to keep scope tight — no schema change was
-  needed for what shipped, and these would need a small one, so deferred.
-- **No per-agent/team-level analytics.** `CustomerMessage` has no sender/
-  agent-id column, so message volume and response time can be shown
-  tenant-wide (see §3) but never broken down by which team member sent a
-  given reply. Adding that is a schema change, out of scope this pass.
-- **Media messages are not actually stored, only described.** A photo,
-  voice note, document, or location a customer sends now shows an honest
-  placeholder in the Pipeline conversation (e.g. "📷 Photo: <caption>"),
-  but the actual file isn't fetched, stored, or viewable — that needs a
-  schema change (a media URL/type column on `CustomerMessage`) plus
-  downloading the media from WhatsApp's Cloud API, both out of scope this
-  pass.
+- **No typing indicators — and this cannot be honestly built.** WhatsApp's
+  Cloud API does not expose a "customer is typing" webhook to businesses
+  at all (it only lets a business send a typing indicator *to* the
+  customer, not receive one). Building this would mean fabricating the
+  signal, which we won't do. Not planned unless Meta adds this capability.
 - **Replies sent from the WhatsApp Business app directly (not through the
   console) aren't captured.** Only messages sent via the console's
   quick-reply (outbound) or received via our webhook (inbound) are
@@ -306,12 +322,6 @@ working tree, pending your go-ahead to commit and push.
   FoundingOS entirely and that reply won't appear in the Pipeline panel.
   Not fixable without a different WhatsApp integration approach (e.g. the
   WhatsApp Business API's own multi-device support), not attempted here.
-- **No real WhatsApp delivery/read receipts.** `CustomerMessage` has no
-  status field and no `providerMessageId` to correlate with the WhatsApp
-  Cloud API's `statuses` webhook, so the panel only shows what we can prove
-  (Sending/Sent/Failed), not Delivered/Read. Wiring that up is a schema
-  change (add a status + provider-id column and a webhook handler), out of
-  scope for this pass.
 - **Converted leads keep `stage: 'converted'`** — this no longer shows as a
   blank dropdown (fixed this session, see §3), but a converted lead still
   has no way to move back into a working stage from the console if that's
@@ -366,13 +376,27 @@ working tree, pending your go-ahead to commit and push.
 
 In rough priority order, based on customer-impact:
 
-1. Commit and push this session's fixes (§3) once you're ready — nothing
+1. **Apply the new migration to a real database.** No live database was
+   reachable from this environment, so
+   `prisma/migrations/20260924210000_message_status_assignment_tags/migration.sql`
+   is hand-written and verified against the schema, but has not been run
+   via `prisma migrate deploy` against Postgres yet — do that before
+   relying on status/media/tags/assignment in production.
+2. **Mobile parity for status/media/tags/assignment** — the mobile app's
+   CRM screen (`apps/foundingos-mobile/app/(app)/crm.tsx`) manages deals
+   but has no WhatsApp conversation panel at all today (unlike the console's
+   Pipeline). Bringing over delivery-status ticks, inline media, tags, and
+   assignment is a real UI build (a conversation screen/modal), not a small
+   tweak — same backend endpoints already return everything needed
+   (`/customers/:id/messages`), so this is front-end-only work, just larger
+   than a quick pass allows.
+3. Commit and push this session's fixes (§3) once you're ready — nothing
    above takes effect in production until then.
-2. Continue making `apps/foundingos-console`'s remaining modules real
+4. Continue making `apps/foundingos-console`'s remaining modules real
    (backend-persisted) — Sales Pipeline and a generic Records module are
    now real (§3); everything else in the console (CRM demo boards,
    per-brand modules) is still demo/seeded.
-3. Remove or gate the deprecated `/foundthat`, `/meat`, `/crypto` console
+5. Remove or gate the deprecated `/foundthat`, `/meat`, `/crypto` console
    routes so they can't be stumbled into.
-4. Wire FoundAI into the console (it currently only exists on mobile) using
+6. Wire FoundAI into the console (it currently only exists on mobile) using
    the same `/api/v1/ops/ai/ask` and `/api/v1/ops/ai/status` endpoints.
