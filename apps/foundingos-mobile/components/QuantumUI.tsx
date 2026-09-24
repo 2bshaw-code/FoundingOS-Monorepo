@@ -31,6 +31,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ensureReadableText } from '../lib/colour-audit'
+import { hapticTap } from '../lib/haptics'
 import { ENTRANCE_DURATION_MS, PRESS_SPRING, staggerDelay, useReducedMotionPreference } from '../lib/motion'
 import { QuantumTheme, getShellSafeTheme, useQuantumStore } from '../lib/store'
 import { QuantumHeader as QuantumHeaderV1 } from './QuantumHeader'
@@ -109,7 +110,7 @@ type QuantumTextProps = {
   color?: string
   align?: TextStyle['textAlign']
   style?: StyleProp<TextStyle>
-} & Pick<TextProps, 'adjustsFontSizeToFit' | 'ellipsizeMode' | 'minimumFontScale' | 'numberOfLines'>
+} & Pick<TextProps, 'adjustsFontSizeToFit' | 'ellipsizeMode' | 'minimumFontScale' | 'numberOfLines' | 'accessibilityRole' | 'accessibilityLabel'>
 
 type QuantumCardProps = {
   children: ReactNode
@@ -236,6 +237,7 @@ export function QuantumCard({
   }))
 
   const handlePressIn = () => {
+    hapticTap()
     if (reduceMotion) return
     press.value = withSpring(1, PRESS_SPRING)
   }
@@ -282,6 +284,7 @@ export function QuantumCard({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       disabled={disabled}
+      accessibilityRole="button"
       style={reduceMotion ? undefined : pressStyle}
     >
       {cardBody}
@@ -340,7 +343,11 @@ export function QuantumButton({ children, onPress, tone = 'primary', disabled, s
         style,
       ]}
       onPress={onPress}
+      onPressIn={hapticTap}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!disabled }}
+      accessibilityLabel={isTextishChildren(children) ? flattenTextish(children) : undefined}
     >
       {gradientColors ? (
         <LinearGradient
@@ -350,7 +357,7 @@ export function QuantumButton({ children, onPress, tone = 'primary', disabled, s
           style={StyleSheet.absoluteFill}
         />
       ) : null}
-      {typeof children === 'string' || typeof children === 'number' ? (
+      {isTextishChildren(children) ? (
         <QuantumText variant="label" color={textColor} style={styles.buttonText}>
           {children}
         </QuantumText>
@@ -359,6 +366,30 @@ export function QuantumButton({ children, onPress, tone = 'primary', disabled, s
       )}
     </Pressable>
   )
+}
+
+// JSX like `<QuantumButton>Add the first {label}</QuantumButton>` compiles to an array of
+// children (a string plus an expression), not a single string — so a naive `typeof children
+// === 'string'` check misses it and the raw text nodes get rendered straight into the
+// Pressable/View, which silently drops them on native and throws "Unexpected text node" on
+// web. Treat any children made up entirely of strings/numbers (including nested arrays and
+// nullish gaps) as text that needs wrapping in a <Text>.
+function isTextishChildren(children: ReactNode): boolean {
+  if (children == null || typeof children === 'boolean') return true
+  if (typeof children === 'string' || typeof children === 'number') return true
+  if (Array.isArray(children)) return children.every(isTextishChildren)
+  return false
+}
+
+// Flattens textish children (see isTextishChildren above) into the plain
+// string VoiceOver/TalkBack needs for accessibilityLabel — without this,
+// screen readers announce buttons built from `{a} {b}` JSX as "button" with
+// no label at all, since there's no single Text node for them to read.
+function flattenTextish(children: ReactNode): string {
+  if (children == null || typeof children === 'boolean') return ''
+  if (typeof children === 'string' || typeof children === 'number') return String(children)
+  if (Array.isArray(children)) return children.map(flattenTextish).join('')
+  return ''
 }
 
 export function QuantumPill({ children, active, accent, onPress }: QuantumPillProps) {
@@ -375,6 +406,8 @@ export function QuantumPill({ children, active, accent, onPress }: QuantumPillPr
       ]}
       onPress={onPress}
       disabled={!onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: !!active }}
     >
       <QuantumText variant="label" color={active ? quantumColors.neutral0 : theme.textColor}>
         {children}
@@ -387,7 +420,7 @@ export function QuantumSectionHeader({ label, action }: { label: string; action?
   const theme = useActiveQuantumTheme()
   return (
     <View style={styles.sectionHeader}>
-      <QuantumText variant="overline" color={theme.subtextColor}>
+      <QuantumText variant="overline" color={theme.subtextColor} style={styles.sectionHeaderLabel}>
         {label}
       </QuantumText>
       {action}
@@ -456,7 +489,9 @@ export function QuantumFormField({
 }) {
   return (
     <View style={styles.formField}>
-      <QuantumText variant="caption">{label}</QuantumText>
+      <QuantumText variant="caption" accessibilityRole="text">
+        {label}
+      </QuantumText>
       {children}
     </View>
   )
@@ -478,8 +513,11 @@ export function QuantumListItem({
   const theme = useActiveQuantumTheme()
   const Wrapper = onPress ? Pressable : View
   const pressStyle = onPress ? ({ pressed }: { pressed: boolean }) => [styles.listItem, { borderColor: accent ?? theme.borderColor, backgroundColor: theme.cardBg, opacity: pressed ? 0.7 : 1 }] : [styles.listItem, { borderColor: accent ?? theme.borderColor, backgroundColor: theme.cardBg }]
+  const accessibilityProps = onPress
+    ? { accessibilityRole: 'button' as const, accessibilityLabel: subtitle ? `${title}. ${subtitle}` : title }
+    : {}
   return (
-    <Wrapper style={pressStyle} onPress={onPress}>
+    <Wrapper style={pressStyle} onPress={onPress} {...accessibilityProps}>
       <View style={[styles.listDot, { backgroundColor: accent ?? theme.accent }]} />
       <View style={styles.listCopy}>
         <QuantumText variant="h3">{title}</QuantumText>
@@ -554,11 +592,11 @@ export function QuantumMetric({
 }) {
   const color = getSemanticColor(tone)
   return (
-    <View style={styles.metric}>
-      <QuantumText variant="h2" color={color}>
+    <View style={styles.metric} accessible accessibilityLabel={`${label}: ${value}`}>
+      <QuantumText variant="h2" color={color} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
         {value}
       </QuantumText>
-      <QuantumText variant="caption" align="center">
+      <QuantumText variant="caption" align="center" numberOfLines={2}>
         {label}
       </QuantumText>
     </View>
@@ -754,7 +792,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    rowGap: quantumSpace.xs,
     marginTop: quantumSpace.xs,
+  },
+  // Lets a long section label (e.g. "Live workspaces · full module access")
+  // shrink and wrap onto its own line instead of squeezing an adjacent
+  // action (e.g. a status pill) off-screen — previously the label had no
+  // flexShrink/flexBasis, so `justify-content: space-between` just pushed
+  // the action past the edge of the screen while the label wrapped underneath it.
+  sectionHeaderLabel: {
+    flexShrink: 1,
+    flexBasis: '100%',
   },
   headerRow: {
     flexDirection: 'row',
@@ -815,8 +864,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   metric: {
+    // No minWidth here on purpose — a hardcoded floor used to force metric
+    // labels (e.g. "Open baskets") to overflow past their card's edge and
+    // overlap the next card whenever three or more metrics share a row on a
+    // narrow phone screen. flex: 1 already grows each metric to fill
+    // whatever room the row actually has, so shrinking freely below that is
+    // what keeps multi-metric rows from colliding.
     flex: 1,
-    minWidth: 92,
+    minWidth: 0,
     alignItems: 'center',
     justifyContent: 'center',
     gap: quantumSpace.xs,

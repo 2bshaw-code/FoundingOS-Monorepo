@@ -16,11 +16,17 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.foundingos.quantum",
+      "appleTeamId": "8WDFN2TWG9",
+      "entitlements": {
+        "com.apple.security.application-groups": ["group.com.foundingos.quantum"]
+      },
       "infoPlist": {
         "NSCameraUsageDescription": "FoundingOS uses the camera to scan shelves, receipts, product labels, and workflow media for AI-assisted actions.",
         "NSMicrophoneUsageDescription": "FoundingOS uses the microphone to capture voice commands for AI-assisted workflows.",
         "NSPhotoLibraryUsageDescription": "FoundingOS uses your photo library to select receipts, product photos, videos, and workflow media for AI-assisted actions.",
         "NSPhotoLibraryAddUsageDescription": "FoundingOS may save generated receipts, workflow captures, and AI confirmation assets to your photo library when requested.",
+        "NSFaceIDUsageDescription": "FoundingOS uses Face ID to unlock the app when App Lock is turned on in Settings.",
+        "NSSupportsLiveActivities": true,
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -34,7 +40,9 @@
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
       ]
     },
     "web": {
@@ -47,7 +55,16 @@
       "expo-secure-store",
       "expo-web-browser",
       "expo-image-picker",
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-local-authentication",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#4CC9FF"
+        }
+      ],
+      "@bacons/apple-targets"
     ],
     "extra": {
       "router": {},

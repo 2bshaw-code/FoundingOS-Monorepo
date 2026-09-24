@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["ApprovalsWidgetBridgeModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.approvalswidgetbridge.ApprovalsWidgetBridgeModule"]
+  }
+}

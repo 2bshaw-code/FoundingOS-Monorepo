@@ -115,7 +115,7 @@ export function QuantumTabBar({
         {hasOverflow ? (
           <Modal visible={sheetMounted} transparent animationType="none" onRequestClose={closeMore}>
             <Animated.View style={[styles.backdrop, backdropStyle]}>
-              <Pressable style={StyleSheet.absoluteFill} onPress={closeMore} />
+              <Pressable style={StyleSheet.absoluteFill} onPress={closeMore} accessibilityRole="button" accessibilityLabel="Close menu" />
             </Animated.View>
             <Animated.View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, 20) }, sheetStyle]}>
               <View style={styles.sheetHandle} />
@@ -134,6 +134,9 @@ export function QuantumTabBar({
                       closeMore()
                       navigation.navigate(route.name)
                     }}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: isFocused }}
+                    accessibilityLabel={label}
                   >
                     <View style={[styles.iconWrap, isFocused && { backgroundColor: `${accent}22` }]}>
                       {Icon ? Icon({ color: isFocused ? accent : '#dbe2ea', size: 20 }) : null}
@@ -182,7 +185,16 @@ function TabIcon({
   }
 
   return (
-    <Pressable onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut} style={styles.item} hitSlop={6}>
+    <Pressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={styles.item}
+      hitSlop={6}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: isFocused }}
+      accessibilityLabel={label}
+    >
       <Animated.View style={[styles.iconWrap, isFocused && { backgroundColor: `${accent}22` }, animatedIconStyle]}>
         {children}
       </Animated.View>

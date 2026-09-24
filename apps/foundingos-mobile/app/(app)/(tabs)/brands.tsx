@@ -42,11 +42,25 @@ export default function WorkspaceDirectoryScreen() {
       <QuantumHeader
         eyebrow="Everything, one tap away"
         title="Workspaces"
-        description="Pick a suite or a live workspace below — this is the single starting point for the whole app."
+        description="Jump straight into a core workspace below, or open a suite dashboard — this is the single starting point for the whole app."
         accent={FOUNDINGOS_ACCENT}
       />
 
-      <QuantumSectionHeader label="Suites & dashboards" action={<QuantumNotice tone={connectionNotice.tone}>{connectionNotice.label}</QuantumNotice>} />
+      <QuantumSectionHeader label="Live workspaces · full module access" action={<QuantumNotice tone={connectionNotice.tone}>{connectionNotice.label}</QuantumNotice>} />
+      <QuantumText variant="caption">
+        Every module below reads and writes the same real, tenant-scoped data as the web app — sales pipelines, orders,
+        inventory, campaigns, payroll, and more.
+      </QuantumText>
+      <View style={styles.workspaceGrid}>
+        {WORKSPACES.map((workspace, i) => (
+          <QuantumCard key={workspace.slug} accent={workspace.accent} style={styles.workspaceCard} index={i} onPress={() => router.push(`/workspace/${workspace.slug}`)}>
+            <QuantumText variant="h3">{workspace.label}</QuantumText>
+            <QuantumText variant="caption">{workspace.modules.length} modules</QuantumText>
+          </QuantumCard>
+        ))}
+      </View>
+
+      <QuantumSectionHeader label="Suites & dashboards" />
       <View style={styles.suiteGrid}>
         {SUITE_LINKS.filter((suite) => suite.label !== 'Account').map((suite, i) => (
           <QuantumCard key={suite.slug} accent={suite.accent} style={styles.suiteCard} index={i} onPress={() => open(suite.slug, suite.route)}>
@@ -63,20 +77,6 @@ export default function WorkspaceDirectoryScreen() {
           <QuantumCard key={suite.slug} accent={suite.accent} style={styles.suiteCard} index={i} onPress={() => open(suite.slug, suite.route)}>
             <QuantumText variant="h3">{suite.name}</QuantumText>
             <QuantumText variant="caption">{suite.tagline}</QuantumText>
-          </QuantumCard>
-        ))}
-      </View>
-
-      <QuantumSectionHeader label="Live workspaces · full module access" />
-      <QuantumText variant="caption">
-        Every module below reads and writes the same real, tenant-scoped data as the web app — sales pipelines, orders,
-        inventory, campaigns, payroll, and more.
-      </QuantumText>
-      <View style={styles.workspaceGrid}>
-        {WORKSPACES.map((workspace, i) => (
-          <QuantumCard key={workspace.slug} accent={workspace.accent} style={styles.workspaceCard} index={i} onPress={() => router.push(`/workspace/${workspace.slug}`)}>
-            <QuantumText variant="h3">{workspace.label}</QuantumText>
-            <QuantumText variant="caption">{workspace.modules.length} modules</QuantumText>
           </QuantumCard>
         ))}
       </View>

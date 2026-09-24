@@ -475,7 +475,9 @@ export default function WorkspaceModuleScreen() {
 const styles = StyleSheet.create({
   screen: { gap: quantumSpace.lg },
   kpiRow: { flexDirection: 'row', gap: quantumSpace.sm },
-  kpiCard: { flex: 1 },
+  // Tighter padding than the default card so 3+ KPIs fit their row without
+  // their labels overflowing into the neighbouring card on narrow phones.
+  kpiCard: { flex: 1, minWidth: 0, paddingHorizontal: quantumSpace.sm, paddingVertical: quantumSpace.md },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
   kanbanScroll: { gap: quantumSpace.md, paddingBottom: quantumSpace.sm },

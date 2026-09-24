@@ -15,7 +15,6 @@ import { normalizeRole } from '../lib/permissions'
 import { useQuantumStore } from '../lib/store'
 import { QuantumSphere } from '../components/QuantumSphere'
 import { QuantumButton, QuantumCard, QuantumFormField, QuantumNotice, QuantumPasswordInput, QuantumText, QuantumTextInput, quantumSpace, shadeColor } from '../components/QuantumUI'
-
 export default function LoginScreen() {
   const { returnTo } = useLocalSearchParams<{ returnTo?: string }>()
   const destination = typeof returnTo === 'string' && returnTo.startsWith('/') ? returnTo : '/(app)/home'
@@ -100,6 +99,15 @@ export default function LoginScreen() {
     router.replace(destination as any)
   }
 
+  // Lets anyone opening the app for the first time — investors, TestFlight testers,
+  // anyone without real credentials — see the whole product immediately, instead of
+  // hitting a locked sign-in wall. Turns on Smart Demo Mode (illustrative sample
+  // data everywhere, no live tenant, no network calls) and goes straight in.
+  function handleViewDemo() {
+    useQuantumStore.getState().setDemoMode(true)
+    router.replace(destination as any)
+  }
+
   if (checkingSession) {
     return (
       <View style={styles.center}>
@@ -149,6 +157,18 @@ export default function LoginScreen() {
                 {loading ? <ActivityIndicator color={FOUNDINGOS_BASE} /> : 'Sign in'}
               </QuantumButton>
             </QuantumCard>
+
+            <View style={styles.demoRow}>
+              <View style={styles.demoDivider} />
+              <QuantumText variant="caption" color="#9AA5B1">or</QuantumText>
+              <View style={styles.demoDivider} />
+            </View>
+            <QuantumButton tone="secondary" onPress={handleViewDemo} disabled={loading}>
+              View live demo
+            </QuantumButton>
+            <QuantumText variant="caption" align="center" color="#9AA5B1">
+              Explore every workspace with realistic sample data — no account needed.
+            </QuantumText>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -164,4 +184,6 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: FOUNDINGOS_BASE },
   brand: { alignItems: 'center', gap: quantumSpace.lg },
   glow: { position: 'absolute', top: -160, left: -80, width: 340, height: 340, borderRadius: 170 },
+  demoRow: { flexDirection: 'row', alignItems: 'center', gap: quantumSpace.md, marginTop: -quantumSpace.lg },
+  demoDivider: { flex: 1, height: 1, backgroundColor: '#2A3541' },
 })

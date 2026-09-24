@@ -27,6 +27,8 @@ export function QuantumBackButton({ label = 'Back', fallbackHref = '/(app)/home'
   return (
     <Pressable
       onPress={handlePress}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}, navigate back`}
       style={({ pressed }) => [
         styles.button,
         {

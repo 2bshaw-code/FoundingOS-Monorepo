@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react'
 import { StyleSheet } from 'react-native'
 import { FOUNDINGOS_ACCENT } from '../../lib/brands'
 import { ActionLogEntry, clearActionLog, getActionLog, subscribeToActionLog } from '../../lib/action-logger'
+import { isBiometricLockSupported, saveBiometricLockPreference } from '../../lib/biometric-lock'
 import { CORE_OPS_API_BASE } from '../../lib/core-operations-api'
 import { CORE_WORKFORCE_API_BASE } from '../../lib/core-workforce-api'
 import {
@@ -59,8 +60,20 @@ export default function DebugLogScreen() {
   const serviceStatus = useServiceStatus()
   const demoMode = useQuantumStore((state) => state.demoMode)
   const setDemoMode = useQuantumStore((state) => state.setDemoMode)
+  const biometricLockEnabled = useQuantumStore((state) => state.biometricLockEnabled)
+  const setBiometricLockEnabled = useQuantumStore((state) => state.setBiometricLockEnabled)
+  const [biometricSupported, setBiometricSupported] = useState(true)
 
   useEffect(() => subscribeToActionLog(() => setEntries(getActionLog())), [])
+  useEffect(() => {
+    void isBiometricLockSupported().then(setBiometricSupported)
+  }, [])
+
+  const toggleBiometricLock = async () => {
+    const next = !biometricLockEnabled
+    await saveBiometricLockPreference(next)
+    setBiometricLockEnabled(next)
+  }
 
   return (
     <QuantumScreen>
@@ -74,6 +87,23 @@ export default function DebugLogScreen() {
         </QuantumText>
         <QuantumButton tone={demoMode ? 'danger' : 'primary'} onPress={() => setDemoMode(!demoMode)} style={styles.demoButton}>
           {demoMode ? 'Turn off demo mode' : 'Turn on demo mode'}
+        </QuantumButton>
+      </QuantumCard>
+
+      <QuantumText variant="overline">App lock</QuantumText>
+      <QuantumCard accent={biometricLockEnabled ? getSemanticColor('good') : undefined}>
+        <QuantumText variant="caption">
+          {biometricSupported
+            ? 'Require Face ID, Touch ID, or your device passcode every time FoundingOS opens or returns from the background.'
+            : 'Face ID / Touch ID is not set up on this device — add one in your device Settings first.'}
+        </QuantumText>
+        <QuantumButton
+          tone={biometricLockEnabled ? 'danger' : 'primary'}
+          disabled={!biometricSupported}
+          onPress={toggleBiometricLock}
+          style={styles.demoButton}
+        >
+          {biometricLockEnabled ? 'Turn off app lock' : 'Turn on app lock'}
         </QuantumButton>
       </QuantumCard>
 

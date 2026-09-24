@@ -119,6 +119,12 @@ interface QuantumState {
   // across app restarts and never affects any write path — approve/reject/
   // execute on demo data only ever mutates local in-memory state.
   demoMode: boolean
+  // Face ID / Touch ID / fingerprint app lock (lib/biometric-lock.ts). Unlike
+  // the other flags here this one *is* persisted (see loadBiometricLockPreference
+  // in _layout.tsx) since it's a security preference, not a session/UI state.
+  // Defaults to false — opt-in, so nobody is locked out of a build that
+  // shipped before they set a device passcode.
+  biometricLockEnabled: boolean
   setActiveBrand: (slug: string) => void
   setActiveConsoleModule: (moduleName: string | null) => void
   setRole: (role: UserRole) => void
@@ -130,6 +136,7 @@ interface QuantumState {
   setLicensedSuites: (suites: { core_workforce: boolean; core_intelligence: boolean }) => void
   setReducedMotion: (enabled: boolean) => void
   setDemoMode: (enabled: boolean) => void
+  setBiometricLockEnabled: (enabled: boolean) => void
   getActiveBrand: () => Brand | undefined
   getActiveTheme: () => QuantumTheme
   getVisibleBrands: () => Brand[]
@@ -151,6 +158,7 @@ export const useQuantumStore = create<QuantumState>((set, get) => ({
   // for the overwhelming majority of users who don't have this set.
   reducedMotion: false,
   demoMode: false,
+  biometricLockEnabled: false,
 
   setActiveBrand: (slug: string) => set({ activeBrandSlug: getValidBrandSlug(slug) }),
   setActiveConsoleModule: (moduleName: string | null) => set({ activeConsoleModule: moduleName }),
@@ -163,6 +171,7 @@ export const useQuantumStore = create<QuantumState>((set, get) => ({
   setLicensedSuites: (suites) => set({ licensedSuites: suites }),
   setReducedMotion: (enabled: boolean) => set({ reducedMotion: enabled }),
   setDemoMode: (enabled: boolean) => set({ demoMode: enabled }),
+  setBiometricLockEnabled: (enabled: boolean) => set({ biometricLockEnabled: enabled }),
 
   getActiveBrand: () => BRANDS.find((b) => b.slug === getValidBrandSlug(get().activeBrandSlug)),
   getActiveTheme: () => getShellSafeTheme(get().activeBrandSlug),
