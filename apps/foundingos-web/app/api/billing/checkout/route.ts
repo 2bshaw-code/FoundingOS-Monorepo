@@ -26,8 +26,10 @@ export async function POST(request: Request) {
     customerId: customerResult.data.customerId,
     priceId: body.priceId,
     brandSlug: body.brandSlug,
-    successUrl: body.successUrl ?? `${new URL(request.url).origin}/onboarding?checkout=success`,
-    cancelUrl: body.cancelUrl ?? `${new URL(request.url).origin}/onboarding?checkout=cancelled`,
+    // /onboarding does not exist in this app; fall back to the real signed-in workspace
+    // page instead so an unconfigured caller can't send a paying customer to a 404.
+    successUrl: body.successUrl ?? `${new URL(request.url).origin}/workspace?checkout=success`,
+    cancelUrl: body.cancelUrl ?? `${new URL(request.url).origin}/workspace?checkout=cancelled`,
   })
   if (!checkoutResult.ok) return NextResponse.json(checkoutResult, { status: 502 })
 
