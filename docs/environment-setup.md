@@ -128,6 +128,25 @@ After the web and API services are reachable:
 npm run verify:production-readiness -- --live
 ```
 
+### Enable FoundAI
+
+FoundAI runs only in the Core.Operations API. Do not add an AI provider key to
+the mobile app, web app, or any `NEXT_PUBLIC_`/`EXPO_PUBLIC_` variable.
+
+1. Create an Anthropic API key with a project-level spend limit.
+2. Add the following server-side deployment variables:
+
+   ```text
+   AI_ENABLED=true
+   ANTHROPIC_API_KEY=<server-side secret>
+   AI_REASONING_MODEL=claude-sonnet-4-5
+   ```
+
+3. Redeploy Core.Operations, then use **Search → Ask FoundAI** in the mobile
+   app. Answers are tenant-scoped, cite only supplied workspace records, and
+   are audited as `ai.asked`. FoundAI provides guidance and proposed next
+   steps; it never performs an external or financial action directly.
+
 On the first production visit, select **Initialize a new deployment**. Enter
 the bootstrap token from the secret manager and create the first business
 owner. The token is sent only to the API and is not persisted by the browser.
