@@ -7,7 +7,7 @@ import { createBobRouter } from '@foundingos/bob'
 import { createModuleAccessMiddleware } from '@foundingos/service-auth'
 import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess } from './auth.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
-import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, recordCustomerMessage, updateCustomer, updateLeadStage } from './pipeline.js'
+import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, recordCustomerMessage, updateCustomer, updateLeadStage, agentPerformance, bulkDeleteLeads, bulkUpdateCustomers, bulkUpdateLeads } from './pipeline.js'
 import { assignDelivery, createCampaign, createDeliveryOperator, createDeliveryVehicle, createDeliveryZone, createInventoryItem, createInvoice, createOrder, createSocialPost, deleteInventoryItem, detectLocation, generateMedia, getBrandProfile, invoiceDocument, operationsSummary, orderDocument, saveBrandProfile, saveLocationProfile, searchInventory, sendInvoice, updateCampaign, updateDeliveryAssignment, updateDeliveryNotification, updateDeliveryOperator, updateDeliveryVehicle, updateDeliveryZone, updateInventoryItem, updateInvoice, updateOrder, updateSocialPost, weatherAt } from './operations.js'
 import { addMerchantStaff, merchantWorkspace, ownerMerchantSummary, removeMerchantStaff, resetMerchantPassword, reviewMerchantChange, submitMerchantChange, updateMerchantStaff } from './merchant.js'
 import { listEvents, predictEventPattern, publishEvent, queryEvents, registerEventStreamClient, summarizeEventPattern } from './event-feed.js'
@@ -567,6 +567,47 @@ apiRouter.get('/owner/overview', requireOwnerAccess, requireTenant, requireCoreO
 apiRouter.get('/owner/pipeline', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { res.json({ success: true, data: await pipelineSummary(readTenant(req, res)) }) } catch (error) { next(error) }
 })
+// Real per-agent activity — who's actually sending messages, from tracked senderUserId on
+// outbound CustomerMessage rows. Powers the console's team performance view.
+apiRouter.get('/owner/team-performance', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await agentPerformance(readTenant(req, res)) }) } catch (error) { next(error) }
+})
+// Bulk assign/tag for the Pipeline and Records bulk-action bars. `ids` must be a non-empty
+// array; at least one of `assignedUserId` (string, or null to unassign) or `tags` (string[])
+// must be present, or there's nothing to change.
+apiRouter.patch('/leads/bulk', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(String) : []
+    if (!ids.length) return res.status(400).json({ success: false, message: 'Select at least one lead.' })
+    const changes: { assignedUserId?: string | null; tags?: string[] } = {}
+    // "me" resolves server-side to the authenticated caller, so the console never needs to
+    // know or pass its own user ID just to support an "Assign to me" button.
+    if ('assignedUserId' in (req.body || {})) changes.assignedUserId = req.body.assignedUserId === null ? null : req.body.assignedUserId === 'me' ? res.locals.auth?.id : String(req.body.assignedUserId)
+    if (Array.isArray(req.body?.tags)) changes.tags = req.body.tags.map(String)
+    if (!('assignedUserId' in changes) && !('tags' in changes)) return res.status(400).json({ success: false, message: 'Nothing to update.' })
+    res.json({ success: true, data: await bulkUpdateLeads(ids, readTenant(req, res), changes) })
+  } catch (error) { next(error) }
+})
+apiRouter.patch('/customers/bulk', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(String) : []
+    if (!ids.length) return res.status(400).json({ success: false, message: 'Select at least one customer.' })
+    const changes: { assignedUserId?: string | null; tags?: string[] } = {}
+    if ('assignedUserId' in (req.body || {})) changes.assignedUserId = req.body.assignedUserId === null ? null : String(req.body.assignedUserId)
+    if (Array.isArray(req.body?.tags)) changes.tags = req.body.tags.map(String)
+    if (!('assignedUserId' in changes) && !('tags' in changes)) return res.status(400).json({ success: false, message: 'Nothing to update.' })
+    res.json({ success: true, data: await bulkUpdateCustomers(ids, readTenant(req, res), changes) })
+  } catch (error) { next(error) }
+})
+// Bulk delete for the Pipeline's bulk action bar. Express's DELETE handler still reads a JSON
+// body here (ids), since a bulk delete of arbitrary size doesn't fit cleanly in a query string.
+apiRouter.delete('/leads/bulk', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(String) : []
+    if (!ids.length) return res.status(400).json({ success: false, message: 'Select at least one lead.' })
+    res.json({ success: true, data: await bulkDeleteLeads(ids, readTenant(req, res)) })
+  } catch (error) { next(error) }
+})
 apiRouter.get('/customers', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { res.json({ success: true, data: await listCustomers(readTenant(req, res)) }) } catch (error) { next(error) }
 })
@@ -595,8 +636,15 @@ apiRouter.post('/customers/:id/messages', requireOwnerAccess, requireTenant, req
     const customer = await getCustomer(String(req.params.id), tenantId)
     if (!customer.phone) return res.status(422).json({ success: false, message: 'This customer has no WhatsApp number on file yet.' })
     const credentials = await getIntegrationCredentials(tenantId, 'whatsapp')
-    await sendWhatsAppText(customer.phone, text, undefined, credentials)
-    res.status(201).json({ success: true, data: await recordCustomerMessage(tenantId, customer.id, 'outbound', text) })
+    const result = await sendWhatsAppText(customer.phone, text, undefined, credentials) as { messages?: Array<{ id?: string }> }
+    const providerMessageId = result.messages?.[0]?.id ? String(result.messages[0].id) : undefined
+    res.status(201).json({
+      success: true,
+      data: await recordCustomerMessage(tenantId, customer.id, 'outbound', text, 'whatsapp', {
+        providerMessageId,
+        senderUserId: res.locals.auth?.id,
+      }),
+    })
   } catch (error) { next(error) }
 })
 apiRouter.post('/leads', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {

@@ -50,3 +50,32 @@ export const sendWhatsAppText = async (to: unknown, text: unknown, phoneNumberId
   if (!response.ok) throw new Error(body.error?.message || `WhatsApp returned HTTP ${response.status}`)
   return body
 }
+
+// Downloads a WhatsApp media attachment (photo, voice note, document, video) so FoundingOS
+// can store and display it, rather than only showing a "not yet viewable" placeholder. This is
+// a real two-step Graph API flow: first resolve the media ID to a short-lived, auth-gated URL,
+// then fetch the bytes from that URL with the same access token. Both requests use the
+// tenant's own WhatsApp credentials — never a shared/global token.
+export const fetchWhatsAppMedia = async (mediaId: string, credentials?: WhatsAppCredentialInput): Promise<{ bytes: Buffer; contentType: string } | null> => {
+  const value = config(credentials)
+  if (!value.accessToken || !mediaId) return null
+  try {
+    const lookup = await fetch(`https://graph.facebook.com/${value.graphVersion}/${mediaId}`, {
+      headers: { Authorization: `Bearer ${value.accessToken}` },
+      signal: AbortSignal.timeout(10_000),
+    })
+    const meta = await lookup.json().catch(() => null) as { url?: string; mime_type?: string } | null
+    if (!lookup.ok || !meta?.url) return null
+    const download = await fetch(meta.url, {
+      headers: { Authorization: `Bearer ${value.accessToken}` },
+      signal: AbortSignal.timeout(15_000),
+    })
+    if (!download.ok) return null
+    const bytes = Buffer.from(await download.arrayBuffer())
+    return { bytes, contentType: meta.mime_type || download.headers.get('content-type') || 'application/octet-stream' }
+  } catch {
+    // Best-effort: a failed media download should never take down inbound message processing —
+    // the message is still stored with its text/placeholder body either way.
+    return null
+  }
+}

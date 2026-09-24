@@ -5,13 +5,14 @@
 import { Prisma } from './generated/prisma/index.js'
 import { prisma } from './auth.js'
 import { publishEvent } from './event-feed.js'
-import { classifyMessagingIntent, describeWhatsAppMessageBody, extractWhatsAppMessages, type MessagingIntent, type WhatsAppInbound } from './messaging-intents.js'
+import { classifyMessagingIntent, describeWhatsAppMessageBody, extractWhatsAppMessages, extractWhatsAppStatuses, whatsAppMediaReference, type MessagingIntent, type WhatsAppInbound } from './messaging-intents.js'
 import { createCampaign, createInvoice, createOrder, invoiceDocument, operationsSummary, updateOrder } from './operations.js'
-import { sendWhatsAppText } from './whatsapp.js'
+import { fetchWhatsAppMedia, sendWhatsAppText } from './whatsapp.js'
 import { getIntegrationCredentials } from './platform.js'
 import { decideAgentAction, executeAgentAction, getAgentIntelligenceSummary, reverseAgentActionExecution } from './agent-actions.js'
 import { buildIntelligenceBrief, explainActionForMessaging } from './intelligence-messaging.js'
-import { normalizedPhone, recordCustomerMessage } from './pipeline.js'
+import { applyCustomerMessageStatus, normalizedPhone, recordCustomerMessage } from './pipeline.js'
+import { put } from '@vercel/blob'
 
 const json = (value: unknown): Prisma.InputJsonValue =>
   JSON.parse(JSON.stringify(value ?? {})) as Prisma.InputJsonValue
@@ -254,6 +255,26 @@ async function sendAndStoreReply(input: {
   }
 }
 
+// Downloads a WhatsApp media attachment and stores it in Vercel Blob (the same storage
+// already used for workspace record image uploads), returning a real, publicly viewable URL.
+// Best-effort: any failure (download error, storage error) returns null rather than throwing,
+// so a media message still gets stored with its honest placeholder body either way.
+const extensionForMimeType = (mimeType: string) => {
+  const [, subtype] = mimeType.split('/')
+  return (subtype || 'bin').split(';')[0].replace(/[^a-z0-9]/gi, '') || 'bin'
+}
+async function storeInboundMedia(tenantId: string, mediaId: string, mediaType: string, credentials: Awaited<ReturnType<typeof getIntegrationCredentials>>) {
+  const media = await fetchWhatsAppMedia(mediaId, credentials)
+  if (!media) return null
+  try {
+    const pathname = `${tenantId}/whatsapp-media/${mediaId}.${extensionForMimeType(media.contentType)}`
+    const blob = await put(pathname, media.bytes, { access: 'public', contentType: media.contentType, addRandomSuffix: false })
+    return { mediaUrl: blob.url, mediaType }
+  } catch {
+    return null
+  }
+}
+
 async function processInboundMessage(input: WhatsAppInbound) {
   const providerMessageId = clean(input.message.id)
   const sender = clean(input.message.from)
@@ -342,7 +363,14 @@ async function processInboundMessage(input: WhatsAppInbound) {
   if (senderPhone) {
     const matchedCustomer = await prisma.customer.findFirst({ where: { tenantId: connection.tenantId, phone: senderPhone } })
     if (matchedCustomer) {
-      await recordCustomerMessage(connection.tenantId, matchedCustomer.id, 'inbound', describeWhatsAppMessageBody(input.message))
+      const mediaRef = whatsAppMediaReference(input.message)
+      const media = mediaRef
+        ? await storeInboundMedia(connection.tenantId, mediaRef.mediaId, mediaRef.mediaType, await getIntegrationCredentials(connection.tenantId, 'whatsapp'))
+        : null
+      await recordCustomerMessage(connection.tenantId, matchedCustomer.id, 'inbound', describeWhatsAppMessageBody(input.message), 'whatsapp', {
+        mediaUrl: media?.mediaUrl,
+        mediaType: media?.mediaType,
+      })
     }
   }
 
@@ -405,6 +433,17 @@ export async function processWhatsAppWebhook(payload: unknown) {
   const messages = extractWhatsAppMessages(payload)
   const results = []
   for (const message of messages) results.push(await processInboundMessage(message))
+
+  // Real delivered/read/failed receipts — the only honest source of message status beyond
+  // "sent". Applied to both message stores: MessagingMessage (agent-command flow) and
+  // CustomerMessage (console conversation panel / quick-reply), since a single WhatsApp send
+  // may be tracked in either depending on which flow created it.
+  const statuses = extractWhatsAppStatuses(payload)
+  for (const update of statuses) {
+    await prisma.messagingMessage.updateMany({ where: { providerMessageId: update.providerMessageId }, data: { status: update.status } }).catch(() => undefined)
+    await applyCustomerMessageStatus(update.providerMessageId, update.status).catch(() => undefined)
+    results.push({ providerMessageId: update.providerMessageId, status: `status_${update.status}` as const })
+  }
   return results
 }
 

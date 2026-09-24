@@ -24,6 +24,9 @@ model AuthUser {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   invitations  TenantInvitation[] @relation("InvitationInvitee")
+  sentMessages CustomerMessage[] @relation("MessageSender")
+  assignedLeads     Lead[]     @relation("LeadAssignee")
+  assignedCustomers Customer[] @relation("CustomerAssignee")
 
   @@schema("wros")
 }
@@ -161,12 +164,16 @@ model Lead {
   itemTitle   String?
   stage       String    @default("new")
   valuePence  Int       @default(0)
+  tags        String[]  @default([])
+  assignedUserId String?
+  assignedUser   AuthUser? @relation("LeadAssignee", fields: [assignedUserId], references: [id], onDelete: SetNull)
   customerId  String?
   customer    Customer? @relation(fields: [customerId], references: [id])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   @@index([tenantId, stage])
+  @@index([assignedUserId])
   @@schema("wros")
 }
 
@@ -178,6 +185,9 @@ model Customer {
   email       String?
   phone       String?
   source      String?
+  tags        String[] @default([])
+  assignedUserId String?
+  assignedUser   AuthUser? @relation("CustomerAssignee", fields: [assignedUserId], references: [id], onDelete: SetNull)
   leads       Lead[]
   orders      SalesOrder[]
   messages    CustomerMessage[]
@@ -185,6 +195,7 @@ model Customer {
   updatedAt   DateTime @updatedAt
 
   @@index([tenantId])
+  @@index([assignedUserId])
   @@schema("wros")
 }
 
@@ -209,16 +220,36 @@ model SalesOrder {
 }
 
 model CustomerMessage {
-  id         String    @id @default(cuid())
-  tenantId   String
-  customerId String?
-  customer   Customer? @relation(fields: [customerId], references: [id])
-  channel    String    @default("whatsapp")
-  direction  String
-  body       String
-  createdAt  DateTime  @default(now())
+  id                String    @id @default(cuid())
+  tenantId          String
+  customerId        String?
+  customer          Customer? @relation(fields: [customerId], references: [id])
+  channel           String    @default("whatsapp")
+  direction         String
+  body              String
+  // Real, honest lifecycle for outbound messages: "sent" once the WhatsApp Cloud API accepts
+  // it, then "delivered"/"read" only when Meta's own status webhook reports it, or "failed" if
+  // the send errored. Inbound messages are stored as "received". Never advanced without a
+  // real webhook/API signal behind it.
+  status            String    @default("sent")
+  // WhatsApp's message ID for this send, used to match later delivered/read status webhooks
+  // back to this row. Null for inbound messages (which arrive with their own provider ID
+  // recorded on MessagingMessage instead) and for channels that don't return one.
+  providerMessageId String?   @unique
+  // Which FoundingOS user sent this (outbound only) — powers per-agent response analytics.
+  // Null for inbound (customer-sent) messages and for sends made before this field existed.
+  senderUserId      String?
+  senderUser        AuthUser? @relation("MessageSender", fields: [senderUserId], references: [id], onDelete: SetNull)
+  // Real inbound media (photo, voice note, document, video), downloaded from WhatsApp's Graph
+  // API and stored via Vercel Blob — mediaUrl is a real, viewable URL, not a placeholder. Both
+  // null when the message has no media or the download failed (the message still stores its
+  // honest text placeholder in `body` either way).
+  mediaUrl          String?
+  mediaType         String?
+  createdAt         DateTime  @default(now())
 
   @@index([tenantId, createdAt])
+  @@index([senderUserId])
   @@schema("wros")
 }
 

@@ -8,10 +8,25 @@ export type WhatsAppMessage = {
   timestamp?: string
   type?: string
   text?: { body?: string }
-  image?: { caption?: string }
-  video?: { caption?: string }
-  document?: { caption?: string; filename?: string }
+  image?: { id?: string; caption?: string; mime_type?: string }
+  video?: { id?: string; caption?: string; mime_type?: string }
+  audio?: { id?: string; mime_type?: string }
+  document?: { id?: string; caption?: string; filename?: string; mime_type?: string }
   location?: { name?: string; address?: string }
+}
+
+// Extracts the media ID/type off a message, if it has downloadable media — used to fetch and
+// store the real attachment rather than just its placeholder text.
+export function whatsAppMediaReference(message: WhatsAppMessage): { mediaId: string; mediaType: string } | null {
+  const type = message.type || 'text'
+  const mediaId = clean(
+    type === 'image' ? message.image?.id
+      : type === 'video' ? message.video?.id
+      : type === 'audio' || type === 'voice' ? message.audio?.id
+      : type === 'document' ? message.document?.id
+      : undefined,
+  )
+  return mediaId ? { mediaId, mediaType: type } : null
 }
 
 export type WhatsAppInbound = {
@@ -164,4 +179,44 @@ export function extractWhatsAppMessages(payload: unknown): WhatsAppInbound[] {
     }
   }
   return inbound
+}
+
+export type WhatsAppStatusUpdate = {
+  providerMessageId: string
+  // WhatsApp's own delivery lifecycle: "sent" -> "delivered" -> "read", or "failed".
+  status: 'sent' | 'delivered' | 'read' | 'failed'
+}
+
+// Meta sends delivery/read receipts as a separate `statuses[]` array alongside (or instead
+// of) `messages[]` in the same webhook shape — this is the one real, honest signal WhatsApp
+// gives us for a sent message's lifecycle, so it's the only way message status ever advances
+// past "sent" in FoundingOS. There is no equivalent webhook for "customer is typing"; Meta
+// does not expose that to businesses, so it isn't handled here.
+export function extractWhatsAppStatuses(payload: unknown): WhatsAppStatusUpdate[] {
+  if (!payload || typeof payload !== 'object') return []
+  const root = payload as Record<string, unknown>
+  if (root.object !== 'whatsapp_business_account' || !Array.isArray(root.entry)) return []
+
+  const updates: WhatsAppStatusUpdate[] = []
+  for (const entry of root.entry) {
+    if (!entry || typeof entry !== 'object') continue
+    const changes = (entry as Record<string, unknown>).changes
+    if (!Array.isArray(changes)) continue
+    for (const change of changes) {
+      if (!change || typeof change !== 'object') continue
+      const value = (change as Record<string, unknown>).value
+      if (!value || typeof value !== 'object') continue
+      const record = value as Record<string, unknown>
+      if (!Array.isArray(record.statuses)) continue
+      for (const status of record.statuses) {
+        if (!status || typeof status !== 'object') continue
+        const entryStatus = status as Record<string, unknown>
+        const providerMessageId = clean(entryStatus.id)
+        const rawStatus = clean(entryStatus.status)
+        if (!providerMessageId || !['sent', 'delivered', 'read', 'failed'].includes(rawStatus)) continue
+        updates.push({ providerMessageId, status: rawStatus as WhatsAppStatusUpdate['status'] })
+      }
+    }
+  }
+  return updates
 }

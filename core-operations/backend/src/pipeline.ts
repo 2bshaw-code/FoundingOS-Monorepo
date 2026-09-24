@@ -107,6 +107,32 @@ export const createLead = (input: Record<string, unknown>, authenticatedTenant?:
 
 export const updateLeadStage = (id: string, stage: unknown, tenantId?: string) => prisma.lead.update({ where: { id, ...(tenantId ? { tenantId } : {}) }, data: { stage: String(stage || 'new') } })
 
+// Bulk assign/tag for the Pipeline's multi-select bulk action bar. `assignedUserId: null`
+// intentionally unassigns; `undefined` (omitted) leaves assignment untouched. Tags replace
+// the full list (the console sends the complete desired set, not a delta) so there's one
+// clear source of truth rather than merge semantics that could surprise a second bulk actor.
+export const bulkUpdateLeads = (ids: string[], tenantId: string | undefined, changes: { assignedUserId?: string | null; tags?: string[] }) =>
+  prisma.lead.updateMany({
+    where: { id: { in: ids }, ...(tenantId ? { tenantId } : {}) },
+    data: {
+      ...(changes.assignedUserId !== undefined ? { assignedUserId: changes.assignedUserId } : {}),
+      ...(changes.tags !== undefined ? { tags: changes.tags } : {}),
+    },
+  })
+export const bulkUpdateCustomers = (ids: string[], tenantId: string | undefined, changes: { assignedUserId?: string | null; tags?: string[] }) =>
+  prisma.customer.updateMany({
+    where: { id: { in: ids }, ...(tenantId ? { tenantId } : {}) },
+    data: {
+      ...(changes.assignedUserId !== undefined ? { assignedUserId: changes.assignedUserId } : {}),
+      ...(changes.tags !== undefined ? { tags: changes.tags } : {}),
+    },
+  })
+
+// Bulk delete for the Pipeline's bulk action bar — permanently removes the selected leads.
+// Scoped to tenantId (when provided) so a bulk delete can never reach across tenants.
+export const bulkDeleteLeads = (ids: string[], tenantId: string | undefined) =>
+  prisma.lead.deleteMany({ where: { id: { in: ids }, ...(tenantId ? { tenantId } : {}) } })
+
 const customerData = (input: Record<string, unknown>) => ({
   companyName: String(input.companyName || '').trim(),
   contactName: input.contactName ? String(input.contactName).trim() : undefined,
@@ -115,13 +141,66 @@ const customerData = (input: Record<string, unknown>) => ({
   source: input.source ? String(input.source).trim() : undefined,
 })
 
-// Persists an outbound (or inbound, for future use) message against a customer's real
-// conversation thread. Called right after a WhatsApp send succeeds so a quick reply from the
-// console shows up immediately in the same CustomerMessage history the "View conversation"
-// panel reads — otherwise a sent reply would vanish from the thread until some other process
-// wrote it back.
-export const recordCustomerMessage = (tenantId: string, customerId: string, direction: 'inbound' | 'outbound', body: string, channel = 'whatsapp') =>
-  prisma.customerMessage.create({ data: { tenantId, customerId, direction, body, channel } })
+// Persists an outbound (or inbound) message against a customer's real conversation thread.
+// Called right after a WhatsApp send succeeds so a quick reply from the console shows up
+// immediately in the same CustomerMessage history the "View conversation" panel reads —
+// otherwise a sent reply would vanish from the thread until some other process wrote it back.
+// `providerMessageId` (outbound only, when the send returned one) lets a later WhatsApp
+// delivered/read status webhook find this exact row; `senderUserId` attributes an outbound
+// reply to the FoundingOS user who sent it, for per-agent analytics.
+export const recordCustomerMessage = (
+  tenantId: string,
+  customerId: string,
+  direction: 'inbound' | 'outbound',
+  body: string,
+  channel = 'whatsapp',
+  options: { providerMessageId?: string; senderUserId?: string; mediaUrl?: string; mediaType?: string } = {},
+) =>
+  prisma.customerMessage.create({
+    data: {
+      tenantId,
+      customerId,
+      direction,
+      body,
+      channel,
+      status: direction === 'inbound' ? 'received' : 'sent',
+      providerMessageId: options.providerMessageId,
+      senderUserId: options.senderUserId,
+      mediaUrl: options.mediaUrl,
+      mediaType: options.mediaType,
+    },
+  })
+
+// Applies a real WhatsApp delivered/read/failed status webhook to the matching CustomerMessage
+// row, found by the provider message ID recorded when it was sent. No-op (returns null) if no
+// row matches — e.g. the send happened before providerMessageId was tracked, or this status is
+// for a MessagingMessage-only send outside the console's quick-reply path.
+export const applyCustomerMessageStatus = async (providerMessageId: string, status: string) => {
+  const existing = await prisma.customerMessage.findUnique({ where: { providerMessageId } })
+  if (!existing) return null
+  return prisma.customerMessage.update({ where: { providerMessageId }, data: { status } })
+}
+
+// Real per-agent activity, computed from the same recent-messages window used elsewhere —
+// counts of outbound messages actually sent by each tracked FoundingOS user. Messages sent
+// before senderUserId existed, or sent by an automated flow with no user attached, are
+// grouped under a null "unattributed" bucket rather than silently dropped or guessed at.
+export const agentPerformance = async (tenantId?: string) => {
+  const where = { ...(tenantId ? { tenantId } : {}), direction: 'outbound' as const }
+  const messages = await prisma.customerMessage.findMany({ where, orderBy: { createdAt: 'desc' }, take: 200 })
+  const userIds = [...new Set(messages.map((message) => message.senderUserId).filter((id): id is string => Boolean(id)))]
+  const users = userIds.length ? await prisma.authUser.findMany({ where: { id: { in: userIds } } }) : []
+  const userById = new Map(users.map((user) => [user.id, user]))
+
+  const byAgent = new Map<string, { userId: string | null; email: string | null; messagesSent: number }>()
+  for (const message of messages) {
+    const key = message.senderUserId ?? 'unattributed'
+    const bucket = byAgent.get(key) ?? { userId: message.senderUserId, email: message.senderUserId ? userById.get(message.senderUserId)?.email ?? null : null, messagesSent: 0 }
+    bucket.messagesSent += 1
+    byAgent.set(key, bucket)
+  }
+  return [...byAgent.values()].sort((a, b) => b.messagesSent - a.messagesSent)
+}
 
 export const listCustomers = (tenantId?: string) => prisma.customer.findMany({ where: tenantId ? { tenantId } : {}, include: { leads: true }, orderBy: { updatedAt: 'desc' }, take: 100 })
 export const getCustomer = (id: string, tenantId?: string) => prisma.customer.findFirstOrThrow({ where: { id, ...(tenantId ? { tenantId } : {}) }, include: { leads: true, orders: true, messages: { orderBy: { createdAt: 'desc' }, take: 100 } } })

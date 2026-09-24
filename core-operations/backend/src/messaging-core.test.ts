@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { classifyMessagingIntent, describeWhatsAppMessageBody, extractWhatsAppMessages } from './messaging-intents.js'
+import { classifyMessagingIntent, describeWhatsAppMessageBody, extractWhatsAppMessages, extractWhatsAppStatuses } from './messaging-intents.js'
 import { buildIntelligenceBrief, explainActionForMessaging } from './intelligence-messaging.js'
 
 test('classifies structured and natural-language orders', () => {
@@ -96,6 +96,26 @@ test('extracts inbound WhatsApp messages with account context', () => {
     contactName: 'Bobby',
     message: { id: 'wamid.1', from: '447700900000', type: 'text', text: { body: '/status' } },
   }])
+})
+
+test('extracts delivered/read/failed status webhooks by provider message ID', () => {
+  assert.deepEqual(extractWhatsAppStatuses({
+    object: 'whatsapp_business_account',
+    entry: [{
+      changes: [{
+        value: {
+          statuses: [
+            { id: 'wamid.1', status: 'delivered' },
+            { id: 'wamid.2', status: 'read' },
+            { id: 'wamid.3', status: 'bogus' },
+          ],
+        },
+      }],
+    }],
+  }), [
+    { providerMessageId: 'wamid.1', status: 'delivered' },
+    { providerMessageId: 'wamid.2', status: 'read' },
+  ])
 })
 
 test('describes non-text WhatsApp messages honestly, without inventing content', () => {
