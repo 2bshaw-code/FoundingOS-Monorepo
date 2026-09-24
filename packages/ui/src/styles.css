@@ -449,6 +449,25 @@
   word-break: break-word;
 }
 
+/* Real inbound/outbound media (photo, document) attached to a message — kept compact so a
+   thread with several attachments doesn't overwhelm the panel. */
+.q-message-media-image {
+  max-width: 220px;
+  max-height: 220px;
+  border-radius: 10px;
+  margin-top: 6px;
+  display: block;
+  object-fit: cover;
+}
+
+.q-message-media-link {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--q-accent-0, #4da3ff);
+  text-decoration: underline;
+}
+
 /* An outbound message still in flight, or one that failed to send — kept visually distinct
    from confirmed "Sent" bubbles so a rep never mistakes an unsent reply for a delivered one. */
 .q-message-bubble--pending {

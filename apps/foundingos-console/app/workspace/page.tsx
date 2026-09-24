@@ -27,6 +27,7 @@ type PipelineSummary = {
     messagesPrior24h: number
   }
 }
+type AgentActivity = { userId: string | null; email: string | null; messagesSent: number }
 
 async function currentTenantUser(): Promise<TenantUser | null> {
   const token = cookies().get(TENANT_SESSION_COOKIE)?.value
@@ -71,6 +72,27 @@ function formatMoney(pence: number) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(pence / 100)
 }
 
+// Real per-agent message activity — who on the team is actually replying, from tracked
+// senderUserId on outbound CustomerMessage rows. Returns [] (not fabricated placeholder rows)
+// if the endpoint is unreachable or no one has sent a tracked message yet.
+async function fetchTeamActivity(): Promise<AgentActivity[]> {
+  const token = cookies().get(TENANT_SESSION_COOKIE)?.value
+  const apiRoot = coreOperationsApiRoot()
+  if (!token || !apiRoot) return []
+  try {
+    const response = await fetch(`${apiRoot}/ops/owner/team-performance`, {
+      headers: { authorization: 'Bearer ' + token },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (!response.ok) return []
+    const body = await response.json().catch(() => ({})) as { success?: boolean; data?: AgentActivity[] }
+    return body.data ?? []
+  } catch {
+    return []
+  }
+}
+
 // Honest "busier/quieter than yesterday" phrasing for the 24h message-volume metric — never
 // claims a precise percentage change from what's ultimately a capped, recent-window sample.
 function messageVolumeTrendDetail(last24h: number, prior24h: number) {
@@ -91,6 +113,7 @@ export default async function ConsoleWorkspacePage() {
 
   const pipeline = await fetchPipelineSummary()
   const recentLeads = (pipeline?.leads ?? []).slice(0, 5)
+  const teamActivity = await fetchTeamActivity()
 
   return (
     <main className="q-shell q-login-shell">
@@ -135,6 +158,20 @@ export default async function ConsoleWorkspacePage() {
           <a className="q-button q-button-primary" href="/workspace/pipeline">
             Go to Sales Pipeline
           </a>
+        </QuantumCard>
+      ) : null}
+      {teamActivity.length > 0 ? (
+        <QuantumCard brand={brands.foundingos}>
+          <p className={qText.overline}>Team activity</p>
+          <p className={qText.body}>Who's actually replying, from real sent messages.</p>
+          <div className="q-form-stack">
+            {teamActivity.map((agent) => (
+              <div key={agent.userId ?? 'unattributed'} className="q-list-row">
+                <span>{agent.email ?? 'Unattributed (automated or legacy send)'}</span>
+                <small>{agent.messagesSent} message{agent.messagesSent === 1 ? '' : 's'} sent</small>
+              </div>
+            ))}
+          </div>
         </QuantumCard>
       ) : null}
       <QuantumCard brand={brands.foundingos}>

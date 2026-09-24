@@ -17,9 +17,11 @@ export type PipelineLead = {
   customerId: string | null
   createdAt: string
   updatedAt: string
+  tags?: string[]
+  assignedUserId?: string | null
 }
 
-type ConversationMessage = { id: string; channel: string; direction: string; body: string; createdAt: string }
+type ConversationMessage = { id: string; channel: string; direction: string; body: string; createdAt: string; status?: string; mediaUrl?: string | null; mediaType?: string | null }
 type AiAnswer = {
   answer: string
   citations: Array<{ workspace: string; module: string; reference: string; name: string }>
@@ -35,6 +37,19 @@ const OPEN_STAGES = STAGES.filter((stage) => stage !== 'lost' && stage !== 'won'
 // How often to re-poll an open conversation panel for new inbound WhatsApp messages. Short
 // enough to feel live, long enough not to hammer Core.Operations while a rep is just reading.
 const CONVERSATION_POLL_MS = 6_000
+
+// Real, honest status label for an outbound message — reflects whatever WhatsApp's own
+// delivery/read webhook last reported (or "Sent" if no status webhook has landed yet), never
+// a guessed/simulated progression.
+function statusLabel(status: string | undefined) {
+  switch (status) {
+    case 'delivered': return 'Delivered ✓✓'
+    case 'read': return 'Read ✓✓'
+    case 'failed': return 'Failed'
+    case 'sent':
+    default: return 'Sent ✓'
+  }
+}
 
 function formatMoney(pence: number) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(pence / 100)
@@ -93,6 +108,7 @@ export function PipelineBoard({ initialLeads, awaitingReplySince = {} }: { initi
   const [aiAnswers, setAiAnswers] = useState<Record<string, AiAnswer | 'loading' | 'error'>>({})
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set())
   const [bulkUpdating, setBulkUpdating] = useState(false)
+  const [bulkTagInput, setBulkTagInput] = useState('')
 
   // Mirrors the KPI row and stage filter the mobile app's Sales Pipeline already has, so both
   // surfaces feel consistent for the same messaging-driven deals — computed client-side from
@@ -304,6 +320,84 @@ export function PipelineBoard({ initialLeads, awaitingReplySince = {} }: { initi
     setBulkUpdating(false)
   }
 
+  // Assigns the selected leads to whoever is currently signed in ("me" is resolved server-side
+  // to the authenticated user — the console never needs to know its own user ID), and adds a
+  // tag to all of them if one was entered. Uses the real PATCH /api/pipeline/bulk endpoint.
+  async function assignSelectedToMe() {
+    const ids = [...selectedLeadIds]
+    if (ids.length === 0) return
+    setBulkUpdating(true)
+    setError(null)
+    try {
+      const response = await fetch('/api/pipeline/bulk', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ids, assignedUserId: 'me' }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data?.error || 'Could not assign the selected leads.')
+      setSelectedLeadIds(new Set())
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not assign the selected leads.')
+    } finally {
+      setBulkUpdating(false)
+    }
+  }
+
+  async function tagSelected(tag: string) {
+    const ids = [...selectedLeadIds]
+    const cleanTag = tag.trim()
+    if (ids.length === 0 || !cleanTag) return
+    setBulkUpdating(true)
+    setError(null)
+    try {
+      // Merges the new tag onto each selected lead's own existing tags — a bulk tag action
+      // should add to what's already there, not overwrite one lead's tags with another's.
+      const targets = leads.filter((lead) => selectedLeadIds.has(lead.id))
+      await Promise.all(
+        targets.map((lead) => {
+          const existingTags = lead.tags ?? []
+          const nextTags = existingTags.includes(cleanTag) ? existingTags : [...existingTags, cleanTag]
+          return fetch('/api/pipeline/bulk', {
+            method: 'PATCH',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ ids: [lead.id], tags: nextTags }),
+          })
+        }),
+      )
+      setSelectedLeadIds(new Set())
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not tag the selected leads.')
+    } finally {
+      setBulkUpdating(false)
+    }
+  }
+
+  // Permanently deletes the selected leads — irreversible, so gated behind a plain confirm()
+  // rather than a silent one-click action.
+  async function deleteSelected() {
+    const ids = [...selectedLeadIds]
+    if (ids.length === 0) return
+    if (!window.confirm(`Permanently delete ${ids.length} lead${ids.length === 1 ? '' : 's'}? This cannot be undone.`)) return
+    setBulkUpdating(true)
+    setError(null)
+    try {
+      const response = await fetch('/api/pipeline/bulk', {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data?.error || 'Could not delete the selected leads.')
+      setLeads((current) => current.filter((lead) => !selectedLeadIds.has(lead.id)))
+      setSelectedLeadIds(new Set())
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not delete the selected leads.')
+    } finally {
+      setBulkUpdating(false)
+    }
+  }
+
   // Converts this lead into a real Customer, then opens its conversation panel immediately —
   // so going from "lead" to "I can see their WhatsApp history" is one action, not a detour to
   // another screen. Leads without a phone/email on file still convert, they'll just have no
@@ -414,8 +508,20 @@ export function PipelineBoard({ initialLeads, awaitingReplySince = {} }: { initi
                 <QuantumButtonGhost type="button" disabled={bulkUpdating} onClick={() => void markSelectedLost()}>
                   {bulkUpdating ? 'Updating…' : 'Mark selected as lost'}
                 </QuantumButtonGhost>
+                <QuantumButtonGhost type="button" disabled={bulkUpdating} onClick={() => void assignSelectedToMe()}>
+                  Assign to me
+                </QuantumButtonGhost>
+                <QuantumButtonGhost type="button" disabled={bulkUpdating} onClick={() => void deleteSelected()}>
+                  Delete selected
+                </QuantumButtonGhost>
                 <QuantumButtonGhost type="button" onClick={() => setSelectedLeadIds(new Set())}>
                   Clear selection
+                </QuantumButtonGhost>
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                <QuantumTextField label="Add a tag" placeholder="e.g. vip, follow-up" value={bulkTagInput} onChange={(event) => setBulkTagInput(event.target.value)} />
+                <QuantumButtonGhost type="button" disabled={bulkUpdating || !bulkTagInput.trim()} onClick={() => { void tagSelected(bulkTagInput); setBulkTagInput('') }}>
+                  Apply tag
                 </QuantumButtonGhost>
               </div>
             </QuantumCard>
@@ -443,6 +549,11 @@ export function PipelineBoard({ initialLeads, awaitingReplySince = {} }: { initi
                     Awaiting reply · {formatWaitingDuration(awaitingReplySinceIso)}
                   </span>
                 ) : null}
+                {(lead.tags ?? []).map((tag) => (
+                  <span key={tag} className="q-pill" style={{ marginLeft: 8 }}>
+                    {tag}
+                  </span>
+                ))}
               </p>
               <p className={qText.body}>
                 {lead.contactName ? `${lead.contactName} · ` : ''}
@@ -496,9 +607,16 @@ export function PipelineBoard({ initialLeads, awaitingReplySince = {} }: { initi
                                       <strong>{message.direction === 'inbound' ? lead.contactName || lead.companyName : 'You'}</strong>
                                       <span>· {message.channel}</span>
                                       <span>· {formatMessageTime(message.createdAt)}</span>
-                                      {message.direction === 'outbound' ? <span>· Sent ✓</span> : null}
+                                      {message.direction === 'outbound' ? <span>· {statusLabel(message.status)}</span> : null}
                                     </span>
                                     <span className="q-message-body">{message.body}</span>
+                                    {message.mediaUrl && message.mediaType === 'image' ? (
+                                      <img src={message.mediaUrl} alt="" className="q-message-media-image" />
+                                    ) : message.mediaUrl ? (
+                                      <a href={message.mediaUrl} target="_blank" rel="noreferrer" className="q-message-media-link">
+                                        Open attachment
+                                      </a>
+                                    ) : null}
                                   </div>
                                 </div>
                               )
