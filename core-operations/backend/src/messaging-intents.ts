@@ -8,12 +8,47 @@ export type WhatsAppMessage = {
   timestamp?: string
   type?: string
   text?: { body?: string }
+  image?: { caption?: string }
+  video?: { caption?: string }
+  document?: { caption?: string; filename?: string }
+  location?: { name?: string; address?: string }
 }
 
 export type WhatsAppInbound = {
   phoneNumberId: string
   contactName?: string
   message: WhatsAppMessage
+}
+
+// A customer's message body for storage/display. Text messages use their real content
+// verbatim; every other WhatsApp message type (photo, voice note, document, location, …) has
+// no text body at all, so rather than storing an empty string or silently dropping the
+// message, this returns an honest, human-readable placeholder — we don't yet store media
+// files themselves (that needs a schema change: a media URL/type column), so the placeholder
+// says what arrived without pretending to show its contents.
+export function describeWhatsAppMessageBody(message: WhatsAppMessage): string {
+  const type = message.type || 'text'
+  switch (type) {
+    case 'text':
+      return clean(message.text?.body)
+    case 'image':
+      return message.image?.caption ? `📷 Photo: ${clean(message.image.caption)}` : '📷 Photo (not yet viewable in FoundingOS)'
+    case 'video':
+      return message.video?.caption ? `🎥 Video: ${clean(message.video.caption)}` : '🎥 Video (not yet viewable in FoundingOS)'
+    case 'audio':
+    case 'voice':
+      return '🎤 Voice note (not yet playable in FoundingOS)'
+    case 'document':
+      return message.document?.filename ? `📎 Document: ${clean(message.document.filename)}` : '📎 Document (not yet viewable in FoundingOS)'
+    case 'sticker':
+      return '💬 Sticker'
+    case 'location':
+      return message.location?.name ? `📍 Shared location: ${clean(message.location.name)}` : '📍 Shared a location'
+    case 'contacts':
+      return '👤 Shared a contact card'
+    default:
+      return `Sent a ${type.replace(/_/g, ' ')} message (not yet supported in FoundingOS)`
+  }
 }
 
 export type MessagingIntent =

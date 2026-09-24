@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { classifyMessagingIntent, extractWhatsAppMessages } from './messaging-intents.js'
+import { classifyMessagingIntent, describeWhatsAppMessageBody, extractWhatsAppMessages } from './messaging-intents.js'
 import { buildIntelligenceBrief, explainActionForMessaging } from './intelligence-messaging.js'
 
 test('classifies structured and natural-language orders', () => {
@@ -96,4 +96,14 @@ test('extracts inbound WhatsApp messages with account context', () => {
     contactName: 'Bobby',
     message: { id: 'wamid.1', from: '447700900000', type: 'text', text: { body: '/status' } },
   }])
+})
+
+test('describes non-text WhatsApp messages honestly, without inventing content', () => {
+  assert.equal(describeWhatsAppMessageBody({ type: 'text', text: { body: 'Hello there' } }), 'Hello there')
+  assert.equal(describeWhatsAppMessageBody({ type: 'image', image: { caption: 'Here is the invoice' } }), '📷 Photo: Here is the invoice')
+  assert.equal(describeWhatsAppMessageBody({ type: 'image' }), '📷 Photo (not yet viewable in FoundingOS)')
+  assert.equal(describeWhatsAppMessageBody({ type: 'document', document: { filename: 'contract.pdf' } }), '📎 Document: contract.pdf')
+  assert.equal(describeWhatsAppMessageBody({ type: 'audio' }), '🎤 Voice note (not yet playable in FoundingOS)')
+  assert.equal(describeWhatsAppMessageBody({ type: 'location', location: { name: 'Shop' } }), '📍 Shared location: Shop')
+  assert.equal(describeWhatsAppMessageBody({ type: 'unsupported_type' }), 'Sent a unsupported type message (not yet supported in FoundingOS)')
 })

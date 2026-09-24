@@ -5,12 +5,13 @@
 import { Prisma } from './generated/prisma/index.js'
 import { prisma } from './auth.js'
 import { publishEvent } from './event-feed.js'
-import { classifyMessagingIntent, extractWhatsAppMessages, type MessagingIntent, type WhatsAppInbound } from './messaging-intents.js'
+import { classifyMessagingIntent, describeWhatsAppMessageBody, extractWhatsAppMessages, type MessagingIntent, type WhatsAppInbound } from './messaging-intents.js'
 import { createCampaign, createInvoice, createOrder, invoiceDocument, operationsSummary, updateOrder } from './operations.js'
 import { sendWhatsAppText } from './whatsapp.js'
 import { getIntegrationCredentials } from './platform.js'
 import { decideAgentAction, executeAgentAction, getAgentIntelligenceSummary, reverseAgentActionExecution } from './agent-actions.js'
 import { buildIntelligenceBrief, explainActionForMessaging } from './intelligence-messaging.js'
+import { normalizedPhone, recordCustomerMessage } from './pipeline.js'
 
 const json = (value: unknown): Prisma.InputJsonValue =>
   JSON.parse(JSON.stringify(value ?? {})) as Prisma.InputJsonValue
@@ -330,6 +331,20 @@ async function processInboundMessage(input: WhatsAppInbound) {
     source: 'messaging_core',
     payload: { channel: 'whatsapp', conversationId: conversation.id, providerMessageId, messageType: input.message.type, intent: intent.type },
   })
+
+  // The Sales Pipeline's "View conversation" panel reads a separate CustomerMessage
+  // history keyed by Customer, not by MessagingConversation — so a real inbound WhatsApp
+  // reply also needs to land there, matched by phone number, for it to actually show up
+  // live in that panel instead of only being visible to the agent-command flow above.
+  // Best-effort: most senders won't be a known Customer (e.g. a first-time lead before
+  // conversion), and that's expected, not an error.
+  const senderPhone = normalizedPhone(sender)
+  if (senderPhone) {
+    const matchedCustomer = await prisma.customer.findFirst({ where: { tenantId: connection.tenantId, phone: senderPhone } })
+    if (matchedCustomer) {
+      await recordCustomerMessage(connection.tenantId, matchedCustomer.id, 'inbound', describeWhatsAppMessageBody(input.message))
+    }
+  }
 
   const participant = await prisma.messagingParticipant.findUnique({
     where: { tenantId_channel_address: { tenantId: connection.tenantId, channel: 'whatsapp', address: sender } },

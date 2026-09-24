@@ -7,7 +7,7 @@ import { createBobRouter } from '@foundingos/bob'
 import { createModuleAccessMiddleware } from '@foundingos/service-auth'
 import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess } from './auth.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
-import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
+import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, recordCustomerMessage, updateCustomer, updateLeadStage } from './pipeline.js'
 import { assignDelivery, createCampaign, createDeliveryOperator, createDeliveryVehicle, createDeliveryZone, createInventoryItem, createInvoice, createOrder, createSocialPost, deleteInventoryItem, detectLocation, generateMedia, getBrandProfile, invoiceDocument, operationsSummary, orderDocument, saveBrandProfile, saveLocationProfile, searchInventory, sendInvoice, updateCampaign, updateDeliveryAssignment, updateDeliveryNotification, updateDeliveryOperator, updateDeliveryVehicle, updateDeliveryZone, updateInventoryItem, updateInvoice, updateOrder, updateSocialPost, weatherAt } from './operations.js'
 import { addMerchantStaff, merchantWorkspace, ownerMerchantSummary, removeMerchantStaff, resetMerchantPassword, reviewMerchantChange, submitMerchantChange, updateMerchantStaff } from './merchant.js'
 import { listEvents, predictEventPattern, publishEvent, queryEvents, registerEventStreamClient, summarizeEventPattern } from './event-feed.js'
@@ -20,6 +20,7 @@ import { decideAgentAction, executeAgentAction, getAgentActionTrail, getAgentInt
 import { isSuiteLicensed, listTenantSuiteLicenses, setTenantSuiteLicense } from './licensing.js'
 import { createTelemetryRateLimiter, emitBackendTelemetry, ingestTelemetryEvents, parseTelemetryBatch, queryTelemetryEvents, queryTelemetrySummary, resolveOptionalTenantId } from './telemetry.js'
 import { listFeatureFlags, upsertFeatureFlag, validateFeatureFlagInput, validateFeatureFlagKey } from './feature-flags.js'
+import { askFoundAi, isAiConfigured } from './ai.js'
 
 const requireTenant: RequestHandler = (_req, res, next) => {
   if (res.locals.auth?.role === 'founder_master') return next()
@@ -40,6 +41,29 @@ const requireFounderMaster: RequestHandler = (_req, res, next) => {
 const telemetryRateLimit = createTelemetryRateLimiter()
 export const apiRouter = Router()
 apiRouter.get('/status', (_req, res) => res.json({ app: 'core_operations', status: 'operational' }))
+// Lets any signed-in client check FoundAI's availability up front (e.g. to hide/grey out an
+// "Ask FoundAI" button) instead of only finding out via a failed /ai/ask call.
+apiRouter.get('/ai/status', requireMerchantAccess, requireTenant, (_req, res) => res.json({ success: true, data: { enabled: isAiConfigured() } }))
+apiRouter.post('/ai/ask', requireMerchantAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.json({
+      success: true,
+      data: await askFoundAi({
+        tenantId,
+        actorId: res.locals.auth.id,
+        question: req.body?.question,
+        workspace: req.body?.workspace,
+        module: req.body?.module,
+        customerId: req.body?.customerId,
+        requestId: res.locals.requestId,
+      }),
+    })
+  } catch (error) {
+    next(error)
+  }
+})
 // Real, cross-suite suite-licensing gate. Core.Workforce and
 // Core.Intelligence call this over HTTP (via FOUNDER_API_URL +
 // createModuleAccessMiddleware); Core.Operations checks it locally for
@@ -557,6 +581,23 @@ apiRouter.patch('/customers/:id', requireOwnerAccess, requireTenant, requireCore
 })
 apiRouter.delete('/customers/:id', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { res.json({ success: true, data: await deleteCustomer(String(req.params.id), readTenant(req, res)) }) } catch (error) { next(error) }
+})
+// Quick-reply from the console's Pipeline conversation panel — sends a real WhatsApp message
+// via the same Cloud API path /whatsapp/messages already uses, then records it as an
+// outbound CustomerMessage so it appears in the thread immediately, not just on the provider
+// side. Requires the customer to have a phone number on file (set when the lead converts).
+apiRouter.post('/customers/:id/messages', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    const text = String(req.body?.text || '').trim()
+    if (!text) return res.status(400).json({ success: false, message: 'Enter a message to send.' })
+    const customer = await getCustomer(String(req.params.id), tenantId)
+    if (!customer.phone) return res.status(422).json({ success: false, message: 'This customer has no WhatsApp number on file yet.' })
+    const credentials = await getIntegrationCredentials(tenantId, 'whatsapp')
+    await sendWhatsAppText(customer.phone, text, undefined, credentials)
+    res.status(201).json({ success: true, data: await recordCustomerMessage(tenantId, customer.id, 'outbound', text) })
+  } catch (error) { next(error) }
 })
 apiRouter.post('/leads', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { res.status(201).json({ success: true, data: await createLead(req.body || {}, writeTenant(req, res) || undefined) }) } catch (error) { next(error) }
