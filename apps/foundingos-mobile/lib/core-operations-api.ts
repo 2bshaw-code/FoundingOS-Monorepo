@@ -627,6 +627,31 @@ export type WorkspaceRecordDTO = {
 export const fetchWorkspaceRecords = (workspace: string, module: string) =>
   authedRequest<WorkspaceRecordDTO[]>(`/api/v1/ops/platform/workspaces/${workspace}/${module}/records`)
 
+export type FoundAiCitation = {
+  workspace: string
+  module: string
+  reference: string
+  name: string
+}
+
+export type FoundAiResponse = {
+  answer: string
+  citations: FoundAiCitation[]
+  suggestedActions: string[]
+  model: string
+}
+
+export const askFoundAi = (input: { question: string; workspace?: string; module?: string }) =>
+  authedRequest<FoundAiResponse>('/api/v1/ops/ai/ask', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+
+// Cheap up-front check so the search screen can show a plain "FoundAI isn't set up yet"
+// notice instead of only finding out after a full round trip that fails.
+export const fetchFoundAiStatus = () =>
+  authedRequest<{ enabled: boolean }>('/api/v1/ops/ai/status').catch(() => ({ enabled: false }))
+
 export const createWorkspaceRecord = (
   workspace: string,
   module: string,
@@ -639,7 +664,7 @@ export const createWorkspaceRecord = (
 
 export const updateWorkspaceRecord = (
   id: string,
-  input: { version: number; status?: string; name?: string; valuePence?: number; data?: Record<string, unknown> },
+  input: { version: number; status?: string; name?: string; valuePence?: number | null; data?: Record<string, unknown> },
 ) => authedRequest<WorkspaceRecordDTO>(`/api/v1/ops/platform/records/${id}`, { method: 'PATCH', body: JSON.stringify(input) })
 
 // Uploads a photo captured/picked on-device (via expo-image-picker in the

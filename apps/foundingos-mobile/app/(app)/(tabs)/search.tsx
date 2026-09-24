@@ -6,10 +6,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { router } from 'expo-router'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import { FOUNDINGOS_ACCENT } from '../../../lib/brands'
-import { answerCommandBarQuery, isAskableQuery, type CommandBarAnswer } from '../../../lib/ai-command-bar'
+import { answerCommandBarQuery, askFoundAiQuestion, isAskableQuery, type CommandBarAnswer, type FoundAiAnswer } from '../../../lib/ai-command-bar'
+import { fetchFoundAiStatus } from '../../../lib/core-operations-api'
 import { searchCatalogue } from '../../../lib/nav-directory'
 import { ENTRANCE_DURATION_MS, staggerDelay, useReducedMotionPreference } from '../../../lib/motion'
 import {
+  QuantumButton,
   QuantumCard,
   QuantumEmptyState,
   QuantumHeader,
@@ -38,6 +40,23 @@ export default function SearchScreen() {
   const reduceMotion = useReducedMotionPreference()
   const [answer, setAnswer] = useState<CommandBarAnswer | null>(null)
   const [answerLoading, setAnswerLoading] = useState(false)
+  const [aiAnswer, setAiAnswer] = useState<FoundAiAnswer | null>(null)
+  const [aiError, setAiError] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  // Checked once up front so the button can say "not set up yet" instead of only failing
+  // after the user asks a question — this used to require a manual, easy-to-forget
+  // AI_ENABLED=true alongside ANTHROPIC_API_KEY on the backend; now it's just the key.
+  const [aiEnabled, setAiEnabled] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchFoundAiStatus().then((status) => {
+      if (!cancelled) setAiEnabled(status.enabled)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     if (!isAskableQuery(query)) {
@@ -56,6 +75,21 @@ export default function SearchScreen() {
       cancelled = true
     }
   }, [query])
+
+  const askFoundAi = async () => {
+    const question = query.trim()
+    if (!question) return
+    setAiLoading(true)
+    setAiError('')
+    try {
+      setAiAnswer(await askFoundAiQuestion(question))
+    } catch (error: any) {
+      setAiAnswer(null)
+      setAiError(error?.message || 'FoundAI could not answer that question.')
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   const goToPhotoIntake = () => router.push('/workspace/retail/inventory')
 
@@ -78,6 +112,28 @@ export default function SearchScreen() {
         onChangeText={setQuery}
         autoFocus
       />
+
+      {query.trim() ? (
+        <QuantumCard accent={FOUNDINGOS_ACCENT}>
+          <QuantumText variant="h3">Ask FoundAI</QuantumText>
+          <QuantumText variant="caption">Uses your permitted workspace records, returns cited guidance, and never takes an external action without review.</QuantumText>
+          {aiEnabled === false ? (
+            <QuantumText variant="caption" color={quantumColors.warning}>FoundAI isn&apos;t set up for this account yet — ask your admin to add an Anthropic API key.</QuantumText>
+          ) : (
+            <QuantumButton onPress={askFoundAi} disabled={aiLoading || aiEnabled === null}>
+              {aiLoading ? 'Thinking…' : 'Ask FoundAI'}
+            </QuantumButton>
+          )}
+          {aiError ? <QuantumText variant="caption" color={quantumColors.warning}>{aiError}</QuantumText> : null}
+          {aiAnswer ? (
+            <>
+              <QuantumText>{aiAnswer.answer}</QuantumText>
+              {aiAnswer.citations.length ? <QuantumText variant="caption">Sources: {aiAnswer.citations.map((citation) => `${citation.workspace} · ${citation.module} · ${citation.reference}`).join(' • ')}</QuantumText> : null}
+              {aiAnswer.suggestedActions.map((action) => <QuantumText key={action} variant="caption">• {action}</QuantumText>)}
+            </>
+          ) : null}
+        </QuantumCard>
+      ) : null}
 
       {answerLoading ? (
         <QuantumCard>

@@ -7,6 +7,7 @@ import 'react-native-gesture-handler'
 import Constants from 'expo-constants'
 import { Stack, ThemeProvider, DarkTheme } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { enableScreens } from 'react-native-screens'
 import { CrashBoundary } from '../components/CrashBoundary'
@@ -39,22 +40,27 @@ export default function RootLayout() {
   }, [])
 
   return (
-    <SafeAreaProvider>
-      <ThemeProvider value={DarkTheme}>
-        <QuantumBackground>
-          <StatusBar style="light" />
-          <CrashBoundary>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: 'transparent' },
-                animation: 'fade_from_bottom',
-                gestureEnabled: true,
-              }}
-            />
-          </CrashBoundary>
-        </QuantumBackground>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    // react-native-gesture-handler v2 requires a single GestureHandlerRootView
+    // ancestor for gestures (e.g. the sales pipeline's swipe-to-advance cards)
+    // to work reliably alongside react-native-screens, which is enabled above.
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider value={DarkTheme}>
+          <QuantumBackground>
+            <StatusBar style="light" />
+            <CrashBoundary>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: 'transparent' },
+                  animation: 'fade_from_bottom',
+                  gestureEnabled: true,
+                }}
+              />
+            </CrashBoundary>
+          </QuantumBackground>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   )
 }

@@ -13,12 +13,15 @@
 // real data, and is a clean seam to swap in a real LLM-backed assistant
 // later without touching any call site.
 import { fetchApprovalsQueue, type ApprovalsQueueItem } from './approvals-queue'
+import { askFoundAi, type FoundAiResponse } from './core-operations-api'
 
 export type CommandBarAnswer = {
   headline: string
   detail: string
   items: ApprovalsQueueItem[]
 }
+
+export type FoundAiAnswer = FoundAiResponse
 
 type Intent = 'attention' | 'count' | 'overdue' | 'greeting' | null
 
@@ -35,6 +38,8 @@ function detectIntent(query: string): Intent {
 export function isAskableQuery(query: string): boolean {
   return detectIntent(query) !== null
 }
+
+export const askFoundAiQuestion = (query: string) => askFoundAi({ question: query })
 
 export async function answerCommandBarQuery(query: string): Promise<CommandBarAnswer | null> {
   const intent = detectIntent(query)

@@ -32,6 +32,7 @@ import {
   QuantumScreen,
   QuantumSkeletonList,
   QuantumText,
+  QuantumTextInput,
   quantumColors,
   quantumSpace,
   useActiveQuantumTheme,
@@ -60,6 +61,30 @@ function classifyModuleKind(module: WorkspaceModuleDef): ModuleKind {
   if (DASHBOARD_MODULE_IDS.has(module.id)) return 'dashboard'
   if (module.statuses && module.statuses.length > 0) return 'kanban'
   return 'records'
+}
+
+function recordFormCopy(module: WorkspaceModuleDef) {
+  const singular = module.label.replace(/ies$/i, 'y').replace(/s$/i, '').toLowerCase()
+  const labels: Record<string, { name: string; reference: string; notes: string }> = {
+    patients: { name: 'Patient name', reference: 'Patient reference', notes: 'Care notes' },
+    appointments: { name: 'Appointment title', reference: 'Booking reference', notes: 'Appointment notes' },
+    'care-plans': { name: 'Care plan title', reference: 'Plan reference', notes: 'Care notes' },
+    triage: { name: 'Triage case', reference: 'Case reference', notes: 'Assessment notes' },
+    candidates: { name: 'Candidate name', reference: 'Candidate reference', notes: 'Candidate notes' },
+    jobs: { name: 'Role title', reference: 'Job reference', notes: 'Role notes' },
+    invoices: { name: 'Customer or invoice title', reference: 'Invoice number', notes: 'Invoice notes' },
+    bills: { name: 'Supplier or bill title', reference: 'Bill reference', notes: 'Bill notes' },
+    deliveries: { name: 'Delivery title', reference: 'Delivery reference', notes: 'Delivery notes' },
+    dispatch: { name: 'Dispatch title', reference: 'Dispatch reference', notes: 'Dispatch instructions' },
+    products: { name: 'Product name', reference: 'SKU', notes: 'Product notes' },
+    inventory: { name: 'Stock item', reference: 'SKU or stock reference', notes: 'Stock notes' },
+    orders: { name: 'Order title', reference: 'Order reference', notes: 'Order notes' },
+  }
+  return labels[module.id] ?? {
+    name: `${module.label} name`,
+    reference: `${module.label} reference`,
+    notes: `${singular[0]?.toUpperCase() ?? ''}${singular.slice(1)} notes`,
+  }
 }
 
 // Modules where a product/stock photo is meaningful — Retail's Products and
@@ -105,6 +130,20 @@ export default function WorkspaceModuleScreen() {
   // rather than migrating every render branch to FlatList.
   const RENDER_PAGE_SIZE = 60
   const [renderLimit, setRenderLimit] = useState(RENDER_PAGE_SIZE)
+  const [selectedInboxRecordId, setSelectedInboxRecordId] = useState<string | null>(null)
+  const [showComposer, setShowComposer] = useState(false)
+  const [recipient, setRecipient] = useState('')
+  const [subject, setSubject] = useState('')
+  const [messageBody, setMessageBody] = useState('')
+  const [sendingMessage, setSendingMessage] = useState(false)
+  const [showRecordForm, setShowRecordForm] = useState(false)
+  const [editingRecord, setEditingRecord] = useState<WorkspaceRecordDTO | null>(null)
+  const [recordName, setRecordName] = useState('')
+  const [recordReference, setRecordReference] = useState('')
+  const [recordValue, setRecordValue] = useState('')
+  const [recordNotes, setRecordNotes] = useState('')
+  const [recordStatus, setRecordStatus] = useState('')
+  const [savingRecord, setSavingRecord] = useState(false)
 
   const load = useCallback(
     async (isRefresh = false) => {
@@ -187,34 +226,94 @@ export default function WorkspaceModuleScreen() {
     }
   }
 
-  async function addRecord() {
+  function openRecordForm(record?: WorkspaceRecordDTO) {
+    setEditingRecord(record ?? null)
+    setRecordName(record?.name ?? '')
+    setRecordReference(record?.reference ?? '')
+    setRecordValue(record?.valuePence === null || record?.valuePence === undefined ? '' : String(record.valuePence / 100))
+    setRecordNotes(typeof record?.data?.notes === 'string' ? record.data.notes : '')
+    setRecordStatus(record?.status ?? statuses?.[0] ?? 'New')
+    setShowRecordForm(true)
+  }
+
+  async function saveRecord() {
     if (!workspace || !module) return
-    // Optimistic: show the new record in the list immediately with a
-    // temporary id, then swap in the server's real record once it responds.
-    const tempId = `temp-${Date.now()}`
-    const optimisticRecord: WorkspaceRecordDTO = {
-      id: tempId,
-      reference: `${module.id}-${Date.now()}`,
-      name: `New ${module.label.toLowerCase()}`,
-      status: statuses?.[0] ?? 'New',
-      ownerId: null,
-      valuePence: null,
-      data: {},
-      version: 0,
-      updatedAt: new Date().toISOString(),
+    const name = recordName.trim()
+    if (!name) {
+      showError(new Error(`${recordFormCopy(module).name} is required.`))
+      return
     }
-    setRecords((current) => [optimisticRecord, ...current])
+    const parsedValue = recordValue.trim() ? Number(recordValue.replace(/[^\d.]/g, '')) : null
+    if (parsedValue !== null && (!Number.isFinite(parsedValue) || parsedValue < 0)) {
+      showError(new Error('Enter a valid value in pounds.'))
+      return
+    }
+    const reference = recordReference.trim() || `${module.id.toUpperCase().slice(0, 4)}-${Date.now()}`
+    const data = recordNotes.trim() ? { notes: recordNotes.trim() } : {}
+    setSavingRecord(true)
+    try {
+      if (editingRecord) {
+        const updated = await updateWorkspaceRecord(editingRecord.id, {
+          version: editingRecord.version,
+          name,
+          status: recordStatus,
+          valuePence: parsedValue === null ? null : Math.round(parsedValue * 100),
+          data,
+        })
+        setRecords((current) => current.map((item) => (item.id === updated.id ? updated : item)))
+        logAction('record_updated', 'success', { module: module.id })
+      } else {
+        const created = await createWorkspaceRecord(workspace.slug, module.id, {
+          reference,
+          name,
+          status: recordStatus,
+          valuePence: parsedValue === null ? undefined : Math.round(parsedValue * 100),
+          data,
+        })
+        setRecords((current) => [created, ...current])
+        logAction('record_created', 'success', { module: module.id })
+      }
+      setShowRecordForm(false)
+      setEditingRecord(null)
+    } catch (err) {
+      showError(err, saveRecord)
+    } finally {
+      setSavingRecord(false)
+    }
+  }
+
+  async function queueMessage() {
+    if (!workspace || !module) return
+    const to = recipient.trim()
+    const body = messageBody.trim()
+    if (!to || !body) {
+      showError(new Error('Add a recipient and a message before queuing it.'))
+      return
+    }
+    setSendingMessage(true)
     try {
       const created = await createWorkspaceRecord(workspace.slug, module.id, {
-        reference: optimisticRecord.reference,
-        name: optimisticRecord.name,
-        status: optimisticRecord.status,
+        reference: `OUT-${Date.now()}`,
+        name: subject.trim() || `Message to ${to}`,
+        status: 'Queued',
+        data: {
+          direction: 'outbound',
+          recipient: to,
+          subject: subject.trim() || null,
+          body,
+          channel: 'email',
+        },
       })
-      setRecords((current) => current.map((item) => (item.id === tempId ? created : item)))
-      logAction('record_created', 'success', { module: module.id })
+      setRecords((current) => [created, ...current])
+      setSelectedInboxRecordId(created.id)
+      setRecipient('')
+      setSubject('')
+      setMessageBody('')
+      setShowComposer(false)
     } catch (err) {
-      setRecords((current) => current.filter((item) => item.id !== tempId))
-      showError(err, addRecord)
+      showError(err, queueMessage)
+    } finally {
+      setSendingMessage(false)
     }
   }
 
@@ -310,6 +409,7 @@ export default function WorkspaceModuleScreen() {
             Move to {next}
           </QuantumButton>
         ) : null}
+        <QuantumButton tone="ghost" onPress={() => openRecordForm(record)}>Edit details</QuantumButton>
       </QuantumCard>
     )
   }
@@ -339,8 +439,9 @@ export default function WorkspaceModuleScreen() {
       <QuantumListItem
         key={record.id}
         title={record.name}
-        subtitle={`${record.status} · ${record.reference}`}
+        subtitle={`${record.data?.direction === 'outbound' ? 'To' : 'From'} ${String(record.data?.recipient ?? record.reference)} · ${record.status}`}
         accent={isUnread ? workspace!.accent : quantumColors.neutral300}
+        onPress={() => setSelectedInboxRecordId(record.id)}
         trailing={
           next ? (
             <QuantumButton tone="secondary" onPress={() => advance(record)} disabled={busy}>
@@ -349,6 +450,61 @@ export default function WorkspaceModuleScreen() {
           ) : undefined
         }
       />
+    )
+  }
+
+  function renderInbox() {
+    const selectedRecord = records.find((record) => record.id === selectedInboxRecordId)
+    return (
+      <View style={styles.inboxLayout}>
+        <QuantumCard accent={workspace!.accent} style={styles.inboxToolbar}>
+          <View style={styles.headerRow}>
+            <View style={styles.inboxToolbarCopy}>
+              <QuantumText variant="h3">Inbox</QuantumText>
+              <QuantumText variant="caption" color={theme.subtextColor}>Read conversations, draft replies, and keep a clear outbox.</QuantumText>
+            </View>
+            <QuantumButton tone="secondary" onPress={() => setShowComposer((visible) => !visible)}>
+              {showComposer ? 'Close' : 'Compose'}
+            </QuantumButton>
+          </View>
+          <QuantumText variant="caption" color={theme.subtextColor}>
+            Email delivery requires a connected mail channel. Messages created here are saved as queued outbox records until a delivery integration is configured.
+          </QuantumText>
+        </QuantumCard>
+
+        {showComposer ? (
+          <QuantumCard accent={workspace!.accent} style={styles.composer}>
+            <QuantumText variant="h3">New message</QuantumText>
+            <QuantumTextInput value={recipient} onChangeText={setRecipient} placeholder="To (email address or contact)" autoCapitalize="none" keyboardType="email-address" />
+            <QuantumTextInput value={subject} onChangeText={setSubject} placeholder="Subject (optional)" />
+            <QuantumTextInput value={messageBody} onChangeText={setMessageBody} placeholder="Write your message" multiline style={styles.messageInput} />
+            <QuantumButton onPress={queueMessage} disabled={sendingMessage}>
+              {sendingMessage ? 'Queuing…' : 'Queue message'}
+            </QuantumButton>
+          </QuantumCard>
+        ) : null}
+
+        {selectedRecord ? (
+          <QuantumCard accent={workspace!.accent} style={styles.messageDetail}>
+            <View style={styles.headerRow}>
+              <View style={styles.inboxToolbarCopy}>
+                <QuantumText variant="h3">{selectedRecord.name}</QuantumText>
+                <QuantumText variant="caption" color={theme.subtextColor}>
+                  {selectedRecord.data?.direction === 'outbound' ? 'To' : 'From'} {String(selectedRecord.data?.recipient ?? selectedRecord.reference)}
+                </QuantumText>
+              </View>
+              <QuantumButton tone="ghost" onPress={() => setSelectedInboxRecordId(null)}>Back to list</QuantumButton>
+            </View>
+            <QuantumText variant="caption" color={workspace!.accent}>{selectedRecord.status.toUpperCase()}</QuantumText>
+            <QuantumText>{String(selectedRecord.data?.body ?? 'No message body has been recorded for this conversation.')}</QuantumText>
+            <QuantumButton tone="secondary" onPress={() => { setRecipient(String(selectedRecord.data?.recipient ?? '')); setSubject(`Re: ${selectedRecord.name}`); setShowComposer(true) }}>
+              Reply
+            </QuantumButton>
+          </QuantumCard>
+        ) : (
+          <View style={styles.list}>{pagedRecords.map(renderInboxRow)}{renderShowMore()}</View>
+        )}
+      </View>
     )
   }
 
@@ -381,7 +537,7 @@ export default function WorkspaceModuleScreen() {
           ) : null}
           {copy ? <QuantumText variant="caption" color={quantumColors.neutral500}>{copy.extensibility}</QuantumText> : null}
           {showAddButton ? (
-            <QuantumButton onPress={addRecord}>Add the first {module?.label.toLowerCase().replace(/s$/, '') ?? 'record'}</QuantumButton>
+            <QuantumButton onPress={() => openRecordForm()}>Add the first {module?.label.toLowerCase().replace(/s$/, '') ?? 'record'}</QuantumButton>
           ) : null}
           <QuantumText variant="caption" color={quantumColors.neutral500}>Nothing here is simulated — this fills in as real activity happens.</QuantumText>
         </View>
@@ -417,7 +573,7 @@ export default function WorkspaceModuleScreen() {
       )
     }
 
-    if (kind === 'inbox') return <View style={styles.list}>{pagedRecords.map(renderInboxRow)}{renderShowMore()}</View>
+    if (kind === 'inbox') return renderInbox()
     if (kind === 'config' || kind === 'dashboard') return <View style={styles.list}>{pagedRecords.map(renderQuietRow)}{renderShowMore()}</View>
     return <View style={styles.list}>{pagedRecords.map(renderRecordCard)}{renderShowMore()}</View>
   }
@@ -448,11 +604,39 @@ export default function WorkspaceModuleScreen() {
           {records.length} record{records.length === 1 ? '' : 's'}
         </QuantumText>
         {showAddButton ? (
-          <QuantumButton tone="secondary" onPress={addRecord}>
-            + Add
+          <QuantumButton tone="secondary" onPress={() => openRecordForm()}>
+            + Add {module.label.replace(/s$/i, '')}
           </QuantumButton>
         ) : null}
       </View>
+
+      {showRecordForm ? (
+        <QuantumCard accent={workspace.accent} style={styles.recordForm}>
+          <View style={styles.headerRow}>
+            <View style={styles.formCopy}>
+              <QuantumText variant="h3">{editingRecord ? `Edit ${module.label.replace(/s$/i, '')}` : `Add ${module.label.replace(/s$/i, '')}`}</QuantumText>
+              <QuantumText variant="caption" color={theme.subtextColor}>This creates only the information you enter. You can edit it again at any time.</QuantumText>
+            </View>
+            <QuantumButton tone="ghost" onPress={() => { setShowRecordForm(false); setEditingRecord(null) }}>Cancel</QuantumButton>
+          </View>
+          <QuantumTextInput value={recordName} onChangeText={setRecordName} placeholder={recordFormCopy(module).name} autoCapitalize="words" />
+          <QuantumTextInput value={recordReference} onChangeText={setRecordReference} placeholder={`${recordFormCopy(module).reference} (optional)`} />
+          <QuantumTextInput value={recordValue} onChangeText={setRecordValue} placeholder="Value in pounds (optional)" keyboardType="decimal-pad" />
+          <QuantumTextInput value={recordNotes} onChangeText={setRecordNotes} placeholder={recordFormCopy(module).notes} multiline style={styles.notesInput} />
+          {statuses?.length ? (
+            <View style={styles.pillRow}>
+              {statuses.map((status) => (
+                <QuantumPill key={status} active={recordStatus === status} accent={workspace.accent} onPress={() => setRecordStatus(status)}>
+                  {status}
+                </QuantumPill>
+              ))}
+            </View>
+          ) : null}
+          <QuantumButton onPress={saveRecord} disabled={savingRecord}>
+            {savingRecord ? 'Saving…' : editingRecord ? 'Save changes' : `Add ${module.label.replace(/s$/i, '')}`}
+          </QuantumButton>
+        </QuantumCard>
+      ) : null}
 
       {showStatusPills && filterOptions.length > 0 ? (
         <View style={styles.pillRow}>
@@ -478,7 +662,7 @@ const styles = StyleSheet.create({
   // Tighter padding than the default card so 3+ KPIs fit their row without
   // their labels overflowing into the neighbouring card on narrow phones.
   kpiCard: { flex: 1, minWidth: 0, paddingHorizontal: quantumSpace.sm, paddingVertical: quantumSpace.md },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: quantumSpace.sm },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
   kanbanScroll: { gap: quantumSpace.md, paddingBottom: quantumSpace.sm },
   kanbanColumn: { width: 220, gap: quantumSpace.sm },
@@ -493,6 +677,15 @@ const styles = StyleSheet.create({
   },
   thumbnailImage: { width: '100%', height: '100%' },
   list: { gap: quantumSpace.md },
+  inboxLayout: { gap: quantumSpace.md },
+  inboxToolbar: { gap: quantumSpace.sm },
+  inboxToolbarCopy: { flex: 1, minWidth: 0, gap: quantumSpace.xs },
+  composer: { gap: quantumSpace.sm },
+  messageInput: { minHeight: 132, textAlignVertical: 'top' },
+  messageDetail: { gap: quantumSpace.md },
+  recordForm: { gap: quantumSpace.sm },
+  formCopy: { flex: 1, minWidth: 0, gap: quantumSpace.xs },
+  notesInput: { minHeight: 108, textAlignVertical: 'top' },
   emptyState: { gap: quantumSpace.sm },
   emptyExampleBox: { gap: 2, paddingVertical: quantumSpace.xs },
   recordCard: { gap: quantumSpace.sm },

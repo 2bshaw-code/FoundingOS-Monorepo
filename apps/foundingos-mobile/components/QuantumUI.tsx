@@ -172,7 +172,7 @@ export function QuantumScreen({ children, scroll = true, refreshControl, style, 
         style={StyleSheet.absoluteFill}
       />
       <View pointerEvents="none" style={[styles.screenGlow, { backgroundColor: theme.accent, opacity: 0.07 }]} />
-      <SafeAreaView style={containerStyle} edges={['left', 'right', 'bottom']}>
+      <SafeAreaView style={containerStyle} edges={['top', 'left', 'right', 'bottom']}>
         {scroll ? (
           <ScrollView
             style={styles.flex}
