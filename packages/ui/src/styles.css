@@ -231,6 +231,30 @@
   padding: 0;
 }
 
+/* Stage-filter pills for Pipeline (and any future list needing quick filtering) — mirrors
+   the mobile app's filter pills so both surfaces group deals by stage the same way. */
+.q-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.q-pill {
+  border: 1px solid color-mix(in srgb, var(--q-accent) 34%, rgba(255, 255, 255, 0.14));
+  border-radius: 999px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--q-neutral-100);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.q-pill-active {
+  background: var(--q-accent);
+  color: var(--q-base);
+}
+
 .q-field span,
 .q-toggle strong {
   color: var(--q-neutral-0);
@@ -363,6 +387,78 @@
 
 .q-list-row small {
   color: var(--q-neutral-200);
+}
+
+/* Conversation thread inside the Pipeline's "View conversation" panel — a messaging-first OS
+   should make a real WhatsApp thread feel like a chat, not a plain log line. */
+.q-conversation-thread {
+  display: grid;
+  gap: 10px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 4px 2px;
+}
+
+/* "Today"/"Yesterday"/date separators between groups of messages, the same convention
+   WhatsApp itself uses — keeps a long thread scannable instead of a wall of bubbles. */
+.q-conversation-day {
+  justify-self: center;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--q-neutral-200);
+  margin: 6px 0 0;
+}
+
+.q-message-bubble {
+  display: grid;
+  gap: 4px;
+  max-width: 82%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.q-message-bubble--inbound {
+  justify-self: start;
+  background: rgba(255, 255, 255, 0.06);
+  border-bottom-left-radius: 4px;
+}
+
+.q-message-bubble--outbound {
+  justify-self: end;
+  background: color-mix(in srgb, var(--q-accent) 22%, rgba(255, 255, 255, 0.06));
+  border-bottom-right-radius: 4px;
+}
+
+.q-message-meta {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  font-size: 11px;
+  color: var(--q-neutral-200);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.q-message-body {
+  color: var(--q-neutral-0);
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* An outbound message still in flight, or one that failed to send — kept visually distinct
+   from confirmed "Sent" bubbles so a rep never mistakes an unsent reply for a delivered one. */
+.q-message-bubble--pending {
+  opacity: 0.65;
+  border-style: dashed;
+}
+
+.q-message-bubble--failed {
+  border-color: color-mix(in srgb, #ff6b6b 55%, rgba(255, 255, 255, 0.12));
+  background: color-mix(in srgb, #ff6b6b 12%, rgba(255, 255, 255, 0.06));
 }
 
 .q-form-stack,
@@ -9862,11 +9958,27 @@ body[data-sidebar-collapsed='true'] .nav-card {
   text-transform: uppercase;
 }
 
+/* The site-wide button:focus-visible rule (outline: 2px solid; outline-offset: 3px)
+   draws a rectangular ring around this round button after it's clicked/tapped,
+   so it visibly no longer "fits" the circular fab. Replace it with a circular
+   ring that matches the button's own radius instead of suppressing focus
+   feedback entirely. */
+.found-ai-fab:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--found-ai-accent), 0 18px 40px var(--found-ai-glow), 0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
 .found-ai-panel {
   position: fixed;
-  top: 104px;
+  /* Auto-fit to the page: fill almost the full viewport height with a small
+     consistent margin, instead of the old fixed 104px/96px top/bottom insets
+     that made it look like a short floating box partway down the screen.
+     --topbar-height is only set inside .console-shell-page (the product
+     console shell); on the marketing site, where there's no topbar, this
+     falls back to 0 so the panel still reaches almost to the very top. */
+  top: calc(var(--topbar-height, 0px) + 16px);
   right: 24px;
-  bottom: 96px;
+  bottom: 16px;
   width: min(380px, calc(100vw - 48px));
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto auto auto;
@@ -11349,8 +11461,8 @@ body[data-sidebar-collapsed='true'] .nav-card {
     left: 12px;
     right: 12px;
     width: auto;
-    top: 116px;
-    bottom: 84px;
+    top: calc(var(--topbar-height, 0px) + 12px);
+    bottom: 12px;
   }
 
   .found-ai-fab {
