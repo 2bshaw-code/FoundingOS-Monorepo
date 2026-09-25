@@ -1,26 +1,33 @@
-# FoundingOS Workspace
+# FoundingOS
 
-Isolated scaffold for FoundingOS, FoundRetail, FoundThis, FoundMeat, and FoundTalent.
+FoundingOS is the unified operating system for founder-run businesses, centered on three suites: Core.Operations, Core.Workforce, and Core.Intelligence.
 
-## Applications
+Positioning statement: FoundingOS gives founder-led companies one shared operating layer for operations, workforce, and intelligence so they can run the business, manage the team, and make decisions from the same system instead of stitching together brand-specific tools.
 
-| Application | Frontend hostname | Frontend port | Backend port | PostgreSQL schema |
-| --- | --- | ---: | ---: | --- |
-| FoundRetail | `localhost:3000` | 3000 | 4000 | `foundretail` |
-| FoundMeat | `localhost:3001` | 3001 | 4001 | `foundmeat` |
-| FoundThis | `localhost:3002` | 3002 | 4002 | `foundthis` |
-| FoundTalent | `localhost:3003` | 3003 | 4003 | `foundtalent` |
-| FoundCrypto | `localhost:3004` | 3004 | 4004 | `foundcrypto` |
-| FoundingOS Console | `localhost:3005` | 3005 | 5000 | `founder_os` |
+This repository is organized around the shared FoundingOS platform rather than the legacy brand silo model. FoundMeat, FoundCrypto, and the FoundThat scraping engine are explicitly deprecated and are not treated as active product surfaces in the current platform architecture.
 
-The hostnames are documented targets only. This scaffold does not edit `/etc/hosts`, proxies, DNS, server configuration, or existing environment files.
+## Active suites
+
+| Suite | Purpose | Primary console |
+| --- | --- | --- |
+| Core.Operations | retail operations, orders, messaging, and business control | `founder-os` / console |
+| Core.Workforce | workforce workflows, staffing, and hiring operations | `founder-os` / console |
+| Core.Intelligence | first-party signals, lead intelligence, and reporting | `founder-os` / console |
+
+## Deprecated products
+
+- FoundMeat: deprecated and removed from active API/module references.
+- FoundCrypto: deprecated and removed from active API/module references.
+- FoundThat scraping: deprecated. First-party intelligence is the active path.
 
 ## Shared packages
 
-- `@foundingos/service-auth`: role and access-policy utilities
-- `@foundingos/legacy-ui`: shared React primitives
-- `@foundingos/media`: shared media-upload contracts and helpers
+- `@founder-os/auth`: auth, RBAC, and access-policy helpers
+- `@founder-os/bob`: AI operator and workflow integration
+- `@founder-os/ui`: shared React primitives
+- `@founder-os/brand-assets`: shared mark assets
+- `@founder-os/media`: media contracts and helpers
 
-## Safety
+## Repository posture
 
-No dependencies have been installed, no database migrations have been created or run, and no deployment configuration has been changed. Copy each backend's `.env.example` to a local ignored `.env` only when development begins.
+This is a working monorepo, not a one-shot rewrite. The current goal is to preserve unrelated work while consolidating the active platform around FoundingOS, its three current suites, and the product boundaries already documented in the restructure notes.

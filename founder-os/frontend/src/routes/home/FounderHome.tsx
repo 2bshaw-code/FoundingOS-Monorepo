@@ -16,14 +16,12 @@ export default function FounderHome() {
       }}
     >
       <h1 style={{ fontSize: '48px', marginBottom: '20px' }}>FoundingOS</h1>
-      <p style={{ fontSize: '20px', marginBottom: '40px' }}>Select a brand</p>
+      <p style={{ fontSize: '20px', marginBottom: '40px' }}>Select a suite</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <Link style={linkStyle} to="/foundretail/">FoundRetail</Link>
-        <Link style={linkStyle} to="/foundmeat/">FoundMeat</Link>
-        <Link style={linkStyle} to="/foundthis/">FoundThis</Link>
-        <Link style={linkStyle} to="/foundtalent/">FoundTalent</Link>
-        <Link style={linkStyle} to="/foundcrypto/">FoundCrypto</Link>
+        <Link style={linkStyle} to="/foundretail/">Core.Operations</Link>
+        <Link style={linkStyle} to="/foundthis/">Core.Intelligence</Link>
+        <Link style={linkStyle} to="/foundtalent/">Core.Workforce</Link>
       </div>
     </div>
   )

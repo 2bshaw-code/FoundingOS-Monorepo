@@ -3,8 +3,8 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { type FormEvent, useEffect, useState } from "react";
-import { Card, Header, FoundCryptoLogo, FoundRetailLogo } from "@founder-os/ui";
-import { FoundThisBrandMark, FoundMeatBrandMark, FoundTalentBrandMark } from "@founder-os/brand-assets";
+import { Card, Header, FoundRetailLogo } from "@founder-os/ui";
+import { FoundThisBrandMark, FoundTalentBrandMark } from "@founder-os/brand-assets";
 import { authClient } from "./auth";
 
 type CompanyModule = { module: string; enabled: boolean };
@@ -23,17 +23,13 @@ type Company = {
   };
   modules: CompanyModule[];
 };
-const modules = ["foundretail", "foundcrypto", "foundthis", "foundit", "foundmeat", "foundtalent"] as const;
+const modules = ["foundretail", "foundthis", "foundit", "foundtalent"] as const;
 const moduleLabel = (module: (typeof modules)[number]) =>
   module === "foundretail"
-    ? "FoundRetail"
-    : module === "foundcrypto"
-      ? "FoundCrypto"
-    :     module === "foundthis" || module === "foundit"
-      ? "FoundThis"
-      : module === "foundmeat"
-        ? "FoundMeat"
-        : "FoundTalent";
+    ? "Core.Operations"
+    : module === "foundthis" || module === "foundit"
+      ? "Core.Intelligence"
+      : "Core.Workforce";
 
 export function CompanyManagement() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -164,12 +160,10 @@ export function CompanyManagement() {
               >
                 <input type="checkbox" name={module} />
                 {module === "foundretail"
-                  ? "FoundRetail"
-                  : module === "foundcrypto"
-                    ? "FoundCrypto"
-                    : module === "foundthis" || module === "foundit"
-                      ? "FoundThis"
-                      : "FoundMeat"}
+                  ? "Core.Operations"
+                  : module === "foundthis" || module === "foundit"
+                    ? "Core.Intelligence"
+                    : "Core.Workforce"}
               </label>
             ))}
             <button className="rounded bg-[var(--primary)] px-5 py-2 font-semibold text-white">
@@ -193,19 +187,15 @@ export function CompanyManagement() {
               <div className="flex items-center gap-3">
                 {company.slug === "foundretail" ? (
                   <FoundRetailLogo className="h-9 w-9" />
-                ) : company.slug === "foundcrypto" ? (
-                  <FoundCryptoLogo className="h-9 w-9" />
                 ) : company.slug === "foundthis" || company.slug === "foundit" ? (
                   <FoundThisBrandMark className="h-9 w-9" />
-                ) : company.slug === "foundmeat" ? (
-                  <FoundMeatBrandMark className="h-9 w-9" />
                 ) : company.slug === "foundtalent" ? (
                   <FoundTalentBrandMark className="h-9 w-9" />
                 ) : (
                   <span
                     className="h-9 w-9 border border-[var(--line)]"
                     style={{
-                      background: company.settings?.brandColor || (company.slug === "foundcrypto" ? "#7C3AED" : "#006CFF"),
+                      background: company.settings?.brandColor || "#006CFF",
                     }}
                   />
                 )}
@@ -255,8 +245,8 @@ export function CompanyManagement() {
                 Brand colour
                 <input
                   type="color"
-                  value={company.slug === "foundthis" || company.slug === "foundit" ? "#FFD600" : company.slug === "foundtalent" ? "#F97316" : company.slug === "foundcrypto" ? "#7C3AED" : company.slug === "foundretail" ? "#25D366" : company.settings?.brandColor || "#006CFF"}
-                  disabled={company.slug === "foundthis" || company.slug === "foundit" || company.slug === "foundtalent" || company.slug === "foundcrypto" || company.slug === "foundretail"}
+                  value={company.slug === "foundthis" || company.slug === "foundit" ? "#FFD600" : company.slug === "foundtalent" ? "#F97316" : company.slug === "foundretail" ? "#25D366" : company.settings?.brandColor || "#006CFF"}
+                  disabled={company.slug === "foundthis" || company.slug === "foundit" || company.slug === "foundtalent" || company.slug === "foundretail"}
                   onChange={(event) =>
                     void update(company, {
                       settings: {

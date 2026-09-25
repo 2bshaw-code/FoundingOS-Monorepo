@@ -1,5 +1,5 @@
 {
-  "name": "@foundingos/service-auth",
+  "name": "@founder-os/auth",
   "private": true,
   "version": "0.1.0",
   "type": "module",

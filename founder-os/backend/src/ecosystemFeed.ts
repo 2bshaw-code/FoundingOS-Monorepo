@@ -6,9 +6,8 @@ import type { Request } from 'express'
 
 const services = {
   foundretail: `${process.env.FOUNDRETAIL_API_URL || 'http://127.0.0.1:4001/api/v1'}/owner/overview`,
-  foundcrypto: `${process.env.FOUNDCRYPTO_API_URL || 'http://127.0.0.1:4002/api/v1'}/crypto/overview`,
-  foundmeat: `${process.env.FOUNDMEAT_API_URL || 'http://127.0.0.1:4004/api/v1'}/owner`,
   foundtalent: `${process.env.FOUNDTALENT_API_URL || 'http://127.0.0.1:5050/api/v1'}/owner`,
+  foundit: `${process.env.FOUNDIT_API_URL || 'http://127.0.0.1:4003/api/v1'}/owner`,
 } as const
 
 const readService = async (url: string, authorization: string) => {
@@ -33,6 +32,11 @@ export const forwardFoundRetailCommand = async (request: Request, path: string, 
 
 export const fetchEcosystemFeed = async (request: Request) => {
   const authorization = request.get('authorization') || ''
-  const [foundretail, foundcrypto, foundmeat, foundtalent] = await Promise.all([readService(services.foundretail, authorization), readService(services.foundcrypto, authorization), readService(services.foundmeat, authorization), readService(services.foundtalent, authorization)])
-  return { foundretail, foundcrypto, foundmeat, foundtalent, refreshedAt: new Date().toISOString() }
+  const [foundretail, foundit, foundtalent] = await Promise.all([
+    readService(services.foundretail, authorization),
+    readService(services.foundit, authorization),
+    readService(services.foundtalent, authorization),
+  ])
+
+  return { foundretail, foundit, foundtalent, refreshedAt: new Date().toISOString() }
 }

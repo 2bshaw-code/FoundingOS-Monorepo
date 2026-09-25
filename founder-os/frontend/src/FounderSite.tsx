@@ -3,31 +3,27 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { useEffect, useState, type CSSProperties } from 'react'
-import { BrandCard, BrandLogo, Card, FoundCryptoLogo, FoundRetailLogo } from '@founder-os/ui'
-import { FoundThisBrandMark, FoundMeatBrandMark, FoundTalentBrandMark } from '@founder-os/brand-assets'
+import { BrandCard, BrandLogo, Card, FoundRetailLogo } from '@founder-os/ui'
+import { FoundThisBrandMark, FoundTalentBrandMark } from '@founder-os/brand-assets'
 import { FounderOsLogo } from '@founder-os/ui/logo'
 import { BobIntroCard } from './components/BobIntroCard'
 
 type PublicCompany = { id: string; name: string; slug: string; publicWebsiteUrl: string | null; ownerConsoleUrl: string | null; merchantConsoleUrl: string | null; settings?: { brandColor?: string } | null; modules: Array<{ module: string }> }
 type BrandHub = { slug: string; name: string; description: string; accent: string; features: string[]; siteUrl: string; loginUrl: string; ownerConsoleUrl: string; merchantConsoleUrl: string }
 const companyDetails: Record<string, { category: string; description: string; accent: string }> = {
-  foundretail: { category: 'FoundRetail', description: 'Retail operations, staff consoles, customer workflows, and primary control in one connected workspace.', accent: '#25D366' },
-  foundcrypto: { category: 'FoundCrypto', description: 'Crypto charting, signal monitoring, trade automation, and risk controls in one connected workspace.', accent: '#7C3AED' },
-  foundthis: { category: 'FoundThis', description: 'A circular marketplace connecting communities with local merchants, useful products, and nearby opportunities.', accent: '#FFD600' },
-  foundit: { category: 'FoundThis', description: 'A circular marketplace connecting communities with local merchants, useful products, and nearby opportunities.', accent: '#FFD600' },
-  foundmeat: { category: 'Community Meat Trading OS', description: 'Trusted local infrastructure for suppliers, buyers, stock discovery, and community buyers.', accent: '#B00020' },
-  foundtalent: { category: 'Workforce Intelligence OS', description: 'Job scraping, applicant scoring, labour market intelligence, and FoundAI onboarding in one brand.', accent: '#F97316' },
+  foundretail: { category: 'Core.Operations', description: 'Retail operations, staff consoles, customer workflows, and primary control in one connected workspace.', accent: '#25D366' },
+  foundthis: { category: 'Core.Intelligence', description: 'A circular marketplace connecting communities with local merchants, useful products, and nearby opportunities.', accent: '#FFD600' },
+  foundit: { category: 'Core.Intelligence', description: 'A circular marketplace connecting communities with local merchants, useful products, and nearby opportunities.', accent: '#FFD600' },
+  foundtalent: { category: 'Core.Workforce', description: 'Workforce intelligence, applicant scoring, labour market intelligence, and FoundAI onboarding in one platform.', accent: '#F97316' },
 }
 const brandDefaults: Record<string, BrandHub> = {
-  foundretail: { slug: 'foundretail', name: 'FoundRetail', description: 'Retail OS for product catalogues, customer messages, orders, and staff operations.', accent: '#25D366', features: ['Catalogue browsing', 'Orders and inventory', 'Customer messaging', 'Retail Manager and Staff consoles'], siteUrl: 'http://localhost:5210/console', loginUrl: 'http://localhost:5210/console', ownerConsoleUrl: 'http://localhost:5210/console', merchantConsoleUrl: 'http://localhost:5210/console' },
-  foundmeat: { slug: 'foundmeat', name: 'FoundMeat', description: 'Supply chain OS for trusted butchers, farms, and trade operations.', accent: '#B00020', features: ['Stock discovery', 'Trade workflows', 'Supplier relationships', 'Supplier and buyer consoles'], siteUrl: 'http://localhost:5220/console', loginUrl: 'http://localhost:5220/console', ownerConsoleUrl: 'http://localhost:5220/console', merchantConsoleUrl: 'http://localhost:5220/console' },
-  foundthis: { slug: 'foundthis', name: 'FoundThis', description: 'Market and competitor intelligence with local discovery workflows.', accent: '#FFD600', features: ['Market intelligence', 'Merchant discovery', 'Scraped links', 'Intelligence and data operations consoles'], siteUrl: 'http://localhost:5230/console', loginUrl: 'http://localhost:5230/console', ownerConsoleUrl: 'http://localhost:5230/console', merchantConsoleUrl: 'http://localhost:5230/console' },
-  foundit: { slug: 'foundthis', name: 'FoundThis', description: 'Market and competitor intelligence with local discovery workflows.', accent: '#FFD600', features: ['Market intelligence', 'Merchant discovery', 'Scraped links', 'Intelligence and data operations consoles'], siteUrl: 'http://localhost:5230/console', loginUrl: 'http://localhost:5230/console', ownerConsoleUrl: 'http://localhost:5230/console', merchantConsoleUrl: 'http://localhost:5230/console' },
-  foundtalent: { slug: 'foundtalent', name: 'FoundTalent', description: 'Workforce intelligence, hiring analytics, and WhatsApp-native candidate workflows.', accent: '#F97316', features: ['Job scraping', 'Applicant scoring', 'Hiring analytics', 'Talent manager, recruiter, and applicant consoles'], siteUrl: 'http://localhost:5240/console', loginUrl: 'http://localhost:5240/console', ownerConsoleUrl: 'http://localhost:5240/console', merchantConsoleUrl: 'http://localhost:5240/console' },
-  foundcrypto: { slug: 'foundcrypto', name: 'FoundCrypto', description: 'Crypto analytics, trigger monitoring, trade automation, and managed risk tools.', accent: '#7C3AED', features: ['Chart analysis', 'Trigger monitoring', 'Auto-execution', 'Risk controls'], siteUrl: 'http://localhost:5250/console', loginUrl: 'http://localhost:5250/console', ownerConsoleUrl: 'http://localhost:5250/console', merchantConsoleUrl: 'http://localhost:5250/console' },
+  foundretail: { slug: 'foundretail', name: 'Core.Operations', description: 'Retail OS for product catalogues, customer messages, orders, and staff operations.', accent: '#25D366', features: ['Catalogue browsing', 'Orders and inventory', 'Customer messaging', 'Retail Manager and Staff consoles'], siteUrl: 'http://localhost:5210/console', loginUrl: 'http://localhost:5210/console', ownerConsoleUrl: 'http://localhost:5210/console', merchantConsoleUrl: 'http://localhost:5210/console' },
+  foundthis: { slug: 'foundthis', name: 'Core.Intelligence', description: 'Market and competitor intelligence with local discovery workflows.', accent: '#FFD600', features: ['Market intelligence', 'Merchant discovery', 'Scraped links', 'Intelligence and data operations consoles'], siteUrl: 'http://localhost:5230/console', loginUrl: 'http://localhost:5230/console', ownerConsoleUrl: 'http://localhost:5230/console', merchantConsoleUrl: 'http://localhost:5230/console' },
+  foundit: { slug: 'foundthis', name: 'Core.Intelligence', description: 'Market and competitor intelligence with local discovery workflows.', accent: '#FFD600', features: ['Market intelligence', 'Merchant discovery', 'Scraped links', 'Intelligence and data operations consoles'], siteUrl: 'http://localhost:5230/console', loginUrl: 'http://localhost:5230/console', ownerConsoleUrl: 'http://localhost:5230/console', merchantConsoleUrl: 'http://localhost:5230/console' },
+  foundtalent: { slug: 'foundtalent', name: 'Core.Workforce', description: 'Workforce intelligence, hiring analytics, and WhatsApp-native candidate workflows.', accent: '#F97316', features: ['Applicant scoring', 'Hiring analytics', 'Team coordination', 'Talent manager, recruiter, and applicant consoles'], siteUrl: 'http://localhost:5240/console', loginUrl: 'http://localhost:5240/console', ownerConsoleUrl: 'http://localhost:5240/console', merchantConsoleUrl: 'http://localhost:5240/console' },
 }
 const detailFor = (company: PublicCompany) => companyDetails[company.slug] || companyDetails[company.modules[0]?.module] || { category: 'FoundingOS company', description: 'A company managed through the FoundingOS control centre.', accent: '#006CFF' }
-const companyMark = (company: PublicCompany) => company.slug === 'foundthis' || company.slug === 'foundit' ? <FoundThisBrandMark className="founder-site-brand-mark"/> : company.slug === 'foundmeat' ? <FoundMeatBrandMark className="founder-site-brand-mark"/> : company.slug === 'foundtalent' ? <FoundTalentBrandMark className="founder-site-brand-mark"/> : company.slug === 'foundcrypto' ? <FoundCryptoLogo className="founder-site-brand-mark"/> : company.slug === 'foundretail' ? <FoundRetailLogo className="founder-site-brand-mark"/> : <span className="founder-site-brand-mark">{company.name.slice(0, 1)}</span>
+const companyMark = (company: PublicCompany) => company.slug === 'foundthis' || company.slug === 'foundit' ? <FoundThisBrandMark className="founder-site-brand-mark"/> : company.slug === 'foundtalent' ? <FoundTalentBrandMark className="founder-site-brand-mark"/> : company.slug === 'foundretail' ? <FoundRetailLogo className="founder-site-brand-mark"/> : <span className="founder-site-brand-mark">{company.name.slice(0, 1)}</span>
 export function FounderSite() {
   const [companies, setCompanies] = useState<PublicCompany[]>([])
   useEffect(() => {
@@ -48,7 +44,7 @@ export function FounderSite() {
         <div className="founder-site-hero-copy">
           <p className="founder-site-eyebrow">FoundingOS</p>
           <h1>FoundingOS</h1>
-          <p className="founder-site-subtitle">The unified operating system powering FoundRetail, FoundCrypto, FoundThis, FoundMeat, and FoundTalent.</p>
+          <p className="founder-site-subtitle">The unified operating system powering Core.Operations, Core.Workforce, and Core.Intelligence.</p>
           <a className="founder-site-primary" href="/console">Console</a>
         </div>
         <div className="founder-site-system" aria-label="FoundingOS brand network">
@@ -114,7 +110,7 @@ export function FounderSite() {
         </div>
       </section>
 
-      <footer className="founder-site-footer">FoundingOS — Parent company of FoundRetail, FoundCrypto, FoundThis, FoundMeat, and FoundTalent.</footer>
+      <footer className="founder-site-footer">FoundingOS — Parent company of Core.Operations, Core.Workforce, and Core.Intelligence.</footer>
     </main>
   )
 }

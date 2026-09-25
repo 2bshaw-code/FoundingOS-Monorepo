@@ -7,11 +7,9 @@ import { BrandLogo, ImageBlock } from '@founder-os/ui'
 import { BobIntroCard } from '../components/BobIntroCard'
 
 const brandCards = [
-  { label: 'FoundRetail', href: 'http://localhost:5210', brand: 'foundretail', accent: '#25D366', title: 'E-Commerce Solutions' },
-  { label: 'FoundMeat', href: 'http://localhost:5220', brand: 'foundmeat', accent: '#F94144', title: 'Supply Chain & Logistics' },
-  { label: 'FoundThis', href: 'http://localhost:5230', brand: 'foundthis', accent: '#FFD600', title: 'Data & Leads' },
-  { label: 'FoundTalent', href: 'http://localhost:5240', brand: 'foundtalent', accent: '#F97316', title: 'Talent Acquisition' },
-  { label: 'FoundCrypto', href: 'http://localhost:5250', brand: 'foundcrypto', accent: '#7C3AED', title: 'Crypto & Finance' },
+  { label: 'Core.Operations', href: 'http://localhost:5210', brand: 'foundretail', accent: '#25D366', title: 'E-Commerce Solutions' },
+  { label: 'Core.Intelligence', href: 'http://localhost:5230', brand: 'foundthis', accent: '#FFD600', title: 'Data & Leads' },
+  { label: 'Core.Workforce', href: 'http://localhost:5240', brand: 'foundtalent', accent: '#F97316', title: 'Talent Acquisition' },
 ] as const
 
 const featureCards = [
@@ -308,7 +306,7 @@ export function Home() {
           <div className="hero-copy">
             <div className="eyebrow">FoundingOS</div>
             <h1>Build &amp; Scale Your Brands with Confidence.</h1>
-            <p>The unified ecosystem powering FoundRetail, FoundMeat, FoundThis, FoundTalent, FoundCrypto.</p>
+            <p>The unified ecosystem powering Core.Operations, Core.Intelligence, and Core.Workforce.</p>
             <div className="cta-row">
               <a href="#products" className="secondary-btn">Explore Brands</a>
             </div>
@@ -372,11 +370,9 @@ export function Home() {
                 </div>
 
                 <div className="brand-pills">
-                  <span className="pill retail">FoundRetail</span>
-                  <span className="pill metrics">FoundMeat</span>
-                  <span className="pill meat">FoundThis</span>
-                  <span className="pill crypto">FoundTalent</span>
-                  <span className="pill purple">FoundCrypto</span>
+                  <span className="pill retail">Core.Operations</span>
+                  <span className="pill metrics">Core.Intelligence</span>
+                  <span className="pill meat">Core.Workforce</span>
                 </div>
               </div>
             </div>
@@ -680,11 +676,9 @@ export function StatusPage() {
       <div className="status-grid">
         {[
           ['FoundingOS', 'Operational'],
-          ['FoundRetail', 'Operational'],
-          ['FoundMeat', 'Operational'],
-          ['FoundThis', 'Operational'],
-          ['FoundTalent', 'Operational'],
-          ['FoundCrypto', 'Operational'],
+          ['Core.Operations', 'Operational'],
+          ['Core.Intelligence', 'Operational'],
+          ['Core.Workforce', 'Operational'],
         ].map(([service, health]) => (
           <article key={service} className="status-row">
             <span>{service}</span>

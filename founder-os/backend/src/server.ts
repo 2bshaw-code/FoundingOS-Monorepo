@@ -11,7 +11,7 @@ import { passkeyRouter } from './passkeys.js'
 
 const app = express()
 const port = Number(process.env.PORT || 5050)
-const defaultOrigins = 'http://founder-os.frontend.local,http://foundretail.frontend.local,http://foundcrypto.frontend.local,http://foundit.frontend.local,http://foundmeat.frontend.local,http://foundtalent.frontend.local,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,http://localhost:3002,http://127.0.0.1:3002,http://localhost:3003,http://127.0.0.1:3003,http://localhost:3004,http://127.0.0.1:3004,http://localhost:3005,http://127.0.0.1:3005'
+const defaultOrigins = 'http://founder-os.frontend.local,http://core-operations.frontend.local,http://core-workforce.frontend.local,http://core-intelligence.frontend.local,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,http://localhost:3002,http://127.0.0.1:3002,http://localhost:3003,http://127.0.0.1:3003,http://localhost:3005,http://127.0.0.1:3005'
 if (process.env.NODE_ENV === 'production' && !process.env.CORS_ORIGINS) throw new Error('CORS_ORIGINS is required in production')
 const allowedOrigins = (process.env.CORS_ORIGINS || defaultOrigins).split(',').map((value) => value.trim()).filter(Boolean)
 if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1)
