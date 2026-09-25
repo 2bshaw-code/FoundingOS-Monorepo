@@ -15,10 +15,11 @@ import path from 'node:path'
 import { cp, mkdir, writeFile } from 'node:fs/promises'
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
+await mkdir(path.join(root, 'api/_bundle'), { recursive: true })
 
 await build({
   entryPoints: [path.join(root, 'core-operations/backend/src/vercel-entry.ts')],
-  outfile: path.join(root, 'api/index.js'),
+  outfile: path.join(root, 'api/_bundle/index.js'),
   bundle: true,
   platform: 'node',
   target: 'node20',
@@ -46,17 +47,18 @@ await build({
 // esbuild preserves the original relative specifier text for externalized
 // relative imports (e.g. "./generated/prisma/index.js") without rewriting it
 // for the new output location, so the generated Prisma client must physically
-// live at api/generated/prisma to resolve correctly at runtime.
+// live alongside the bundle output under api/_bundle/generated/prisma to
+// resolve correctly at runtime.
 const generatedSrc = path.join(root, 'core-operations/backend/src/generated/prisma')
-const generatedDest = path.join(root, 'api/generated/prisma')
+const generatedDest = path.join(root, 'api/_bundle/generated/prisma')
 await mkdir(path.dirname(generatedDest), { recursive: true })
 await cp(generatedSrc, generatedDest, { recursive: true })
 
 // bcrypt has a native binary and is kept external too. Vercel's automatic
 // dependency tracing does not reliably include it for this bundle, so copy
-// it directly next to the function entry where Node resolves it first.
+// it directly next to the bundle output where Node resolves it first.
 const bcryptSrc = path.join(root, 'node_modules/bcrypt')
-const bcryptDest = path.join(root, 'api/node_modules/bcrypt')
+const bcryptDest = path.join(root, 'api/_bundle/node_modules/bcrypt')
 await mkdir(path.dirname(bcryptDest), { recursive: true })
 await cp(bcryptSrc, bcryptDest, { recursive: true })
 
