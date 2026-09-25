@@ -23,7 +23,7 @@ core-workforce/backend/src/generated/
 # Generated Vercel serverless bundle for Core.Operations backend
 /api/index.js
 !/api/index.js
-/api/_bundle/
+/dist/core-operations-api/
 /api/generated/
 /api/node_modules/
 /public/

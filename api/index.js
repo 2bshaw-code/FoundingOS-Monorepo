@@ -1,1 +1,1 @@
-module.exports = require('./_bundle/index.js')
+module.exports = require('../dist/core-operations-api/index.js')

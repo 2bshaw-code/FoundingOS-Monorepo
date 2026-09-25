@@ -15,11 +15,11 @@ import path from 'node:path'
 import { cp, mkdir, writeFile } from 'node:fs/promises'
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
-await mkdir(path.join(root, 'api/_bundle'), { recursive: true })
+await mkdir(path.join(root, 'dist/core-operations-api'), { recursive: true })
 
 await build({
   entryPoints: [path.join(root, 'core-operations/backend/src/vercel-entry.ts')],
-  outfile: path.join(root, 'api/_bundle/index.js'),
+  outfile: path.join(root, 'dist/core-operations-api/index.js'),
   bundle: true,
   platform: 'node',
   target: 'node20',
@@ -47,10 +47,10 @@ await build({
 // esbuild preserves the original relative specifier text for externalized
 // relative imports (e.g. "./generated/prisma/index.js") without rewriting it
 // for the new output location, so the generated Prisma client must physically
-// live alongside the bundle output under api/_bundle/generated/prisma to
+// live alongside the bundle output under dist/core-operations-api/generated/prisma to
 // resolve correctly at runtime.
 const generatedSrc = path.join(root, 'core-operations/backend/src/generated/prisma')
-const generatedDest = path.join(root, 'api/_bundle/generated/prisma')
+const generatedDest = path.join(root, 'dist/core-operations-api/generated/prisma')
 await mkdir(path.dirname(generatedDest), { recursive: true })
 await cp(generatedSrc, generatedDest, { recursive: true })
 
@@ -58,7 +58,7 @@ await cp(generatedSrc, generatedDest, { recursive: true })
 // dependency tracing does not reliably include it for this bundle, so copy
 // it directly next to the bundle output where Node resolves it first.
 const bcryptSrc = path.join(root, 'node_modules/bcrypt')
-const bcryptDest = path.join(root, 'api/_bundle/node_modules/bcrypt')
+const bcryptDest = path.join(root, 'dist/core-operations-api/node_modules/bcrypt')
 await mkdir(path.dirname(bcryptDest), { recursive: true })
 await cp(bcryptSrc, bcryptDest, { recursive: true })
 
