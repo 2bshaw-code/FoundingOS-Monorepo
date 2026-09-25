@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { getModuleProfile, type ModuleKpi } from './module-profiles'
+import { getWorkspaceLayout, ModuleAiBar, moduleSamples, ModuleWorkspaceView, nextStep, type AiPlan, type LayoutRecord } from './module-workspaces'
 import { useRouter } from 'next/navigation'
 import { Fragment, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { bootstrapProduction, getProductionSession, loginToProduction, logoutProduction, productionAgentActions, productionApiConfigured, productionModeEnabled, productionPlatform, productionRecords, productionRequest, type AgentAction, type AgentIntelligenceSummary, type ControlSettings, type ProductionInvitation, type ProductionSession, type ProductionWorkspaceRecord } from './workspace-production-client'
@@ -105,9 +106,12 @@ const seedWorkspace = (workspace: BusinessWorkspaceSlug): WorkspaceState => {
     // Rotate the starting subject and vary the record count per module so every module in a
     // workspace shows different names/counts instead of repeating the same seed data everywhere.
     const offset = moduleHash % config.subjects.length
-    const count = 3 + (moduleHash % 4)
+    const samples = moduleSamples(workspace, item.id)
+    const count = samples?.length ?? 3 + (moduleHash % 4)
     const moduleSubjects = Array.from({ length: count }, (_, i) => config.subjects[(offset + i) % config.subjects.length])
     const isMoneyGroup = moneyGroups.has(item.group)
+    const layout = getWorkspaceLayout(workspace, item.id)
+    const hasDueDates = layout === 'ledger' || layout === 'queue'
     return [
       item.id,
       moduleSubjects.map((subject, index) => {
@@ -120,8 +124,10 @@ const seedWorkspace = (workspace: BusinessWorkspaceSlug): WorkspaceState => {
         // exact same amount.
         const amount = 45 + (hashSeed(`${workspace}:${item.id}:${subject}:${index}`) % 18455)
         const currencyValue = `£${amount.toLocaleString('en-GB')}`
-        const value = isStockModule ? `${quantity} units` : isMoneyGroup || index % 2 ? currencyValue : 'High priority'
-        return { id: `${item.id.slice(0, 3).toUpperCase()}-${101 + index}`, name: subject, secondary: `${item.label} workflow`, value, status, owner: ownerPool[(moduleHash + index) % ownerPool.length], updated: `${index * 18 + 4}m ago`, quantity, reorderPoint, log: isStockModule ? [{ time: `${index * 18 + 40}m ago`, note: `Counted ${quantity} units on hand` }] : undefined }
+        const value = isStockModule ? `${quantity} units` : samples?.[index]?.value ?? (isMoneyGroup || index % 2 ? currencyValue : 'High priority')
+        const dueOffset = status === 'Overdue' ? -(index + 3) : status === statusFor(item).at(-1) ? -(index + 1) : layout === 'queue' && index === 1 ? -1 : index * 3 + 2
+        const dueDate = hasDueDates ? new Date(Date.now() + dueOffset * 86400000).toISOString().slice(0, 10) : undefined
+        return { id: `${item.id.slice(0, 3).toUpperCase()}-${101 + index}`, name: samples?.[index]?.name ?? subject, secondary: samples?.[index]?.secondary ?? `${item.label} workflow`, value, status, dueDate, owner: ownerPool[(moduleHash + index) % ownerPool.length], updated: `${index * 18 + 4}m ago`, quantity, reorderPoint, log: isStockModule ? [{ time: `${index * 18 + 40}m ago`, note: `Counted ${quantity} units on hand` }] : undefined }
       }),
     ]
   }))
@@ -147,7 +153,7 @@ const EVENTS_KEY = 'foundingos-shared-workspace-events-v1'
 const AGENT_ACTIONS_KEY = 'foundingos-agent-actions-v1'
 const ACTIVATION_KEY = 'foundingos-intelligence-activation-v1'
 const DEMO_REFERENCE_TIME = '2026-09-18T10:00:00.000Z'
-const storageKey = (workspace: BusinessWorkspaceSlug) => `foundingos-${workspace}-complete-workspace-v1`
+const storageKey = (workspace: BusinessWorkspaceSlug) => `foundingos-${workspace}-complete-workspace-v2`
 
 const demoAgentAction = (): AgentAction => ({
   id: 'agent-replenishment-001',
@@ -2087,7 +2093,8 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const [cityFilter, setCityFilter] = useState('all')
   const [sortBy, setSortBy] = useState<'default' | 'name' | 'value' | 'owner' | 'score'>('default')
   const [checkedIds, setCheckedIds] = useState<string[]>([])
-  const [boardView, setBoardView] = useState<'kanban' | 'list'>('kanban')
+  const layout = getWorkspaceLayout(workspace, item.id)
+  const [boardView, setBoardView] = useState<'workspace' | 'kanban' | 'list'>(layout ? 'workspace' : 'kanban')
   const [editing, setEditing] = useState(false)
   const [editDraft, setEditDraft] = useState({ name: '', secondary: '', value: '', owner: '' })
   const [dragRecordId, setDragRecordId] = useState<string | null>(null)
@@ -2259,6 +2266,52 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
       setSaving(false)
     }
   }
+  const findRecord = (record: LayoutRecord) => records.find((candidate) => candidate.id === record.id)
+  const runStep = async (task: () => Promise<void>) => {
+    setSaving(true)
+    setError('')
+    try {
+      await task()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Action could not be completed')
+    } finally {
+      setSaving(false)
+    }
+  }
+  const moveTo = (record: LayoutRecord, status: string) => {
+    const target = findRecord(record)
+    if (target) void runStep(() => advanceRecord(item.id, target, status))
+  }
+  const noteOn = (record: LayoutRecord, note: string) => {
+    const target = findRecord(record)
+    if (target) logNote(item.id, target, note, 'FoundAI')
+  }
+  const countStock = (record: LayoutRecord, quantity: number) => {
+    const target = findRecord(record)
+    if (target) adjustStock(item.id, target, quantity, `Stock take: counted ${quantity} units (was ${target.quantity ?? 0})`)
+  }
+  const sell = async (sale: { summary: string; total: number; method: string }) => {
+    const paidStatus = statuses.includes('Paid') ? 'Paid' : statuses.at(-1) ?? statuses[0]
+    const record: WorkspaceRecord = { id: `SAL-${Date.now().toString().slice(-5)}`, name: `Sale #${3300 + records.length + 1}`, secondary: `${sale.summary} · ${sale.method}`, value: `£${sale.total.toFixed(2)}`, status: paidStatus, owner: 'You', updated: 'Just now' }
+    await runStep(async () => {
+      const created = await createRecord(item.id, record)
+      setSelectedId(created.id)
+    })
+  }
+  const applyAiPlan = async (plan: AiPlan) => {
+    const targets = plan.targets.map(findRecord).filter((record): record is WorkspaceRecord => Boolean(record))
+    if (plan.apply?.kind === 'note') {
+      targets.forEach((record) => logNote(item.id, record, plan.apply?.note ?? 'Actioned by FoundAI', 'FoundAI'))
+      return
+    }
+    await runStep(async () => {
+      await Promise.all(targets.map((record) => {
+        const step = nextStep(item.id, record.status, statuses)
+        return step ? bulkAdvance(item.id, [record], step.to) : Promise.resolve()
+      }))
+    })
+  }
+  const catalogue = state.records.products ?? []
   const handoffTarget = workspaceOrder[(workspaceOrder.indexOf(workspace) + 1) % workspaceOrder.length]
   const selectRecord = (id: string) => {
     setSelectedId(id)
@@ -2294,6 +2347,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const genericCharts = !profile
   return <>
     <WorkspaceHeading eyebrow={`${config.suite} · ${item.group}`} title={item.label} copy={profile && !isInbox && !isCalendar && !isContentStudio ? profile.copy : isInbox ? `Every conversation for ${config.label.toLowerCase()} in one inbox — open a message to read the full thread and reply.` : isCalendar ? `See every scheduled ${item.label.toLowerCase()} entry laid out by day, and click through to its details.` : isContentStudio ? `Brief FoundAI on what you're promoting and it will draft the copy — then send it straight into the pipeline below.` : isDirectory ? `Browse every ${item.label.toLowerCase()} record with health, owner, and connected handoff.` : `Manage every ${item.label.toLowerCase()} record, owner, stage, activity, and connected handoff.`} action={<button className="retail-app-primary" onClick={() => setCreating(true)} type="button">+ New {noun}</button>} />
+    {!isInbox && !isContentStudio && !isDirectory ? <ModuleAiBar kpis={profile && records.length ? profile.kpis(records, statuses) : []} moduleId={item.id} moduleLabel={item.label} noun={noun} onApply={applyAiPlan} records={records} statuses={statuses} /> : null}
     {isContentStudio ? <ContentStudioPanel onSave={(draft) => void saveContentDraft(draft)} saving={saving} /> : null}
     {profile && records.length > 0 ? <ModuleKpiStrip kpis={profile.kpis(records, statuses)} /> : null}
     {genericCharts && !isDirectory && !isInbox ? <div className="complete-workspace-stage-summary">{statuses.map((status) => <article key={status}><strong>{records.filter((record) => record.status === status).length}</strong><span>{status}</span></article>)}</div> : null}
@@ -2304,7 +2358,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
     {isPayroll && records.length > 0 ? <PayrollSummaryPanel records={records} statuses={statuses} /> : null}
     {isPerformance && records.length > 0 ? <PerformanceScorePanel records={records} /> : null}
     {isBudgets && records.length > 0 ? <BudgetProgressPanel records={records} /> : null}
-    {isInvoices && records.length > 0 ? <InvoiceAgingPanel records={records} /> : null}
+    {isInvoices && !layout && records.length > 0 ? <InvoiceAgingPanel records={records} /> : null}
     {genericCharts && !isDirectory && !isInbox && !isCalendar && !isContentStudio && !isSalesPipeline && !isInventory && !isPerformance && records.length > 0 ? <ValueByStageBar records={records} statuses={statuses} /> : null}
     {genericCharts && !isDirectory && !isInbox && !isCalendar && !isContentStudio && !isSalesPipeline && !isInventory && !isPerformance && records.length > 0 ? <ConversionFunnel records={records} statuses={statuses} /> : null}
     {genericCharts && !isInbox && !isCalendar && !isPerformance && !isBudgets && !isProducts && records.length > 0 ? (isDirectory ? <DirectoryKPIBar metricLabel={metricLabel} records={records} /> : <PipelineKPIBar records={records} statuses={statuses} />) : null}
@@ -2313,6 +2367,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
       {!isDirectory && !isCalendar ? <select aria-label={`Filter ${item.label} by status`} onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}><option value="all">All stages</option>{statuses.map((status) => <option key={status} value={status}>{status}</option>)}</select> : null}
       <select aria-label={`Sort ${item.label}`} onChange={(event) => setSortBy(event.target.value as typeof sortBy)} value={sortBy}><option value="default">Sort: default</option><option value="name">Sort: name A–Z</option><option value="value">Sort: value high–low</option><option value="owner">Sort: owner A–Z</option>{item.id === 'crm' ? <option value="score">Sort: lead score high–low</option> : null}</select>
       {!isDirectory && !isCalendar && !isProducts ? <div className="retail-app-view-toggle" role="group">
+        {layout ? <button aria-pressed={boardView === 'workspace'} onClick={() => setBoardView('workspace')} type="button">{layout === 'till' ? '▣ Till' : layout === 'ledger' ? '≣ Ledger' : layout === 'stock' ? '▤ Stock room' : layout === 'feed' ? '◉ Feed' : '☰ Queue'}</button> : null}
         <button aria-pressed={boardView === 'kanban'} onClick={() => setBoardView('kanban')} type="button">▦ Board</button>
         <button aria-pressed={boardView === 'list'} onClick={() => setBoardView('list')} type="button">☰ List</button>
       </div> : null}
@@ -2355,7 +2410,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
           })}
           {visible.length === 0 ? <p className="retail-app-board-empty">No records match your search</p> : null}
         </div>
-      </div> : boardView === 'list' ? <div className="retail-app-table-card">
+      </div> : layout && boardView === 'workspace' ? <ModuleWorkspaceView busy={saving} catalogue={catalogue} fields={fields} layout={layout} moduleId={item.id} noun={noun} onCount={countStock} onMove={moveTo} onNote={noteOn} onSelect={selectRecord} onSell={sell} records={visible} selectedId={selected?.id} statuses={statuses} /> : boardView === 'list' ? <div className="retail-app-table-card">
         <div className="retail-app-panel-heading"><div><p>{item.group}</p><h2>{visible.length} records across {statuses.length} stages</h2></div></div>
         <div className="retail-app-table-scroll"><table className="retail-app-list-table">
           <thead><tr><th /><th>{fields.name}</th><th>{fields.secondary}</th><th>Stage</th><th>{fields.value}</th><th>{fields.owner}</th><th>Follow-up</th><th>Updated</th><th /></tr></thead>
@@ -2904,7 +2959,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
   else if (['reports', 'forecasting', 'attribution'].includes(current.id)) content = <ReportsPage config={config} />
   else if (current.id === 'event-feed') content = <EventFeedPage events={events} />
   else if (current.id === 'settings') content = <SettingsPage config={config} production={production} state={state} update={update} />
-  else content = <RecordsPage adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} />
+  else content = <RecordsPage key={`${workspace}/${current.id}`} adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} />
   return <main className="retail-product-shell complete-workspace-shell" style={{ ['--retail-accent' as string]: config.accent }}>
     <aside className="retail-product-sidebar"><Link className="retail-product-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{config.suite}</small></div></Link><div className="retail-product-store"><span>{config.label.slice(0, 2).toUpperCase()}</span><div><strong>{state.settings.businessName}</strong><small>{config.label} Workspace</small></div><b>⌄</b></div><nav aria-label={`${config.label} workspace navigation`}>{groups.map((group) => { const expanded = group === activeGroup || !collapsedGroups.includes(group); const sunk = group === 'Administration'; return <div className={sunk ? 'retail-product-nav-group-sunk' : undefined} key={group}><button aria-expanded={expanded} className="retail-product-nav-group" onClick={() => toggleGroup(group)} type="button"><p>{group}</p><i className={expanded ? 'retail-product-nav-chevron open' : 'retail-product-nav-chevron'}>›</i></button>{expanded ? config.modules.filter((item) => item.group === group).map((item) => <Link className={item.id === current.id ? 'active' : ''} href={`${workspaceRoot}/${workspace}${item.id === 'overview' ? '' : `/${item.id}`}`} key={item.id}><i>{item.id === 'overview' ? '⌂' : '◇'}</i><span>{item.label}</span>{state.records[item.id]?.length ? <em>{state.records[item.id].length}</em> : null}{overdueCount(state.records[item.id]) ? <b aria-label={`${overdueCount(state.records[item.id])} follow-ups due`} className="retail-product-nav-dot" title={`${overdueCount(state.records[item.id])} follow-up${overdueCount(state.records[item.id]) === 1 ? '' : 's'} due`} /> : null}</Link>) : null}</div> })}</nav><Link className="retail-product-switcher" href={workspaceRoot}><span>Switch workspace</span><b>↗</b></Link></aside>
     <section className="retail-product-main"><header className="retail-product-topbar"><form onSubmit={(event) => { event.preventDefault(); setPaletteOpen(true) }}><span>⌕</span><input aria-label="Global workspace search" onFocus={(event) => { event.target.blur(); setPaletteOpen(true) }} placeholder={`Search ${config.label}, or ask FoundAI… (⌘K)`} readOnly /></form><div><span className="complete-workspace-live">● {production ? 'PRODUCTION' : 'SIMULATION'} LIVE</span>{production ? <button className="complete-workspace-signout" onClick={() => void logoutProduction().then(() => setSession(null))} type="button">Sign out</button> : null}<form action="/api/access/logout" method="post"><button className="complete-workspace-signout" type="submit">Log out</button></form><span className="retail-product-user">{session?.user.email.slice(0, 2).toUpperCase() || 'BS'}</span></div></header><div className="retail-product-content"><div className="retail-product-notice"><span>{loading ? '…' : error ? '!' : '✓'}</span>{loading ? 'Loading tenant data…' : error ? error : production ? 'Tenant data is secured in PostgreSQL and every action is audited' : 'Interactive simulation · actions persist in this browser'}</div>{content}</div><footer className="retail-product-footer"><span>{config.label} Workspace · {production ? 'tenant-isolated production data' : 'browser-persistent shared simulation'}</span>{!production ? <button onClick={reset} type="button">Reset {config.label} data</button> : null}</footer></section>
