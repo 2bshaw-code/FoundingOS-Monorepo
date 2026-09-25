@@ -77,12 +77,6 @@ export type TenantSuiteLicense = {
   trialEndsAt?: string | null
 }
 
-/** Bundle discounts applied when a tenant licenses multiple suites. See docs/pricing.md. */
-export const bundleDiscounts: Record<number, number> = {
-  1: 0,
-  2: 0.15,
-  3: 0.25,
-}
 
 /**
  * Returns the suite keys a tenant currently has enabled, given its

@@ -3,20 +3,22 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { NextResponse } from 'next/server'
+import { boltOnKeys, commercialBoltOns, extraSeat, planBaseWorkspaces, type BoltOnKey } from '@foundingos/config/commercial'
+import type { PlanTier } from '@foundingos/config/suites'
 
-type SelfServePlan = 'lite' | 'starter' | 'growth'
+type SelfServePlan = 'lite' | 'core' | 'complete'
 
-// Workspace slugs are backend identifiers (see core-operations/backend/src/platform.ts).
-const PLAN_WORKSPACES: Record<SelfServePlan, string[]> = {
-  lite: ['retail'],
-  starter: ['retail', 'finance', 'marketing'],
-  growth: ['retail', 'logistics', 'finance', 'marketing', 'talent', 'health', 'intelligence'],
-}
+const PLAN_TIER: Record<SelfServePlan, PlanTier> = { lite: 'lite', core: 'starter', complete: 'growth' }
 
-const PLAN_PRICE_ENV: Record<Exclude<SelfServePlan, 'lite'>, string> = {
-  starter: 'STRIPE_PRICE_STARTER',
-  growth: 'STRIPE_PRICE_GROWTH',
-}
+// Stripe Price IDs, one monthly recurring price per chargeable item.
+const PRICE_ENV = {
+  core: 'STRIPE_PRICE_CORE',
+  complete: 'STRIPE_PRICE_COMPLETE',
+  commerce_pro: 'STRIPE_PRICE_COMMERCE_PRO',
+  core_workforce: 'STRIPE_PRICE_WORKFORCE',
+  core_intelligence: 'STRIPE_PRICE_INTELLIGENCE',
+  extra_seat: 'STRIPE_PRICE_EXTRA_SEAT',
+} as const
 
 function apiRoot() {
   const configured = (process.env.CORE_OPERATIONS_API_BASE || process.env.NEXT_PUBLIC_FOUNDINGOS_API_URL || process.env.NEXT_PUBLIC_CORE_OPERATIONS_API_URL || '')
@@ -27,22 +29,29 @@ function apiRoot() {
 
 const text = (value: unknown, max = 200) => (typeof value === 'string' ? value.trim().slice(0, max) : '')
 
-async function createStripeCheckout(params: { plan: Exclude<SelfServePlan, 'lite'>; email: string; tenantId: string; origin: string }) {
+async function createStripeCheckout(params: { plan: Exclude<SelfServePlan, 'lite'>; boltOns: BoltOnKey[]; extraSeats: number; email: string; tenantId: string; origin: string }) {
   const secret = process.env.STRIPE_SECRET_KEY?.trim()
-  const price = process.env[PLAN_PRICE_ENV[params.plan]]?.trim()
-  if (!secret || !price) return null
+  const items: Array<{ env: string; quantity: number }> = [{ env: PRICE_ENV[params.plan], quantity: 1 }]
+  for (const key of params.boltOns) items.push({ env: PRICE_ENV[key], quantity: 1 })
+  if (params.extraSeats > 0) items.push({ env: PRICE_ENV.extra_seat, quantity: params.extraSeats })
+  const prices = items.map((item) => ({ price: process.env[item.env]?.trim(), quantity: item.quantity }))
+  if (!secret || prices.some((item) => !item.price)) return null
   const form = new URLSearchParams({
     mode: 'subscription',
-    'line_items[0][price]': price,
-    'line_items[0][quantity]': '1',
     customer_email: params.email,
     client_reference_id: params.tenantId,
     'metadata[tenantId]': params.tenantId,
     'metadata[plan]': params.plan,
+    'metadata[boltOns]': params.boltOns.join(','),
+    'metadata[extraSeats]': String(params.extraSeats),
     'subscription_data[metadata][tenantId]': params.tenantId,
     'subscription_data[metadata][plan]': params.plan,
     success_url: `${params.origin}/signup?checkout=success&plan=${params.plan}`,
     cancel_url: `${params.origin}/signup?checkout=cancelled&plan=${params.plan}`,
+  })
+  prices.forEach((item, index) => {
+    form.set(`line_items[${index}][price]`, item.price!)
+    form.set(`line_items[${index}][quantity]`, String(item.quantity))
   })
   const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
     method: 'POST',
@@ -61,7 +70,14 @@ export async function POST(request: Request) {
   if (text(body.website)) return NextResponse.json({ ok: true, nextStep: 'signin' })
 
   const plan = text(body.plan) as SelfServePlan
-  if (!(plan in PLAN_WORKSPACES)) return NextResponse.json({ ok: false, message: 'Choose Lite, Starter, or Growth. Enterprise is arranged with our team.' }, { status: 400 })
+  if (!Object.hasOwn(PLAN_TIER, plan)) return NextResponse.json({ ok: false, message: 'Choose Lite, Core, or Complete. Enterprise is arranged with our team.' }, { status: 400 })
+  const tier = PLAN_TIER[plan]
+  const requestedBoltOns = Array.isArray(body.boltOns) ? body.boltOns.map(String) : []
+  // Bolt-ons attach to Core only; Complete already includes them all.
+  const boltOns = plan === 'core' ? boltOnKeys.filter((key) => requestedBoltOns.includes(key)) : []
+  const seatsRequested = Math.floor(Number(body.extraSeats) || 0)
+  const extraSeats = plan === 'lite' ? 0 : Math.min(extraSeat.maxPerSignup, Math.max(0, seatsRequested))
+  const workspaces = [...new Set([...planBaseWorkspaces[tier], ...boltOns.flatMap((key) => commercialBoltOns[key].workspaces)])]
   const email = text(body.email).toLowerCase()
   const password = typeof body.password === 'string' ? body.password : ''
   const ownerName = text(body.ownerName)
@@ -77,7 +93,7 @@ export async function POST(request: Request) {
   const created = await fetch(`${root}/ops/platform/bootstrap`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-bootstrap-token': token },
-    body: JSON.stringify({ email, password, ownerName, businessName, plan, workspaces: PLAN_WORKSPACES[plan] }),
+    body: JSON.stringify({ email, password, ownerName, businessName, plan: tier, workspaces }),
   }).catch(() => null)
   const createdBody = await created?.json().catch(() => null) as { data?: { tenantId?: string }; message?: string } | null
   if (!created?.ok || !createdBody?.data?.tenantId) {
@@ -87,7 +103,7 @@ export async function POST(request: Request) {
 
   if (plan === 'lite') return NextResponse.json({ ok: true, nextStep: 'signin' }, { status: 201 })
   try {
-    const checkoutUrl = await createStripeCheckout({ plan, email, tenantId: createdBody.data.tenantId, origin: new URL(request.url).origin })
+    const checkoutUrl = await createStripeCheckout({ plan, boltOns, extraSeats, email, tenantId: createdBody.data.tenantId, origin: new URL(request.url).origin })
     return NextResponse.json({ ok: true, nextStep: checkoutUrl ? 'checkout' : 'signin', checkoutUrl }, { status: 201 })
   } catch (error) {
     return NextResponse.json({ ok: true, nextStep: 'signin', message: error instanceof Error ? error.message : 'Payment checkout could not be started.' }, { status: 201 })

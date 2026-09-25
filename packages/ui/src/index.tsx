@@ -4,7 +4,7 @@
 */
 import Link from 'next/link'
 import { cookies } from 'next/headers'
-import { commercialAddOns, commercialPlans, marketingPlanFeatures } from '@foundingos/config/commercial'
+import { boltOnKeys, commercialAddOns, commercialBoltOns, commercialPlans, extraSeat, marketingPlanFeatures } from '@foundingos/config/commercial'
 import { GlobalisationControls, GlobalisationProvider, LocalizedGbp } from './globalisation'
 import { ThemeToggle } from './theme'
 import { WorkflowWalkthrough } from './workflow-walkthrough'
@@ -180,30 +180,10 @@ const operatingLayers = [
 ] as const
 
 const packagePlans = [
-  {
-    name: 'Lite',
-    priceGbp: commercialPlans.lite.monthlyPriceGbp,
-    summary: 'Free basic access for one user, designed for low-data environments and offline-tolerant capture.',
-    features: commercialPlans.lite.includedFeatures,
-  },
-  {
-    name: 'Starter',
-    priceGbp: commercialPlans.starter.monthlyPriceGbp,
-    summary: 'Core.Operations for a small team, with automatic sync and every supported language included.',
-    features: commercialPlans.starter.includedFeatures,
-  },
-  {
-    name: 'Growth',
-    priceGbp: commercialPlans.growth.monthlyPriceGbp,
-    summary: 'All three cores, team automation, operational intelligence, and advanced reporting.',
-    features: commercialPlans.growth.includedFeatures,
-  },
-  {
-    name: 'Enterprise',
-    priceGbp: commercialPlans.enterprise.monthlyPriceGbp,
-    summary: 'Custom governance, SSO, integrations, usage, support, and rollout requirements.',
-    features: commercialPlans.enterprise.includedFeatures,
-  },
+  { tier: 'lite', signupPlan: 'lite', summary: 'Free for one user. Built for low-data, offline-tolerant capture.' },
+  { tier: 'starter', signupPlan: 'core', summary: 'The Core.Operations base for a small team. Add bolt-ons only when you need them.' },
+  { tier: 'growth', signupPlan: 'complete', summary: 'Every suite and bolt-on for a team of 15, at a bundle discount.' },
+  { tier: 'enterprise', signupPlan: null, summary: 'Custom governance, SSO, integrations, usage, support, and rollout requirements.' },
 ] as const
 
 // Matches SITE_ACCESS_COOKIE in apps/foundingos-web/src/site-access.ts — duplicated here
@@ -365,7 +345,7 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
         {(Object.entries(marketingPlanFeatures) as Array<[keyof typeof marketingPlanFeatures, string[]]>).map(([tier, features]) => (
           <article key={tier} className="card-premium">
             <p className="eyebrow">{tier === 'lite' ? 'Free' : tier}</p>
-            <h2>{tier[0].toUpperCase() + tier.slice(1)} marketing</h2>
+            <h2>{commercialPlans[tier].name} marketing</h2>
             <ul>{features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
             <Link className="btn btn-primary" href="/pricing">Compare plans</Link>
           </article>
@@ -394,27 +374,50 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
 
   if (page === 'pricing') return (
     <>
-      <PageIntro eyebrow="Modular pricing" title="Start with one core. Connect the whole OS." copy="Packages are modular so buyers can begin with the operating capability they need and add shared intelligence as they grow." />
+      <PageIntro eyebrow="Simple, modular pricing" title="Start free. Add only what you need." copy="Every business starts on the Core.Operations base. Add Commerce Pro, Core.Workforce, or Core.Intelligence as you grow, or take everything with Complete. No sales call needed." />
       <section className="module-grid">
-        {packagePlans.map((plan) => (
-          <article key={plan.name} className="card-premium">
-            <p className="eyebrow">{plan.priceGbp === null ? 'Custom' : plan.priceGbp === 0 ? 'Free' : <><LocalizedGbp amount={plan.priceGbp} />/month</>}</p>
-            <h2>{plan.name}</h2>
-            <p>{plan.summary}</p>
-            <h3>What you access</h3>
-            <ul>{commercialPlans[plan.name.toLowerCase() as keyof typeof commercialPlans].access.map((item) => <li key={item}>{item}</li>)}</ul>
-            <h3>Enabled workspaces</h3>
-            <ul>{commercialPlans[plan.name.toLowerCase() as keyof typeof commercialPlans].includedWorkspaces.map((item) => <li key={item}>{item}</li>)}</ul>
-            <ul>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
-            {plan.name === 'Enterprise'
-              ? <Link className="btn btn-primary" href="/contact">Talk to FoundingOS</Link>
-              : <Link className="btn btn-primary" href={`/signup?plan=${plan.name.toLowerCase()}`}>{plan.name === 'Lite' ? 'Start free' : `Start ${plan.name}`}</Link>}
-          </article>
-        ))}
+        {packagePlans.map((plan) => {
+          const details = commercialPlans[plan.tier]
+          return (
+            <article key={plan.tier} className="card-premium">
+              <p className="eyebrow">{details.monthlyPriceGbp === null ? 'Custom' : details.monthlyPriceGbp === 0 ? 'Free' : <><LocalizedGbp amount={details.monthlyPriceGbp} />/month</>}</p>
+              <h2>{details.name}</h2>
+              <p>{plan.summary}</p>
+              <h3>What you get</h3>
+              <ul>{details.access.map((item) => <li key={item}>{item}</li>)}</ul>
+              <ul>{details.includedWorkspaces.map((item) => <li key={item}>{item}</li>)}</ul>
+              <ul>{details.includedFeatures.map((feature) => <li key={feature}>{feature}</li>)}</ul>
+              {plan.signupPlan
+                ? <Link className="btn btn-primary" href={`/signup?plan=${plan.signupPlan}`}>{plan.tier === 'lite' ? 'Start free' : `Start ${details.name}`}</Link>
+                : <Link className="btn btn-primary" href="/contact">Talk to FoundingOS</Link>}
+            </article>
+          )
+        })}
+      </section>
+
+      <PageIntro eyebrow="Bolt-ons for Core" title="Add a suite when you are ready" copy="Bolt-ons attach to the Core plan and can be added or removed monthly. Complete includes all three." />
+      <section className="module-grid">
+        {boltOnKeys.map((key) => {
+          const boltOn = commercialBoltOns[key]
+          return (
+            <article key={key} className="card-premium">
+              <p className="eyebrow">+<LocalizedGbp amount={boltOn.monthlyPriceGbp} />/month</p>
+              <h2>{boltOn.name}</h2>
+              <p>{boltOn.description}</p>
+              <ul>{boltOn.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
+              <Link className="btn btn-primary" href={`/signup?plan=core&add=${key}`}>Start Core with {boltOn.name}</Link>
+            </article>
+          )
+        })}
+        <article className="card-premium">
+          <p className="eyebrow"><LocalizedGbp amount={extraSeat.monthlyPriceGbp} />/month per user</p>
+          <h2>Extra team members</h2>
+          <p>Add users beyond your plan&apos;s included seats on Core or Complete.</p>
+        </article>
         <article className="card-premium">
           <p className="eyebrow"><LocalizedGbp amount={commercialAddOns.languagePack.monthlyPriceGbp} />/month on Lite</p>
           <h2>{commercialAddOns.languagePack.name}</h2>
-          <p>{commercialAddOns.languagePack.description} Included at no extra cost from Starter upward.</p>
+          <p>{commercialAddOns.languagePack.description} Included at no extra cost on every paid plan.</p>
         </article>
       </section>
     </>
@@ -557,13 +560,16 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
       <WorkflowWalkthrough />
 
       <section className="module-grid">
-        {packagePlans.map((plan) => (
-          <article key={plan.name} className="card-premium">
-            <p className="eyebrow">{plan.priceGbp === null ? 'Custom' : plan.priceGbp === 0 ? 'Free' : <><LocalizedGbp amount={plan.priceGbp} />/month</>}</p>
-            <h2>{plan.name}</h2>
-            <p>{plan.summary}</p>
-          </article>
-        ))}
+        {packagePlans.map((plan) => {
+          const price = commercialPlans[plan.tier].monthlyPriceGbp
+          return (
+            <Link key={plan.tier} className="card-premium" href={plan.signupPlan ? `/signup?plan=${plan.signupPlan}` : '/contact'}>
+              <p className="eyebrow">{price === null ? 'Custom' : price === 0 ? 'Free' : <><LocalizedGbp amount={price} />/month</>}</p>
+              <h2>{commercialPlans[plan.tier].name}</h2>
+              <p>{plan.summary}</p>
+            </Link>
+          )
+        })}
       </section>
 
       </>}
