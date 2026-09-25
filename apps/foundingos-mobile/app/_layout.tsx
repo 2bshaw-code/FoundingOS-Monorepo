@@ -2,16 +2,28 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
+import { useEffect } from 'react'
 import 'react-native-gesture-handler'
 import { Stack, ThemeProvider, DarkTheme } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { enableScreens } from 'react-native-screens'
 import { QuantumBackground } from '../components/QuantumBackground'
+import { startNetworkStatusListener } from '../lib/network-status'
+import { startTelemetryFlushLoop } from '../lib/telemetry-client'
 
 enableScreens(true)
 
 export default function RootLayout() {
+  useEffect(() => {
+    const unsubscribeNetwork = startNetworkStatusListener()
+    const stopTelemetry = startTelemetryFlushLoop()
+    return () => {
+      unsubscribeNetwork()
+      stopTelemetry()
+    }
+  }, [])
+
   return (
     <SafeAreaProvider>
       <ThemeProvider value={DarkTheme}>

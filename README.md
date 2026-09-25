@@ -17,9 +17,9 @@ The hostnames are documented targets only. This scaffold does not edit `/etc/hos
 
 ## Shared packages
 
-- `@founder-os/auth`: role and access-policy utilities
-- `@founder-os/ui`: shared React primitives
-- `@founder-os/media`: shared media-upload contracts and helpers
+- `@foundingos/service-auth`: role and access-policy utilities
+- `@foundingos/legacy-ui`: shared React primitives
+- `@foundingos/media`: shared media-upload contracts and helpers
 
 ## Safety
 

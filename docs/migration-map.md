@@ -8,7 +8,7 @@ prefixes. Use this as the checklist when doing the physical rename pass
 
 | Legacy path | New concept | Action |
 | --- | --- | --- |
-| `founder-os/` | FoundingOS platform core | Rename references to `foundingos-core` |
+| `founder-os/` | Legacy founder-platform aggregator | **Deprecated (Phase 24)** — not in npm workspaces, own isolated `founder_os` Postgres schema, no active app depends on it. Retire rather than rename/migrate; see [deprecations.md](./deprecations.md). |
 | `core_operations/` | Core.Operations | Rename to `core-operations/` |
 | `core_workforce/` | Core.Workforce | Rename to `core-workforce/` |
 | `foundmeat/` | *(deprecated)* | Archive out of active tree |
@@ -21,7 +21,7 @@ prefixes. Use this as the checklist when doing the physical rename pass
 | `apps/crypto-*`, `apps/foundcrypto-*` | *(deprecated)* | Remove from `apps/` |
 | `apps/foundfinance-*`, `apps/foundhealth-*`, `apps/foundlogistics-*` | Parked (not in 3-suite scope) | Exclude from active build; keep code, mark parked |
 | `Upgrade-and-Additional-Companies/Consoles/*` | Superseded by console shell modules | Retire once module migration lands |
-| `packages/*` | Shared backbone | Rename `@founder-os/*` → `@foundingos/*` |
+| `packages/*` | Shared backbone | Rename `@founder-os/*` → `@foundingos/*` (done — see Package mapping) |
 
 ## Route mapping
 
@@ -62,17 +62,50 @@ See full detail in [shared-schema.md](./shared-schema.md). Summary:
 | `foundcrypto.*` | *(dropped after export)* |
 | `founder_os.*` | unprefixed shared/platform tables |
 
+**`packages/db` legacy per-brand tables** (`Brand`, `BrandMetric`,
+`BrandSubscription`, `CrmDeal`, `BrandFinance` — default/public Postgres
+schema, no dedicated schema name): **Phase 33/35 update** — `Brand` and
+`BrandMetric` have been dropped (`20260925090000_legacy_scaffold_removal`
+migration); their former readers/writers now go through the `wros`
+schema's `TelemetryEvent` model via
+`packages/config/src/engagement-telemetry.ts`. `BrandSubscription`,
+`CrmDeal`, and `BrandFinance` remain in place, unrenamed and unmigrated —
+confirmed to back real, currently-displayed console UI (see
+[single-schema-migration.md](./single-schema-migration.md) §2/§4), so no
+table-prefix scheme is planned for them yet; any future migration is a
+separate initiative pending a tenant-identity decision for each.
+
 ## Package mapping
+
+Completed in Phase 23. `packages/config`, `packages/auth`, `packages/ui`,
+`packages/db`, and `packages/billing` were already `@foundingos/*` scoped.
+The remaining `shared/*` packages (still consumed by the three `core-*`
+backend services) have now been renamed too. `@foundingos/auth` and
+`@foundingos/ui` were already taken by the newer `packages/*` libraries, so
+the renamed `shared/*` packages use distinguishing names:
 
 | Legacy | New |
 | --- | --- |
-| `@founder-os/auth` | `@foundingos/auth` |
-| `@founder-os/ui` | `@foundingos/ui` |
-| `@founder-os/media` | `@foundingos/media` |
+| `@founder-os/auth` (`shared/auth`) | `@foundingos/service-auth` |
+| `@founder-os/bob` (`shared/bob`) | `@foundingos/bob` |
+| `@founder-os/ui` (`shared/ui`) | `@foundingos/legacy-ui` |
+| `@founder-os/brand-assets` (`shared/brand-assets`) | `@foundingos/brand-assets` |
+| `@founder-os/media` (`shared/media`) | `@foundingos/media` |
+| `@founder-os/core-operations-backend` | `@foundingos/core-operations-backend` |
+| `@founder-os/core-workforce-backend` | `@foundingos/core-workforce-backend` |
+| `@founder-os/core-intelligence-backend` | `@foundingos/core-intelligence-backend` |
 | `packages/config` brand registry | Suite registry (see [feature-flags.md](./feature-flags.md)) |
+
+`@foundingos/legacy-ui` and `@foundingos/brand-assets` are not consumed by
+any app in the active npm workspaces today — only the `founder-os/`
+aggregator (Phase 24) still depends on them. The rename was applied for
+consistency and to unblock future workspace inclusion, not because they are
+in active use.
 
 ## Execution status
 
-This map is written but **not yet executed as a bulk rename** in this pass.
-Rationale and next steps are in
+The package-scope rename (`@founder-os/*` → `@foundingos/*`) is executed as
+of Phase 23. Directory/route/env/table-prefix renames beyond that are
+**not yet executed as a bulk rename** in this pass. Rationale and next
+steps are in
 [restructure-summary.md](./restructure-summary.md).

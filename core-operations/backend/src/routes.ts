@@ -2,9 +2,9 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { Router, type RequestHandler } from 'express'
-import { createBobRouter } from '@founder-os/bob'
-import { createModuleAccessMiddleware } from '@founder-os/auth'
+import { Router, raw, type RequestHandler } from 'express'
+import { createBobRouter } from '@foundingos/bob'
+import { createModuleAccessMiddleware } from '@foundingos/service-auth'
 import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess } from './auth.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
@@ -13,11 +13,13 @@ import { addMerchantStaff, merchantWorkspace, ownerMerchantSummary, removeMercha
 import { listEvents, predictEventPattern, publishEvent, queryEvents, registerEventStreamClient, summarizeEventPattern } from './event-feed.js'
 import { generateInsightsFromRecentEvents, listInsights, registerInsightStreamClient } from './insights.js'
 import { listMessagingConnections, listMessagingParticipants, messagingReadiness, processWhatsAppWebhook, saveMessagingConnection, saveMessagingParticipant, sendMessagingIntelligenceBrief } from './messaging-core.js'
-import { acceptTeamInvitation, assertWorkspaceAccess, bootstrapTenant, checkIntegration, completeStripeCheckout, createWorkspaceRecord, deleteWorkspaceRecord, exportGovernanceCsv, getControlSettings, getIntegrationCredentials, getInvitationDetails, getOnboarding, inviteTeamMember, listAuditEvents, listIntegrations, listPendingInvitations, listTeam, listTenantWorkspaces, listWorkspaceRecords, platformReadiness, recordPaymentCheckout, revokeTeamInvitation, resendTeamInvitation, saveControlSettings, saveIntegration, saveOnboarding, saveTenantWorkspace, updateTeamMember, updateWorkspaceRecord } from './platform.js'
+import { acceptTeamInvitation, assertWorkspaceAccess, bootstrapTenant, checkIntegration, completeStripeCheckout, createWorkspaceRecord, deleteWorkspaceRecord, exportGovernanceCsv, getControlSettings, getIntegrationCredentials, getInvitationDetails, getOnboarding, inviteTeamMember, listAuditEvents, listIntegrations, listPendingInvitations, listTeam, listTenantWorkspaces, listWorkspaceRecords, platformReadiness, recordPaymentCheckout, revokeTeamInvitation, resendTeamInvitation, saveControlSettings, saveIntegration, saveOnboarding, saveTenantWorkspace, updateTeamMember, updateWorkspaceRecord, uploadWorkspaceRecordImage } from './platform.js'
 import { verifyBootstrapToken } from './platform-security.js'
 import { createTenantCheckout, verifyStripeWebhookSignature } from './stripe.js'
 import { decideAgentAction, executeAgentAction, getAgentActionTrail, getAgentIntelligenceSummary, listAgentActions, proposeAgentAction, proposeReplenishmentAction, reverseAgentActionExecution } from './agent-actions.js'
 import { isSuiteLicensed, listTenantSuiteLicenses, setTenantSuiteLicense } from './licensing.js'
+import { createTelemetryRateLimiter, emitBackendTelemetry, ingestTelemetryEvents, parseTelemetryBatch, queryTelemetryEvents, queryTelemetrySummary, resolveOptionalTenantId } from './telemetry.js'
+import { listFeatureFlags, upsertFeatureFlag, validateFeatureFlagInput, validateFeatureFlagKey } from './feature-flags.js'
 
 const requireTenant: RequestHandler = (_req, res, next) => {
   if (res.locals.auth?.role === 'founder_master') return next()
@@ -27,6 +29,15 @@ const requireTenant: RequestHandler = (_req, res, next) => {
 const requireCoreOperationsModule = createModuleAccessMiddleware('core_operations')
 const readTenant = (req: { header(name: string): string | undefined }, res: { locals: Record<string, any> }) => res.locals.auth?.role === 'founder_master' ? req.header('x-tenant-id') || undefined : res.locals.auth?.tenantId
 const writeTenant = (req: { body?: Record<string, unknown>; header(name: string): string | undefined }, res: { locals: Record<string, any> }) => readTenant(req, res) || String(req.body?.tenantId || '')
+// Phase 34 — FeatureFlag rows are global (not tenant-scoped: `key` is
+// unique across the whole deployment), so this is an internal/FoundingOS
+// staff admin surface, not a tenant-owner one — gated more strictly than
+// requireOwnerAccess (which authorizes tenant owners over their own tenant).
+const requireFounderMaster: RequestHandler = (_req, res, next) => {
+  if (res.locals.auth?.role !== 'founder_master') return res.status(403).json({ success: false, message: 'Internal access required' })
+  next()
+}
+const telemetryRateLimit = createTelemetryRateLimiter()
 export const apiRouter = Router()
 apiRouter.get('/status', (_req, res) => res.json({ app: 'core_operations', status: 'operational' }))
 // Real, cross-suite suite-licensing gate. Core.Workforce and
@@ -205,7 +216,9 @@ apiRouter.put('/platform/workspaces/:workspace', requireOwnerAccess, requireTena
   try {
     const tenantId = writeTenant(req, res)
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
-    res.json({ success: true, data: await saveTenantWorkspace(tenantId, res.locals.auth.id, req.params.workspace, req.body || {}, res.locals.requestId) })
+    const data = await saveTenantWorkspace(tenantId, res.locals.auth.id, req.params.workspace, req.body || {}, res.locals.requestId)
+    emitBackendTelemetry(tenantId, 'workspace.access', { workspace: req.params.workspace })
+    res.json({ success: true, data })
   } catch (error) { next(error) }
 })
 apiRouter.get('/platform/workspaces/:workspace/:module/records', requireMerchantAccess, requireTenant, async (req, res, next) => {
@@ -222,6 +235,7 @@ apiRouter.post('/platform/workspaces/:workspace/:module/records', requireMerchan
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
     await assertWorkspaceAccess(tenantId, res.locals.auth.id, res.locals.auth.role, req.params.workspace)
     const data = await createWorkspaceRecord(tenantId, res.locals.auth.id, req.params.workspace, req.params.module, req.body || {}, req.header('idempotency-key'), res.locals.requestId)
+    emitBackendTelemetry(tenantId, 'record.created', { workspace: req.params.workspace, module: req.params.module })
     res.status(201).json({ success: true, data })
   } catch (error) { next(error) }
 })
@@ -255,7 +269,19 @@ apiRouter.patch('/platform/records/:id', requireMerchantAccess, requireTenant, a
   try {
     const tenantId = readTenant(req, res)
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
-    res.json({ success: true, data: await updateWorkspaceRecord(tenantId, res.locals.auth.id, res.locals.auth.role, String(req.params.id), req.body || {}, res.locals.requestId) })
+    const data = await updateWorkspaceRecord(tenantId, res.locals.auth.id, res.locals.auth.role, String(req.params.id), req.body || {}, res.locals.requestId)
+    emitBackendTelemetry(tenantId, 'record.status_change', { recordId: String(req.params.id) })
+    res.json({ success: true, data })
+  } catch (error) { next(error) }
+})
+apiRouter.post('/platform/records/:id/images', requireMerchantAccess, requireTenant, raw({ type: 'image/*', limit: '15mb' }), async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    const contentType = String(req.headers['content-type'] || '')
+    if (!Buffer.isBuffer(req.body)) return res.status(400).json({ success: false, message: 'Send the image as a raw binary body with an image/* Content-Type header' })
+    const result = await uploadWorkspaceRecordImage(tenantId, res.locals.auth.id, res.locals.auth.role, String(req.params.id), { contentType, bytes: req.body }, res.locals.requestId)
+    res.status(201).json({ success: true, data: result })
   } catch (error) { next(error) }
 })
 apiRouter.delete('/platform/records/:id', requireOwnerAccess, requireTenant, async (req, res, next) => {
@@ -321,6 +347,64 @@ apiRouter.post('/platform/events', requireMerchantAccess, requireTenant, async (
     res.status(201).json({ success: true, data: await publishEvent({ tenantId, type: String(req.body?.type || 'workspace.event'), source: String(req.body?.source || 'system'), payload: req.body?.payload }) })
   } catch (error) { next(error) }
 })
+// Phase 28 — telemetry ingestion. Intentionally reachable without auth (see
+// resolveOptionalTenantId) so pre-login/marketing-site events can be sent;
+// an invalid bearer token is still rejected rather than silently ignored.
+apiRouter.post('/platform/telemetry', async (req, res, next) => {
+  try {
+    const decision = telemetryRateLimit(req.header('x-tenant-id') || `ip:${req.ip}`)
+    res.setHeader('RateLimit-Limit', '60')
+    res.setHeader('RateLimit-Remaining', String(decision.remaining))
+    res.setHeader('RateLimit-Reset', String(Math.ceil(decision.resetAt / 1000)))
+    if (!decision.allowed) return res.status(429).json({ success: false, message: 'Too many telemetry events' })
+    const authenticatedTenantId = resolveOptionalTenantId(req.header('authorization'))
+    const events = parseTelemetryBatch(req.body).map((event) => ({ ...event, tenantId: authenticatedTenantId ?? undefined }))
+    const count = await ingestTelemetryEvents(events)
+    res.status(201).json({ success: true, data: { accepted: count } })
+  } catch (error) { next(error) }
+})
+apiRouter.get('/platform/telemetry', requireOwnerAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.json({ success: true, data: await queryTelemetryEvents(tenantId, req.query) })
+  } catch (error) { next(error) }
+})
+// Phase 36 — cross-tenant aggregate for the internal telemetry dashboard.
+// Internal-only (founder_master), unlike the tenant-scoped route above.
+apiRouter.get('/platform/telemetry/summary', requireFounderMaster, async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await queryTelemetrySummary(req.query) })
+  } catch (error) { next(error) }
+})
+// Phase 35 — cross-tenant *raw* event read, internal-only. Reuses
+// queryTelemetryEvents with an undefined tenantId (buildTelemetryQuery
+// already treats that as "no tenant filter", not "no results") so
+// internal/demo tooling with no real tenant to scope to — e.g. the
+// migrated BrandMetric replacement, see docs/single-schema-migration.md
+// §6 — can read its own events back without a fake tenantId. Distinct
+// from /summary above (aggregate counts) since some callers need the raw
+// `properties` payload (e.g. per-brand categoryBreakdown JSON).
+apiRouter.get('/platform/telemetry/events', requireFounderMaster, async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await queryTelemetryEvents(undefined, req.query) })
+  } catch (error) { next(error) }
+})
+// Phase 34 — feature flag admin. Internal/FoundingOS-staff only (see
+// requireFounderMaster) since FeatureFlag rows are global, not per-tenant.
+apiRouter.get('/platform/feature-flags', requireFounderMaster, async (_req, res, next) => {
+  try {
+    res.json({ success: true, data: await listFeatureFlags() })
+  } catch (error) { next(error) }
+})
+apiRouter.put('/platform/feature-flags/:key', requireFounderMaster, async (req, res, next) => {
+  try {
+    const key = validateFeatureFlagKey(req.params.key)
+    const input = validateFeatureFlagInput(req.body || {})
+    const data = await upsertFeatureFlag(key, input, res.locals.auth.id)
+    res.json({ success: true, data })
+  } catch (error) { next(error) }
+})
 apiRouter.get('/platform/agent-actions', requireMerchantAccess, requireTenant, async (req, res, next) => {
   try {
     const tenantId = readTenant(req, res)
@@ -364,7 +448,9 @@ apiRouter.post('/platform/agent-actions/:id/decision', requireDecisionApprovalAc
   try {
     const tenantId = readTenant(req, res)
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
-    res.json({ success: true, data: await decideAgentAction(tenantId, res.locals.auth.id, String(req.params.id), req.body?.decision, res.locals.requestId) })
+    const data = await decideAgentAction(tenantId, res.locals.auth.id, String(req.params.id), req.body?.decision, res.locals.requestId)
+    emitBackendTelemetry(tenantId, 'agent_action.decision', { actionId: String(req.params.id), decision: String(req.body?.decision || '') })
+    res.json({ success: true, data })
   } catch (error) { next(error) }
 })
 apiRouter.post('/platform/agent-actions/:id/execute', requireExecutionAccess, requireTenant, async (req, res, next) => {
@@ -451,11 +537,11 @@ apiRouter.post('/merchant/changes', requireMerchantAccess, requireTenant, requir
 apiRouter.get('/merchants/:id', requireMerchantAccess, requireTenant, requireCoreOperationsModule, (req, res) => res.json({ merchant: { id: req.params.id, tenantId: res.locals.auth.tenantId } }))
 apiRouter.get('/consoles/:id', requireMerchantAccess, requireTenant, requireCoreOperationsModule, (req, res) => res.json({ console: { id: req.params.id, tenantId: res.locals.auth.tenantId } }))
 apiRouter.get('/packages/:id', requireOwnerAccess, requireTenant, requireCoreOperationsModule, (req, res) => res.json({ package: { id: req.params.id, tenantId: res.locals.auth.tenantId } }))
-apiRouter.get('/owner/overview', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (_req, res, next) => {
-  try { res.json(await pipelineSummary(res.locals.auth?.role === 'founder_master' ? undefined : res.locals.auth?.tenantId)) } catch (error) { next(error) }
+apiRouter.get('/owner/overview', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json(await pipelineSummary(readTenant(req, res))) } catch (error) { next(error) }
 })
-apiRouter.get('/owner/pipeline', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (_req, res, next) => {
-  try { res.json({ success: true, data: await pipelineSummary(res.locals.auth?.role === 'founder_master' ? undefined : res.locals.auth?.tenantId) }) } catch (error) { next(error) }
+apiRouter.get('/owner/pipeline', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await pipelineSummary(readTenant(req, res)) }) } catch (error) { next(error) }
 })
 apiRouter.get('/customers', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { res.json({ success: true, data: await listCustomers(readTenant(req, res)) }) } catch (error) { next(error) }
@@ -473,13 +559,13 @@ apiRouter.delete('/customers/:id', requireOwnerAccess, requireTenant, requireCor
   try { res.json({ success: true, data: await deleteCustomer(String(req.params.id), readTenant(req, res)) }) } catch (error) { next(error) }
 })
 apiRouter.post('/leads', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
-  try { res.status(201).json({ success: true, data: await createLead(req.body || {}, res.locals.auth?.role === 'founder_master' ? undefined : res.locals.auth?.tenantId) }) } catch (error) { next(error) }
+  try { res.status(201).json({ success: true, data: await createLead(req.body || {}, writeTenant(req, res) || undefined) }) } catch (error) { next(error) }
 })
 apiRouter.patch('/leads/:id', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
-  try { res.json({ success: true, data: await updateLeadStage(String(req.params.id), req.body?.stage, res.locals.auth?.role === 'founder_master' ? undefined : res.locals.auth?.tenantId) }) } catch (error) { next(error) }
+  try { res.json({ success: true, data: await updateLeadStage(String(req.params.id), req.body?.stage, readTenant(req, res)) } ) } catch (error) { next(error) }
 })
 apiRouter.post('/leads/:id/convert', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
-  try { res.json({ success: true, data: await convertLead(String(req.params.id), res.locals.auth?.role === 'founder_master' ? undefined : res.locals.auth?.tenantId) }) } catch (error) { next(error) }
+  try { res.json({ success: true, data: await convertLead(String(req.params.id), readTenant(req, res)) }) } catch (error) { next(error) }
 })
 apiRouter.get('/owner/operations', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try { res.json({ success: true, data: await operationsSummary(readTenant(req, res)) }) } catch (error) { next(error) }

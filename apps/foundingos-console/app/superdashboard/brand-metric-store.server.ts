@@ -7,8 +7,23 @@
 // SuperDashboardPage.tsx: only brands with a working survey-feed pipeline (currently just
 // FoundRetail) ever get a row here, so this powers a separate "real data" panel rather than
 // replacing the mock table (which still covers all 8 brands, several with no real source).
-import { getPrismaClient } from '@foundingos/db'
+//
+// Phase 35 — no longer reads/writes packages/db's BrandMetric/AnomalyLog/EngagementLog
+// tables directly. `Brand`/`BrandMetric` had no real tenant mapping (brand slugs are
+// synthetic demo identifiers, not tenants), so this data now flows through the
+// core-operations TelemetryEvent pipeline instead — see docs/single-schema-migration.md
+// §5-6 and packages/config/src/engagement-telemetry.ts. The brand-level high-engagement
+// trigger now emits a `demo.engagement_anomaly` telemetry event instead of writing
+// AnomalyLog/EngagementLog rows — those two tables stay in packages/db for their
+// still-active *category-level* usage (survey-feed-signals.server.ts,
+// server/verification-layer.server.ts), unaffected by this change.
 import { brands, type BrandSlug } from '@foundingos/config'
+import {
+  emitEngagementAnomaly,
+  emitEngagementSnapshot,
+  readLatestEngagementSnapshotForBrand,
+  readLatestEngagementSnapshots,
+} from '@foundingos/config/engagement-telemetry'
 
 function resolveBrandName(brandSlug: string): string {
   const brand = brands[brandSlug as BrandSlug]
@@ -40,35 +55,25 @@ function shouldTriggerHighEngagement(anomalyScore: number, totalEngagement: numb
 }
 
 export async function upsertBrandMetricOnSubmission(brandSlug: string, category: string): Promise<void> {
-  const prisma = getPrismaClient()
-  if (!prisma) return // Demo Mode — no DB configured.
-
   const brandName = resolveBrandName(brandSlug)
-  const existing = await prisma.brandMetric.findUnique({ where: { brandName } })
+  const existing = await readLatestEngagementSnapshotForBrand(brandName)
 
   const totalEngagement = (existing?.totalEngagement ?? 0) + 1
-  const existingBreakdown = (existing?.categoryBreakdown as Record<string, number> | null) ?? {}
+  const existingBreakdown = existing?.categoryBreakdown ?? {}
   const categoryBreakdown = { ...existingBreakdown, [category]: (existingBreakdown[category] ?? 0) + 1 }
   const anomalyScore = computeAnomalyScore(totalEngagement)
 
-  await prisma.brandMetric.upsert({
-    where: { brandName },
-    create: { brandName, totalEngagement, anomalyScore, categoryBreakdown },
-    update: { totalEngagement, anomalyScore, categoryBreakdown, lastUpdated: new Date() },
-  })
+  await emitEngagementSnapshot({ brandName, totalEngagement, anomalyScore, categoryBreakdown })
 
   if (shouldTriggerHighEngagement(anomalyScore, totalEngagement, categoryBreakdown)) {
     const message = `${brandName} high engagement — auto-optimize triggered.`
-    await Promise.all([
-      prisma.anomalyLog.create({ data: { brandName, message, score: anomalyScore, totalEngagement, categoryBreakdown } }),
-      prisma.engagementLog.create({ data: { brandName, score: anomalyScore, totalEngagement, categoryBreakdown } }),
-    ])
+    await emitEngagementAnomaly({ brandName, message, score: anomalyScore, totalEngagement, categoryBreakdown })
   }
 }
 
 export async function readBrandMetrics() {
-  const prisma = getPrismaClient()
-  if (!prisma) return []
-
-  return prisma.brandMetric.findMany({ orderBy: { brandName: 'asc' } })
+  const snapshots = await readLatestEngagementSnapshots()
+  return snapshots
+    .map((snapshot) => ({ ...snapshot, lastUpdated: new Date(snapshot.lastUpdated) }))
+    .sort((a, b) => a.brandName.localeCompare(b.brandName))
 }

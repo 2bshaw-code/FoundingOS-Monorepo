@@ -37,13 +37,13 @@ jobs:
           node-version: 22
       - run: npm ci
       # Build-only local workspace deps first: core-operations/workforce/intelligence backends
-      # import @founder-os/auth and @founder-os/bob by their built `dist/` exports (not source),
+      # import @foundingos/service-auth and @foundingos/bob by their built `dist/` exports (not source),
       # and each backend's own module resolution expects a generated Prisma client under
       # src/generated/prisma — both are intentionally gitignored build artifacts (see .gitignore),
       # so typecheck fails with "cannot find module" unless they're produced first, exactly as
       # each backend's own `build` script already does before `tsc`.
-      - run: npm run build --workspace @founder-os/auth --workspace @founder-os/bob
-      - run: npm run prisma:generate --workspace @founder-os/core-operations-backend --workspace @founder-os/core-workforce-backend --workspace @founder-os/core-intelligence-backend
+      - run: npm run build --workspace @foundingos/service-auth --workspace @foundingos/bob
+      - run: npm run prisma:generate --workspace @foundingos/core-operations-backend --workspace @foundingos/core-workforce-backend --workspace @foundingos/core-intelligence-backend
       # Real, whole-monorepo type safety gate across all 26 apps + shared packages — this
       # session's actual bugs (both hydration issues, several prop-signature mismatches) were
       # frequently caught this way during manual verification; this makes that automatic on

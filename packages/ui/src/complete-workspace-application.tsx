@@ -544,6 +544,11 @@ function useAgentActions(production: boolean, session: ProductionSession | null,
   const [intelligence, setIntelligence] = useState<AgentIntelligenceSummary>(() => demoIntelligenceSummary([demoAgentAction(), demoRelatedAgentAction()]))
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
+  // Tracks the last action that genuinely failed (4xx/real rejection) so the
+  // error banner can offer a one-tap retry of the exact same call, matching
+  // the mobile Approvals retry behavior.
+  const [retry, setRetry] = useState<(() => void) | null>(null)
+  const inFlight = useRef<Set<string>>(new Set())
   useEffect(() => {
     if (production) {
       if (!session) return
@@ -580,8 +585,11 @@ function useAgentActions(production: boolean, session: ProductionSession | null,
     if (!production) window.localStorage.setItem(AGENT_ACTIONS_KEY, JSON.stringify(next))
   }
   const propose = async (input: Record<string, unknown> = demoAgentAction().input) => {
+    if (inFlight.current.has('propose')) return
+    inFlight.current.add('propose')
     setBusy('propose')
     setError('')
+    setRetry(null)
     try {
       const action = production
         ? await productionAgentActions.proposeReplenishment(input)
@@ -590,13 +598,18 @@ function useAgentActions(production: boolean, session: ProductionSession | null,
       emit('FoundAI proposed a coordinated replenishment action from a low-stock signal')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'FoundAI could not create the proposal')
+      setRetry(() => () => propose(input))
     } finally {
       setBusy('')
+      inFlight.current.delete('propose')
     }
   }
   const activate = async (input: { businessName: string; supplier: string; productName: string; sku: string; currentStock: number; reorderQuantity: number; unitCostPence: number; unitRetailPricePence?: number; cashPositionPence: number; deliveryAddress: string }) => {
+    if (inFlight.current.has('activate')) return
+    inFlight.current.add('activate')
     setBusy('activate')
     setError('')
+    setRetry(null)
     try {
       if (production) {
         const onboarding = await productionRequest<{ businessName: string; ownerName: string; industry?: string | null; countryCode: string; currency: string; timezone: string }>('/platform/onboarding')
@@ -617,26 +630,44 @@ function useAgentActions(production: boolean, session: ProductionSession | null,
       throw cause
     } finally {
       setBusy('')
+      inFlight.current.delete('activate')
     }
   }
   const decide = async (action: AgentAction, decision: 'approve' | 'reject') => {
+    const key = `decide:${action.id}:${decision}`
+    if (inFlight.current.has(key)) return
+    inFlight.current.add(key)
     setBusy(action.id)
     setError('')
+    setRetry(null)
+    // Optimistic: reflect the decision immediately so approve/reject feels
+    // instant on web too, matching the mobile Approvals behavior. Only rolled
+    // back if the server genuinely rejects the request.
+    const previousActions = actions
+    const optimisticStatus = decision === 'approve' ? 'approved' as const : 'rejected' as const
+    persist(actions.map((item) => item.id === action.id ? { ...item, status: optimisticStatus } : item))
     try {
       const updated = production
         ? await productionAgentActions.decide(action.id, decision)
-        : { ...action, status: decision === 'approve' ? 'approved' as const : 'rejected' as const, trailEventIds: [...(action.trailEventIds ?? []), `${decision}-${Date.now()}`], updatedAt: new Date().toISOString() }
+        : { ...action, status: optimisticStatus, trailEventIds: [...(action.trailEventIds ?? []), `${decision}-${Date.now()}`], updatedAt: new Date().toISOString() }
       persist(actions.map((item) => item.id === action.id ? updated : item))
       emit(`Agent action ${decision === 'approve' ? 'approved' : 'rejected'}: ${action.title}`)
     } catch (cause) {
+      persist(previousActions)
       setError(cause instanceof Error ? cause.message : 'The decision could not be recorded')
+      setRetry(() => () => decide(action, decision))
     } finally {
       setBusy('')
+      inFlight.current.delete(key)
     }
   }
   const execute = async (action: AgentAction) => {
+    const key = `execute:${action.id}`
+    if (inFlight.current.has(key)) return
+    inFlight.current.add(key)
     setBusy(action.id)
     setError('')
+    setRetry(null)
     try {
       let updated: AgentAction
       if (production) {
@@ -652,13 +683,19 @@ function useAgentActions(production: boolean, session: ProductionSession | null,
       emit('FoundAI completed replenishment across Retail, Logistics, and Finance')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'The approved action could not be executed')
+      setRetry(() => () => execute(action))
     } finally {
       setBusy('')
+      inFlight.current.delete(key)
     }
   }
   const reverse = async (action: AgentAction) => {
+    const key = `reverse:${action.id}`
+    if (inFlight.current.has(key)) return
+    inFlight.current.add(key)
     setBusy(action.id)
     setError('')
+    setRetry(null)
     try {
       if (production) await productionAgentActions.reverse(action.id)
       const updated = { ...action, executionReversed: true, trailEventIds: [...(action.trailEventIds ?? []), `reversed-${Date.now()}`], updatedAt: new Date().toISOString() }
@@ -666,11 +703,13 @@ function useAgentActions(production: boolean, session: ProductionSession | null,
       emit('FoundAI compensated the internal Retail, Logistics, and Finance records')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'The internal execution could not be reversed')
+      setRetry(() => () => reverse(action))
     } finally {
       setBusy('')
+      inFlight.current.delete(key)
     }
   }
-  return { actions, intelligence, busy, error, propose, decide, execute, reverse, activate }
+  return { actions, intelligence, busy, error, retry, propose, decide, execute, reverse, activate }
 }
 
 function WorkspaceHeading({ eyebrow, title, copy, action }: { eyebrow: string; title: string; copy: string; action?: React.ReactNode }) {
@@ -681,18 +720,31 @@ function Metric({ label, value, change }: { label: string; value: string; change
   return <article className="retail-app-metric"><span>{label}</span><strong>{value}</strong><small>{change}</small></article>
 }
 
-function Overview({ workspace, config, state, events }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; state: WorkspaceState; events: WorkspaceEvent[] }) {
+function Overview({ workspace, config, state, events, production, agentActions }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; state: WorkspaceState; events: WorkspaceEvent[]; production: boolean; agentActions: AgentAction[] }) {
   const operational = config.modules.filter((item) => !['overview', 'settings', 'integrations', 'security', 'team'].includes(item.id)).slice(0, 5)
+  // In production, a founder's real activity is what should build trust — fabricated
+  // placeholder events would contradict "nothing here is a demo". Only the interactive
+  // test workspaces (production=false) show illustrative sample events.
+  const activityItems = events.length
+    ? events
+    : production
+      ? []
+      : [{ id: '1', workspace, text: `${config.label} workspace opened`, time: 'Now' }, { id: '2', workspace: 'finance' as const, text: 'Payment reconciled to customer order', time: '24m' }, { id: '3', workspace: 'marketing' as const, text: 'Campaign revenue attribution updated', time: '42m' }]
+  // Mirrors the mobile Today tab's "Needs your attention" count — the same
+  // governed-action queue, not a separate mock list, so the number a founder
+  // sees here matches what they'd see on their phone.
+  const pendingActions = agentActions.filter((action) => action.status === 'proposed' || action.status === 'approved')
   return <>
     <WorkspaceHeading eyebrow={`${config.label} command centre`} title={`Good morning, Bobby`} copy={config.description} />
+    {production ? <p className="complete-workspace-trust-strip">FoundingOS shows you what needs attention today. Nothing here is simulated.</p> : null}
     <section className="retail-app-metrics">{config.metrics.map((metric) => <Metric key={metric.label} {...metric} />)}</section>
     <section className="retail-app-dashboard-grid">
-      <article className="retail-app-panel retail-app-chart-panel"><div className="retail-app-panel-heading"><div><p>Performance</p><h2>Seven-day operating trend</h2></div><span>Live simulation</span></div><svg viewBox="0 0 620 220" role="img" aria-label={`${config.label} seven-day trend`}><defs><linearGradient id={`${workspace}-trend`} x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor={config.accent} stopOpacity=".38" /><stop offset="1" stopColor={config.accent} stopOpacity="0" /></linearGradient></defs>{[35, 80, 125, 170].map((y) => <line key={y} stroke="#dfe5ed" x1="30" x2="600" y1={y} y2={y} />)}<path d="M30 175 L120 150 L210 159 L300 112 L390 126 L480 73 L600 39 L600 205 L30 205 Z" fill={`url(#${workspace}-trend)`} /><polyline fill="none" points="30,175 120,150 210,159 300,112 390,126 480,73 600,39" stroke={config.accent} strokeLinecap="round" strokeLinejoin="round" strokeWidth="5" /></svg></article>
-      <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Priority queue</p><h2>Work needing attention</h2></div></div><div className="retail-app-priorities">{operational.map((item, index) => <Link href={`${workspaceRoot}/${workspace}/${item.id}`} key={item.id}><i data-tone={index < 2 ? 'risk' : 'watch'} /><div><strong>{state.records[item.id]?.[0]?.name}</strong><span>{item.label} · {state.records[item.id]?.[0]?.status}</span></div><b>→</b></Link>)}</div></article>
+      <article className="retail-app-panel retail-app-chart-panel"><div className="retail-app-panel-heading"><div><p>Performance</p><h2>Seven-day operating trend</h2></div><span>{production ? 'Illustrative — connect reporting for a live trend' : 'Live simulation'}</span></div><svg viewBox="0 0 620 220" role="img" aria-label={`${config.label} seven-day trend`}><defs><linearGradient id={`${workspace}-trend`} x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor={config.accent} stopOpacity=".38" /><stop offset="1" stopColor={config.accent} stopOpacity="0" /></linearGradient></defs>{[35, 80, 125, 170].map((y) => <line key={y} stroke="#dfe5ed" x1="30" x2="600" y1={y} y2={y} />)}<path d="M30 175 L120 150 L210 159 L300 112 L390 126 L480 73 L600 39 L600 205 L30 205 Z" fill={`url(#${workspace}-trend)`} /><polyline fill="none" points="30,175 120,150 210,159 300,112 390,126 480,73 600,39" stroke={config.accent} strokeLinecap="round" strokeLinejoin="round" strokeWidth="5" /></svg></article>
+      <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Priority queue</p><h2>Needs attention{production ? ` · ${pendingActions.length}` : ''}</h2></div></div>{production && pendingActions.length === 0 ? <p className="complete-workspace-empty-note">You're all caught up. Nothing needs a decision right now — real actions will appear here the moment something does.</p> : <div className="retail-app-priorities">{operational.map((item, index) => <Link href={`${workspaceRoot}/${workspace}/${item.id}`} key={item.id}><i data-tone={index < 2 ? 'risk' : 'watch'} /><div><strong>{state.records[item.id]?.[0]?.name}</strong><span>{item.label} · {state.records[item.id]?.[0]?.status}</span></div><b>→</b></Link>)}</div>}</article>
     </section>
     <section className="retail-app-dashboard-grid lower">
       <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Connected system</p><h2>Workspace coverage</h2></div></div><div className="complete-workspace-coverage">{config.modules.slice(1, 9).map((item) => <Link href={`${workspaceRoot}/${workspace}/${item.id}`} key={item.id}><strong>{state.records[item.id]?.length ?? 0}</strong><span>{item.label}</span></Link>)}</div></article>
-      <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Shared backbone</p><h2>Latest cross-workspace events</h2></div><Link href={`${workspaceRoot}/intelligence/event-feed`}>View feed</Link></div><ul className="retail-app-activity">{(events.length ? events : [{ id: '1', workspace, text: `${config.label} workspace opened`, time: 'Now' }, { id: '2', workspace: 'finance' as const, text: 'Payment reconciled to customer order', time: '24m' }, { id: '3', workspace: 'marketing' as const, text: 'Campaign revenue attribution updated', time: '42m' }]).slice(0, 5).map((event) => <li key={event.id}><i /><span><strong>{configs[event.workspace].label}</strong> · {event.text}</span><span>{event.time}</span></li>)}</ul></article>
+      <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Shared backbone</p><h2>Latest cross-workspace events</h2></div><Link href={`${workspaceRoot}/intelligence/event-feed`}>View feed</Link></div>{activityItems.length ? <ul className="retail-app-activity">{activityItems.slice(0, 5).map((event) => <li key={event.id}><i /><span><strong>{configs[event.workspace].label}</strong> · {event.text}</span><span>{event.time}</span></li>)}</ul> : <p className="complete-workspace-empty-note">Nothing has happened across your workspaces yet. Once your team starts working, real activity — not sample data — will show up here.</p>}</article>
     </section>
   </>
 }
@@ -861,7 +913,7 @@ function StrategicOverview({ intelligence }: { intelligence: AgentIntelligenceSu
   </section>
 }
 
-function SuperDashboardOverview({ events, agentActions, intelligence, agentBusy, agentError, activateIntelligence, proposeAgentAction, decideAgentAction, executeAgentAction, reverseAgentAction }: { events: WorkspaceEvent[]; agentActions: AgentAction[]; intelligence: AgentIntelligenceSummary; agentBusy: string; agentError: string; activateIntelligence: (input: ActivationInput) => Promise<void>; proposeAgentAction: () => Promise<void>; decideAgentAction: (action: AgentAction, decision: 'approve' | 'reject') => Promise<void>; executeAgentAction: (action: AgentAction) => Promise<void>; reverseAgentAction: (action: AgentAction) => Promise<void> }) {
+function SuperDashboardOverview({ events, agentActions, intelligence, agentBusy, agentError, agentRetry, activateIntelligence, proposeAgentAction, decideAgentAction, executeAgentAction, reverseAgentAction }: { events: WorkspaceEvent[]; agentActions: AgentAction[]; intelligence: AgentIntelligenceSummary; agentBusy: string; agentError: string; agentRetry: (() => void) | null; activateIntelligence: (input: ActivationInput) => Promise<void>; proposeAgentAction: () => Promise<void>; decideAgentAction: (action: AgentAction, decision: 'approve' | 'reject') => Promise<void>; executeAgentAction: (action: AgentAction) => Promise<void>; reverseAgentAction: (action: AgentAction) => Promise<void> }) {
   const [horizon, setHorizon] = useState<'Today' | '7 days' | '30 days'>('7 days')
   const forecast = horizon === 'Today' ? { revenue: '+0.8%', cash: '£87.1k', confidence: '95%' } : horizon === '7 days' ? { revenue: '+4.6%', cash: '£91.8k', confidence: '91%' } : { revenue: '+13.2%', cash: '£103.5k', confidence: '86%' }
   const activeAction = agentActions.find((action) => action.status !== 'rejected') ?? agentActions[0]
@@ -880,7 +932,7 @@ function SuperDashboardOverview({ events, agentActions, intelligence, agentBusy,
     <StrategicOverview intelligence={intelligence} />
     <section className="agent-action-command" id="agent-actions">
       <header><div><p>FoundAI orchestration</p><h2>{activeAction?.title ?? 'No active proposals'}</h2></div>{activeAction ? <span data-status={activeAction.status}>{activeAction.status}</span> : null}</header>
-      {agentError ? <div className="complete-workspace-error" role="alert">{agentError}</div> : null}
+      {agentError ? <div className="complete-workspace-error" role="alert"><span>{agentError}</span>{agentRetry ? <button type="button" className="complete-workspace-error__retry" onClick={agentRetry}>Retry</button> : null}</div> : null}
       {activeAction ? <>
         <p className="agent-action-summary">{activeAction.summary}</p>
         <div className="agent-action-evidence"><span>Triggered by <strong>Shared Event Feed</strong></span><span>Risk <strong>{activeAction.riskLevel}</strong></span><span>Cash impact <strong>{displayMoney(activeAction.estimatedValuePence)}</strong></span>{activeAction.predictiveSignals ? <span className="agent-confidence-badge" data-confidence={activeAction.predictiveSignals.confidenceLabel}><strong>{activeAction.predictiveSignals.confidence}% confidence</strong> · {activeAction.predictiveSignals.evidenceCount} outcomes</span> : null}</div>
@@ -2021,6 +2073,8 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const [creating, setCreating] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [retry, setRetry] = useState<(() => void) | null>(null)
+  const inFlight = useRef<Set<string>>(new Set())
   const [stockCount, setStockCount] = useState('')
   const [noteText, setNoteText] = useState('')
   const [noteKind, setNoteKind] = useState('Note')
@@ -2132,8 +2186,11 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   }
   const create = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (inFlight.current.has('create')) return
+    inFlight.current.add('create')
     setSaving(true)
     setError('')
+    setRetry(null)
     const form = new FormData(event.currentTarget)
     const file = form.get('attachment') as File | null
     const attachment = file && file.size > 0 ? await readFileAsDataUrl(file) : undefined
@@ -2144,21 +2201,28 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
       setCreating(false)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Record could not be created')
+      setRetry(() => () => void createRecord(item.id, record).then((created) => { setSelectedId(created.id); setCreating(false); setError(''); setRetry(null) }).catch((retryCause) => setError(retryCause instanceof Error ? retryCause.message : 'Record could not be created')))
     } finally {
       setSaving(false)
+      inFlight.current.delete('create')
     }
   }
   const advance = async () => {
     if (!selected) return
+    if (inFlight.current.has(`advance:${selected.id}`)) return
+    inFlight.current.add(`advance:${selected.id}`)
     const next = statuses[Math.min(statuses.indexOf(selected.status) + 1, statuses.length - 1)]
     setSaving(true)
     setError('')
+    setRetry(null)
     try {
       await advanceRecord(item.id, selected, next)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Record could not be updated')
+      setRetry(() => () => void advance())
     } finally {
       setSaving(false)
+      inFlight.current.delete(`advance:${selected.id}`)
     }
   }
   const saveContentDraft = async (draft: ContentDraft) => {
@@ -2371,9 +2435,9 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
         {!isContentStudio ? <ActivityLog entries={selected.log ?? []} kind={noteKind} note={noteText} onAdd={addNote} onKindChange={setNoteKind} onNoteChange={setNoteText} placeholder={isInventory ? 'Add a note about this stock' : 'Add an activity note'} /> : null}
         <button aria-expanded={sourceOpen} className="retail-app-source-toggle" onClick={() => setSourceOpen((open) => !open)} type="button"><span>Source: {origin.label}</span><b>{sourceOpen ? '−' : '+'}</b></button>
         {sourceOpen ? <p className="retail-app-source-detail">{origin.detail}</p> : null}
-        {!isDirectory ? <div className="retail-app-stage">{statuses.map((status) => <span className={status === selected.status ? 'active' : ''} key={status}>{status}</span>)}</div> : null}{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}{productionModeEnabled && item.id === 'payments' && selected.status !== 'Paid' ? <button className="retail-app-primary" disabled={saving || !selected.backendId} onClick={() => void collectPayment()} type="button">Collect with Stripe</button> : !isDirectory && selected.status !== statuses.at(-1) ? <button className="retail-app-primary" disabled={saving} onClick={() => void advance()} type="button">Move to {statuses[Math.min(statuses.indexOf(selected.status) + 1, statuses.length - 1)]}</button> : null}<button className="retail-app-secondary" disabled={saving} onClick={() => void publishHandoff(item.id, selected, handoffTarget).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Handoff could not be published'))} type="button">Handoff to {configs[handoffTarget].label}</button></aside> : null}
+        {!isDirectory ? <div className="retail-app-stage">{statuses.map((status) => <span className={status === selected.status ? 'active' : ''} key={status}>{status}</span>)}</div> : null}{error ? <div className="complete-workspace-error" role="alert"><span>{error}</span>{retry ? <button type="button" className="complete-workspace-error__retry" onClick={retry}>Retry</button> : null}</div> : null}{productionModeEnabled && item.id === 'payments' && selected.status !== 'Paid' ? <button className="retail-app-primary" disabled={saving || !selected.backendId} onClick={() => void collectPayment()} type="button">Collect with Stripe</button> : !isDirectory && selected.status !== statuses.at(-1) ? <button className="retail-app-primary" disabled={saving} onClick={() => void advance()} type="button">Move to {statuses[Math.min(statuses.indexOf(selected.status) + 1, statuses.length - 1)]}</button> : null}<button className="retail-app-secondary" disabled={saving} onClick={() => void publishHandoff(item.id, selected, handoffTarget).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Handoff could not be published'))} type="button">Handoff to {configs[handoffTarget].label}</button></aside> : null}
     </section>}
-    {creating ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void create(event)}><div><p>{item.label}</p><h2>Create a record</h2></div><label>Name<input name="name" required /></label><label>Context<input name="secondary" required /></label><div className="retail-app-form-grid"><label>Value<input name="value" placeholder="£0 or priority" required /></label><label>Owner<select name="owner"><option>Maya</option><option>Noah</option><option>Ava</option><option>Bobby</option></select></label></div><label>Attachment (optional)<input accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv" name="attachment" type="file" /></label>{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setCreating(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Saving…' : 'Create record'}</button></footer></form></div> : null}
+    {creating ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void create(event)}><div><p>{item.label}</p><h2>Create a record</h2></div><label>Name<input name="name" required /></label><label>Context<input name="secondary" required /></label><div className="retail-app-form-grid"><label>Value<input name="value" placeholder="£0 or priority" required /></label><label>Owner<select name="owner"><option>Maya</option><option>Noah</option><option>Ava</option><option>Bobby</option></select></label></div><label>Attachment (optional)<input accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv" name="attachment" type="file" /></label>{error ? <div className="complete-workspace-error" role="alert"><span>{error}</span>{retry ? <button type="button" className="complete-workspace-error__retry" onClick={retry}>Retry</button> : null}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setCreating(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Saving…' : 'Create record'}</button></footer></form></div> : null}
   </>
 }
 
@@ -2819,10 +2883,10 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
   if (!hydrated) return <main className="complete-workspace-access"><section><h1>Loading FoundingOS…</h1></section></main>
   if (production && !session) return <ProductionAccess onAuthenticated={setSession} />
   let content: React.ReactNode
-  if (current.id === 'overview' && workspace === 'intelligence') content = <SuperDashboardOverview activateIntelligence={agent.activate} agentActions={agent.actions} intelligence={agent.intelligence} agentBusy={agent.busy} agentError={agent.error} decideAgentAction={agent.decide} events={events} executeAgentAction={agent.execute} proposeAgentAction={agent.propose} reverseAgentAction={agent.reverse} />
+  if (current.id === 'overview' && workspace === 'intelligence') content = <SuperDashboardOverview activateIntelligence={agent.activate} agentActions={agent.actions} intelligence={agent.intelligence} agentBusy={agent.busy} agentError={agent.error} agentRetry={agent.retry} decideAgentAction={agent.decide} events={events} executeAgentAction={agent.execute} proposeAgentAction={agent.propose} reverseAgentAction={agent.reverse} />
   else if (current.id === 'outcomes' && workspace === 'intelligence') content = <OutcomesPage intelligence={agent.intelligence} production={production} />
   else if (current.id === 'strategic-overview' && workspace === 'intelligence') content = <><WorkspaceHeading eyebrow="Buyer-ready platform summary" title="Strategic overview" copy="A concise view of the platform’s defensibility, measured evidence, governance boundaries, and WhatsApp-native advantage." /><StrategicOverview intelligence={agent.intelligence} /></>
-  else if (current.id === 'overview') content = <Overview config={config} events={events} state={state} workspace={workspace} />
+  else if (current.id === 'overview') content = <Overview agentActions={agent.actions} config={config} events={events} production={production} state={state} workspace={workspace} />
   else if (current.id === 'automations') content = <AutomationsPage config={config} state={state} update={update} />
   else if (current.id === 'integrations') content = <IntegrationsPage production={production} state={state} update={update} />
   else if (current.id === 'security') content = <SecurityPage workspace={workspace} />
@@ -2832,7 +2896,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
   else if (current.id === 'settings') content = <SettingsPage config={config} production={production} state={state} update={update} />
   else content = <RecordsPage adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} />
   return <main className="retail-product-shell complete-workspace-shell" style={{ ['--retail-accent' as string]: config.accent }}>
-    <aside className="retail-product-sidebar"><Link className="retail-product-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{config.suite}</small></div></Link><div className="retail-product-store"><span>{config.label.slice(0, 2).toUpperCase()}</span><div><strong>{state.settings.businessName}</strong><small>{config.label} Workspace</small></div><b>⌄</b></div><nav aria-label={`${config.label} workspace navigation`}>{groups.map((group) => { const expanded = group === activeGroup || !collapsedGroups.includes(group); return <div key={group}><button aria-expanded={expanded} className="retail-product-nav-group" onClick={() => toggleGroup(group)} type="button"><p>{group}</p><i className={expanded ? 'retail-product-nav-chevron open' : 'retail-product-nav-chevron'}>›</i></button>{expanded ? config.modules.filter((item) => item.group === group).map((item) => <Link className={item.id === current.id ? 'active' : ''} href={`${workspaceRoot}/${workspace}${item.id === 'overview' ? '' : `/${item.id}`}`} key={item.id}><i>{item.id === 'overview' ? '⌂' : '◇'}</i><span>{item.label}</span>{state.records[item.id]?.length ? <em>{state.records[item.id].length}</em> : null}{overdueCount(state.records[item.id]) ? <b aria-label={`${overdueCount(state.records[item.id])} follow-ups due`} className="retail-product-nav-dot" title={`${overdueCount(state.records[item.id])} follow-up${overdueCount(state.records[item.id]) === 1 ? '' : 's'} due`} /> : null}</Link>) : null}</div> })}</nav><Link className="retail-product-switcher" href={workspaceRoot}><span>Switch workspace</span><b>↗</b></Link></aside>
+    <aside className="retail-product-sidebar"><Link className="retail-product-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{config.suite}</small></div></Link><div className="retail-product-store"><span>{config.label.slice(0, 2).toUpperCase()}</span><div><strong>{state.settings.businessName}</strong><small>{config.label} Workspace</small></div><b>⌄</b></div><nav aria-label={`${config.label} workspace navigation`}>{groups.map((group) => { const expanded = group === activeGroup || !collapsedGroups.includes(group); const sunk = group === 'Administration'; return <div className={sunk ? 'retail-product-nav-group-sunk' : undefined} key={group}><button aria-expanded={expanded} className="retail-product-nav-group" onClick={() => toggleGroup(group)} type="button"><p>{group}</p><i className={expanded ? 'retail-product-nav-chevron open' : 'retail-product-nav-chevron'}>›</i></button>{expanded ? config.modules.filter((item) => item.group === group).map((item) => <Link className={item.id === current.id ? 'active' : ''} href={`${workspaceRoot}/${workspace}${item.id === 'overview' ? '' : `/${item.id}`}`} key={item.id}><i>{item.id === 'overview' ? '⌂' : '◇'}</i><span>{item.label}</span>{state.records[item.id]?.length ? <em>{state.records[item.id].length}</em> : null}{overdueCount(state.records[item.id]) ? <b aria-label={`${overdueCount(state.records[item.id])} follow-ups due`} className="retail-product-nav-dot" title={`${overdueCount(state.records[item.id])} follow-up${overdueCount(state.records[item.id]) === 1 ? '' : 's'} due`} /> : null}</Link>) : null}</div> })}</nav><Link className="retail-product-switcher" href={workspaceRoot}><span>Switch workspace</span><b>↗</b></Link></aside>
     <section className="retail-product-main"><header className="retail-product-topbar"><form onSubmit={(event) => { event.preventDefault(); setPaletteOpen(true) }}><span>⌕</span><input aria-label="Global workspace search" onFocus={(event) => { event.target.blur(); setPaletteOpen(true) }} placeholder={`Search ${config.label}, or ask FoundAI… (⌘K)`} readOnly /></form><div><span className="complete-workspace-live">● {production ? 'PRODUCTION' : 'SIMULATION'} LIVE</span>{production ? <button className="complete-workspace-signout" onClick={() => void logoutProduction().then(() => setSession(null))} type="button">Sign out</button> : null}<form action="/api/access/logout" method="post"><button className="complete-workspace-signout" type="submit">Log out</button></form><span className="retail-product-user">{session?.user.email.slice(0, 2).toUpperCase() || 'BS'}</span></div></header><div className="retail-product-content"><div className="retail-product-notice"><span>{loading ? '…' : error ? '!' : '✓'}</span>{loading ? 'Loading tenant data…' : error ? error : production ? 'Tenant data is secured in PostgreSQL and every action is audited' : 'Interactive simulation · actions persist in this browser'}</div>{content}</div><footer className="retail-product-footer"><span>{config.label} Workspace · {production ? 'tenant-isolated production data' : 'browser-persistent shared simulation'}</span>{!production ? <button onClick={reset} type="button">Reset {config.label} data</button> : null}</footer></section>
     <CommandPalette onClose={() => setPaletteOpen(false)} open={paletteOpen} state={state} workspace={workspace} />
   </main>

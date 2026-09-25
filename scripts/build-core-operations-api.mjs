@@ -31,8 +31,8 @@ await build({
   // type errors unrelated to this bundle, so avoid depending on their dist
   // output entirely.
   alias: {
-    '@founder-os/auth': path.join(root, 'shared/auth/src/index.ts'),
-    '@founder-os/bob': path.join(root, 'shared/bob/src/index.ts'),
+    '@foundingos/service-auth': path.join(root, 'shared/auth/src/index.ts'),
+    '@foundingos/bob': path.join(root, 'shared/bob/src/index.ts'),
   },
   external: [
     'bcrypt',

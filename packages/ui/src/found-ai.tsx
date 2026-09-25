@@ -611,7 +611,7 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
     <>
       <button
         type="button"
-        className="found-ai-fab found-ai-circle"
+        className={`found-ai-fab found-ai-circle${open ? '' : ' breathing'}`}
         style={{ '--found-ai-accent': theme.accent, '--found-ai-glow': theme.glow } as React.CSSProperties}
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
@@ -636,7 +636,11 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
               {message.text}
             </div>
           ))}
-          {loading && <div className="found-ai-message assistant">FoundAI is thinking…</div>}
+          {loading && (
+            <div className="found-ai-message assistant found-ai-typing" aria-label="FoundAI is typing">
+              <span /><span /><span />
+            </div>
+          )}
         </section>
 
         <section className="found-ai-prompts">

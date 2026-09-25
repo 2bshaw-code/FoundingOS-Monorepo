@@ -4,7 +4,7 @@ Real Express + Prisma backend for Core.Workforce. No hardcoded jobs, candidates,
 
 ## Data model
 
-- **AuthUser / AuthSession / PasswordReset / TenantInvitation** — shared auth tables reused via `@founder-os/auth`.
+- **AuthUser / AuthSession / PasswordReset / TenantInvitation** — shared auth tables reused via `@foundingos/service-auth`.
 - **Job** — tenant-scoped requisitions with title, department, location, status (`open`, `closed`, `filled`), and description.
 - **Candidate** — tenant-scoped applicants linked to a `Job`, with contact details, source, resume URL, notes, and pipeline stage (`Applied`, `Screening`, `Interview`, `Offer`, `Hired`, `Rejected`).
 - **PipelineEvent** — immutable pipeline history for application intake, stage changes, interview scheduling/status changes, and reversals.
@@ -71,4 +71,4 @@ npx prisma generate
 npx tsc --noEmit
 ```
 
-A live CRUD smoke test additionally requires a real Postgres database wired through `DATABASE_URL` and the shared auth secrets used by `@founder-os/auth`.
+A live CRUD smoke test additionally requires a real Postgres database wired through `DATABASE_URL` and the shared auth secrets used by `@foundingos/service-auth`.

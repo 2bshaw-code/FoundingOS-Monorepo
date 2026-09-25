@@ -3,7 +3,6 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { Platform } from 'react-native'
-import { authedFetch } from './api'
 import { useQuantumStore, OutboxItem } from './store'
 import { decideAgentAction, executeAgentAction, reverseAgentActionExecution } from './core-operations-api'
 import { decideWorkforceAction, executeWorkforceAction, reverseWorkforceActionExecution } from './core-workforce-api'
@@ -169,33 +168,12 @@ export async function processOutboxSync(): Promise<{ synced: number; failed: num
           continue
         }
 
-        let endpoint = '/api/ai/generic'
-        if (item.actionType.includes('inventory')) endpoint = '/api/ai/inventory-intake'
-        else if (item.actionType.includes('order')) endpoint = '/api/ai/order-assist'
-        else if (item.actionType.includes('logistics')) endpoint = '/api/ai/logistics-routing'
-        else if (item.actionType.includes('marketing')) endpoint = '/api/ai/marketing/director/suggest-campaigns'
-
-        const res = await authedFetch(`https://console.foundingos.com${endpoint}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            brandSlug: item.brandSlug,
-            actionType: item.actionType,
-            payload: item.payload,
-            queuedAt: item.createdAt,
-          }),
-        })
-
-        // A real failure (4xx/5xx other than "not found") must be reported as failed —
-        // previously 404 was treated as a synced success, silently masking real sync
-        // failures and violating the audit/reversibility guarantee for offline actions.
-        if (res.ok) {
-          await updateItemStatus(item.id, 'synced')
-          synced++
-        } else {
-          await updateItemStatus(item.id, 'failed', `Server status ${res.status}`, item.retryCount + 1)
-          failed++
-        }
+        // Any other action type has no real backend counterpart in the current
+        // architecture (the old console.foundingos.com generic AI-intake endpoints
+        // this used to call no longer exist/are unreachable from this app's auth
+        // model) — fail it explicitly rather than silently posting to a dead URL.
+        await updateItemStatus(item.id, 'failed', `No handler registered for action type "${item.actionType}"`, item.retryCount + 1)
+        failed++
       } catch (err: any) {
         await updateItemStatus(item.id, 'failed', err?.message || 'Network sync error', item.retryCount + 1)
         failed++

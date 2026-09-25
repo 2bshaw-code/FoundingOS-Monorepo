@@ -1,6 +1,6 @@
 # Unified Authentication
 
-All applications use `@founder-os/auth` for password hashing, access tokens, refresh rotation, reset flows, response contracts, and safe diagnostics.
+All applications use `@foundingos/service-auth` for password hashing, access tokens, refresh rotation, reset flows, response contracts, and safe diagnostics.
 
 ## HTTP contract
 

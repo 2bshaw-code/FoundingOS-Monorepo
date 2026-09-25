@@ -2,8 +2,8 @@ FROM node:20-bookworm-slim AS build
 WORKDIR /app
 COPY . .
 RUN npm ci \
-  && npm run build --workspace @founder-os/auth \
-  && npm run build --workspace @founder-os/core-operations-backend
+  && npm run build --workspace @foundingos/service-auth \
+  && npm run build --workspace @foundingos/core-operations-backend
 
 FROM node:20-bookworm-slim AS runtime
 ENV NODE_ENV=production

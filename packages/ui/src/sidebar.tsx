@@ -3,9 +3,35 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import Link from 'next/link'
+import type { PlanTier, SuiteKey } from '@foundingos/config/suites'
+import { isModuleVisibleAtTier } from '@foundingos/config/suites'
 import type { BrandConsoleConfig } from './console'
 
-function ActualSidebar({ config }: { config?: BrandConsoleConfig }) {
+// Phase 27: maps this Sidebar's hardcoded display-name groups onto the
+// SuiteKey vocabulary moduleMinTier is keyed by, so tier filtering can reuse
+// the one canonical mapping in packages/config instead of duplicating it here.
+const SUITE_KEY_BY_NAME: Record<string, SuiteKey> = {
+  'Core.Operations': 'core_operations',
+  'Core.Workforce': 'core_workforce',
+  'Core.Intelligence': 'core_intelligence',
+}
+
+function ActualSidebar({
+  config,
+  planTier,
+  featureFlags,
+}: {
+  config?: BrandConsoleConfig
+  planTier?: PlanTier
+  // Phase 34: flag key -> on/off, already evaluated server-side (via
+  // isFeatureEnabled in core-operations/backend/src/feature-flags.ts) for
+  // the current tenant/environment. Keyed by the same nav-item label used
+  // in moduleMinTier below, e.g. { Marketing: false } hides that item
+  // regardless of plan tier. Omitted keys default to visible, matching
+  // moduleMinTier's "unknown defaults to visible, never silently hidden"
+  // convention — a flag is an additional gate, not a second gating system.
+  featureFlags?: Record<string, boolean>
+}) {
   const theme = { '--accent': config?.colors.accent ?? '#4A90E2' } as React.CSSProperties
   const grouped: Record<string, Array<{ label: string; href: string; icon: string }>> = {
     'Core.Operations': [
@@ -32,6 +58,14 @@ function ActualSidebar({ config }: { config?: BrandConsoleConfig }) {
   }
   const suiteName = config?.name ?? 'Core.Operations'
   const items = grouped[suiteName] ?? grouped['Core.Operations']
+  // Graceful fallback (Phase 27 spec requirement): with no planTier supplied
+  // (the common case today — no console app currently sources a real tenant
+  // session/license; see docs/permissions.md and docs/restructure-summary.md),
+  // every module stays visible exactly as before this change.
+  const suiteKey = SUITE_KEY_BY_NAME[suiteName]
+  const visibleItems = (planTier && suiteKey ? items.filter((item) => isModuleVisibleAtTier(suiteKey, item.label, planTier)) : items).filter(
+    (item) => featureFlags?.[item.label] !== false,
+  )
 
   return (
     <aside className="sidebar" style={theme}>
@@ -46,7 +80,7 @@ function ActualSidebar({ config }: { config?: BrandConsoleConfig }) {
       <div className="nav-card-grid">
         <div className="nav-section">
           <p className="nav-section-label">{suiteName}</p>
-          {items.map((item) => (
+          {visibleItems.map((item) => (
             <Link key={item.href} className="nav-card" href={item.href}>
               <span className="nav-card-icon">{item.icon}</span>
               <div>
@@ -61,9 +95,17 @@ function ActualSidebar({ config }: { config?: BrandConsoleConfig }) {
   )
 }
 
-export function Sidebar({ config }: { config?: BrandConsoleConfig }) {
+export function Sidebar({
+  config,
+  planTier,
+  featureFlags,
+}: {
+  config?: BrandConsoleConfig
+  planTier?: PlanTier
+  featureFlags?: Record<string, boolean>
+}) {
   try {
-    return <ActualSidebar config={config} />
+    return <ActualSidebar config={config} planTier={planTier} featureFlags={featureFlags} />
   } catch {
     return <div className="p-4 text-red-500">Sidebar failed to load</div>
   }

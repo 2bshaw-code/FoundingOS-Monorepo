@@ -216,7 +216,24 @@ async function SiteNav() {
   const signedIn = Boolean((await cookies()).get(SITE_ACCESS_COOKIE_NAME)?.value)
   return (
     <nav>
-      <Link href="/">FoundingOS</Link>
+      {/* The checkbox must be a direct child of <nav>, as a preceding sibling of
+          .site-nav-links/.site-nav-scrim below, for the CSS `~` sibling combinator
+          toggle to work — it can't live inside .site-nav-bar with the visible button,
+          even though the button (a <label htmlFor>) is only ever shown there. */}
+      <input type="checkbox" id="site-nav-toggle" className="site-nav-toggle-checkbox" />
+      {/* The visible bar (logo, blur, border) lives in this inner wrapper rather than on
+          <nav> itself: `backdrop-filter` creates a new containing block for `position:
+          fixed` descendants, which trapped the slide-in panel inside the ~120px bar
+          instead of the full viewport. Keeping <nav> filter-free lets the panel and
+          scrim below size themselves against the real viewport. */}
+      <div className="site-nav-bar">
+        <Link href="/" className="site-nav-logo">FoundingOS</Link>
+        <label htmlFor="site-nav-toggle" className="site-nav-toggle-button" aria-label="Open menu">
+          <span />
+          <span />
+          <span />
+        </label>
+      </div>
       <div className="site-nav-links">
         <Link href="/suites">Suites</Link>
         <Link href="/#how-it-works">How it works</Link>
@@ -231,6 +248,10 @@ async function SiteNav() {
         <ThemeToggle />
         {signedIn ? <form action="/api/access/logout" method="post" className="site-nav-logout"><button type="submit">Log out</button></form> : null}
       </div>
+      {/* Closing the menu by tapping outside it: a full-screen label sits behind the open
+          panel and re-checks the (hidden) toggle off via its `for` attribute. Pure CSS,
+          no client JS needed since SiteNav is an async server component. */}
+      <label htmlFor="site-nav-toggle" className="site-nav-scrim" aria-hidden="true" />
     </nav>
   )
 }

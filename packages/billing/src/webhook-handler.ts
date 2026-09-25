@@ -33,17 +33,15 @@ export async function handleStripeWebhook(rawBody: string, signature: string | n
 
   if (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
     const subscription = event.data.object as Stripe.Subscription
-    const brandId = subscription.metadata?.brandId
-    const userId = subscription.metadata?.userId
+    const brandSlug = subscription.metadata?.brandSlug
     const plan = subscription.metadata?.plan ?? 'unknown'
 
-    if (!brandId || !userId) {
-      return { status: 200, message: 'Ignored — subscription metadata missing brandId/userId.' }
+    if (!brandSlug) {
+      return { status: 200, message: 'Ignored — subscription metadata missing brandSlug.' }
     }
 
     await syncSubscriptionFromStripe({
-      brandId,
-      userId,
+      brandSlug,
       stripeCustomerId: typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id,
       stripeSubscriptionId: subscription.id,
       status: subscription.status === 'canceled' ? 'canceled' : subscription.status === 'past_due' ? 'past_due' : subscription.status === 'trialing' ? 'trialing' : 'active',

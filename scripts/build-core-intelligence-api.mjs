@@ -25,8 +25,8 @@ await build({
   target: 'node20',
   format: 'cjs',
   alias: {
-    '@founder-os/auth': path.join(root, 'shared/auth/src/index.ts'),
-    '@founder-os/bob': path.join(root, 'shared/bob/src/index.ts'),
+    '@foundingos/service-auth': path.join(root, 'shared/auth/src/index.ts'),
+    '@foundingos/bob': path.join(root, 'shared/bob/src/index.ts'),
   },
   external: [
     'bcrypt',

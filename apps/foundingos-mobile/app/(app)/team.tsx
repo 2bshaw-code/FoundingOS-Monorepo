@@ -41,6 +41,10 @@ function roleLabel(role: TeamRole | string) {
 
 // Only Founder/Owner and Manager roles can view or manage team membership —
 // mirrors the backend's requireTenantOwnerAccess guard on every /platform/team route.
+// Deliberately NOT expressed via lib/permissions.ts's `manageWorkspace` action:
+// that matrix entry requires 'admin' tier only (owner-equivalent), whereas this
+// screen's existing, correct behavior also allows 'manager' tier — reusing the
+// shared helper here would have silently narrowed who can manage the team.
 const MANAGE_ROLES = new Set<string>(['business_owner', 'business_manager'])
 
 export default function TeamScreen() {
@@ -210,7 +214,7 @@ export default function TeamScreen() {
         invitations.map((invitation) => (
           <QuantumCard key={invitation.id} accent={getSemanticColor('watch')}>
             <QuantumText style={styles.title}>{invitation.email}</QuantumText>
-            <QuantumText variant="caption" color="#7F7F7F">
+            <QuantumText variant="caption">
               {roleLabel(invitation.role)} · expires {new Date(invitation.expiresAt).toLocaleDateString('en-GB')}
             </QuantumText>
             <View style={styles.actionRow}>
@@ -232,7 +236,7 @@ export default function TeamScreen() {
         members.map((member) => (
           <QuantumCard key={member.id} accent={member.active ? FOUNDINGOS_ACCENT : getSemanticColor('risk')}>
             <QuantumText style={styles.title}>{member.email}</QuantumText>
-            <QuantumText variant="caption" color="#7F7F7F">
+            <QuantumText variant="caption">
               {roleLabel(member.role)} · {member.active ? 'Active' : 'Suspended'}
             </QuantumText>
             <View style={styles.pillRow}>

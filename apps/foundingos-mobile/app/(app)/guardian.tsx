@@ -79,7 +79,7 @@ export default function GuardianScreen() {
               <QuantumMetric label="Assessed outcomes" value={data.health.totalAssessedOutcomes} tone="info" />
               <QuantumMetric label="Active patterns" value={data.health.activePatterns} tone="info" />
             </View>
-            <QuantumText variant="caption" color="#7F7F7F">{data.health.narrative}</QuantumText>
+            <QuantumText variant="caption">{data.health.narrative}</QuantumText>
             {data.health.recurringDeviation ? (
               <QuantumNotice tone="warning">
                 Recurring deviation on {data.health.recurringDeviation.field} ({data.health.recurringDeviation.count}x): {data.health.recurringDeviation.insight}
@@ -96,7 +96,7 @@ export default function GuardianScreen() {
                 <QuantumText variant="overline" color={getSemanticColor(severityTone(signal.severity))}>{signal.kind.replace(/-/g, ' ')}</QuantumText>
                 <QuantumText style={styles.title}>{signal.title}</QuantumText>
                 <QuantumText variant="caption">{signal.summary}</QuantumText>
-                <QuantumText variant="caption" color="#7F7F7F">Reliability {Math.round(signal.reliability * 100)}% · {signal.outcomeCount} outcomes</QuantumText>
+                <QuantumText variant="caption">Reliability {Math.round(signal.reliability * 100)}% · {signal.outcomeCount} outcomes</QuantumText>
                 <QuantumText variant="caption">{signal.advisory}</QuantumText>
               </QuantumCard>
             ))
@@ -110,7 +110,7 @@ export default function GuardianScreen() {
               <QuantumCard key={interaction.id} accent={getSemanticColor(interaction.severity === 'material' ? 'risk' : 'watch')}>
                 <QuantumText style={styles.title}>{interaction.actionTitles[0]} ↔ {interaction.actionTitles[1]}</QuantumText>
                 <QuantumText variant="caption">{interaction.summary}</QuantumText>
-                <QuantumText variant="caption" color="#7F7F7F">{interaction.dimensions.join(' · ')}</QuantumText>
+                <QuantumText variant="caption">{interaction.dimensions.join(' · ')}</QuantumText>
                 <QuantumText variant="caption">{interaction.advisory}</QuantumText>
               </QuantumCard>
             ))
@@ -122,7 +122,7 @@ export default function GuardianScreen() {
               <QuantumCard accent={FOUNDINGOS_ACCENT}>
                 <QuantumText style={styles.title}>{entry.actionTitle}</QuantumText>
                 <QuantumText variant="caption">{entry.stage.toUpperCase()} · {entry.actor}</QuantumText>
-                <QuantumText variant="caption" color="#7F7F7F">{new Date(entry.occurredAt).toLocaleString('en-GB')}</QuantumText>
+                <QuantumText variant="caption">{new Date(entry.occurredAt).toLocaleString('en-GB')}</QuantumText>
                 <QuantumText variant="caption">{entry.summary}</QuantumText>
               </QuantumCard>
             </Pressable>

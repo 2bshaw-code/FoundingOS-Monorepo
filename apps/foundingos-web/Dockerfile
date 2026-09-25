@@ -6,7 +6,7 @@ ENV NEXT_PUBLIC_APP_MODE=$NEXT_PUBLIC_APP_MODE
 ENV NEXT_PUBLIC_FOUNDINGOS_API_URL=$NEXT_PUBLIC_FOUNDINGOS_API_URL
 COPY . .
 RUN npm ci \
-  && npm run build --workspace @founder-os/auth \
+  && npm run build --workspace @foundingos/service-auth \
   && npm run build --workspace @foundingos/foundingos-website
 
 FROM node:20-bookworm-slim

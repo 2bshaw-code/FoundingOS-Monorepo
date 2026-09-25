@@ -5,8 +5,8 @@
 import cors from 'cors'
 import express from 'express'
 import type { Request } from 'express'
-import { createCorsOptions, createRateLimit, malformedJsonHandler, requestContext, securityHeaders, structuredErrorHandler } from '@founder-os/auth'
-import { authRouter } from './auth.js'
+import { createCorsOptions, createRateLimit, malformedJsonHandler, requestContext, securityHeaders, structuredErrorHandler } from '@foundingos/service-auth'
+import { authRouter, prisma } from './auth.js'
 import { apiRouter } from './routes.js'
 
 export const app = express()
@@ -21,6 +21,17 @@ app.use(cors(createCorsOptions(allowedOrigins)))
 app.use(express.json({ verify: (req, _res, buffer) => { (req as Request & { rawBody?: Buffer }).rawBody = Buffer.from(buffer) } }))
 app.use(malformedJsonHandler)
 app.get('/health', (_req, res) => res.json({ app: 'core_operations', suite: 'ops', status: 'ok' }))
+// Phase 31 — readiness check: unlike /health (always cheap/instant liveness),
+// this actually pings the database so orchestrators can distinguish "process
+// is up" from "process can actually serve real requests".
+app.get('/ready', async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`
+    res.json({ app: 'core_operations', status: 'ready', dependencies: { database: true } })
+  } catch {
+    res.status(503).json({ app: 'core_operations', status: 'not_ready', dependencies: { database: false } })
+  }
+})
 app.use('/api/v1/auth', createRateLimit({ windowMs: 15 * 60_000, max: 20 }))
 app.use('/api/v1', createRateLimit({ max: 240 }))
 app.use('/api/v1/auth', authRouter)

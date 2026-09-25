@@ -88,21 +88,112 @@ export class CoreOpsApiError extends Error {
   }
 }
 
+// The backend issues short-lived (15 minute) access tokens plus a longer-lived
+// refresh token. Without this, every screen would 401 ~15 minutes into a
+// session and dump the user back to the login screen — which is exactly the
+// "sign in button takes me back to overview" loop this fixes. Concurrent 401s
+// (e.g. several tabs fetching at once) share one in-flight refresh instead of
+// each racing to refresh separately.
+let refreshInFlight: Promise<CoreOpsSession | null> | null = null
+
+async function refreshSession(): Promise<CoreOpsSession | null> {
+  if (refreshInFlight) return refreshInFlight
+  refreshInFlight = (async () => {
+    const current = await getSession()
+    if (!current?.refreshToken) return null
+    try {
+      // The backend rejects a refresh with "Refresh token required" unless a device
+      // fingerprint is also present — omitting this header (as an earlier version of
+      // this function did) makes every refresh attempt fail and wipe the session,
+      // which is worse than not refreshing at all.
+      const deviceFingerprint = await getDeviceFingerprint()
+      const response = await fetch(`${CORE_OPS_API_BASE}/api/v1/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-refresh-token': current.refreshToken,
+          'X-Device-Fingerprint': deviceFingerprint,
+        },
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data?.success) {
+        await clearSession()
+        return null
+      }
+      const session: CoreOpsSession = {
+        token: data.token,
+        refreshToken: data.refreshToken,
+        userId: data.user?.id,
+        email: data.user?.email,
+        role: data.user?.role,
+        tenantId: data.user?.tenantId ?? null,
+      }
+      await setSession(session)
+      return session
+    } catch {
+      // Network failure — keep the existing (expired) session rather than
+      // signing the user out over a transient connectivity issue.
+      return null
+    }
+  })()
+  try {
+    return await refreshInFlight
+  } finally {
+    refreshInFlight = null
+  }
+}
+
 async function authedRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const session = await getSession()
+  let session = await getSession()
   if (!session) throw new CoreOpsApiError('Not signed in to Core.Operations', 401)
   const deviceFingerprint = await getDeviceFingerprint()
-  const headers = new Headers(init.headers)
-  headers.set('Authorization', `Bearer ${session.token}`)
-  headers.set('X-Device-Fingerprint', deviceFingerprint)
-  if (session.tenantId) headers.set('X-Tenant-Id', session.tenantId)
-  if (init.body) headers.set('Content-Type', 'application/json')
-  const response = await fetch(`${CORE_OPS_API_BASE}${path}`, { ...init, headers })
+
+  const send = async (activeSession: CoreOpsSession) => {
+    const headers = new Headers(init.headers)
+    headers.set('Authorization', `Bearer ${activeSession.token}`)
+    headers.set('X-Device-Fingerprint', deviceFingerprint)
+    if (activeSession.tenantId) headers.set('X-Tenant-Id', activeSession.tenantId)
+    if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+    return fetch(`${CORE_OPS_API_BASE}${path}`, { ...init, headers })
+  }
+
+  let response = await send(session)
+  if (response.status === 401) {
+    const refreshed = await refreshSession()
+    if (refreshed) {
+      session = refreshed
+      response = await send(session)
+    }
+  }
+
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
     throw new CoreOpsApiError(data?.message || `Request failed (${response.status})`, response.status)
   }
   return (data?.data !== undefined ? data.data : data) as T
+}
+
+// Checks whether a locally stored Core.Operations session is still accepted by the
+// backend — a session token can exist on disk (e.g. from a previous install, a
+// revoked account, or an expired token) without actually being valid, which would
+// otherwise cause the app to silently bounce a user straight back past the login
+// screen into a broken "signed in but every call 401s" state. Any stored session
+// found invalid here is cleared so the login screen behaves like a fresh sign-in.
+export async function verifySession(): Promise<boolean> {
+  const session = await getSession()
+  if (!session) return false
+  try {
+    await authedRequest('/api/v1/ops/platform/onboarding')
+    return true
+  } catch (err) {
+    if (err instanceof CoreOpsApiError && err.status === 401) {
+      await clearSession()
+      return false
+    }
+    // Network/server error unrelated to auth (offline, 5xx, etc.) — don't destroy a
+    // possibly-valid session over a transient failure.
+    return true
+  }
 }
 
 export type AgentActionStatus = 'proposed' | 'approved' | 'rejected' | 'executing' | 'completed'
@@ -491,6 +582,85 @@ export async function fetchBusinessPulse(): Promise<BusinessPulse | null> {
 export const fetchOwnerOperations = () => authedRequest<OwnerOperationsData>('/api/v1/ops/owner/operations')
 
 export const fetchMarketingWorkspace = () => authedRequest<MarketingWorkspace>('/api/v1/ops/marketing/workspace')
+
+// Sales Pipeline / Deals — backed by the real, tenant-scoped Lead model
+// (core-operations/backend/src/pipeline.ts), not client-side mock data. The
+// backend's `stage` field is a free-form string, so the app's Kanban stage
+// names ('Lead' | 'Qualified' | 'Proposal' | 'Won' | 'Lost') are used directly
+// as the stored stage value — no separate enum/mapping layer needed.
+export type PipelineLead = {
+  id: string
+  companyName: string
+  contactName: string | null
+  stage: string
+  valuePence: number
+  createdAt: string
+  updatedAt: string
+}
+
+export const fetchPipelineLeads = () =>
+  authedRequest<{ leads: PipelineLead[] }>('/api/v1/ops/owner/pipeline').then((data) => data.leads)
+
+export const createPipelineLead = (input: { companyName: string; contactName?: string; valuePence?: number; stage?: string }) =>
+  authedRequest<PipelineLead>('/api/v1/ops/leads', { method: 'POST', body: JSON.stringify(input) })
+
+export const updatePipelineLeadStage = (id: string, stage: string) =>
+  authedRequest<PipelineLead>(`/api/v1/ops/leads/${id}`, { method: 'PATCH', body: JSON.stringify({ stage }) })
+
+// Generic workspace module records — the same backend the web app's
+// production mode uses for every module across all 7 workspaces
+// (platform.ts: listWorkspaceRecords/createWorkspaceRecord/updateWorkspaceRecord).
+// This lets every module defined in lib/workspace-modules.ts read and write
+// real, tenant-scoped data with no per-module backend work required.
+export type WorkspaceRecordDTO = {
+  id: string
+  reference: string
+  name: string
+  status: string
+  ownerId: string | null
+  valuePence: number | null
+  data: Record<string, unknown> | null
+  version: number
+  updatedAt: string
+}
+
+export const fetchWorkspaceRecords = (workspace: string, module: string) =>
+  authedRequest<WorkspaceRecordDTO[]>(`/api/v1/ops/platform/workspaces/${workspace}/${module}/records`)
+
+export const createWorkspaceRecord = (
+  workspace: string,
+  module: string,
+  input: { reference: string; name: string; status: string; ownerId?: string; valuePence?: number; data?: Record<string, unknown> },
+) =>
+  authedRequest<WorkspaceRecordDTO>(`/api/v1/ops/platform/workspaces/${workspace}/${module}/records`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+
+export const updateWorkspaceRecord = (
+  id: string,
+  input: { version: number; status?: string; name?: string; valuePence?: number; data?: Record<string, unknown> },
+) => authedRequest<WorkspaceRecordDTO>(`/api/v1/ops/platform/records/${id}`, { method: 'PATCH', body: JSON.stringify(input) })
+
+// Uploads a photo captured/picked on-device (via expo-image-picker in the
+// workspace/[module] screen's photo capture button) and attaches it to a
+// workspace record — used for Retail Inventory/Products stock photos. The image
+// is read from its local file URI into a Blob and sent as a raw binary body;
+// the backend stores it in Vercel Blob storage and appends the resulting URL
+// to the record's `data.images` array.
+export async function uploadWorkspaceRecordImage(
+  recordId: string,
+  localUri: string,
+  mimeType: string,
+): Promise<{ record: WorkspaceRecordDTO; url: string }> {
+  const fileResponse = await fetch(localUri)
+  const blob = await fileResponse.blob()
+  return authedRequest<{ record: WorkspaceRecordDTO; url: string }>(`/api/v1/ops/platform/records/${recordId}/images`, {
+    method: 'POST',
+    headers: { 'Content-Type': mimeType || 'image/jpeg' },
+    body: blob,
+  })
+}
 
 export async function fetchEventFeed(limit = 20): Promise<PlatformEvent[]> {
   try {

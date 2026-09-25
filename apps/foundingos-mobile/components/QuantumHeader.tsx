@@ -57,12 +57,12 @@ export function QuantumHeader({ title, subtitle, accent, rightSlot }: QuantumHea
 const styles = StyleSheet.create({
   root: {
     position: 'relative',
-    minHeight: 68,
+    minHeight: 76,
     borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 10,
+    borderRadius: 16,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     overflow: 'hidden',
@@ -78,14 +78,14 @@ const styles = StyleSheet.create({
     paddingRight: 12,
   },
   title: {
-    fontSize: 20,
-    lineHeight: 24,
+    fontSize: 23,
+    lineHeight: 28,
     fontWeight: '800',
   },
   subtitle: {
-    marginTop: 2,
-    fontSize: 13,
-    lineHeight: 17,
+    marginTop: 3,
+    fontSize: 15,
+    lineHeight: 19,
     fontWeight: '600',
   },
   rightSlot: {

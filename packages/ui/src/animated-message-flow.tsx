@@ -91,18 +91,32 @@ export function AnimatedMessageFlow() {
     return () => window.clearTimeout(advance)
   }, [step, sequence.length])
 
+  const nextRole = visibleCount < sequence.length ? parseLine(sequence[visibleCount]).role : null
+
   return (
     <div className={`founda-message-flow founda-flow--${platform.key}`}>
       <span className="founda-flow-badge">{platform.label} · demo banter</span>
       <div className="founda-bubble-stack">
         {sequence.slice(0, visibleCount).map((line, index) => {
           const { role, text } = parseLine(line)
+          // Only the newest bubble on the user's side gets the "message sent" micro-pulse —
+          // older bubbles already settled and shouldn't re-animate as the conversation advances.
+          const isLatest = index === visibleCount - 1
+          const sentPulse = isLatest && role === 'user' ? ' sent-pulse' : ''
           return (
-            <div key={`${step}-${index}`} className={`founda-bubble from-${role}`}>
+            <div key={`${step}-${index}`} className={`founda-bubble from-${role}${sentPulse}`}>
               {text}
             </div>
           )
         })}
+        {/* "Typing…" dots for whichever side is about to send the next bubble — matches that
+            side's own bubble background/alignment so it reads as an in-progress message, not
+            a separate UI element. */}
+        {nextRole && (
+          <div className={`founda-bubble founda-typing from-${nextRole}`} aria-hidden="true">
+            <span /><span /><span />
+          </div>
+        )}
       </div>
     </div>
   )

@@ -91,7 +91,7 @@ export default function ActivityScreen() {
         events.map((event) => (
           <QuantumCard key={event.id} accent={FOUNDINGOS_ACCENT}>
             <QuantumText style={styles.title}>{event.type.replace(/[._]/g, ' ')}</QuantumText>
-            <QuantumText variant="caption" color="#7F7F7F">{event.source} · {new Date(event.createdAt).toLocaleString('en-GB')}</QuantumText>
+            <QuantumText variant="caption">{event.source} · {new Date(event.createdAt).toLocaleString('en-GB')}</QuantumText>
             <QuantumText variant="caption">{describeEvent(event)}</QuantumText>
           </QuantumCard>
         ))

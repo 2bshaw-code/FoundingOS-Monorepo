@@ -25,6 +25,7 @@ export async function POST(request: Request) {
   const checkoutResult = await createCheckoutSession({
     customerId: customerResult.data.customerId,
     priceId: body.priceId,
+    brandSlug: body.brandSlug,
     successUrl: body.successUrl ?? `${new URL(request.url).origin}/onboarding?checkout=success`,
     cancelUrl: body.cancelUrl ?? `${new URL(request.url).origin}/onboarding?checkout=cancelled`,
   })

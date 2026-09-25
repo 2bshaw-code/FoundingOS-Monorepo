@@ -16,13 +16,23 @@
 // event arguments are accepted for signature compatibility only and are unused; moduleId /
 // brandId ARE used, since categoryBreakdown keys and brandName give a real, existing lookup
 // for those two.
+// Phase 35 — loadBrandMetrics() no longer reads packages/db's BrandMetric table
+// directly; that model has no real tenant mapping (see
+// docs/single-schema-migration.md §2) and now flows through the
+// core-operations TelemetryEvent pipeline instead. recordRetention() and
+// recordStability()'s EngagementLog/AnomalyLog reads are UNCHANGED — those two
+// tables stay in packages/db for their still-active *category-level* usage
+// (survey-feed-signals.server.ts, verification-layer.server.ts); only the
+// brand-level trigger that used to also write into them was migrated (see
+// brand-metric-store.server.ts), so recordStability() now adds the migrated
+// brand-level anomaly count from telemetry alongside the category-level
+// AnomalyLog count, to avoid silently understating anomalyCount over time.
 import { getPrismaClient } from '@foundingos/db'
+import { readLatestEngagementSnapshots, readRecentEngagementAnomalies } from '@foundingos/config/engagement-telemetry'
 import { readVerificationStatus } from './verification-layer.server'
 
 async function loadBrandMetrics() {
-  const prisma = getPrismaClient()
-  if (!prisma) return []
-  return prisma.brandMetric.findMany()
+  return readLatestEngagementSnapshots()
 }
 
 function sumCategoryBreakdowns(rows: Array<{ categoryBreakdown: unknown }>): Record<string, number> {
@@ -75,7 +85,9 @@ export async function recordBrandPreference(brandId?: string): Promise<Array<{ b
 export async function recordStability(event?: string): Promise<{ score: number; anomalyCount: number; pendingGuardian: number }> {
   void event // no matching column on AnomalyLog/DriftLog — see file header
   const prisma = getPrismaClient()
-  const anomalyCount = prisma ? await prisma.anomalyLog.count() : 0
+  const categoryAnomalyCount = prisma ? await prisma.anomalyLog.count() : 0
+  const brandAnomalyCount = (await readRecentEngagementAnomalies(200)).length
+  const anomalyCount = categoryAnomalyCount + brandAnomalyCount
   const { pendingGuardian } = await readVerificationStatus()
   const score = Math.max(0, Math.min(100, 100 - anomalyCount * 2 - pendingGuardian * 5))
   return { score, anomalyCount, pendingGuardian }

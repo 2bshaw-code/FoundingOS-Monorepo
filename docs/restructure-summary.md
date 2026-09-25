@@ -213,35 +213,100 @@ this pass.
    [shared-schema.md](./shared-schema.md) before any production database
    drops those schemas — this repo pass only touched source code, no
    database exists to export from in this environment.
-2. **`founder-os` lead-sync integration removal** — the
-   `core_operationsLeadSync.ts` module still references FoundMeat/FoundCrypto
-   models, per [api-review.md](./api-review.md) and the schema-migration
-   note above. The founder-os aggregator's routing still depends on that
-   model — removing it without a schema migration would break the
-   service entirely.
-3. **Directory/package renames** — execute
-   [migration-map.md](./migration-map.md): `core_operations/` →
-   `core-operations/`, `core_workforce/` → `core-workforce/`,
-   `@founder-os/*` → `@foundingos/*` everywhere (currently
-   `packages/config` already uses the new scope; `packages/auth`,
-   `packages/ui` still need the same rename applied to their own
-   `package.json`/imports).
+2. ~~**`founder-os` lead-sync integration removal**~~ — **Re-audited in
+   Phase 24: the premise no longer applies.** There is no
+   `core_operationsLeadSync.ts` file in the current tree, and the
+   `founder-os/` aggregator's own legacy models (`Company`,
+   `CompanyModule`, `PackageApplication`) are separate from the
+   `Brand`/`CrmDeal`/`BrandFinance` models this note originally meant.
+   `founder-os/` is not in the npm `workspaces` array, runs against its
+   own isolated `founder_os` Postgres schema, and nothing in the active
+   workspace depends on it. **Decision: retire, don't migrate** — see
+   [deprecations.md](./deprecations.md) for the full audit and the
+   follow-up action (delete after schema export/confirmation of no
+   production data).
+3. **Directory/package renames** — `core_operations/` → `core-operations/`
+   and `core_workforce/` → `core-workforce/` are done. The `@founder-os/*`
+   → `@foundingos/*` package rename is now **complete for every package
+   consumed by the active workspace** (Phase 23): `packages/config`,
+   `packages/auth`, `packages/ui`, `packages/db`, and `packages/billing`
+   were already on the new scope; `shared/auth`, `shared/bob`,
+   `shared/ui`, `shared/brand-assets`, and `shared/media` (still consumed
+   by the three `core-*` backends) have been renamed too. Because
+   `@foundingos/auth` and `@foundingos/ui` were already taken by the newer
+   `packages/auth`/`packages/ui`, the renamed `shared/*` packages use
+   distinguishing names instead — `@foundingos/service-auth` (session/
+   token/role middleware used by the backends) and `@foundingos/legacy-ui`
+   (the old per-brand `BrandLogo`/`BrandCard` components, not currently
+   consumed by any active app). See [migration-map.md](./migration-map.md)
+   for the full before/after table. The one remaining holdout is the
+   `founder-os/` aggregator directory itself (`founder-os/frontend`,
+   `founder-os/backend`, `founder-os/desktop`) — it isn't in the npm
+   workspaces list, still imports the old `@founder-os/*` names, and is
+   tracked separately as the Phase 24 legacy-aggregator cleanup.
 4. **Database migration** — implement the Prisma schema changes described
    in [shared-schema.md](./shared-schema.md) (single schema,
    `core_ops_*`/`core_workforce_*`/`core_intel_*` prefixes, `Tenant`,
    `TenantSuiteLicense`), write backfill scripts, and run a reviewed
-   migration. No migration was created or run in this pass.
+   migration. **Phases 32/33/35 (this pass, revised):** the original Phase
+   32 audit incorrectly assumed `Brand`, `BrandSubscription`, and `CrmDeal`
+   were all dead — a corrected pass found `BrandSubscription`, `CrmDeal`,
+   and `BrandFinance` actually back real, currently-displayed console UI
+   (commercial panel, CRM pipeline, finance/accounting). Only `Brand` and
+   `BrandMetric` had zero live readers. Scope was narrowed accordingly and
+   **completed** for that narrower scope: `Brand` (plus its dead
+   pre-FoundingOS NextAuth/billing scaffold — `User`, `Module`,
+   `Subscription`, `ActivityLog`, `Account`, `Session`,
+   `VerificationToken`, `SurveyResult`) was dropped outright, and
+   `BrandMetric`'s 3 SuperDashboard readers + 12 per-brand cron-route
+   writers were repointed to the `core-operations` `TelemetryEvent`
+   pipeline (`packages/config/src/engagement-telemetry.ts`) instead of a
+   tenant-scoped table, since brand slugs never had a real tenant mapping.
+   See [single-schema-migration.md](./single-schema-migration.md) for the
+   full corrected audit. **Remaining, explicitly deferred:**
+   `BrandSubscription`/`CrmDeal`/`BrandFinance` are still deprecated but
+   untouched — migrating them needs a tenant-identity decision per model
+   plus a proper multi-tenant-aware replacement design, not a
+   repoint-and-drop pass; tracked as a separate future initiative, not
+   bundled into Phase 35.
 5. **Console shell wiring** — implement `getEnabledSuites()`-driven module
    registration in the actual console app (`apps/foundingos-console` /
    `packages/ui`), replacing the current per-brand console apps.
+5b. ~~**Feature flag system hardening**~~ — **Phase 34 complete:** a
+   structured `wros.FeatureFlag` table (global, not per-tenant rows) with
+   kill switch, environment pinning, deterministic percentage rollout, and
+   per-tenant overrides (`core-operations/backend/src/feature-flags.ts`,
+   11 unit tests), `GET`/`PUT /platform/feature-flags` routes (internal
+   `founder_master`-only), and an optional `featureFlags` prop on
+   `packages/ui/src/sidebar.tsx` alongside the existing `planTier`
+   tier-gating. See [feature-flags.md](./feature-flags.md) §"Structured
+   feature flags (Phase 34)". **Scoped down**, and flagged as such in that
+   doc: the phase spec's "console-only admin interface to toggle flags per
+   tenant" was not built as a UI — none of the three per-suite consoles have
+   real session/tenant plumbing yet (same pre-existing blocker `planTier`
+   already has), so a toggle UI would have nothing real to authenticate
+   against. The API contract is the complete, tested deliverable instead.
 6. **Website/docs rewrite (implementation)** — this pass wrote the
    strategy docs; the actual `apps/foundingos-web` marketing pages,
    `apps/*-web` legacy sites, and their copy still need to be
    rewritten/retired to match [positioning.md](./positioning.md) and
    [pricing.md](./pricing.md).
-7. **Telemetry pipeline implementation** — schema/catalog defined in
-   [telemetry.md](./telemetry.md); ingestion (queue, batching, storage
-   wiring) not implemented.
+7. ~~**Telemetry pipeline implementation**~~ — **Phases 28–31 complete:**
+   ingestion endpoint (`POST/GET /platform/telemetry` on `core-operations`,
+   backed by the `TelemetryEvent` table), client-side flushing from
+   `action-logger.ts` (`telemetry-client.ts`, periodic + lifecycle +
+   reconnect + on-error triggers), backend emission points in all three
+   core services (`core-operations` in-process, `core-workforce`/
+   `core-intelligence` over HTTP), and `/health` (liveness) + `/ready`
+   (readiness) on all three backends plus a live status view in the mobile
+   debug screen. **Phase 36 also complete:** a cross-tenant
+   `GET /platform/telemetry/summary` aggregate (founder_master-only) and a
+   read-only dashboard page at
+   `apps/foundingos-console/app/superdashboard/telemetry`. See
+   [telemetry.md](./telemetry.md) for the full contract. Remaining:
+   live-device/live-database verification (untestable in this environment),
+   and issuing the `CORE_OPERATIONS_INTERNAL_TOKEN` service token the
+   dashboard needs in a real deployment.
 8. **Targeted tests/builds after code changes land** — once the
    existing test suites named in
    [MARKET_LAUNCH_GATE.md](../MARKET_LAUNCH_GATE.md) ("Release commands":
