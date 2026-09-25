@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { boltOnKeys, commercialAddOns, commercialBoltOns, commercialPlans, extraSeat, marketingPlanFeatures } from '@foundingos/config/commercial'
 import { GlobalisationControls, GlobalisationProvider, LocalizedGbp } from './globalisation'
+import { BackButton } from './back-button'
 import { ThemeToggle } from './theme'
 import { WorkflowWalkthrough } from './workflow-walkthrough'
 import { WorkspacePreview, type WorkspacePreviewProduct } from './workspace-preview'
@@ -374,6 +375,7 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
 
   if (page === 'pricing') return (
     <>
+      <BackButton />
       <PageIntro eyebrow="Simple, modular pricing" title="Start free. Add only what you need." copy="Every business starts on the Core.Operations base. Add Commerce Pro, Core.Workforce, or Core.Intelligence as you grow, or take everything with Complete. No sales call needed." />
       <section className="module-grid">
         {packagePlans.map((plan) => {
