@@ -189,7 +189,7 @@ const packagePlans = [
   {
     name: 'Starter',
     priceGbp: commercialPlans.starter.monthlyPriceGbp,
-    summary: 'Core Operations for a small team, with automatic sync and every supported language included.',
+    summary: 'Core.Operations for a small team, with automatic sync and every supported language included.',
     features: commercialPlans.starter.includedFeatures,
   },
   {
@@ -244,6 +244,7 @@ async function SiteNav() {
         <Link href="/pricing">Pricing</Link>
         <Link href="/about">About</Link>
         <Link href="/contact">Contact</Link>
+        <Link href="/signup">Sign up</Link>
         <GlobalisationControls />
         <ThemeToggle />
         {signedIn ? <form action="/api/access/logout" method="post" className="site-nav-logout"><button type="submit">Log out</button></form> : null}
@@ -405,7 +406,9 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
             <h3>Enabled workspaces</h3>
             <ul>{commercialPlans[plan.name.toLowerCase() as keyof typeof commercialPlans].includedWorkspaces.map((item) => <li key={item}>{item}</li>)}</ul>
             <ul>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
-            <Link className="btn btn-primary" href="/contact">{plan.name === 'Lite' ? 'Start with Lite' : 'Talk to FoundingOS'}</Link>
+            {plan.name === 'Enterprise'
+              ? <Link className="btn btn-primary" href="/contact">Talk to FoundingOS</Link>
+              : <Link className="btn btn-primary" href={`/signup?plan=${plan.name.toLowerCase()}`}>{plan.name === 'Lite' ? 'Start free' : `Start ${plan.name}`}</Link>}
           </article>
         ))}
         <article className="card-premium">

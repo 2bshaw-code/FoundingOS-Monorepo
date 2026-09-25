@@ -74,14 +74,17 @@ export async function bootstrapTenant(input: Record<string, unknown>) {
   const ownerName = requiredText(input.ownerName, 'Owner name')
   const existing = await prisma.authUser.findUnique({ where: { email } })
   if (existing) throw Object.assign(new Error('An account already exists for this email'), { status: 409 })
+  const requestedWorkspaces = Array.isArray(input.workspaces) ? input.workspaces.map(String) : null
+  const enabledWorkspaces = new Set(requestedWorkspaces ? workspaceSlugs.filter((workspace) => requestedWorkspaces.includes(workspace)) : workspaceSlugs)
+  if (!enabledWorkspaces.size) throw Object.assign(new Error('At least one workspace must be enabled'), { status: 400 })
   const passwordHash = await bcrypt.hash(password, 12)
   return prisma.$transaction(async (tx) => {
     const user = await tx.authUser.create({ data: { email, passwordHash, role: roles.businessOwner, tenantId, permissions: json({ workspaces: workspaceSlugs }) } })
     const onboarding = await tx.tenantOnboarding.create({
       data: { tenantId, businessName, ownerName, industry: optionalText(input.industry), countryCode: String(input.countryCode || 'GB'), currency: String(input.currency || 'GBP'), timezone: String(input.timezone || 'Europe/London'), completedSteps: json(['business', 'owner']), goLiveStatus: 'setup' },
     })
-    await tx.tenantWorkspace.createMany({ data: workspaceSlugs.map((workspace) => ({ tenantId, workspace, enabled: true, plan: String(input.plan || 'growth'), modules: json([]) })) })
-    await tx.workspaceAuditEvent.create({ data: { tenantId, actorId: user.id, action: 'tenant.bootstrapped', metadata: json({ businessName, email }) } })
+    await tx.tenantWorkspace.createMany({ data: workspaceSlugs.map((workspace) => ({ tenantId, workspace, enabled: enabledWorkspaces.has(workspace), plan: String(input.plan || 'growth'), modules: json([]) })) })
+    await tx.workspaceAuditEvent.create({ data: { tenantId, actorId: user.id, action: 'tenant.bootstrapped', metadata: json({ businessName, email, plan: String(input.plan || 'growth'), workspaces: [...enabledWorkspaces] }) } })
     return { tenantId, owner: { id: user.id, email: user.email, role: user.role }, onboarding }
   })
 }

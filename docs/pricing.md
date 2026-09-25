@@ -79,6 +79,20 @@ Pricing tiers reference the same `SuiteKey` values as
 directly to a `TenantSuiteLicense` row — no separate brand-to-suite
 translation layer needed.
 
+## Self-serve sign-up
+
+Lite, Starter and Growth are self-serve at `foundingos.com/signup?plan=<tier>`;
+only Enterprise routes to `/contact`. The sign-up API
+(`apps/foundingos-web/app/api/signup/route.ts`) creates the tenant through the
+Core.Operations `/platform/bootstrap` endpoint with only the plan's workspaces
+enabled, then sends Starter/Growth buyers to Stripe Checkout.
+
+Required production settings:
+
+- `PLATFORM_BOOTSTRAP_TOKEN`: same value on `core-operations-backend` and `founding-os-web`.
+- `STRIPE_SECRET_KEY`, `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_GROWTH`: on `founding-os-web`.
+  Until these are set, paid-plan sign-ups create the account without taking payment.
+
 ## Open item
 
 The £29 Starter and £99 Growth prices are the currently configured launch

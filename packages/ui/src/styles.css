@@ -2311,7 +2311,8 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   gap: 6px;
 }
 
-.complete-workspace-access input {
+.complete-workspace-access input,
+.complete-workspace-access select {
   background: #fff;
   border: 1px solid #ced7e3;
   border-radius: 7px;
