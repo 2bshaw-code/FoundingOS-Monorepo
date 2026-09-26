@@ -2,24 +2,25 @@
 
 import { useEffect, useState } from 'react'
 import { PasswordField } from '../access/password-field'
-import { boltOnKeys, commercialBoltOns, commercialPlans, extraSeat, monthlyTotalGbp, normalizeBoltOns, type BoltOnKey } from '@foundingos/config/commercial'
+import { baseKeys, boltOnKeys, commercialBases, commercialBoltOns, commercialPlans, extraSeat, monthlyTotalGbp, type BaseWorkspaceKey, type BoltOnKey } from '@foundingos/config/commercial'
 import type { PlanTier } from '@foundingos/config/suites'
 
 type Plan = 'lite' | 'core' | 'complete'
 
 const PLANS: Record<Plan, { tier: PlanTier; summary: string }> = {
   lite: { tier: 'lite', summary: 'One user, Core.Operations basics.' },
-  core: { tier: 'starter', summary: 'Three users on the Core.Operations base. Add bolt-ons below.' },
+  core: { tier: 'starter', summary: 'Three users. Pick Retail & Logistics, Talent or HR — £19/month each — and combine as many as you like.' },
   complete: { tier: 'growth', summary: 'Fifteen users with every suite and bolt-on included.' },
 }
 
 const formatGbp = (amount: number) => amount === 0 ? 'Free' : `£${amount}/month`
-const planLabel = (plan: Plan) => `${commercialPlans[PLANS[plan].tier].name} · ${formatGbp(commercialPlans[PLANS[plan].tier].monthlyPriceGbp ?? 0)}`
+const planLabel = (plan: Plan) => `${commercialPlans[PLANS[plan].tier].name} · ${plan === 'core' ? 'from ' : ''}${formatGbp(commercialPlans[PLANS[plan].tier].monthlyPriceGbp ?? 0)}`
 const isPlan = (value: string | null): value is Plan => value === 'lite' || value === 'core' || value === 'complete'
 const legacyPlan: Record<string, Plan> = { starter: 'core', growth: 'complete' }
 
 export default function SignupPage() {
   const [plan, setPlan] = useState<Plan>('lite')
+  const [bases, setBases] = useState<BaseWorkspaceKey[]>(['retail'])
   const [boltOns, setBoltOns] = useState<BoltOnKey[]>([])
   const [extraSeats, setExtraSeats] = useState(0)
   const [ownerName, setOwnerName] = useState('')
@@ -38,16 +39,17 @@ export default function SignupPage() {
     if (resolved) setPlan(resolved)
     const add = params.get('add')
     if (add && (boltOnKeys as string[]).includes(add)) setBoltOns([add as BoltOnKey])
+    const base = params.get('base') || ({ talent_recruitment: 'talent', people_hr: 'hr' } as Record<string, string>)[add || '']
+    if (base === 'workforce' || add === 'core_workforce') setBases(['talent', 'hr'])
+    else if (base && (baseKeys as string[]).includes(base)) setBases([base as BaseWorkspaceKey])
     if (params.get('checkout') === 'success') setStatus('done')
     if (params.get('checkout') === 'cancelled') setStatus('cancelled')
   }, [])
 
-  const total = monthlyTotalGbp(PLANS[plan].tier, plan === 'core' ? boltOns : [], plan === 'lite' ? 0 : extraSeats) ?? 0
-  const toggleBoltOn = (key: BoltOnKey) => setBoltOns((current) => {
-    if (current.includes(key)) return current.filter((item) => item !== key)
-    const next = key === 'core_workforce' ? current.filter((item) => item !== 'talent_recruitment' && item !== 'people_hr') : current
-    return normalizeBoltOns([...next, key])
-  })
+  const total = monthlyTotalGbp(PLANS[plan].tier, plan === 'core' ? boltOns : [], plan === 'lite' ? 0 : extraSeats, bases) ?? 0
+  const toggleBoltOn = (key: BoltOnKey) => setBoltOns((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key])
+  // At least one base workspace is always selected.
+  const toggleBase = (key: BaseWorkspaceKey) => setBases((current) => current.includes(key) ? (current.length > 1 ? current.filter((item) => item !== key) : current) : baseKeys.filter((item) => item === key || current.includes(item)))
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -59,7 +61,7 @@ export default function SignupPage() {
       const response = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan, boltOns: plan === 'core' ? boltOns : [], extraSeats: plan === 'lite' ? 0 : extraSeats, ownerName, businessName, email, password, website }),
+        body: JSON.stringify({ plan, bases: plan === 'core' ? bases : [], boltOns: plan === 'core' ? boltOns : [], extraSeats: plan === 'lite' ? 0 : extraSeats, ownerName, businessName, email, password, website }),
       })
       const body = await response.json() as { ok?: boolean; nextStep?: string; checkoutUrl?: string; message?: string }
       if (!response.ok || !body.ok) throw new Error(body.message || 'Your account could not be created.')
@@ -96,6 +98,13 @@ export default function SignupPage() {
             </select>
           </label>
           <small className="site-access-note">{PLANS[plan].summary} Need SSO or a custom rollout? <a className="text-link" href="/contact">Talk to us about Enterprise</a>.</small>
+          {plan === 'core' ? <fieldset className="signup-bolt-ons">
+            <legend>Your workspaces (£19/month each)</legend>
+            {baseKeys.map((key) => <label className="signup-check" key={key}>
+              <input checked={bases.includes(key)} onChange={() => toggleBase(key)} type="checkbox" />
+              <span>{commercialBases[key].name} · £{commercialBases[key].monthlyPriceGbp}/month<small>{commercialBases[key].description}</small></span>
+            </label>)}
+          </fieldset> : null}
           {plan === 'core' ? <fieldset className="signup-bolt-ons">
             <legend>Bolt-ons (optional)</legend>
             {boltOnKeys.map((key) => <label className="signup-check" key={key}>

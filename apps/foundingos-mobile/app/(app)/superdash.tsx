@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   kpis: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
   kpi: { width: '48%', flexGrow: 1, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.04)', padding: quantumSpace.md, gap: 2 },
   kpiAlert: { borderColor: '#FBBF24', backgroundColor: 'rgba(251,191,36,0.08)' },
-  links: { flexDirection: 'row', gap: quantumSpace.xs },
+  links: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.xs },
   requestRow: { flexDirection: 'row', alignItems: 'center', gap: quantumSpace.sm, paddingVertical: 6 },
   healthRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
   healthDot: { width: 9, height: 9, borderRadius: 5 },

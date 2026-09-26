@@ -3,9 +3,10 @@
 Pricing is structured around one FoundingOS account with modular workspaces.
 Every plan uses the same primary FoundingOS web and mobile applications.
 
-## Model: base plan + suite bolt-ons
+## Model: base workspaces + suite bolt-ons
 
-Every business starts on a base plan. Bolt-ons add a suite to the Core base
+Core is bought per base workspace: Retail & Logistics, Talent and HR are each
+£19/month and can be taken alone or combined (min. one). Bolt-ons add a suite
 and can be added or removed monthly. Complete bundles everything at a discount.
 All prices are GBP per tenant per month. Source of truth:
 `packages/config/src/commercial.ts`.
@@ -13,21 +14,26 @@ All prices are GBP per tenant per month. Source of truth:
 | Plan | Price | Users | Includes |
 | --- | --- | --- | --- |
 | Lite | Free | 1 | Core.Operations basics: sales, orders, customers |
-| Core | £19 | 3 | Core.Operations: pipeline, CRM, orders, inventory, customers, WhatsApp, marketing, Brand Studio |
-| Complete | £89 | 15 | Core + all three bolt-ons (£108 bought separately, ~18% off) |
+| Core | from £19 | 3 | £19 per base workspace (Retail & Logistics, Talent, HR) + marketing, Brand Studio, WhatsApp |
+| Complete | £89 | 15 | All three base workspaces + every bolt-on (£117 bought separately) |
 | Enterprise | Custom | 50 | Everything, SSO, SLAs, custom integrations, dedicated support |
 
 Internal tier keys are unchanged so gating and stored licences keep working:
 `lite` = Lite, `starter` = Core, `growth` = Complete, `enterprise` = Enterprise.
+
+## Base workspaces (Core plan, £19 each)
+
+| Workspace | Price | Suite | Workspaces enabled | What it unlocks |
+| --- | --- | --- | --- | --- |
+| Retail & Logistics | £19 | Core.Operations | `retail`, `logistics` | Pipeline, CRM, orders, inventory, deliveries and drivers |
+| Talent | £19 | Core.Workforce | `talent` | Recruitment: jobs, candidates, interviews, offers, agency clients and placements |
+| HR | £19 | Core.Workforce | `hr` | Employees, contracts, rotas/shifts, timesheets, holiday/sickness, right-to-work, documents, policies, payroll inputs |
 
 ## Bolt-ons (Core plan only)
 
 | Bolt-on | Price | Suite | Workspace enabled | What it unlocks |
 | --- | --- | --- | --- | --- |
 | Commerce Pro | +£25 | Core.Operations | `finance` | Invoicing, mobile money, purchasing, fulfilment, returns, cashflow |
-| Talent | +£19 | Core.Workforce | `talent` | Recruitment: jobs, candidates, interviews, offers, agency clients and placements |
-| HR | +£19 | Core.Workforce | `hr` | Employees, contracts, rotas/shifts, timesheets, holiday/sickness, right-to-work, documents, policies, payroll inputs |
-| Core.Workforce (Talent + HR) | +£29 | Core.Workforce | `talent`, `hr` | Both workspaces; selecting Talent and HR together is always billed as this bundle |
 | Core.Intelligence | +£35 | Core.Intelligence | `intelligence` | Signals, forecasts, anomalies, AI recommendations |
 
 ## Other add-ons
@@ -37,9 +43,8 @@ Internal tier keys are unchanged so gating and stored licences keep working:
 | Extra team member | £5/user/month | Core and Complete |
 | Language Pack | £5/month | Lite only; all languages included on paid plans |
 
-Industry offers (retail, logistics, health) are marketing pages that recommend
-a combination of Core and bolt-ons, not separate plans. Logistics and Health
-workspaces remain parked and are not sold.
+Logistics is sold as part of the Retail & Logistics base workspace. Health
+remains parked and is not sold.
 
 ## Usage limits (per month)
 
@@ -81,18 +86,19 @@ translation layer needed.
 ## Self-serve sign-up
 
 Lite, Core and Complete are self-serve at `foundingos.com/signup?plan=lite|core|complete`
-(`&add=<bolt-on key>` preselects a bolt-on); only Enterprise routes to `/contact`.
+(`&base=retail|talent|hr` preselects a base workspace, `&add=<bolt-on key>` a bolt-on); only Enterprise routes to `/contact`.
 The sign-up API (`apps/foundingos-web/app/api/signup/route.ts`) creates the tenant
 through the Core.Operations `/platform/bootstrap` endpoint with only the purchased
 workspaces enabled, then sends paid plans to Stripe Checkout with one line item
-per plan, bolt-on, and extra-seat quantity.
+per base workspace (or Complete), bolt-on, and extra-seat quantity.
 
 Required production settings on `founding-os-web` (plus `PLATFORM_BOOTSTRAP_TOKEN`
 on both `founding-os-web` and `core-operations-backend`):
 
 - `STRIPE_SECRET_KEY`
-- `STRIPE_PRICE_CORE` (£19), `STRIPE_PRICE_COMPLETE` (£89)
-- `STRIPE_PRICE_COMMERCE_PRO` (£25), `STRIPE_PRICE_TALENT` (£19), `STRIPE_PRICE_HR` (£19), `STRIPE_PRICE_WORKFORCE` (£29, Talent + HR bundle), `STRIPE_PRICE_INTELLIGENCE` (£35)
+- `STRIPE_PRICE_COMPLETE` (£89)
+- Base workspaces: `STRIPE_PRICE_CORE` (Retail & Logistics), `STRIPE_PRICE_TALENT`, `STRIPE_PRICE_HR` — all £19
+- `STRIPE_PRICE_COMMERCE_PRO` (£25), `STRIPE_PRICE_INTELLIGENCE` (£35)
 - `STRIPE_PRICE_EXTRA_SEAT` (£5, per-unit)
 
 If any price needed for a sign-up is missing, the account is still created but

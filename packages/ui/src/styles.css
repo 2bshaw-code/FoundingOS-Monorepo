@@ -15094,7 +15094,7 @@ html[data-accessibility-simplified='true'] .btn {
 .site-nav-links .site-nav-superdash { color: #38bdf8; font-weight: 800; }
 
 /* SuperDash modules: tabs, forms, P&L, marketing queue */
-.sd-tabs { display: flex; gap: 6px; margin: 0 0 18px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 999px; padding: 4px; width: fit-content; }
+.sd-tabs { display: flex; gap: 6px; margin: 0 0 18px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 999px; padding: 4px; width: fit-content; max-width: 100%; flex-wrap: wrap; }
 .sd-tabs button { background: transparent; color: #8aa0b8; border: 0; border-radius: 999px; padding: 9px 20px; font-weight: 800; font-size: 14px; cursor: pointer; }
 .sd-tabs button.on { background: #38bdf8; color: #04111f; }
 .sd-module button, .sd-actions button { background: #38bdf8; color: #04111f; border: 0; border-radius: 999px; padding: 9px 16px; font-weight: 800; cursor: pointer; font-size: 14px; }
@@ -15160,7 +15160,7 @@ html[data-accessibility-simplified='true'] .btn {
 .sd-shell .mc-event.tone-warn { color: #fcd34d; }
 .mc-more { font-size: 11px; opacity: .7; }
 .mc-empty { font-size: 13px; opacity: .7; margin: 0; }
-@media (max-width: 640px) { .mc-day { min-height: 58px; } .mc-event { font-size: 0; padding: 0; height: 6px; } .sd-actions { max-width: none; } .sd-post { flex-direction: column; } }
+@media (max-width: 640px) { .mc-day { min-height: 58px; } .mc-event { font-size: 0; padding: 0; height: 6px; } .sd-actions { max-width: none; } .sd-tabs { border-radius: 18px; } .sd-tabs button { padding: 8px 14px; } .sd-post { flex-direction: column; } }
 
 /* Real workspace calendar: month navigation, selected day, day agenda */
 .retail-app-calendar-nav { display: flex; align-items: center; gap: 6px; }

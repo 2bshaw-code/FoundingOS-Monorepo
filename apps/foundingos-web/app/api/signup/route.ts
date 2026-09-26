@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { NextResponse } from 'next/server'
-import { boltOnKeys, commercialBoltOns, extraSeat, normalizeBoltOns, planBaseWorkspaces, type BoltOnKey } from '@foundingos/config/commercial'
+import { commercialBases, commercialBoltOns, extraSeat, normalizeBases, normalizeBoltOns, planBaseWorkspaces, type BaseWorkspaceKey, type BoltOnKey } from '@foundingos/config/commercial'
 import type { PlanTier } from '@foundingos/config/suites'
 
 type SelfServePlan = 'lite' | 'core' | 'complete'
@@ -11,13 +11,13 @@ type SelfServePlan = 'lite' | 'core' | 'complete'
 const PLAN_TIER: Record<SelfServePlan, PlanTier> = { lite: 'lite', core: 'starter', complete: 'growth' }
 
 // Stripe Price IDs, one monthly recurring price per chargeable item.
+// Core is billed per base workspace (Retail & Logistics, Talent, HR — £19 each).
 const PRICE_ENV = {
-  core: 'STRIPE_PRICE_CORE',
   complete: 'STRIPE_PRICE_COMPLETE',
+  retail: 'STRIPE_PRICE_CORE',
+  talent: 'STRIPE_PRICE_TALENT',
+  hr: 'STRIPE_PRICE_HR',
   commerce_pro: 'STRIPE_PRICE_COMMERCE_PRO',
-  talent_recruitment: 'STRIPE_PRICE_TALENT',
-  people_hr: 'STRIPE_PRICE_HR',
-  core_workforce: 'STRIPE_PRICE_WORKFORCE',
   core_intelligence: 'STRIPE_PRICE_INTELLIGENCE',
   extra_seat: 'STRIPE_PRICE_EXTRA_SEAT',
 } as const
@@ -31,9 +31,11 @@ function apiRoot() {
 
 const text = (value: unknown, max = 200) => (typeof value === 'string' ? value.trim().slice(0, max) : '')
 
-async function createStripeCheckout(params: { plan: Exclude<SelfServePlan, 'lite'>; boltOns: BoltOnKey[]; extraSeats: number; workspaces: string[]; email: string; tenantId: string; origin: string }) {
+async function createStripeCheckout(params: { plan: Exclude<SelfServePlan, 'lite'>; bases: BaseWorkspaceKey[]; boltOns: BoltOnKey[]; extraSeats: number; workspaces: string[]; email: string; tenantId: string; origin: string }) {
   const secret = process.env.STRIPE_SECRET_KEY?.trim()
-  const items: Array<{ env: string; quantity: number }> = [{ env: PRICE_ENV[params.plan], quantity: 1 }]
+  const items: Array<{ env: string; quantity: number }> = params.plan === 'complete'
+    ? [{ env: PRICE_ENV.complete, quantity: 1 }]
+    : params.bases.map((key) => ({ env: PRICE_ENV[key], quantity: 1 }))
   for (const key of params.boltOns) items.push({ env: PRICE_ENV[key], quantity: 1 })
   if (params.extraSeats > 0) items.push({ env: PRICE_ENV.extra_seat, quantity: params.extraSeats })
   const prices = items.map((item) => ({ price: process.env[item.env]?.trim(), quantity: item.quantity }))
@@ -44,6 +46,7 @@ async function createStripeCheckout(params: { plan: Exclude<SelfServePlan, 'lite
     client_reference_id: params.tenantId,
     'metadata[tenantId]': params.tenantId,
     'metadata[plan]': params.plan,
+    'metadata[bases]': params.bases.join(','),
     'metadata[boltOns]': params.boltOns.join(','),
     'metadata[extraSeats]': String(params.extraSeats),
     'subscription_data[metadata][tenantId]': params.tenantId,
@@ -88,11 +91,16 @@ export async function POST(request: Request) {
   if (!Object.hasOwn(PLAN_TIER, plan)) return NextResponse.json({ ok: false, message: 'Choose Lite, Core, or Complete. Enterprise is arranged with our team.' }, { status: 400 })
   const tier = PLAN_TIER[plan]
   const requestedBoltOns = Array.isArray(body.boltOns) ? body.boltOns.map(String) : []
-  // Bolt-ons attach to Core only; Complete already includes them all.
-  const boltOns = plan === 'core' ? normalizeBoltOns(boltOnKeys.filter((key) => requestedBoltOns.includes(key))) : []
+  const requestedBases = Array.isArray(body.bases) ? body.bases.map(String) : []
+  // Legacy clients sent Talent/HR as bolt-ons; treat them as base workspaces.
+  if (requestedBoltOns.includes('talent_recruitment') || requestedBoltOns.includes('core_workforce')) requestedBases.push('talent')
+  if (requestedBoltOns.includes('people_hr') || requestedBoltOns.includes('core_workforce')) requestedBases.push('hr')
+  // Bases and bolt-ons apply to Core only; Complete already includes them all.
+  const bases = plan === 'core' ? normalizeBases(requestedBases) : []
+  const boltOns = plan === 'core' ? normalizeBoltOns(requestedBoltOns) : []
   const seatsRequested = Math.floor(Number(body.extraSeats) || 0)
   const extraSeats = plan === 'lite' ? 0 : Math.min(extraSeat.maxPerSignup, Math.max(0, seatsRequested))
-  const workspaces = [...new Set([...planBaseWorkspaces[tier], ...boltOns.flatMap((key) => commercialBoltOns[key].workspaces)])]
+  const workspaces = [...new Set([...bases.flatMap((key) => commercialBases[key].workspaces), ...planBaseWorkspaces[tier], ...boltOns.flatMap((key) => commercialBoltOns[key].workspaces)])]
   const email = text(body.email).toLowerCase()
   const password = typeof body.password === 'string' ? body.password : ''
   const ownerName = text(body.ownerName)
@@ -119,7 +127,7 @@ export async function POST(request: Request) {
 
   if (plan === 'lite') return NextResponse.json({ ok: true, nextStep: 'signin' }, { status: 201 })
   try {
-    const checkoutUrl = await createStripeCheckout({ plan, boltOns, extraSeats, workspaces, email, tenantId: createdBody.data.tenantId, origin: new URL(request.url).origin })
+    const checkoutUrl = await createStripeCheckout({ plan, bases, boltOns, extraSeats, workspaces, email, tenantId: createdBody.data.tenantId, origin: new URL(request.url).origin })
     return NextResponse.json({ ok: true, nextStep: checkoutUrl ? 'checkout' : 'signin', checkoutUrl }, { status: 201 })
   } catch (error) {
     return NextResponse.json({ ok: true, nextStep: 'signin', message: error instanceof Error ? error.message : 'Payment checkout could not be started.' }, { status: 201 })

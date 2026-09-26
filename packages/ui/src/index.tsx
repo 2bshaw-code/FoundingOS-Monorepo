@@ -5,7 +5,7 @@
 import { AccountNavLinks } from './account-nav'
 import Link from 'next/link'
 import { cookies } from 'next/headers'
-import { boltOnKeys, commercialAddOns, commercialBoltOns, commercialPlans, extraSeat, marketingPlanFeatures } from '@foundingos/config/commercial'
+import { baseKeys, boltOnKeys, commercialAddOns, commercialBases, commercialBoltOns, commercialPlans, extraSeat, marketingPlanFeatures } from '@foundingos/config/commercial'
 import { GlobalisationControls, GlobalisationProvider, LocalizedGbp } from './globalisation'
 import { BackButton } from './back-button'
 import { ThemeToggle } from './theme'
@@ -379,13 +379,13 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
   if (page === 'pricing') return (
     <>
       <BackButton />
-      <PageIntro eyebrow="Simple, modular pricing" title="Start free. Add only what you need." copy="Every business starts on the Core.Operations base. Add Commerce Pro, Core.Workforce, or Core.Intelligence as you grow, or take everything with Complete. No sales call needed." />
+      <PageIntro eyebrow="Simple, modular pricing" title="Start free. Add only what you need." copy="Pick the workspaces you run — Retail & Logistics, Talent or HR — at £19/month each. Add Commerce Pro or Core.Intelligence as you grow, or take everything with Complete. No sales call needed." />
       <section className="module-grid">
         {packagePlans.map((plan) => {
           const details = commercialPlans[plan.tier]
           return (
             <article key={plan.tier} className="card-premium">
-              <p className="eyebrow">{details.monthlyPriceGbp === null ? 'Custom' : details.monthlyPriceGbp === 0 ? 'Free' : <><LocalizedGbp amount={details.monthlyPriceGbp} />/month</>}</p>
+              <p className="eyebrow">{details.monthlyPriceGbp === null ? 'Custom' : details.monthlyPriceGbp === 0 ? 'Free' : <>{plan.tier === 'starter' ? 'From ' : ''}<LocalizedGbp amount={details.monthlyPriceGbp} />/month</>}</p>
               <h2>{details.name}</h2>
               <p>{plan.summary}</p>
               <h3>What you get</h3>
@@ -400,7 +400,23 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
         })}
       </section>
 
-      <PageIntro eyebrow="Bolt-ons for Core" title="Add a suite when you are ready" copy="Bolt-ons attach to the Core plan and can be added or removed monthly. Talent + HR together cost £29. Complete includes every bolt-on." />
+      <PageIntro eyebrow="Core workspaces" title="£19/month each. Take one, or combine them." copy="Retail & Logistics, Talent and HR are priced the same. Start with the one you need and add the others whenever you like — Complete includes them all." />
+      <section className="module-grid">
+        {baseKeys.map((key) => {
+          const base = commercialBases[key]
+          return (
+            <article key={key} className="card-premium">
+              <p className="eyebrow"><LocalizedGbp amount={base.monthlyPriceGbp} />/month</p>
+              <h2>{base.name}</h2>
+              <p>{base.description}</p>
+              <ul>{base.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
+              <Link className="btn btn-primary" href={`/signup?plan=core&base=${key}`}>Start with {base.name}</Link>
+            </article>
+          )
+        })}
+      </section>
+
+      <PageIntro eyebrow="Bolt-ons for Core" title="Add a suite when you are ready" copy="Bolt-ons attach to the Core plan and can be added or removed monthly. Complete includes every bolt-on." />
       <section className="module-grid">
         {boltOnKeys.map((key) => {
           const boltOn = commercialBoltOns[key]
