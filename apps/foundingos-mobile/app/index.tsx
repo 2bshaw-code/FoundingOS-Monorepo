@@ -2,8 +2,8 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-import { useEffect, useState } from 'react'
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native'
+import { useEffect, useRef, useState } from 'react'
+import { ActivityIndicator, KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router, useLocalSearchParams } from 'expo-router'
@@ -14,6 +14,7 @@ import { FOUNDINGOS_ACCENT, FOUNDINGOS_BASE } from '../lib/brands'
 import { normalizeRole } from '../lib/permissions'
 import { useQuantumStore } from '../lib/store'
 import { QuantumSphere } from '../components/QuantumSphere'
+import { AppHomeSections, FoundAiMovie } from '../components/AppHome'
 import { QuantumButton, QuantumCard, QuantumFormField, QuantumNotice, QuantumPasswordInput, QuantumText, QuantumTextInput, quantumSpace, shadeColor } from '../components/QuantumUI'
 
 export default function LoginScreen() {
@@ -24,6 +25,10 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [checkingSession, setCheckingSession] = useState(true)
+  const scrollRef = useRef<ScrollView>(null)
+  const [signInY, setSignInY] = useState(0)
+  const goToSignIn = () => scrollRef.current?.scrollTo({ y: Math.max(0, signInY - quantumSpace.xl), animated: true })
+  const createAccount = () => { void Linking.openURL('https://www.foundingos.com/signup') }
 
   useEffect(() => {
     let cancelled = false
@@ -119,18 +124,40 @@ export default function LoginScreen() {
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView style={styles.keyboardWrapper} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView
+            ref={scrollRef}
             contentContainerStyle={styles.keyboard}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.brand}>
-              <QuantumSphere size={72} />
-              <QuantumText variant="h1" align="center">FoundingOS</QuantumText>
-              <QuantumText color="#D8D8D8" align="center">
-                One command system for every workspace in your business.
-              </QuantumText>
+            <View style={styles.topBar}>
+              <View style={styles.topBrand}>
+                <QuantumSphere size={30} />
+                <QuantumText variant="label">FoundingOS</QuantumText>
+              </View>
+              <QuantumText variant="label" color={FOUNDINGOS_ACCENT} onPress={goToSignIn}>Sign in</QuantumText>
             </View>
 
+            <View style={styles.hero}>
+              <View style={styles.pill}><QuantumText variant="overline" color="#04111f">FoundAI</QuantumText></View>
+              <QuantumText variant="overline" color="#24C47A">The AI that runs your business</QuantumText>
+              <QuantumText variant="h1" style={styles.heroTitle}>Your business, run by AI.</QuantumText>
+              <QuantumText color="#D8D8D8">
+                FoundAI handles your invoices, stock, deliveries, customer messages, campaigns and social posts — and only asks you when a decision needs a human.
+              </QuantumText>
+              <View style={styles.ctaRow}>
+                <QuantumButton onPress={createAccount} style={styles.cta}>Get started free</QuantumButton>
+                <QuantumButton onPress={goToSignIn} tone="secondary" style={styles.cta}>Sign in</QuantumButton>
+              </View>
+            </View>
+
+            <FoundAiMovie />
+
+            <AppHomeSections />
+
+            <View onLayout={(event) => setSignInY(event.nativeEvent.layout.y)} style={styles.signInHeading}>
+              <QuantumText variant="h2">Sign in</QuantumText>
+              <QuantumText variant="caption" color="#A9B8C8">Use the email and password for your FoundingOS account.</QuantumText>
+            </View>
             <QuantumCard accent={FOUNDINGOS_ACCENT}>
               <QuantumFormField label="Email">
                 <QuantumTextInput
@@ -149,6 +176,9 @@ export default function LoginScreen() {
                 {loading ? <ActivityIndicator color={FOUNDINGOS_BASE} /> : 'Sign in'}
               </QuantumButton>
             </QuantumCard>
+            <QuantumText variant="caption" color="#A9B8C8" align="center">
+              New to FoundingOS? <QuantumText variant="caption" color={FOUNDINGOS_ACCENT} onPress={createAccount}>Create your account</QuantumText>
+            </QuantumText>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -160,7 +190,15 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: FOUNDINGOS_BASE },
   safeArea: { flex: 1, padding: quantumSpace.xl },
   keyboardWrapper: { flex: 1 },
-  keyboard: { flexGrow: 1, justifyContent: 'center', gap: quantumSpace.xxl, paddingVertical: quantumSpace.xl },
+  keyboard: { flexGrow: 1, gap: quantumSpace.xxl, paddingVertical: quantumSpace.md, paddingBottom: quantumSpace.xxl * 2 },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  topBrand: { flexDirection: 'row', alignItems: 'center', gap: quantumSpace.sm },
+  hero: { gap: quantumSpace.md },
+  heroTitle: { fontSize: 40, lineHeight: 44 },
+  pill: { alignSelf: 'flex-start', backgroundColor: '#24C47A', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  ctaRow: { flexDirection: 'row', gap: quantumSpace.sm, marginTop: quantumSpace.sm },
+  cta: { flex: 1 },
+  signInHeading: { gap: quantumSpace.xs },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: FOUNDINGOS_BASE },
   brand: { alignItems: 'center', gap: quantumSpace.lg },
   glow: { position: 'absolute', top: -160, left: -80, width: 340, height: 340, borderRadius: 170 },

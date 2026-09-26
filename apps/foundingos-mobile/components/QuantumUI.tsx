@@ -96,7 +96,7 @@ type QuantumTextProps = {
   color?: string
   align?: TextStyle['textAlign']
   style?: StyleProp<TextStyle>
-} & Pick<TextProps, 'adjustsFontSizeToFit' | 'ellipsizeMode' | 'minimumFontScale' | 'numberOfLines'>
+} & Pick<TextProps, 'adjustsFontSizeToFit' | 'ellipsizeMode' | 'minimumFontScale' | 'numberOfLines' | 'onPress'>
 
 type QuantumCardProps = {
   children: ReactNode
