@@ -34,6 +34,7 @@ import { PlatformEvent, TenantOnboarding, fetchEventFeed, fetchOnboarding, getSe
 import { enqueueOutboxAction } from '../../../lib/outbox-sync'
 import { useQuantumStore } from '../../../lib/store'
 import { useActionFeedback } from '../../../lib/use-action-feedback'
+import { AskFoundAiCard, FoundAiAutopilotCard } from '../../../components/FoundAi'
 
 const STATUS_LABEL: Record<ApprovalsQueueStatus, string> = {
   proposed: 'Suggested',
@@ -172,7 +173,7 @@ export default function TodayScreen() {
 
       <View style={styles.trustStrip}>
         <QuantumText variant="caption" color={quantumColors.neutral300}>
-          FoundingOS shows you what needs attention today. Nothing here is simulated.
+          FoundAI runs the routine work and brings you only what needs a human. Nothing here is simulated.
         </QuantumText>
       </View>
 
@@ -203,6 +204,8 @@ export default function TodayScreen() {
 
       {connected && !loading ? (
         <>
+          <FoundAiAutopilotCard compact onChanged={loadAll} />
+          <AskFoundAiCard />
           <QuantumSectionHeader label={attentionCount > 0 ? `Needs your attention · ${attentionCount}` : 'Needs your attention'} />
           <View style={styles.panel}>
             {setupIncomplete ? (

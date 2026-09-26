@@ -35,6 +35,7 @@ import { useQuantumStore } from '../../../lib/store'
 import { useActionFeedback } from '../../../lib/use-action-feedback'
 import { logAction } from '../../../lib/action-logger'
 import { canPerformAction } from '../../../lib/permissions'
+import { FoundAiAutopilotCard } from '../../../components/FoundAi'
 
 const STATUS_LABEL: Record<ApprovalsQueueStatus, string> = {
   proposed: 'Suggested',
@@ -246,15 +247,17 @@ export default function WorkflowsScreen() {
         <QuantumText variant="overline" color={theme.accent}>Core.Operations · Core.Workforce</QuantumText>
         <QuantumText variant="h1">Approvals</QuantumText>
         <QuantumText color={theme.subtextColor}>
-          One queue for every governed AI action across the business — grouped by what needs a decision now, what is waiting for execution, and what is already part of the audit history.
+          FoundAI runs routine work on Autopilot and brings you only the decisions that need a human. Approve or decline here — everything is recorded in the audit trail.
         </QuantumText>
       </QuantumCard>
+
+      <FoundAiAutopilotCard />
 
       <View style={styles.trustStrip}>
         <QuantumText variant="overline" color={quantumColors.neutral300}>What this can and can't do</QuantumText>
         <QuantumText variant="caption" color={theme.subtextColor}>
           Can: approve, reject, execute, and undo AI-proposed actions from Core.Operations and Core.Workforce, with a full audit trail.{'\n'}
-          Can't: approve actions on your behalf automatically — every action here waits for a human decision unless it's explicitly marked auto-governed.
+          Autopilot: FoundAI acts on its own only for the kinds of work you set to Auto (and within your spend limit). Everything else waits here for you.
         </QuantumText>
       </View>
 

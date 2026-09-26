@@ -168,7 +168,7 @@ async function authedRequest<T>(path: string, init: RequestInit = {}): Promise<T
 
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
-    throw new CoreOpsApiError(data?.message || `Request failed (${response.status})`, response.status)
+    throw new CoreOpsApiError(data?.message || (typeof data?.error === 'string' ? data.error : '') || `Request failed (${response.status})`, response.status)
   }
   return (data?.data !== undefined ? data.data : data) as T
 }
@@ -792,3 +792,43 @@ export const fetchOnboarding = () => authedRequest<TenantOnboarding | null>('/ap
 
 export const saveOnboarding = (input: Partial<TenantOnboarding> & { acceptTerms?: boolean }) =>
   authedRequest<TenantOnboarding>('/api/v1/ops/platform/onboarding', { method: 'PUT', body: JSON.stringify(input) })
+
+// ── FoundAI Autopilot + AI (same endpoints the web workspaces use) ──────────
+export type AutopilotCategory = 'operations' | 'customers' | 'spending' | 'refunds' | 'people' | 'compliance'
+export type AutopilotDecision = {
+  key: string
+  workspace: string
+  module: string
+  recordId: string
+  recordName: string
+  from: string
+  to: string
+  category: AutopilotCategory
+  action: string
+  valuePence: number | null
+  mode: 'auto' | 'ask'
+  reason: string
+}
+export type AutopilotApproval = { id: string; status: 'Pending' | 'Approved' | 'Rejected' | 'Stale'; createdAt: string; decidedBy: string | null; decision: AutopilotDecision }
+export type AutopilotActivity = {
+  id: string
+  createdAt: string
+  decision: AutopilotDecision & { approvedBy: string | null; sent?: { channel: 'email' | 'whatsapp'; to: string } | null; posted?: { channel: string; url: string | null } | null }
+}
+export type AutopilotState = {
+  policy: { enabled: boolean; spendLimitPence: number; categories: Record<AutopilotCategory, 'auto' | 'ask' | 'off'> }
+  approvals: AutopilotApproval[]
+  activity: AutopilotActivity[]
+}
+export type FoundAiAnswer = { answer: string; suggestedActions: string[]; citations: Array<{ reference: string; name: string }>; model: string }
+export type FoundAiPost = { headline: string; body: string; hashtags: string[]; cta: string; type: string; imageIdea?: string }
+
+export const fetchAutopilot = () => authedRequest<AutopilotState>('/api/v1/ops/autopilot')
+export const runAutopilotNow = () =>
+  authedRequest<{ enabled: boolean; executed: AutopilotDecision[]; queued: AutopilotDecision[] }>('/api/v1/ops/autopilot/run', { method: 'POST', body: '{}' })
+export const decideAutopilotApproval = (id: string, approve: boolean) =>
+  authedRequest<{ id: string; status: string }>(`/api/v1/ops/autopilot/approvals/${id}/decision`, { method: 'POST', body: JSON.stringify({ approve }) })
+export const askFoundAi = (question: string, workspace?: string) =>
+  authedRequest<FoundAiAnswer>('/api/v1/ops/ai/ask', { method: 'POST', body: JSON.stringify({ question, workspace }) })
+export const writeFoundAiPost = (input: { topic: string; type: string; tone: string; platform?: string; previous?: string }) =>
+  authedRequest<FoundAiPost>('/api/v1/ops/ai/marketing/post', { method: 'POST', body: JSON.stringify(input) })

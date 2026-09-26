@@ -29,6 +29,7 @@ import {
   quantumSpace,
   useActiveQuantumTheme,
 } from '../../../components/QuantumUI'
+import { FoundAiPostWriter } from '../../../components/FoundAi'
 
 type CampaignDraft = {
   status: string
@@ -285,9 +286,11 @@ export default function MarketingScreen() {
         <QuantumText variant="overline" color={theme.accent}>Core.Operations · Marketing</QuantumText>
         <QuantumText variant="h1">Marketing Console</QuantumText>
         <QuantumText color={theme.subtextColor}>
-          Real campaigns, real social posts, and real text generation history from the live backend. Media generation here produces copy/content only — not images.
+          Real campaigns and social posts from the live backend. FoundAI writes posts in your brand voice, and Autopilot publishes approved posts to Facebook, Instagram and LinkedIn once connected.
         </QuantumText>
       </QuantumCard>
+
+      {connected ? <FoundAiPostWriter /> : null}
 
       {notice ? <QuantumNotice tone="info">{notice}</QuantumNotice> : null}
       {!connected ? (
