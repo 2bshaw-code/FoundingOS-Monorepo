@@ -62,3 +62,23 @@ export const crossSellOffers: Record<CrossSellWorkspace, CrossSellOffer[]> = {
 export function crossSellFor(workspace: CrossSellWorkspace, enabled: ReadonlySet<string> | null, limit = 2): CrossSellOffer[] {
   return crossSellOffers[workspace].filter((offer) => !enabled || !enabled.has(offer.target)).slice(0, limit)
 }
+
+export type TickerItem = { target: CrossSellWorkspace; label: string; price: string; text: string; owned: boolean }
+
+// One line per example for the bottom news ticker. Packages the company hasn't added come
+// first; if it has everything, the ticker still shows what its other workspaces can do.
+export function tickerItemsFor(workspace: CrossSellWorkspace, enabled: ReadonlySet<string> | null): TickerItem[] {
+  const offers = crossSellOffers[workspace]
+  const locked = offers.filter((offer) => !enabled || !enabled.has(offer.target))
+  const source = locked.length ? locked : offers
+  const owned = !locked.length
+  const rounds = Math.max(...source.map((offer) => offer.examples.length + 1))
+  const items: TickerItem[] = []
+  for (let round = 0; round < rounds; round += 1) {
+    for (const offer of source) {
+      const text = round === 0 ? offer.headline : offer.examples[round - 1]
+      if (text) items.push({ target: offer.target, label: offer.label, price: offer.price, text, owned })
+    }
+  }
+  return items
+}

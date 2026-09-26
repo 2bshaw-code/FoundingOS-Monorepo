@@ -15274,22 +15274,23 @@ html[data-accessibility-simplified='true'] .btn {
 .sd-shell .pro-reports > .pro-hint, .sd-shell .pro-toolbar { color: #cbd5e1; }
 .sd-shell .pro-toolbar .pro-hint { color: #94a3b8; }
 
-/* Cross-sell banners: what the company's other packages would add */
-.cross-sell { background: linear-gradient(135deg, #f3f7ff 0%, #eefaf5 100%); border: 1px solid #d6e2f5; border-radius: 12px; margin-bottom: 18px; padding: 14px 16px; }
-.cross-sell > header { align-items: center; display: flex; justify-content: space-between; margin-bottom: 10px; }
-.cross-sell > header span { color: #3b5b8c; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
-.cross-sell > header button { background: transparent; border: 0; color: #6b7a90; cursor: pointer; font-size: 20px; line-height: 1; }
-.cross-sell-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
-.cross-sell-card { background: #fff; border: 1px solid #e3e9f2; border-left: 4px solid #38bdf8; border-radius: 10px; padding: 12px 14px; }
-.cross-sell-finance { border-left-color: #22c55e; }
-.cross-sell-marketing { border-left-color: #f472b6; }
-.cross-sell-intelligence { border-left-color: #a78bfa; }
-.cross-sell-hr, .cross-sell-talent { border-left-color: #f59e0b; }
-.cross-sell-eyebrow { color: #5b6b82; font-size: 12px; font-weight: 700; margin: 0 0 4px; }
-.cross-sell-card h3 { color: #0f1d33; font-size: 15px; margin: 0 0 6px; }
-.cross-sell-card ul { color: #34445c; font-size: 13px; margin: 0 0 10px; padding-left: 18px; }
-.cross-sell-card li { margin: 2px 0; }
-.cross-sell-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; }
-.cross-sell-actions > button, .cross-sell-actions > a:first-child { background: #0f1d33; border: 0; border-radius: 8px; color: #fff; cursor: pointer; font-size: 13px; font-weight: 700; padding: 7px 12px; text-decoration: none; }
-.cross-sell-actions > button:disabled { background: #22c55e; cursor: default; }
-.cross-sell-actions > a:last-child { color: #2563eb; font-size: 13px; font-weight: 600; text-decoration: none; }
+/* Cross-sell news ticker pinned to the bottom of workspace pages */
+.cross-sell-ticker { align-items: center; background: #0f1d33; border-top: 3px solid #38bdf8; bottom: 0; box-shadow: 0 -4px 14px rgba(15, 29, 51, .18); color: #e6edf7; display: flex; font-size: 13px; gap: 12px; min-height: 40px; left: 248px; padding: 6px clamp(12px, 3vw, 40px); position: fixed; right: 0; z-index: 60; }
+.retail-product-main:has(.cross-sell-ticker) { padding-bottom: 46px; }
+@media (max-width: 980px) { .cross-sell-ticker { left: 76px; } }
+.cross-sell-finance { border-top-color: #22c55e; }
+.cross-sell-marketing { border-top-color: #f472b6; }
+.cross-sell-intelligence { border-top-color: #a78bfa; }
+.cross-sell-hr, .cross-sell-talent { border-top-color: #f59e0b; }
+.cross-sell-ticker-tag { background: #38bdf8; border-radius: 4px; color: #04111f; flex: none; font-size: 10px; font-weight: 900; letter-spacing: .06em; padding: 3px 7px; text-transform: uppercase; }
+.cross-sell-ticker p { animation: cross-sell-in .45s ease; display: flex; flex: 1; gap: 8px; margin: 0; min-width: 0; overflow: hidden; white-space: nowrap; }
+.cross-sell-ticker p strong { color: #fff; flex: none; }
+.cross-sell-ticker p span { overflow: hidden; text-overflow: ellipsis; }
+.cross-sell-ticker p em { color: #93a4bd; flex: none; font-style: normal; }
+.cross-sell-ticker-actions { align-items: center; display: flex; flex: none; gap: 10px; }
+.cross-sell-ticker-actions > a, .cross-sell-ticker-actions > button:not(.cross-sell-ticker-close) { background: #38bdf8; border: 0; border-radius: 6px; color: #04111f; cursor: pointer; font-size: 12px; font-weight: 800; padding: 5px 10px; text-decoration: none; }
+.cross-sell-ticker-actions > button:disabled { background: #22c55e; cursor: default; }
+.cross-sell-ticker-close { background: transparent; border: 0; color: #93a4bd; cursor: pointer; font-size: 18px; line-height: 1; }
+@keyframes cross-sell-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (max-width: 700px) { .cross-sell-ticker { left: 0; } .cross-sell-ticker-tag, .cross-sell-ticker p em { display: none; } }
+body:has(.cross-sell-ticker) .found-ai-fab { bottom: 64px; }

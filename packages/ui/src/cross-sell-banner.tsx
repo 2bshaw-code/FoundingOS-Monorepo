@@ -6,66 +6,59 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { crossSellFor, type CrossSellOffer, type CrossSellWorkspace } from '@foundingos/config/cross-sell'
+import { tickerItemsFor, type CrossSellWorkspace, type TickerItem } from '@foundingos/config/cross-sell'
 import { productionRequest } from './workspace-production-client'
 
-const DISMISS_DAYS = 7
+const ROTATE_MS = 6000
 
-// Shows what the company's *other* packages would add, from the point of view of this
-// workspace. Production tenants only see packages they haven't switched on; the demo shows all.
-export function CrossSellBanner({ workspace, production }: { workspace: CrossSellWorkspace; production: boolean }) {
-  const dismissKey = `foundingos-cross-sell-dismissed-${workspace}`
-  const [offers, setOffers] = useState<CrossSellOffer[]>([])
-  const [hidden, setHidden] = useState(true)
+// Thin news-style strip pinned to the bottom of every workspace page, rotating through what
+// the company's other packages would add. Hidden for the rest of the day when closed.
+export function CrossSellTicker({ workspace, production }: { workspace: CrossSellWorkspace; production: boolean }) {
+  const dismissKey = `foundingos-ticker-hidden-${workspace}-${new Date().toISOString().slice(0, 10)}`
+  const [items, setItems] = useState<TickerItem[]>([])
+  const [index, setIndex] = useState(0)
+  const [hidden, setHidden] = useState(false)
   const [requested, setRequested] = useState<Record<string, 'sending' | 'sent' | 'failed'>>({})
 
   useEffect(() => {
-    try {
-      const until = Number(window.localStorage.getItem(dismissKey) || 0)
-      setHidden(until > Date.now())
-    } catch { setHidden(false) }
-    if (!production) { setOffers(crossSellFor(workspace, null)); return }
+    try { setHidden(window.localStorage.getItem(dismissKey) === '1') } catch { /* private mode */ }
+    if (!production) { setItems(tickerItemsFor(workspace, null)); return }
     productionRequest<Array<{ workspace: string; enabled: boolean }>>('/platform/workspaces')
-      .then((rows) => setOffers(crossSellFor(workspace, rows?.length ? new Set(rows.filter((row) => row.enabled).map((row) => row.workspace)) : null)))
-      .catch(() => setOffers([]))
+      .then((rows) => setItems(tickerItemsFor(workspace, rows?.length ? new Set(rows.filter((row) => row.enabled).map((row) => row.workspace)) : null)))
+      .catch(() => setItems(tickerItemsFor(workspace, null)))
   }, [dismissKey, production, workspace])
 
-  if (hidden || !offers.length) return null
+  useEffect(() => {
+    if (items.length < 2) return
+    const timer = window.setInterval(() => setIndex((current) => (current + 1) % items.length), ROTATE_MS)
+    return () => window.clearInterval(timer)
+  }, [items.length])
 
-  const dismiss = () => {
-    try { window.localStorage.setItem(dismissKey, String(Date.now() + DISMISS_DAYS * 86_400_000)) } catch { /* private mode */ }
-    setHidden(true)
-  }
-  const request = async (target: string) => {
-    setRequested((current) => ({ ...current, [target]: 'sending' }))
+  if (hidden || !items.length) return null
+  const item = items[index % items.length]
+  const state = requested[item.target]
+
+  const request = async () => {
+    setRequested((current) => ({ ...current, [item.target]: 'sending' }))
     try {
-      await productionRequest('/platform/upgrade-request', { method: 'POST', body: JSON.stringify({ workspaces: [target], note: `Requested from the ${workspace} workspace banner` }) })
-      setRequested((current) => ({ ...current, [target]: 'sent' }))
+      await productionRequest('/platform/upgrade-request', { method: 'POST', body: JSON.stringify({ workspaces: [item.target], note: `Requested from the ${workspace} workspace ticker` }) })
+      setRequested((current) => ({ ...current, [item.target]: 'sent' }))
     } catch {
-      setRequested((current) => ({ ...current, [target]: 'failed' }))
+      setRequested((current) => ({ ...current, [item.target]: 'failed' }))
     }
   }
 
   return (
-    <aside aria-label="More from FoundingOS" className="cross-sell">
-      <header>
-        <span>More from FoundingOS</span>
-        <button aria-label="Hide for a week" onClick={dismiss} type="button">×</button>
-      </header>
-      <div className="cross-sell-grid">
-        {offers.map((offer) => (
-          <article className={`cross-sell-card cross-sell-${offer.target}`} key={offer.target}>
-            <p className="cross-sell-eyebrow">{offer.label} · {offer.price}</p>
-            <h3>{offer.headline}</h3>
-            <ul>{offer.examples.map((example) => <li key={example}>{example}</li>)}</ul>
-            <div className="cross-sell-actions">
-              {production
-                ? <button disabled={requested[offer.target] === 'sending' || requested[offer.target] === 'sent'} onClick={() => void request(offer.target)} type="button">{requested[offer.target] === 'sent' ? 'Requested ✓ — we’ll switch it on' : requested[offer.target] === 'sending' ? 'Requesting…' : requested[offer.target] === 'failed' ? 'Try again' : `Add ${offer.label}`}</button>
-                : <Link href="/pricing">Add {offer.label}</Link>}
-              <Link href={`/test-workspaces/${offer.target}`}>See it in action →</Link>
-            </div>
-          </article>
-        ))}
+    <aside aria-label="More from FoundingOS" aria-live="polite" className={`cross-sell-ticker cross-sell-${item.target}`}>
+      <span className="cross-sell-ticker-tag">{item.owned ? 'In your plan' : 'New for you'}</span>
+      <p key={index}><strong>{item.label}</strong><span>{item.text}</span>{item.owned ? null : <em>{item.price}</em>}</p>
+      <div className="cross-sell-ticker-actions">
+        {item.owned
+          ? <Link href={`/app/${item.target}`}>Open {item.label} →</Link>
+          : production
+            ? <button disabled={state === 'sending' || state === 'sent'} onClick={() => void request()} type="button">{state === 'sent' ? 'Requested ✓' : state === 'sending' ? 'Requesting…' : state === 'failed' ? 'Try again' : `Add ${item.label}`}</button>
+            : <Link href="/pricing">Add {item.label} →</Link>}
+        <button aria-label="Hide for today" className="cross-sell-ticker-close" onClick={() => { try { window.localStorage.setItem(dismissKey, '1') } catch { /* private mode */ } setHidden(true) }} type="button">×</button>
       </div>
     </aside>
   )
