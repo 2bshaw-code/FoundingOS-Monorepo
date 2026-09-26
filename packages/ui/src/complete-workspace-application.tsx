@@ -6,6 +6,7 @@ import { AutopilotPanel, AutopilotStrip, useAutopilot, type AutopilotController 
 import { getWorkspaceLayout, ModuleAiBar, moduleSamples, ModuleWorkspaceView, nextStep, type AiPlan, type LayoutRecord, type LiveAnswer } from './module-workspaces'
 import { useRouter } from 'next/navigation'
 import { Fragment, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { CampaignPlanner, type CampaignBrief, type CampaignPlan } from './marketing-studio'
 import { bootstrapProduction, getProductionSession, loginToProduction, logoutProduction, productionAgentActions, productionApiConfigured, productionModeEnabled, productionPlatform, productionRecords, productionRequest, type AgentAction, type AgentIntelligenceSummary, type ControlSettings, type ProductionInvitation, type ProductionSession, type ProductionWorkspaceRecord } from './workspace-production-client'
 
 const workspaceRoot = productionModeEnabled ? '/app' : '/test-workspaces'
@@ -1391,7 +1392,7 @@ function InboxListView({ records, selectedId, onSelect, statuses }: { records: W
   </div>
 }
 
-type ContentDraft = { headline: string; body: string; hashtags: string[]; cta: string; type: string; image?: string }
+type ContentDraft = { headline: string; body: string; hashtags: string[]; cta: string; type: string; image?: string; imageIdea?: string }
 
 const STUDIO_TYPES = ['Social post', 'Email', 'Blog intro', 'Ad copy'] as const
 const STUDIO_TONES = ['Professional', 'Playful', 'Bold', 'Minimal'] as const
@@ -1488,7 +1489,7 @@ function ContentPreviewCard({ headline, body, hashtags, cta, type, image }: { he
 // "try another version" regenerate loop, an image upload for the creative, a rendered preview
 // box showing exactly what gets published, one-click downloads, and a save straight into the
 // pipeline below.
-function ContentStudioPanel({ onSave, saving }: { onSave: (draft: ContentDraft) => void; saving: boolean }) {
+function ContentStudioPanel({ onSave, saving, live }: { onSave: (draft: ContentDraft) => void; saving: boolean; live: boolean }) {
   const [topic, setTopic] = useState('')
   const [type, setType] = useState<(typeof STUDIO_TYPES)[number]>(STUDIO_TYPES[0])
   const [tone, setTone] = useState<(typeof STUDIO_TONES)[number]>(STUDIO_TONES[0])
@@ -1497,13 +1498,26 @@ function ContentStudioPanel({ onSave, saving }: { onSave: (draft: ContentDraft) 
   const [draft, setDraft] = useState<ContentDraft | null>(null)
   const [thinking, setThinking] = useState(false)
   const [saved, setSaved] = useState(false)
-  const generate = () => {
+  const [aiError, setAiError] = useState('')
+  const generate = async () => {
     setThinking(true)
     setSaved(false)
-    window.setTimeout(() => {
-      setDraft(generateContentDraft(topic, type, tone, image))
+    setAiError('')
+    if (!live) {
+      window.setTimeout(() => {
+        setDraft(generateContentDraft(topic, type, tone, image))
+        setThinking(false)
+      }, 500)
+      return
+    }
+    try {
+      const written = await productionRequest<ContentDraft>('/ai/marketing/post', { method: 'POST', body: JSON.stringify({ topic, type, tone, previous: draft?.headline }) })
+      setDraft({ ...written, image })
+    } catch (cause) {
+      setAiError(cause instanceof Error ? cause.message : 'FoundAI could not write that post')
+    } finally {
       setThinking(false)
-    }, 500)
+    }
   }
   const upload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -1528,8 +1542,11 @@ function ContentStudioPanel({ onSave, saving }: { onSave: (draft: ContentDraft) 
       <label>Topic or product<input onChange={(event) => setTopic(event.target.value)} placeholder="e.g. the new loyalty rewards tier" value={topic} /></label>
       <label>Format<select onChange={(event) => setType(event.target.value as (typeof STUDIO_TYPES)[number])} value={type}>{STUDIO_TYPES.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
       <label>Tone<select onChange={(event) => setTone(event.target.value as (typeof STUDIO_TONES)[number])} value={tone}>{STUDIO_TONES.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
-      <button className="retail-app-primary" disabled={thinking} onClick={generate} type="button">{thinking ? 'Generating\u2026' : draft ? 'Regenerate with AI' : '\u2728 Generate with AI'}</button>
+      <button className="retail-app-primary" disabled={thinking} onClick={() => { void generate() }} type="button">{thinking ? 'FoundAI is writing\u2026' : draft ? 'Write another version' : '\u2728 Write with FoundAI'}</button>
     </div>
+    {aiError ? <p className="ap-error">{aiError}</p> : null}
+    {!live ? <p className="mk-note">Demo: sample copy. Signed-in accounts get posts written by FoundAI from your real products and brand voice.</p> : null}
+    {draft?.imageIdea ? <p className="mk-note"><b>Image idea:</b> {draft.imageIdea}</p> : null}
     <label className="retail-app-studio-upload">
       <input accept="image/*" hidden onChange={upload} type="file" />
       <span>{'\u2B06\uFE0F'} {imageName || 'Upload image'}</span>
@@ -2255,6 +2272,17 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
       setSaving(false)
     }
   }
+  const addCampaignPlan = async (plan: CampaignPlan, brief: CampaignBrief, dateFor: (day: number) => string) => {
+    const stamp = Date.now().toString().slice(-5)
+    const lastDay = dateFor(plan.durationDays)
+    const campaign = await createRecord('campaigns', { id: `CMP-${stamp}`, name: plan.name, secondary: `${plan.channels.join(', ')} \u00b7 ${plan.durationDays} days \u00b7 ${plan.posts.length} posts \u00b7 ${plan.summary}`, value: brief.budget || '\u2014', status: 'Draft', owner: 'FoundAI', updated: 'Just now', dueDate: lastDay })
+    if (config.modules.some((module) => module.id === 'content')) {
+      for (const [index, post] of plan.posts.entries()) {
+        await createRecord('content', { id: `CNT-${stamp}-${index + 1}`, name: post.headline, secondary: `${post.type} \u00b7 ${post.channel} \u00b7 ${post.body}${post.hashtags.length ? ` ${post.hashtags.join(' ')}` : ''}`, value: post.cta, status: 'Draft', owner: 'FoundAI', updated: 'Just now', dueDate: dateFor(post.day) })
+      }
+    }
+    setSelectedId(campaign.id)
+  }
   const collectPayment = async () => {
     if (!selected?.backendId) return
     setSaving(true)
@@ -2356,7 +2384,8 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
     <WorkspaceHeading eyebrow={`${config.suite} · ${item.group}`} title={item.label} copy={profile && !isInbox && !isCalendar && !isContentStudio ? profile.copy : isInbox ? `Every conversation for ${config.label.toLowerCase()} in one inbox — open a message to read the full thread and reply.` : isCalendar ? `See every scheduled ${item.label.toLowerCase()} entry laid out by day, and click through to its details.` : isContentStudio ? `Brief FoundAI on what you're promoting and it will draft the copy — then send it straight into the pipeline below.` : isDirectory ? `Browse every ${item.label.toLowerCase()} record with health, owner, and connected handoff.` : `Manage every ${item.label.toLowerCase()} record, owner, stage, activity, and connected handoff.`} action={<button className="retail-app-primary" onClick={() => setCreating(true)} type="button">+ New {noun}</button>} />
     {autopilot && !isDirectory ? <AutopilotStrip controller={autopilot} moduleId={item.id} workspace={workspace} /> : null}
     {!isInbox && !isContentStudio && !isDirectory ? <ModuleAiBar kpis={profile && records.length ? profile.kpis(records, statuses) : []} askLive={liveAi ? askLive : undefined} moduleId={item.id} moduleLabel={item.label} noun={noun} onApply={applyAiPlan} records={records} statuses={statuses} /> : null}
-    {isContentStudio ? <ContentStudioPanel onSave={(draft) => void saveContentDraft(draft)} saving={saving} /> : null}
+    {isCampaigns ? <CampaignPlanner live={liveAi} onCreate={addCampaignPlan} /> : null}
+    {isContentStudio ? <ContentStudioPanel live={liveAi} onSave={(draft) => void saveContentDraft(draft)} saving={saving} /> : null}
     {profile && records.length > 0 ? <ModuleKpiStrip kpis={profile.kpis(records, statuses)} /> : null}
     {genericCharts && !isDirectory && !isInbox ? <div className="complete-workspace-stage-summary">{statuses.map((status) => <article key={status}><strong>{records.filter((record) => record.status === status).length}</strong><span>{status}</span></article>)}</div> : null}
     {isSalesPipeline && records.length > 0 ? <PipelineForecastBar records={records} statuses={statuses} /> : null}

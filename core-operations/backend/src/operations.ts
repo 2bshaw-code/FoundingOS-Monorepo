@@ -36,7 +36,7 @@ const termList = (value: unknown) => text(value)
   .map((term) => term.trim())
   .filter(Boolean)
 
-const readBrandVoiceRules = (value: unknown): BrandVoiceRules => {
+export const readBrandVoiceRules = (value: unknown): BrandVoiceRules => {
   const voice = value && typeof value === 'object' && !Array.isArray(value)
     ? value as Record<string, unknown>
     : {}
@@ -47,7 +47,7 @@ const readBrandVoiceRules = (value: unknown): BrandVoiceRules => {
   }
 }
 
-const enforceBrandTerms = (values: string[], rules: BrandVoiceRules) => {
+export const enforceBrandTerms = (values: string[], rules: BrandVoiceRules) => {
   const content = values.join('\n').toLocaleLowerCase()
   const conflicts = rules.avoidedTerms.filter((term) => content.includes(term.toLocaleLowerCase()))
   if (conflicts.length) {

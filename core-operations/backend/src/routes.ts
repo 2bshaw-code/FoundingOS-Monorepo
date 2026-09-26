@@ -7,6 +7,7 @@ import { createBobRouter } from '@foundingos/bob'
 import { createModuleAccessMiddleware } from '@foundingos/service-auth'
 import { timingSafeEqual } from 'node:crypto'
 import { askFoundAi, isAiConfigured } from './ai.js'
+import { draftMarketingPost, planMarketingCampaign } from './marketing-ai.js'
 import { listWhatsAppTemplateStatus, submitWhatsAppTemplates } from './whatsapp-templates.js'
 import { decideAutopilotApproval, getAutopilotPolicy, listAutopilotActivity, listAutopilotApprovals, runAutopilot, runAutopilotForAllTenants, saveAutopilotPolicy } from './autopilot.js'
 import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess } from './auth.js'
@@ -47,6 +48,12 @@ apiRouter.get('/status', (_req, res) => res.json({ app: 'core_operations', statu
 apiRouter.get('/ai/status', requireMerchantAccess, requireTenant, (_req, res) => res.json({ success: true, data: { enabled: isAiConfigured() } }))
 // FoundAI Autopilot — the scheduler calls /autopilot/cron with the Vercel CRON_SECRET; tenants
 // read their policy/approvals/activity and owners change the policy and decide approvals.
+apiRouter.post('/ai/marketing/post', requireMerchantAccess, requireTenant, async (req, res, next) => {
+  try { res.json({ success: true, data: await draftMarketingPost(readTenant(req, res)!, req.body ?? {}) }) } catch (error) { next(error) }
+})
+apiRouter.post('/ai/marketing/campaign', requireMerchantAccess, requireTenant, async (req, res, next) => {
+  try { res.json({ success: true, data: await planMarketingCampaign(readTenant(req, res)!, req.body ?? {}) }) } catch (error) { next(error) }
+})
 apiRouter.get('/autopilot/cron', async (req, res, next) => {
   try {
     const secret = process.env.CRON_SECRET

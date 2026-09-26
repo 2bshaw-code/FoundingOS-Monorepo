@@ -14960,3 +14960,41 @@ html[data-accessibility-simplified='true'] .btn {
 .ap-wa-list li { background: #eef2f6; border-radius: 999px; font-size: 12px; padding: 3px 10px; text-transform: capitalize; }
 .ap-wa-list li[data-status='APPROVED'] { background: #ecfdf3; color: #067647; }
 .ap-wa-list li[data-status='REJECTED'], .ap-wa-list li[data-status='ERROR'] { background: #fef2f2; color: #b42318; }
+
+/* FoundAI marketing: campaign planner + studio notes */
+.mk-note { margin: 8px 0 0; font-size: 13px; color: #5b6472; }
+.mk-planner { color: #0f172a; background: #fff; border: 1px solid #e3e7ee; border-radius: 14px; padding: 18px 20px; margin: 0 0 18px; box-shadow: 0 1px 2px rgba(15,23,42,.04); }
+.mk-planner > header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.mk-planner > header strong { display: block; font-size: 17px; margin: 6px 0 2px; }
+.mk-planner > header small { color: #5b6472; font-size: 13px; }
+.mk-link { background: none; border: 0; color: #4f46e5; font-weight: 600; cursor: pointer; font-size: 13px; padding: 4px 6px; }
+.mk-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.mk-form label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 600; color: #334155; }
+.mk-form .mk-wide { grid-column: 1 / -1; }
+.mk-form input, .mk-form select { color: #0f172a; border: 1px solid #d5dbe5; border-radius: 9px; padding: 9px 11px; font: inherit; font-weight: 400; font-size: 14px; background: #fff; }
+.mk-channels { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.mk-channels button { border: 1px solid #d5dbe5; background: #fff; border-radius: 999px; padding: 6px 13px; font-size: 13px; cursor: pointer; color: #334155; }
+.mk-channels button[aria-pressed="true"] { background: #eef2ff; border-color: #6366f1; color: #3730a3; font-weight: 600; }
+.mk-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+.mk-actions small { color: #5b6472; font-size: 12.5px; }
+.mk-primary { background: #4f46e5; color: #fff; border: 0; border-radius: 10px; padding: 10px 16px; font-weight: 600; cursor: pointer; }
+.mk-primary:disabled { opacity: .55; cursor: default; }
+.mk-plan { border-top: 1px solid #eef1f5; margin-top: 16px; padding-top: 16px; }
+.mk-plan h3 { margin: 0 0 4px; font-size: 18px; }
+.mk-plan p { margin: 0 0 6px; color: #334155; }
+.mk-plan h4 { margin: 14px 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #64748b; }
+.mk-plan-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.mk-plan-meta ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13.5px; }
+.mk-plan-meta li { display: grid; grid-template-columns: 90px 1fr 40px; align-items: center; gap: 8px; }
+.mk-plan-meta div:first-child li { display: block; padding-left: 14px; position: relative; }
+.mk-plan-meta div:first-child li::before { content: '•'; position: absolute; left: 0; color: #6366f1; }
+.mk-plan-meta li i { display: block; height: 8px; border-radius: 4px; background: #818cf8; }
+.mk-posts { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.mk-posts li { display: grid; grid-template-columns: 110px 1fr auto; gap: 14px; border: 1px solid #eef1f5; border-radius: 11px; padding: 12px 14px; background: #fafbfd; }
+.mk-post-when { display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+.mk-post-when span { font-size: 12px; color: #4f46e5; font-weight: 600; }
+.mk-posts strong { font-size: 14px; }
+.mk-posts p { font-size: 13.5px; margin: 4px 0; white-space: pre-line; }
+.mk-posts small { display: block; color: #6366f1; font-size: 12.5px; }
+.mk-posts em { display: inline-block; margin-top: 6px; font-style: normal; font-size: 12px; font-weight: 600; background: #eef2ff; color: #3730a3; padding: 3px 9px; border-radius: 999px; }
+@media (max-width: 760px) { .mk-form { grid-template-columns: 1fr 1fr; } .mk-posts li { grid-template-columns: 1fr; } }
