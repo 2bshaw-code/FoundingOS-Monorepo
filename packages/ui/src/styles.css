@@ -14899,3 +14899,53 @@ html[data-accessibility-simplified='true'] .btn {
 .mw-ai-sources { color: #5b6b80; font-size: 12px; margin: 6px 0 0; }
 .mw-ai-error { color: #fecaca; font-size: 13px; margin: 0; }
 .mw-ai-note { color: rgba(255,255,255,0.65); font-size: 12px; margin: 0; }
+
+/* FoundAI Autopilot */
+.ap-panel { background: #fff; border: 1px solid #dfe6ef; border-radius: 16px; color: #172033; display: grid; gap: 14px; margin-bottom: 18px; padding: 18px; }
+.ap-panel > header { align-items: flex-start; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; }
+.ap-panel > header > div:first-child { align-items: flex-start; display: flex; gap: 10px; }
+.ap-panel > header strong { font-size: 17px; }
+.ap-panel > header p { color: #5b6b80; font-size: 14px; margin: 4px 0 0; }
+.ap-dot { background: #94a3b8; border-radius: 50%; display: inline-block; flex: none; height: 10px; margin-top: 6px; width: 10px; }
+.ap-dot.on { animation: ap-pulse 2s infinite; background: #24c47a; box-shadow: 0 0 0 0 rgba(36,196,122,0.5); }
+@keyframes ap-pulse { 70% { box-shadow: 0 0 0 8px rgba(36,196,122,0); } 100% { box-shadow: 0 0 0 0 rgba(36,196,122,0); } }
+.ap-head-actions { display: flex; gap: 8px; }
+.ap-panel button, .ap-strip button { background: #f1f5f9; border: 1px solid #dfe6ef; border-radius: 8px; color: #172033; cursor: pointer; font-weight: 700; padding: 7px 12px; }
+.ap-panel button:disabled { cursor: default; opacity: 0.6; }
+.ap-panel button.ap-approve, .ap-strip button.ap-approve { background: #172033; border-color: #172033; color: #fff; }
+.ap-stats { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.ap-stats article { background: #f8fafc; border-radius: 10px; display: grid; gap: 2px; padding: 10px 12px; }
+.ap-stats span { color: #5b6b80; font-size: 12px; }
+.ap-stats strong { font-size: 20px; }
+.ap-stats article[data-tone='warn'] { background: #fff7e6; }
+.ap-stats article[data-tone='good'] { background: #ecfdf3; }
+.ap-cols { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.ap-cols h3 { font-size: 14px; margin: 0 0 8px; }
+.ap-cols ul, .ap-strip ul { display: grid; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.ap-approval { align-items: center; background: #fffaf0; border: 1px solid #fde7b0; border-radius: 10px; display: flex; gap: 10px; justify-content: space-between; padding: 10px 12px; }
+.ap-approval > div:first-child { display: grid; gap: 2px; min-width: 0; }
+.ap-approval span, .ap-done small { color: #5b6b80; font-size: 13px; }
+.ap-approval small { color: #9a6700; font-size: 12px; }
+.ap-approval-actions { display: flex; flex: none; gap: 6px; }
+.ap-done { align-items: flex-start; display: flex; gap: 8px; }
+.ap-done > span { color: #24c47a; font-weight: 800; }
+.ap-done > div { display: grid; gap: 2px; }
+.ap-empty { color: #5b6b80; font-size: 14px; margin: 0; }
+.ap-error { background: #fef2f2; border-radius: 8px; color: #b42318; margin: 0; padding: 8px 12px; }
+.ap-rules { background: #f8fafc; border-radius: 12px; display: grid; gap: 10px; padding: 14px; }
+.ap-rules header { display: grid; gap: 2px; }
+.ap-rules small { color: #5b6b80; font-size: 12px; }
+.ap-rule { align-items: center; border-top: 1px solid #e5eaf1; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; padding-top: 10px; }
+.ap-rule > div:first-child { display: grid; gap: 2px; max-width: 520px; }
+.ap-seg { display: flex; }
+.ap-seg button { border-radius: 0; }
+.ap-seg button:first-child { border-radius: 8px 0 0 8px; }
+.ap-seg button:last-child { border-radius: 0 8px 8px 0; }
+.ap-seg button[aria-pressed='true'] { background: #172033; border-color: #172033; color: #fff; }
+.ap-limit { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; font-size: 14px; }
+.ap-limit input { background: #fff; border: 1px solid #dfe6ef; color: #172033; border-radius: 8px; margin-left: 4px; padding: 6px 8px; width: 100px; }
+.ap-toggle { align-items: center; display: flex; font-weight: 700; gap: 8px; }
+.ap-rules footer { display: flex; gap: 8px; }
+.ap-strip { align-items: center; background: #f0fdf6; border: 1px solid #c6f0d9; border-radius: 12px; color: #172033; display: flex; flex-wrap: wrap; font-size: 14px; gap: 8px; margin-bottom: 12px; padding: 10px 14px; }
+.ap-strip .ap-dot { margin-top: 0; }
+.ap-strip ul { flex-basis: 100%; }

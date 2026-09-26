@@ -5,7 +5,9 @@
 import { Router, raw, type RequestHandler } from 'express'
 import { createBobRouter } from '@foundingos/bob'
 import { createModuleAccessMiddleware } from '@foundingos/service-auth'
+import { timingSafeEqual } from 'node:crypto'
 import { askFoundAi, isAiConfigured } from './ai.js'
+import { decideAutopilotApproval, getAutopilotPolicy, listAutopilotActivity, listAutopilotApprovals, runAutopilot, runAutopilotForAllTenants, saveAutopilotPolicy } from './autopilot.js'
 import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess } from './auth.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
@@ -42,6 +44,33 @@ const telemetryRateLimit = createTelemetryRateLimiter()
 export const apiRouter = Router()
 apiRouter.get('/status', (_req, res) => res.json({ app: 'core_operations', status: 'operational' }))
 apiRouter.get('/ai/status', requireMerchantAccess, requireTenant, (_req, res) => res.json({ success: true, data: { enabled: isAiConfigured() } }))
+// FoundAI Autopilot — the scheduler calls /autopilot/cron with the Vercel CRON_SECRET; tenants
+// read their policy/approvals/activity and owners change the policy and decide approvals.
+apiRouter.get('/autopilot/cron', async (req, res, next) => {
+  try {
+    const secret = process.env.CRON_SECRET
+    const supplied = Buffer.from(req.header('authorization') ?? '')
+    const expected = Buffer.from(`Bearer ${secret ?? ''}`)
+    if (!secret || supplied.length !== expected.length || !timingSafeEqual(supplied, expected)) return res.status(401).json({ success: false, message: 'Unauthorized' })
+    res.json({ success: true, data: await runAutopilotForAllTenants() })
+  } catch (error) { next(error) }
+})
+apiRouter.get('/autopilot', requireMerchantAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)!
+    const [policy, approvals, activity] = await Promise.all([getAutopilotPolicy(tenantId), listAutopilotApprovals(tenantId), listAutopilotActivity(tenantId)])
+    res.json({ success: true, data: { policy, approvals, activity } })
+  } catch (error) { next(error) }
+})
+apiRouter.put('/autopilot/policy', requireOwnerAccess, requireTenant, async (req, res, next) => {
+  try { res.json({ success: true, data: await saveAutopilotPolicy(readTenant(req, res)!, res.locals.auth.id, req.body) }) } catch (error) { next(error) }
+})
+apiRouter.post('/autopilot/run', requireMerchantAccess, requireTenant, async (req, res, next) => {
+  try { res.json({ success: true, data: await runAutopilot(readTenant(req, res)!) }) } catch (error) { next(error) }
+})
+apiRouter.post('/autopilot/approvals/:id/decision', requireOwnerAccess, requireTenant, async (req, res, next) => {
+  try { res.json({ success: true, data: await decideAutopilotApproval(readTenant(req, res)!, res.locals.auth.id, String(req.params.id), req.body?.approve === true) }) } catch (error) { next(error) }
+})
 apiRouter.post('/ai/ask', requireMerchantAccess, requireTenant, async (req, res, next) => {
   try {
     const tenantId = readTenant(req, res)

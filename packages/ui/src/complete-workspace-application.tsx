@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { getModuleProfile, type ModuleKpi } from './module-profiles'
+import { AutopilotPanel, AutopilotStrip, useAutopilot, type AutopilotController } from './autopilot'
 import { getWorkspaceLayout, ModuleAiBar, moduleSamples, ModuleWorkspaceView, nextStep, type AiPlan, type LayoutRecord, type LiveAnswer } from './module-workspaces'
 import { useRouter } from 'next/navigation'
 import { Fragment, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
@@ -511,7 +512,7 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
   // feed instead of a flat note list, matching HubSpot/Pipedrive's activity-type timelines.
   const logNote = (module: string, record: WorkspaceRecord, note: string, kind: string = 'Note') => {
     const entry = { time: 'Now', note, kind }
-    update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? { ...item, log: [entry, ...(item.log ?? [])] } : item) } }), `${module}: ${record.name} ${kind.toLowerCase()} logged`)
+    update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? { ...item, log: [entry, ...(item.log ?? [])] } : item) } }), `${module}: ${record.name} ${kind === 'FoundAI' ? 'handled by FoundAI' : `${kind.toLowerCase()} logged`}`)
   }
   // Edits a record's core fields directly from the detail panel — every module gets inline
   // editing of name/secondary/value/owner for free, without any module-specific wiring.
@@ -2075,7 +2076,7 @@ function ModuleKpiStrip({ kpis }: { kpis: ModuleKpi[] }) {
   return <div className="module-kpi-strip">{kpis.map((kpi) => <article data-tone={kpi.tone} key={kpi.label}><span>{kpi.label}</span><strong>{kpi.value}</strong></article>)}</div>
 }
 
-function RecordsPage({ workspace, config, item, state, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string, kind?: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
+function RecordsPage({ autopilot, workspace, config, item, state, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff }: { autopilot?: AutopilotController; workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string, kind?: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
   const records = state.records[item.id] ?? []
   const statuses = statusFor(item)
   const [sourceOpen, setSourceOpen] = useState(false)
@@ -2349,6 +2350,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const genericCharts = !profile
   return <>
     <WorkspaceHeading eyebrow={`${config.suite} · ${item.group}`} title={item.label} copy={profile && !isInbox && !isCalendar && !isContentStudio ? profile.copy : isInbox ? `Every conversation for ${config.label.toLowerCase()} in one inbox — open a message to read the full thread and reply.` : isCalendar ? `See every scheduled ${item.label.toLowerCase()} entry laid out by day, and click through to its details.` : isContentStudio ? `Brief FoundAI on what you're promoting and it will draft the copy — then send it straight into the pipeline below.` : isDirectory ? `Browse every ${item.label.toLowerCase()} record with health, owner, and connected handoff.` : `Manage every ${item.label.toLowerCase()} record, owner, stage, activity, and connected handoff.`} action={<button className="retail-app-primary" onClick={() => setCreating(true)} type="button">+ New {noun}</button>} />
+    {autopilot && !isDirectory ? <AutopilotStrip controller={autopilot} moduleId={item.id} workspace={workspace} /> : null}
     {!isInbox && !isContentStudio && !isDirectory ? <ModuleAiBar kpis={profile && records.length ? profile.kpis(records, statuses) : []} askLive={liveAi ? askLive : undefined} moduleId={item.id} moduleLabel={item.label} noun={noun} onApply={applyAiPlan} records={records} statuses={statuses} /> : null}
     {isContentStudio ? <ContentStudioPanel onSave={(draft) => void saveContentDraft(draft)} saving={saving} /> : null}
     {profile && records.length > 0 ? <ModuleKpiStrip kpis={profile.kpis(records, statuses)} /> : null}
@@ -2911,6 +2913,23 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
     setHydrated(true)
   }, [])
   const { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff } = useWorkspaceState(workspace, current.id, session)
+  const autopilot = useAutopilot({
+    workspace,
+    production,
+    ready: hydrated && !loading && (!production || Boolean(session)),
+    collect: () => Object.entries(state.records).flatMap(([module, list]) => list.map((record) => ({ id: record.id, workspace, module, name: record.name, status: record.status, valuePence: /[£$€]/.test(record.value) ? Math.round(Number(record.value.replace(/[^0-9.-]/g, '')) * 100) : null, dueDate: record.dueDate ?? null }))),
+    apply: async (decision) => {
+      const note = { time: 'Now', note: `FoundAI: ${decision.action}`, kind: 'FoundAI' }
+      if (production) {
+        update((current) => ({ ...current, records: Object.fromEntries(Object.entries(current.records).map(([module, list]) => [module, list.map((record) => record.backendId === decision.recordId ? { ...record, status: decision.to, updated: 'Now', log: [note, ...(record.log ?? [])] } : record)])) }), `FoundAI: ${decision.action} — ${decision.recordName}`)
+        return
+      }
+      const record = state.records[decision.module]?.find((item) => item.id === decision.recordId)
+      if (!record || record.status !== decision.from) return
+      await advanceRecord(decision.module, record, decision.to)
+      logNote(decision.module, record, note.note, 'FoundAI')
+    },
+  })
   const agent = useAgentActions(production, session, (text) => update((current) => current, text))
   const groups = useMemo(() => [...new Set(config.modules.map((item) => item.group))], [config.modules])
   const [paletteOpen, setPaletteOpen] = useState(false)
@@ -2961,7 +2980,8 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
   else if (['reports', 'forecasting', 'attribution'].includes(current.id)) content = <ReportsPage config={config} />
   else if (current.id === 'event-feed') content = <EventFeedPage events={events} />
   else if (current.id === 'settings') content = <SettingsPage config={config} production={production} state={state} update={update} />
-  else content = <RecordsPage key={`${workspace}/${current.id}`} adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} />
+  else content = <RecordsPage key={`${workspace}/${current.id}`} autopilot={autopilot} adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} />
+  if (current.id === 'overview') content = <><AutopilotPanel controller={autopilot} label={config.label} workspace={workspace} />{content}</>
   return <main className="retail-product-shell complete-workspace-shell" style={{ ['--retail-accent' as string]: config.accent }}>
     <aside className="retail-product-sidebar"><Link className="retail-product-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{config.suite}</small></div></Link><div className="retail-product-store"><span>{config.label.slice(0, 2).toUpperCase()}</span><div><strong>{state.settings.businessName}</strong><small>{config.label} Workspace</small></div><b>⌄</b></div><nav aria-label={`${config.label} workspace navigation`}>{groups.map((group) => { const expanded = group === activeGroup || !collapsedGroups.includes(group); const sunk = group === 'Administration'; return <div className={sunk ? 'retail-product-nav-group-sunk' : undefined} key={group}><button aria-expanded={expanded} className="retail-product-nav-group" onClick={() => toggleGroup(group)} type="button"><p>{group}</p><i className={expanded ? 'retail-product-nav-chevron open' : 'retail-product-nav-chevron'}>›</i></button>{expanded ? config.modules.filter((item) => item.group === group).map((item) => <Link className={item.id === current.id ? 'active' : ''} href={`${workspaceRoot}/${workspace}${item.id === 'overview' ? '' : `/${item.id}`}`} key={item.id}><i>{item.id === 'overview' ? '⌂' : '◇'}</i><span>{item.label}</span>{state.records[item.id]?.length ? <em>{state.records[item.id].length}</em> : null}{overdueCount(state.records[item.id]) ? <b aria-label={`${overdueCount(state.records[item.id])} follow-ups due`} className="retail-product-nav-dot" title={`${overdueCount(state.records[item.id])} follow-up${overdueCount(state.records[item.id]) === 1 ? '' : 's'} due`} /> : null}</Link>) : null}</div> })}</nav><Link className="retail-product-switcher" href={workspaceRoot}><span>Switch workspace</span><b>↗</b></Link></aside>
     <section className="retail-product-main"><header className="retail-product-topbar"><form onSubmit={(event) => { event.preventDefault(); setPaletteOpen(true) }}><span>⌕</span><input aria-label="Global workspace search" onFocus={(event) => { event.target.blur(); setPaletteOpen(true) }} placeholder={`Search ${config.label}, or ask FoundAI… (⌘K)`} readOnly /></form><div><span className="complete-workspace-live">● {production ? 'PRODUCTION' : 'SIMULATION'} LIVE</span>{production ? <button className="complete-workspace-signout" onClick={() => void logoutProduction().then(() => setSession(null))} type="button">Sign out</button> : null}<form action="/api/access/logout" method="post"><button className="complete-workspace-signout" type="submit">Log out</button></form><span className="retail-product-user">{session?.user.email.slice(0, 2).toUpperCase() || 'BS'}</span></div></header><div className="retail-product-content"><div className="retail-product-notice"><span>{loading ? '…' : error ? '!' : '✓'}</span>{loading ? 'Loading tenant data…' : error ? error : production ? 'Tenant data is secured in PostgreSQL and every action is audited' : 'Interactive simulation · actions persist in this browser'}</div>{content}</div><footer className="retail-product-footer"><span>{config.label} Workspace · {production ? 'tenant-isolated production data' : 'browser-persistent shared simulation'}</span>{!production ? <button onClick={reset} type="button">Reset {config.label} data</button> : null}</footer></section>

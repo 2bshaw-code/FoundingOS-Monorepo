@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./modules": "./src/modules.ts",
+    "./autopilot": "./src/autopilot.ts",
     "./suites": "./src/suites.ts",
     "./commercial": "./src/commercial.ts",
     "./globalisation": "./src/globalisation.ts",
