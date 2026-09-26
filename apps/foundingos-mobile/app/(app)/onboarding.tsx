@@ -3,7 +3,8 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { useCallback, useEffect, useState } from 'react'
-import { Linking, RefreshControl, StyleSheet, View } from 'react-native'
+import { router } from 'expo-router'
+import { RefreshControl, StyleSheet, View } from 'react-native'
 import {
   CoreOpsApiError,
   MessagingReadiness,
@@ -187,10 +188,14 @@ export default function OnboardingScreen() {
           {readiness ? `${readiness.authorizedParticipants} authorized participant(s)` : 'Connection status unavailable.'}
         </QuantumText>
         {!whatsappConnected ? (
-          <QuantumButton tone="secondary" onPress={() => Linking.openURL('https://www.foundingos.com/app/retail/integrations')}>
+          <QuantumButton tone="secondary" onPress={() => router.push('/(app)/whatsapp')}>
             Connect WhatsApp
           </QuantumButton>
-        ) : null}
+        ) : (
+          <QuantumButton tone="secondary" onPress={() => router.push('/(app)/whatsapp')}>
+            Manage WhatsApp
+          </QuantumButton>
+        )}
       </QuantumCard>
 
       <QuantumSectionHeader label="Go live" />

@@ -577,7 +577,8 @@ export const listMessagingParticipants = (tenantId: string) =>
 
 export const saveMessagingParticipant = async (tenantId: string, input: Record<string, unknown>) => {
   const channel = clean(input.channel) || 'whatsapp'
-  const address = clean(input.address)
+  // WhatsApp sends sender numbers as bare digits (e.g. 447700900123); store them the same way.
+  const address = channel === 'whatsapp' ? clean(input.address).replace(/\D/g, '') : clean(input.address)
   if (!address) throw Object.assign(new Error('Participant address is required.'), { status: 400 })
   const role = clean(input.role) || 'operator'
   if (!allowedIntents[role]) throw Object.assign(new Error('Unsupported messaging role.'), { status: 400 })

@@ -672,6 +672,19 @@ export async function fetchEventFeed(limit = 20): Promise<PlatformEvent[]> {
 
 export const fetchMessagingReadiness = () => authedRequest<MessagingReadiness>('/api/v1/ops/messaging/readiness')
 export const fetchMessagingConnections = () => authedRequest<MessagingChannelConnection[]>('/api/v1/ops/messaging/connections')
+
+export type WhatsAppCredentials = { phoneNumberId: string; accessToken: string; businessAccountId?: string; verifyToken: string; appSecret: string }
+export type IntegrationStatus = { provider: string; status: string; lastError?: string | null }
+
+export const saveWhatsAppIntegration = (credentials: WhatsAppCredentials, displayName?: string) =>
+  authedRequest<IntegrationStatus>('/api/v1/ops/platform/integrations/whatsapp', {
+    method: 'PUT',
+    body: JSON.stringify({ displayName: displayName || 'WhatsApp', credentials, configuration: credentials.businessAccountId ? { businessAccountId: credentials.businessAccountId } : {} }),
+  })
+export const checkWhatsAppIntegration = () =>
+  authedRequest<IntegrationStatus>('/api/v1/ops/platform/integrations/whatsapp/check', { method: 'POST', body: '{}' })
+export const saveMessagingParticipant = (input: { address: string; role: string; displayName?: string; userId?: string | null }) =>
+  authedRequest<MessagingParticipant>('/api/v1/ops/messaging/participants', { method: 'PUT', body: JSON.stringify({ channel: 'whatsapp', ...input }) })
 export const fetchMessagingParticipants = () => authedRequest<MessagingParticipant[]>('/api/v1/ops/messaging/participants')
 
 export const createMarketingCampaign = (input: {

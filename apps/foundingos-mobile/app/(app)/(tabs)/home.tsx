@@ -220,7 +220,7 @@ export default function TodayScreen() {
           ) : null}
           <QuantumSectionHeader label="Your workspaces" />
           <WorkspaceQuickAccess />
-          <FoundAiWhatsAppCard onConnect={() => router.push('/(app)/onboarding')} />
+          <FoundAiWhatsAppCard onConnect={() => router.push('/(app)/whatsapp')} />
           <FoundAiAutopilotCard compact onChanged={loadAll} />
           <AskFoundAiCard />
           <QuantumSectionHeader label={attentionCount > 0 ? `Needs your attention · ${attentionCount}` : 'Needs your attention'} />
