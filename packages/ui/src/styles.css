@@ -14894,3 +14894,8 @@ html[data-accessibility-simplified='true'] .btn {
 .mw-card .mw-pay-methods button[aria-pressed='true'] { color: #fff; }
 .mw-card .mw-tabs button { color: #5b6b80; }
 .mw-card .mw-tabs button[aria-selected='true'] { color: #172033; }
+.mw-ai-answer { color: #172033; line-height: 1.5; margin: 8px 0; white-space: pre-wrap; }
+.mw-ai-label { color: #5b6b80; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.mw-ai-sources { color: #5b6b80; font-size: 12px; margin: 6px 0 0; }
+.mw-ai-error { color: #fecaca; font-size: 13px; margin: 0; }
+.mw-ai-note { color: rgba(255,255,255,0.65); font-size: 12px; margin: 0; }

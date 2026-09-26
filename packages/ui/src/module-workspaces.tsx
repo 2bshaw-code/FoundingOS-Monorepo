@@ -439,21 +439,45 @@ const intentFor = (text: string, actions: AiAction[]): AiAction => {
   return byKind('summary') ?? { label: text, kind: 'summary' }
 }
 
-export function ModuleAiBar({ moduleId, moduleLabel, noun, records, statuses, kpis, onApply }: { moduleId: string; moduleLabel: string; noun: string; records: LayoutRecord[]; statuses: string[]; kpis: ModuleKpi[]; onApply: (plan: AiPlan) => Promise<void> }) {
+export type LiveAnswer = { answer: string; suggestedActions: string[]; citations: Array<{ reference: string; name: string }>; model: string }
+
+export function ModuleAiBar({ moduleId, moduleLabel, noun, records, statuses, kpis, onApply, askLive }: { moduleId: string; moduleLabel: string; noun: string; records: LayoutRecord[]; statuses: string[]; kpis: ModuleKpi[]; onApply: (plan: AiPlan) => Promise<void>; askLive?: (question: string) => Promise<LiveAnswer> }) {
   const actions = useMemo(() => moduleAiActions(moduleId), [moduleId])
   const [prompt, setPrompt] = useState('')
   const [plan, setPlan] = useState<AiPlan | null>(null)
   const [applying, setApplying] = useState(false)
   const [applied, setApplied] = useState('')
+  const [live, setLive] = useState<LiveAnswer | null>(null)
+  const [thinking, setThinking] = useState(false)
+  const [liveError, setLiveError] = useState('')
   const run = (action: AiAction) => {
     setApplied('')
+    setLive(null)
+    setLiveError('')
     setPlan(planAiAction(action, records, statuses, noun, moduleLabel, kpis))
   }
-  const ask = (event: FormEvent) => {
+  const ask = async (event: FormEvent) => {
     event.preventDefault()
-    if (!prompt.trim()) return
-    run(intentFor(prompt, actions))
+    const question = prompt.trim()
+    if (!question) return
     setPrompt('')
+    if (!askLive) {
+      run(intentFor(question, actions))
+      return
+    }
+    setPlan(null)
+    setApplied('')
+    setLive(null)
+    setLiveError('')
+    setThinking(true)
+    try {
+      setLive(await askLive(question))
+    } catch (cause) {
+      setLiveError(cause instanceof Error ? cause.message : 'FoundAI could not answer right now.')
+      setPlan(planAiAction(intentFor(question, actions), records, statuses, noun, moduleLabel, kpis))
+    } finally {
+      setThinking(false)
+    }
   }
   const approve = async () => {
     if (!plan?.apply) return
@@ -467,10 +491,10 @@ export function ModuleAiBar({ moduleId, moduleLabel, noun, records, statuses, kp
     }
   }
   return <section className="mw-ai">
-    <form className="mw-ai-input" onSubmit={ask}>
+    <form className="mw-ai-input" onSubmit={(event) => void ask(event)}>
       <span className="mw-ai-badge">FoundAI</span>
       <input aria-label={`Ask FoundAI about ${moduleLabel}`} onChange={(event) => setPrompt(event.target.value)} placeholder={`Ask or tell FoundAI to do something in ${moduleLabel.toLowerCase()}…`} value={prompt} />
-      <button type="submit">Ask</button>
+      <button disabled={thinking} type="submit">{thinking ? 'Thinking…' : 'Ask'}</button>
     </form>
     <div className="mw-ai-chips">{actions.map((action) => <button key={action.label} onClick={() => run(action)} type="button">{action.label}</button>)}</div>
     {plan ? <div className="mw-ai-plan">
@@ -478,6 +502,14 @@ export function ModuleAiBar({ moduleId, moduleLabel, noun, records, statuses, kp
       {plan.lines.length ? <ul>{plan.lines.slice(0, 6).map((line) => <li key={line}>{line}</li>)}</ul> : null}
       {plan.apply ? <footer><small>Nothing changes until you approve.</small><button className="mw-action" disabled={applying} onClick={() => void approve()} type="button">{applying ? 'Working…' : `Approve: ${plan.apply.label}`}</button></footer> : null}
     </div> : null}
+    {live ? <div className="mw-ai-plan">
+      <header><strong>FoundAI</strong><button aria-label="Dismiss" onClick={() => setLive(null)} type="button">×</button></header>
+      <p className="mw-ai-answer">{live.answer}</p>
+      {live.suggestedActions.length ? <><small className="mw-ai-label">Suggested next steps</small><ul>{live.suggestedActions.map((action) => <li key={action}>{action}</li>)}</ul></> : null}
+      {live.citations.length ? <p className="mw-ai-sources">Based on: {live.citations.map((citation) => citation.name || citation.reference).join(', ')}</p> : null}
+    </div> : null}
+    {liveError ? <p className="mw-ai-error">Live FoundAI is unavailable ({liveError}). Showing a quick answer from this module instead.</p> : null}
     {applied ? <p className="mw-ai-applied">{applied}</p> : null}
+    {!askLive ? <p className="mw-ai-note">Demo mode: answers come from this module’s sample data. When you’re signed in, typed questions are answered by FoundAI from your real business records.</p> : null}
   </section>
 }

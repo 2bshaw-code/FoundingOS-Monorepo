@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { getModuleProfile, type ModuleKpi } from './module-profiles'
-import { getWorkspaceLayout, ModuleAiBar, moduleSamples, ModuleWorkspaceView, nextStep, type AiPlan, type LayoutRecord } from './module-workspaces'
+import { getWorkspaceLayout, ModuleAiBar, moduleSamples, ModuleWorkspaceView, nextStep, type AiPlan, type LayoutRecord, type LiveAnswer } from './module-workspaces'
 import { useRouter } from 'next/navigation'
 import { Fragment, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { bootstrapProduction, getProductionSession, loginToProduction, logoutProduction, productionAgentActions, productionApiConfigured, productionModeEnabled, productionPlatform, productionRecords, productionRequest, type AgentAction, type AgentIntelligenceSummary, type ControlSettings, type ProductionInvitation, type ProductionSession, type ProductionWorkspaceRecord } from './workspace-production-client'
@@ -2312,6 +2312,8 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
     })
   }
   const catalogue = state.records.products ?? []
+  const liveAi = productionModeEnabled && productionApiConfigured && Boolean(getProductionSession())
+  const askLive = (question: string) => productionRequest<LiveAnswer>('/ai/ask', { method: 'POST', body: JSON.stringify({ question, workspace, module: item.id }) })
   const handoffTarget = workspaceOrder[(workspaceOrder.indexOf(workspace) + 1) % workspaceOrder.length]
   const selectRecord = (id: string) => {
     setSelectedId(id)
@@ -2347,7 +2349,7 @@ function RecordsPage({ workspace, config, item, state, createRecord, advanceReco
   const genericCharts = !profile
   return <>
     <WorkspaceHeading eyebrow={`${config.suite} · ${item.group}`} title={item.label} copy={profile && !isInbox && !isCalendar && !isContentStudio ? profile.copy : isInbox ? `Every conversation for ${config.label.toLowerCase()} in one inbox — open a message to read the full thread and reply.` : isCalendar ? `See every scheduled ${item.label.toLowerCase()} entry laid out by day, and click through to its details.` : isContentStudio ? `Brief FoundAI on what you're promoting and it will draft the copy — then send it straight into the pipeline below.` : isDirectory ? `Browse every ${item.label.toLowerCase()} record with health, owner, and connected handoff.` : `Manage every ${item.label.toLowerCase()} record, owner, stage, activity, and connected handoff.`} action={<button className="retail-app-primary" onClick={() => setCreating(true)} type="button">+ New {noun}</button>} />
-    {!isInbox && !isContentStudio && !isDirectory ? <ModuleAiBar kpis={profile && records.length ? profile.kpis(records, statuses) : []} moduleId={item.id} moduleLabel={item.label} noun={noun} onApply={applyAiPlan} records={records} statuses={statuses} /> : null}
+    {!isInbox && !isContentStudio && !isDirectory ? <ModuleAiBar kpis={profile && records.length ? profile.kpis(records, statuses) : []} askLive={liveAi ? askLive : undefined} moduleId={item.id} moduleLabel={item.label} noun={noun} onApply={applyAiPlan} records={records} statuses={statuses} /> : null}
     {isContentStudio ? <ContentStudioPanel onSave={(draft) => void saveContentDraft(draft)} saving={saving} /> : null}
     {profile && records.length > 0 ? <ModuleKpiStrip kpis={profile.kpis(records, statuses)} /> : null}
     {genericCharts && !isDirectory && !isInbox ? <div className="complete-workspace-stage-summary">{statuses.map((status) => <article key={status}><strong>{records.filter((record) => record.status === status).length}</strong><span>{status}</span></article>)}</div> : null}

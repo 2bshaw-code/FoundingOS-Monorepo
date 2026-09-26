@@ -5,6 +5,7 @@
 import { Router, raw, type RequestHandler } from 'express'
 import { createBobRouter } from '@foundingos/bob'
 import { createModuleAccessMiddleware } from '@foundingos/service-auth'
+import { askFoundAi, isAiConfigured } from './ai.js'
 import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess } from './auth.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
@@ -40,6 +41,27 @@ const requireFounderMaster: RequestHandler = (_req, res, next) => {
 const telemetryRateLimit = createTelemetryRateLimiter()
 export const apiRouter = Router()
 apiRouter.get('/status', (_req, res) => res.json({ app: 'core_operations', status: 'operational' }))
+apiRouter.get('/ai/status', requireMerchantAccess, requireTenant, (_req, res) => res.json({ success: true, data: { enabled: isAiConfigured() } }))
+apiRouter.post('/ai/ask', requireMerchantAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.json({
+      success: true,
+      data: await askFoundAi({
+        tenantId,
+        actorId: res.locals.auth.id,
+        question: req.body?.question,
+        workspace: req.body?.workspace,
+        module: req.body?.module,
+        customerId: req.body?.customerId,
+        requestId: res.locals.requestId,
+      }),
+    })
+  } catch (error) {
+    next(error)
+  }
+})
 // Real, cross-suite suite-licensing gate. Core.Workforce and
 // Core.Intelligence call this over HTTP (via FOUNDER_API_URL +
 // createModuleAccessMiddleware); Core.Operations checks it locally for
