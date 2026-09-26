@@ -16,6 +16,8 @@ import { AgedPanel, FinanceReportsPage, MarketingReportsPage, SalesReportsPage }
 import { DealPanel, SalesForecastPanel } from './pro/sales'
 import { documentKindFor, invoiceFromQuote, invoiceTargetFor } from './pro/models'
 import { type LoadRecords, type ProPatch, type ProRecord } from './pro/shared'
+import { opsSchemaFor } from './pro/ops-registry'
+import { OpsFormPanel, OpsInsightsPanel } from './pro/ops-panel'
 import { bootstrapProduction, getProductionSession, loginToProduction, logoutProduction, productionAgentActions, productionApiConfigured, productionModeEnabled, productionPlatform, productionRecords, productionRequest, type AgentAction, type AgentIntelligenceSummary, type ControlSettings, type ProductionInvitation, type ProductionSession, type ProductionWorkspaceRecord } from './workspace-production-client'
 
 const workspaceRoot = productionModeEnabled ? '/app' : '/test-workspaces'
@@ -2452,6 +2454,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
   const isCandidates = item.id === 'candidates'
   const isPatients = item.id === 'patients'
   const isCampaigns = item.id === 'campaigns'
+  const opsSchema = isCampaigns || documentKind || isSalesPipeline ? null : opsSchemaFor(workspace, item.id)
   const metricLabel = directoryMetricLabel(item.group)
   const profile = getModuleProfile(workspace, item.id)
   const noun = profile?.noun ?? 'record'
@@ -2465,6 +2468,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
     {isCampaigns ? <CampaignPlanner live={liveAi} onCreate={addCampaignPlan} /> : null}
     {isContentStudio ? <ContentStudioPanel live={liveAi} onSave={(draft) => void saveContentDraft(draft)} saving={saving} /> : null}
     {profile && records.length > 0 ? <ModuleKpiStrip kpis={profile.kpis(records, statuses)} /> : null}
+    {opsSchema && records.length > 0 ? <OpsInsightsPanel onOpen={selectRecord} records={records} schema={opsSchema} statuses={statuses} /> : null}
     {genericCharts && !isDirectory && !isInbox ? <div className="complete-workspace-stage-summary">{statuses.map((status) => <article key={status}><strong>{records.filter((record) => record.status === status).length}</strong><span>{status}</span></article>)}</div> : null}
     {isSalesPipeline && records.length > 0 ? <SalesForecastPanel records={records} /> : null}
     {isCampaigns && records.length > 0 ? <CampaignPortfolioPanel records={records} /> : null}
@@ -2603,6 +2607,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
         {isBOM ? <BOMComponentsPanel record={selected} /> : null}
         {isCandidates ? <CandidateProfilePanel record={selected} statuses={statuses} /> : null}
         {isPatients ? <PatientSnapshotPanel record={selected} /> : null}
+        {opsSchema ? <a className="pro-jump" href="#pro-editor">Open {opsSchema.title.toLowerCase()} tools ↓</a> : null}
         {isCampaigns || documentKind || isSalesPipeline ? <a className="pro-jump" href="#pro-editor">{isCampaigns ? 'Open campaign results & tracking' : isSalesPipeline ? 'Open deal & quote builder' : `Open full ${documentKind === 'bill' ? 'bill' : documentKind === 'quote' ? 'quote' : 'invoice'} editor`} ↓</a> : null}
         {isContentStudio ? <PublishPanel live={liveAi} onPublished={() => advanceRecord(item.id, selected, 'Published')} record={selected} /> : null}
         {editing ? <div className="retail-app-edit-form">
@@ -2625,7 +2630,8 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
         {sourceOpen ? <p className="retail-app-source-detail">{origin.detail}</p> : null}
         {!isDirectory ? <div className="retail-app-stage">{statuses.map((status) => <span className={status === selected.status ? 'active' : ''} key={status}>{status}</span>)}</div> : null}{error ? <div className="complete-workspace-error" role="alert"><span>{error}</span>{retry ? <button type="button" className="complete-workspace-error__retry" onClick={retry}>Retry</button> : null}</div> : null}{productionModeEnabled && item.id === 'payments' && selected.status !== 'Paid' ? <button className="retail-app-primary" disabled={saving || !selected.backendId} onClick={() => void collectPayment()} type="button">Collect with Stripe</button> : !isDirectory && selected.status !== statuses.at(-1) ? <button className="retail-app-primary" disabled={saving} onClick={() => void advance()} type="button">Move to {statuses[Math.min(statuses.indexOf(selected.status) + 1, statuses.length - 1)]}</button> : null}<button className="retail-app-secondary" disabled={saving} onClick={() => void publishHandoff(item.id, selected, handoffTarget).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Handoff could not be published'))} type="button">Handoff to {configs[handoffTarget].label}</button></aside> : null}
     </section>}
-    {selected && (isCampaigns || documentKind || isSalesPipeline) ? <div className="pro-record-workspace" id="pro-editor">
+    {selected && (isCampaigns || documentKind || isSalesPipeline || opsSchema) ? <div className="pro-record-workspace" id="pro-editor">
+      {opsSchema ? <OpsFormPanel key={selected.id} record={selected} save={(patch) => saveRecordData(item.id, selected, patch)} schema={opsSchema} /> : null}
       {isCampaigns ? <CampaignProPanel key={selected.id} record={selected} save={(patch) => saveRecordData(item.id, selected, patch)} /> : null}
       {documentKind ? <DocumentPanel key={selected.id} kind={documentKind} profile={proDocuments.profile} record={selected} save={(patch) => saveRecordData(item.id, selected, patch)} statuses={statuses}
         {...(documentKind === 'quote' ? { convertLabel: 'Convert to invoice', onConvert: (doc: BusinessDocument) => convertToInvoice(createLinkedRecord, invoiceTargetFor(workspace) as [BusinessWorkspaceSlug, string], doc, proDocuments.profile) } : {})} /> : null}

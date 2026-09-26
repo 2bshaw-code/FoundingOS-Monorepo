@@ -8,6 +8,7 @@
     "./QuantumSphereLogo": "./src/QuantumSphereLogo.tsx",
     "./social-links": "./src/social-links.tsx",
     "./pro/models": "./src/pro/models.ts",
+    "./pro/ops": "./src/pro/ops-registry.ts",
     "./console": "./src/console.tsx",
     "./module-tabs": "./src/module-tabs.tsx",
     "./modules/marketing": "./src/modules/MarketingModule.tsx",

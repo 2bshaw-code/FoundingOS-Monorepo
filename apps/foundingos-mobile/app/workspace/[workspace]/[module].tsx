@@ -26,6 +26,8 @@ import { useQuantumStore } from '../../../lib/store'
 import { logAction } from '../../../lib/action-logger'
 import { dtoToPro, loadDocumentProfile, proKindFor, proReportFor } from '../../../lib/pro-records'
 import { ProRecordSheet } from '../../../components/pro/ProSheet'
+import { OpsInsightsCard, OpsSheet } from '../../../components/pro/OpsSheet'
+import { opsSchemaFor } from '@foundingos/ui/pro/ops'
 import { CampaignSummaryCard, FinanceReport, MarketingReport, SalesReport, SalesSummaryCard } from '../../../components/pro/ProReports'
 import { readProfile, type DocumentProfile } from '@foundingos/ui/pro/models'
 import {
@@ -139,6 +141,7 @@ function WorkspaceModuleScreenInner() {
   const RENDER_PAGE_SIZE = 60
   const [renderLimit, setRenderLimit] = useState(RENDER_PAGE_SIZE)
   const proKind = workspace && module ? proKindFor(workspace.slug, module.id) : null
+  const opsSchema = workspace && module && !proKind ? opsSchemaFor(workspace.slug, module.id) : null
   const reportKind = workspace && module ? proReportFor(workspace.slug, module.id) : null
   const [sheetRecordId, setSheetRecordId] = useState<string | null>(null)
   const [profile, setProfile] = useState<DocumentProfile>(() => readProfile(null))
@@ -320,7 +323,7 @@ function WorkspaceModuleScreenInner() {
     const busy = busyId === record.id
     const photoUrl = firstImageUrl(record)
     const photoBusy = photoBusyId === record.id
-    const openable = Boolean(proKind) && !record.id.startsWith('temp-')
+    const openable = Boolean(proKind || opsSchema) && !record.id.startsWith('temp-')
     return (
       <Pressable key={record.id} disabled={!openable} onPress={() => setSheetRecordId(record.id)} style={({ pressed }) => ({ opacity: pressed && openable ? 0.8 : 1 })}>
       <QuantumCard accent={workspace!.accent} style={styles.recordCard}>
@@ -362,7 +365,7 @@ function WorkspaceModuleScreenInner() {
         </View>
         {openable ? (
           <QuantumText variant="caption" color={workspace!.accent}>
-            {proKind === 'deal' ? 'Open deal · quote · won/lost ›' : proKind === 'campaign' ? 'Open results & ROI ›' : 'Open · lines, VAT, payments ›'}
+            {opsSchema ? `Open ${opsSchema.title.toLowerCase()} tools ›` : proKind === 'deal' ? 'Open deal · quote · won/lost ›' : proKind === 'campaign' ? 'Open results & ROI ›' : 'Open · lines, VAT, payments ›'}
           </QuantumText>
         ) : null}
         {next && kind !== 'kanban' ? (
@@ -568,8 +571,18 @@ function WorkspaceModuleScreenInner() {
 
       {proKind === 'deal' && proRecords.length ? <SalesSummaryCard accent={workspace.accent} records={proRecords} /> : null}
       {proKind === 'campaign' && proRecords.length ? <CampaignSummaryCard accent={workspace.accent} records={proRecords} /> : null}
+      {opsSchema && records.length ? <OpsInsightsCard accent={workspace.accent} onOpen={setSheetRecordId} records={records} schema={opsSchema} statuses={statuses ?? []} /> : null}
 
       {renderBody()}
+      {sheetRecord && opsSchema ? (
+        <OpsSheet
+          accent={workspace.accent}
+          onClose={() => setSheetRecordId(null)}
+          onSaved={(updated) => setRecords((current) => current.map((item) => (item.id === updated.id ? updated : item)))}
+          record={sheetRecord}
+          schema={opsSchema}
+        />
+      ) : null}
       {sheetRecord && proKind ? (
         <ProRecordSheet
           accent={workspace.accent}

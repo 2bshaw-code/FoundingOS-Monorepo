@@ -15332,3 +15332,43 @@ body:has(.cross-sell-ticker) .found-ai-fab { bottom: 64px; }
 .experience-pro .retail-app-heading > div > span { display: none; }
 .experience-pro table td, .experience-pro table th { padding-bottom: 6px; padding-top: 6px; }
 .experience-pro .pro-coach { margin-bottom: 10px; }
+
+/* Specialist ops tools (HR, Talent, Logistics, Health, Retail ops, Intelligence) */
+.ops-insights, .ops-form { margin: 14px 0; }
+.ops-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 12px 0; }
+.ops-kpi { border: 1px solid rgba(15, 23, 42, .1); border-radius: 12px; padding: 10px 12px; background: #fff; display: flex; flex-direction: column; gap: 4px; }
+.ops-kpi span { font-size: 12px; color: #64748b; }
+.ops-kpi strong { font-size: 20px; color: #0f172a; font-variant-numeric: tabular-nums; }
+.ops-kpi.is-good { border-color: rgba(22, 163, 74, .35); background: #f0fdf4; }
+.ops-kpi.is-warn { border-color: rgba(217, 119, 6, .4); background: #fffbeb; }
+.ops-kpi.is-danger { border-color: rgba(220, 38, 38, .4); background: #fef2f2; }
+.ops-alerts { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
+.ops-alert { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; border-radius: 10px; border-left: 4px solid #2563eb; background: #eff6ff; color: #0f172a; font-size: 13px; }
+.ops-alert.is-warn { border-left-color: #d97706; background: #fffbeb; }
+.ops-alert.is-danger { border-left-color: #dc2626; background: #fef2f2; }
+.ops-alert.is-good { border-left-color: #16a34a; background: #f0fdf4; }
+.ops-alert button { flex: none; font-size: 12px; padding: 4px 10px; border-radius: 8px; border: 1px solid rgba(15, 23, 42, .15); background: #fff; cursor: pointer; }
+.ops-clear { margin: 0 0 12px; color: #15803d; font-size: 13px; }
+.ops-visuals { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.ops-visuals h4 { margin: 0 0 8px; font-size: 13px; color: #334155; }
+.ops-bar { display: grid; grid-template-columns: minmax(90px, 38%) 1fr auto; align-items: center; gap: 8px; font-size: 12px; margin: 4px 0; color: #334155; }
+.ops-bar span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ops-bar i { height: 8px; border-radius: 99px; background: linear-gradient(90deg, #2563eb, #7c3aed); }
+.ops-bar b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.ops-table { overflow-x: auto; }
+.ops-intro { margin: 4px 0 12px; color: #475569; font-size: 13px; }
+.ops-fields label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #475569; }
+.ops-fields label.ops-wide { grid-column: 1 / -1; }
+.ops-fields input, .ops-fields select, .ops-fields textarea { font: inherit; font-size: 14px; color: #0f172a; padding: 8px 10px; border: 1px solid rgba(15, 23, 42, .15); border-radius: 8px; background: #fff; }
+.ops-fields small { color: #94a3b8; }
+.ops-checklist { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 6px; }
+.ops-checklist label { flex-direction: row; align-items: center; gap: 8px; color: #0f172a; font-size: 13px; }
+.ops-scores { display: grid; gap: 6px; }
+.ops-score { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; color: #0f172a; }
+.ops-score div { display: flex; gap: 4px; }
+.ops-score button { width: 32px; height: 30px; border-radius: 8px; border: 1px solid rgba(15, 23, 42, .15); background: #fff; cursor: pointer; }
+.ops-score button.is-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+.ops-message { font-size: 12px; color: #15803d; align-self: center; }
+.ops-letter pre { white-space: pre-wrap; font: 13px/1.55 ui-serif, Georgia, serif; background: #f8fafc; border: 1px solid rgba(15, 23, 42, .1); border-radius: 10px; padding: 16px; color: #0f172a; }
+.experience-pro .ops-kpi strong { font-size: 17px; }
+.experience-pro .ops-intro { display: none; }
