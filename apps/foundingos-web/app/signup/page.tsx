@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { PasswordField } from '../access/password-field'
-import { boltOnKeys, commercialBoltOns, commercialPlans, extraSeat, monthlyTotalGbp, type BoltOnKey } from '@foundingos/config/commercial'
+import { boltOnKeys, commercialBoltOns, commercialPlans, extraSeat, monthlyTotalGbp, normalizeBoltOns, type BoltOnKey } from '@foundingos/config/commercial'
 import type { PlanTier } from '@foundingos/config/suites'
 
 type Plan = 'lite' | 'core' | 'complete'
@@ -43,7 +43,11 @@ export default function SignupPage() {
   }, [])
 
   const total = monthlyTotalGbp(PLANS[plan].tier, plan === 'core' ? boltOns : [], plan === 'lite' ? 0 : extraSeats) ?? 0
-  const toggleBoltOn = (key: BoltOnKey) => setBoltOns((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key])
+  const toggleBoltOn = (key: BoltOnKey) => setBoltOns((current) => {
+    if (current.includes(key)) return current.filter((item) => item !== key)
+    const next = key === 'core_workforce' ? current.filter((item) => item !== 'talent_recruitment' && item !== 'people_hr') : current
+    return normalizeBoltOns([...next, key])
+  })
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()

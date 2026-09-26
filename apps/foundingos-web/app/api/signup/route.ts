@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { NextResponse } from 'next/server'
-import { boltOnKeys, commercialBoltOns, extraSeat, planBaseWorkspaces, type BoltOnKey } from '@foundingos/config/commercial'
+import { boltOnKeys, commercialBoltOns, extraSeat, normalizeBoltOns, planBaseWorkspaces, type BoltOnKey } from '@foundingos/config/commercial'
 import type { PlanTier } from '@foundingos/config/suites'
 
 type SelfServePlan = 'lite' | 'core' | 'complete'
@@ -15,6 +15,8 @@ const PRICE_ENV = {
   core: 'STRIPE_PRICE_CORE',
   complete: 'STRIPE_PRICE_COMPLETE',
   commerce_pro: 'STRIPE_PRICE_COMMERCE_PRO',
+  talent_recruitment: 'STRIPE_PRICE_TALENT',
+  people_hr: 'STRIPE_PRICE_HR',
   core_workforce: 'STRIPE_PRICE_WORKFORCE',
   core_intelligence: 'STRIPE_PRICE_INTELLIGENCE',
   extra_seat: 'STRIPE_PRICE_EXTRA_SEAT',
@@ -87,7 +89,7 @@ export async function POST(request: Request) {
   const tier = PLAN_TIER[plan]
   const requestedBoltOns = Array.isArray(body.boltOns) ? body.boltOns.map(String) : []
   // Bolt-ons attach to Core only; Complete already includes them all.
-  const boltOns = plan === 'core' ? boltOnKeys.filter((key) => requestedBoltOns.includes(key)) : []
+  const boltOns = plan === 'core' ? normalizeBoltOns(boltOnKeys.filter((key) => requestedBoltOns.includes(key))) : []
   const seatsRequested = Math.floor(Number(body.extraSeats) || 0)
   const extraSeats = plan === 'lite' ? 0 : Math.min(extraSeat.maxPerSignup, Math.max(0, seatsRequested))
   const workspaces = [...new Set([...planBaseWorkspaces[tier], ...boltOns.flatMap((key) => commercialBoltOns[key].workspaces)])]

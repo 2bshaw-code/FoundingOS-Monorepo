@@ -11,7 +11,7 @@ import { isReservedFounderEmail, prisma } from './auth.js'
 import { publishEvent } from './event-feed.js'
 import { assertExpectedVersion, decryptIntegrationCredentials, encryptIntegrationCredentials, isActiveIdempotencyRecord, roleCanAccessWorkspace } from './platform-security.js'
 
-export const workspaceSlugs = ['retail', 'logistics', 'finance', 'marketing', 'talent', 'health', 'intelligence'] as const
+export const workspaceSlugs = ['retail', 'logistics', 'finance', 'marketing', 'talent', 'hr', 'health', 'intelligence'] as const
 export type WorkspaceSlug = typeof workspaceSlugs[number]
 
 const workspaceSet = new Set<string>(workspaceSlugs)
@@ -525,6 +525,13 @@ export async function updateTeamMember(tenantId: string, actorId: string, id: st
   if (!existing) throw Object.assign(new Error('Team member not found'), { status: 404 })
   const role = input.role === undefined ? existing.role : String(input.role)
   if (!teamRoles.has(role)) throw Object.assign(new Error('Unsupported team role'), { status: 400 })
+  const suspending = input.active !== undefined && !input.active && existing.active
+  const demoting = existing.role === roles.businessOwner && role !== roles.businessOwner
+  if (id === actorId && (suspending || demoting)) throw Object.assign(new Error('You cannot suspend or demote your own account. Ask another owner.'), { status: 409 })
+  if (existing.role === roles.businessOwner && existing.active && (suspending || demoting)) {
+    const otherOwners = await prisma.authUser.count({ where: { tenantId, role: roles.businessOwner, active: true, id: { not: id } } })
+    if (!otherOwners) throw Object.assign(new Error('Every business needs at least one active owner. Make someone else an owner first.'), { status: 409 })
+  }
   const user = await prisma.authUser.update({ where: { id }, data: { role, ...(input.workspaces !== undefined ? { permissions: json({ workspaces: Array.isArray(input.workspaces) ? input.workspaces.map(assertWorkspace) : [] }) } : {}), ...(input.active !== undefined ? { active: Boolean(input.active) } : {}) } })
   await audit({ tenantId, actorId, action: 'team.updated', entityId: user.id, requestId, metadata: { role, active: user.active } })
   return { id: user.id, email: user.email, role: user.role, permissions: user.permissions, active: user.active }

@@ -10,11 +10,11 @@ import { createWorkspaceRecord, workspaceSlugs } from './platform.js'
 const PLAN_PRICE: Record<string, number> = { lite: 0, starter: 19, growth: 89, enterprise: 0 }
 const PLAN_NAME: Record<string, string> = { lite: 'Lite', starter: 'Core', growth: 'Complete', enterprise: 'Enterprise' }
 // Core-plan bolt-ons, priced per enabled workspace (mirrors packages/config/src/commercial.ts).
-const BOLT_ON_PRICE: Record<string, number> = { finance: 25, talent: 29, intelligence: 35 }
+const BOLT_ON_PRICE: Record<string, number> = { finance: 25, talent: 19, hr: 19, intelligence: 35 }
 const DAY = 24 * 60 * 60 * 1000
 
 const monthlyValue = (plan: string, enabled: string[]) =>
-  (PLAN_PRICE[plan] ?? 0) + (plan === 'starter' ? enabled.reduce((sum, workspace) => sum + (BOLT_ON_PRICE[workspace] ?? 0), 0) : 0)
+  (PLAN_PRICE[plan] ?? 0) + (plan === 'starter' ? enabled.reduce((sum, workspace) => sum + (BOLT_ON_PRICE[workspace] ?? 0), 0) - (enabled.includes('talent') && enabled.includes('hr') ? 9 : 0) : 0)
 
 export async function founderOverview(founderTenantId?: string | null) {
   const now = Date.now()

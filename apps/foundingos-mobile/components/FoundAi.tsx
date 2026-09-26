@@ -20,7 +20,7 @@ import {
 import { QuantumButton, QuantumCard, QuantumPill, QuantumText, quantumColors, quantumRadius, quantumSpace } from './QuantumUI'
 
 const FOUNDAI = '#24C47A'
-const WORKSPACE_LABEL: Record<string, string> = { retail: 'Retail', logistics: 'Logistics', finance: 'Finance', marketing: 'Marketing', talent: 'Talent', health: 'Health', intelligence: 'Intelligence' }
+const WORKSPACE_LABEL: Record<string, string> = { retail: 'Retail', logistics: 'Logistics', finance: 'Finance', marketing: 'Marketing', talent: 'Talent', hr: 'HR', health: 'Health', intelligence: 'Intelligence' }
 const money = (pence: number | null) => (pence === null ? '' : `£${(pence / 100).toLocaleString('en-GB', { maximumFractionDigits: 0 })}`)
 const ago = (iso: string) => {
   const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60000)

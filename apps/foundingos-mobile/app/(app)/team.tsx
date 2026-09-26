@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { useCallback, useEffect, useState } from 'react'
-import { RefreshControl, StyleSheet, View } from 'react-native'
+import { Alert, RefreshControl, StyleSheet, View } from 'react-native'
 import {
   CoreOpsApiError,
   PendingInvitation,
@@ -60,6 +60,7 @@ export default function TeamScreen() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<TeamRole>('business_staff')
   const [inviting, setInviting] = useState(false)
+  const [myId, setMyId] = useState<string | null>(null)
 
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true)
@@ -67,6 +68,7 @@ export default function TeamScreen() {
     try {
       const session = await getSession()
       const isManager = MANAGE_ROLES.has(session?.role || '')
+      setMyId(session?.userId ?? null)
       setCanManage(isManager)
       if (isManager) {
         const [team, pending] = await Promise.all([fetchTeam(), fetchPendingInvitations()])
@@ -125,7 +127,15 @@ export default function TeamScreen() {
     }
   }
 
-  const handleToggleActive = async (member: TeamMember) => {
+  const handleToggleActive = (member: TeamMember) => {
+    if (!member.active) { void applyActive(member); return }
+    Alert.alert('Suspend access?', `${member.email} will be signed out and unable to use FoundingOS until reinstated.`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Suspend', style: 'destructive', onPress: () => { void applyActive(member) } },
+    ])
+  }
+
+  const applyActive = async (member: TeamMember) => {
     setBusyId(member.id)
     setError('')
     try {
@@ -239,6 +249,7 @@ export default function TeamScreen() {
             <QuantumText variant="caption">
               {roleLabel(member.role)} · {member.active ? 'Active' : 'Suspended'}
             </QuantumText>
+            {member.id === myId ? <QuantumText variant="caption">This is you. Another owner can change your role or access.</QuantumText> : <>
             <View style={styles.pillRow}>
               {TEAM_ROLES.map((role) => (
                 <QuantumPill
@@ -254,6 +265,7 @@ export default function TeamScreen() {
             <QuantumButton tone={member.active ? 'danger' : 'secondary'} onPress={() => handleToggleActive(member)} disabled={busyId === member.id}>
               {member.active ? 'Suspend access' : 'Reinstate access'}
             </QuantumButton>
+            </>}
           </QuantumCard>
         ))
       )}

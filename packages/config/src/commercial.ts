@@ -19,7 +19,7 @@ export type CommercialPlan = {
   }
 }
 
-export type BoltOnKey = 'commerce_pro' | 'core_workforce' | 'core_intelligence'
+export type BoltOnKey = 'commerce_pro' | 'talent_recruitment' | 'people_hr' | 'core_workforce' | 'core_intelligence'
 
 export type CommercialBoltOn = {
   key: BoltOnKey
@@ -94,14 +94,32 @@ export const commercialBoltOns: Record<BoltOnKey, CommercialBoltOn> = {
     description: 'Finance and back-office for businesses that sell and ship.',
     features: ['Invoicing and bills', 'Mobile money and payments', 'Purchasing and suppliers', 'Fulfilment and returns', 'Cashflow and reconciliation'],
   },
-  core_workforce: {
-    key: 'core_workforce',
-    name: 'Core.Workforce',
-    monthlyPriceGbp: 29,
+  talent_recruitment: {
+    key: 'talent_recruitment',
+    name: 'Talent',
+    monthlyPriceGbp: 19,
     suite: 'core_workforce',
     workspaces: ['talent'],
-    description: 'Hire, onboard, and run your team.',
-    features: ['Candidates and jobs', 'Interviews and offers', 'Onboarding', 'Time off and performance', 'Payroll inputs'],
+    description: 'Recruitment: fill roles fast, in-house or as an agency.',
+    features: ['Jobs and job boards', 'Candidate pipeline', 'Interviews and scorecards', 'Offers and references', 'Agency clients and placements'],
+  },
+  people_hr: {
+    key: 'people_hr',
+    name: 'HR',
+    monthlyPriceGbp: 19,
+    suite: 'core_workforce',
+    workspaces: ['hr'],
+    description: 'People management for the team you already have.',
+    features: ['Employee records and contracts', 'Rotas, shifts and timesheets', 'Holiday and sickness', 'Right-to-work and documents', 'Reviews, policies and payroll inputs'],
+  },
+  core_workforce: {
+    key: 'core_workforce',
+    name: 'Core.Workforce (Talent + HR)',
+    monthlyPriceGbp: 29,
+    suite: 'core_workforce',
+    workspaces: ['talent', 'hr'],
+    description: 'Hire with Talent and run your people with HR — save £9 a month.',
+    features: ['Everything in Talent', 'Everything in HR', 'Hired candidates become employees automatically', 'One team calendar for interviews, shifts and time off'],
   },
   core_intelligence: {
     key: 'core_intelligence',
@@ -116,12 +134,20 @@ export const commercialBoltOns: Record<BoltOnKey, CommercialBoltOn> = {
 
 export const boltOnKeys = Object.keys(commercialBoltOns) as BoltOnKey[]
 
+// Talent + HR together are always billed as the Core.Workforce bundle.
+export function normalizeBoltOns(keys: BoltOnKey[]): BoltOnKey[] {
+  const set = new Set(keys.filter((key) => key in commercialBoltOns))
+  if (set.has('talent_recruitment') && set.has('people_hr')) set.add('core_workforce')
+  if (set.has('core_workforce')) { set.delete('talent_recruitment'); set.delete('people_hr') }
+  return boltOnKeys.filter((key) => set.has(key))
+}
+
 // Backend workspace slugs enabled by each plan before bolt-ons.
 export const planBaseWorkspaces: Record<PlanTier, string[]> = {
   lite: ['retail'],
   starter: ['retail', 'marketing'],
-  growth: ['retail', 'marketing', 'finance', 'talent', 'intelligence'],
-  enterprise: ['retail', 'marketing', 'finance', 'talent', 'intelligence'],
+  growth: ['retail', 'marketing', 'finance', 'talent', 'hr', 'intelligence'],
+  enterprise: ['retail', 'marketing', 'finance', 'talent', 'hr', 'intelligence'],
 }
 
 export const extraSeat = {
@@ -133,7 +159,7 @@ export const extraSeat = {
 export function monthlyTotalGbp(tier: PlanTier, boltOns: BoltOnKey[] = [], extraSeats = 0): number | null {
   const plan = commercialPlans[tier]
   if (plan.monthlyPriceGbp === null) return null
-  const addOns = tier === 'starter' ? boltOns.reduce((sum, key) => sum + commercialBoltOns[key].monthlyPriceGbp, 0) : 0
+  const addOns = tier === 'starter' ? normalizeBoltOns(boltOns).reduce((sum, key) => sum + commercialBoltOns[key].monthlyPriceGbp, 0) : 0
   const seats = (extraSeat.eligiblePlans as readonly PlanTier[]).includes(tier) ? Math.max(0, Math.floor(extraSeats)) * extraSeat.monthlyPriceGbp : 0
   return plan.monthlyPriceGbp + addOns + seats
 }

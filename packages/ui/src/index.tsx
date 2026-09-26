@@ -400,7 +400,7 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
         })}
       </section>
 
-      <PageIntro eyebrow="Bolt-ons for Core" title="Add a suite when you are ready" copy="Bolt-ons attach to the Core plan and can be added or removed monthly. Complete includes all three." />
+      <PageIntro eyebrow="Bolt-ons for Core" title="Add a suite when you are ready" copy="Bolt-ons attach to the Core plan and can be added or removed monthly. Talent + HR together cost £29. Complete includes every bolt-on." />
       <section className="module-grid">
         {boltOnKeys.map((key) => {
           const boltOn = commercialBoltOns[key]

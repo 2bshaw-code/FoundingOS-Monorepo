@@ -8,7 +8,7 @@
 // read/write the same generic backend records
 // (/api/v1/ops/platform/workspaces/:workspace/:module/records) with no
 // per-module custom logic required.
-export type WorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'marketing' | 'talent' | 'health' | 'intelligence'
+export type WorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'marketing' | 'talent' | 'hr' | 'health' | 'intelligence'
 
 export type WorkspaceModuleDef = { id: string; label: string; group: string; statuses?: string[] }
 export type WorkspaceDef = { slug: WorkspaceSlug; label: string; accent: string; description: string; modules: WorkspaceModuleDef[] }
@@ -48,8 +48,13 @@ export const WORKSPACES: WorkspaceDef[] = [
   },
   {
     slug: 'talent', label: 'Talent', accent: '#ff8a33',
-    description: 'Recruit, onboard, develop, support, and retain the team in one workforce system.',
-    modules: [mod('overview', 'People home', 'Workspace'), mod('candidates', 'Candidates', 'Recruiting', ['Applied', 'Screening', 'Interview', 'Offer']), mod('jobs', 'Jobs', 'Recruiting', ['Draft', 'Open', 'Interviewing', 'Filled']), mod('interviews', 'Interviews', 'Recruiting', ['Planned', 'Confirmed', 'Complete', 'Decision']), mod('offers', 'Offers', 'Recruiting', ['Draft', 'Sent', 'Accepted', 'Onboarding']), mod('onboarding', 'Onboarding', 'People', standard), mod('people', 'People directory', 'People'), mod('performance', 'Performance', 'People', standard), mod('time-off', 'Time off', 'People', ['Requested', 'Review', 'Approved', 'Complete']), mod('learning', 'Learning', 'Development', standard), mod('payroll', 'Payroll', 'Reward', ['Preparing', 'Review', 'Approved', 'Paid']), mod('engagement', 'Engagement', 'Intelligence'), mod('reports', 'Workforce reports', 'Intelligence'), mod('automations', 'Automations', 'Intelligence'), mod('team', 'Team & access', 'Administration'), mod('integrations', 'Integrations', 'Administration'), mod('security', 'Security & Access', 'Administration'), mod('settings', 'Settings', 'Administration')],
+    description: 'Recruit for your own business or run an agency: jobs, candidates, interviews, offers, checks, clients and placements.',
+    modules: [mod('overview', 'Recruitment home', 'Workspace'), mod('jobs', 'Jobs', 'Hiring', ['Draft', 'Open', 'Interviewing', 'Filled']), mod('candidates', 'Candidates', 'Hiring', ['Applied', 'Screening', 'Interview', 'Offer']), mod('interviews', 'Interviews', 'Hiring', ['Planned', 'Confirmed', 'Complete', 'Decision']), mod('offers', 'Offers', 'Hiring', ['Draft', 'Sent', 'Accepted', 'Onboarding']), mod('references', 'References & checks', 'Hiring', ['Requested', 'Chasing', 'Received', 'Cleared']), mod('talent-pool', 'Talent pool', 'Pipeline', ['Available', 'Contacted', 'Shortlisted', 'Placed']), mod('clients', 'Agency clients', 'Agency', ['Prospect', 'Active', 'Hiring', 'Paused']), mod('placements', 'Placements', 'Agency', ['Offered', 'Started', 'Invoiced', 'Paid']), mod('reports', 'Recruitment reports', 'Intelligence'), mod('automations', 'Automations', 'Intelligence'), mod('team', 'Team & access', 'Administration'), mod('integrations', 'Integrations', 'Administration'), mod('security', 'Security & Access', 'Administration'), mod('settings', 'Settings', 'Administration')],
+  },
+  {
+    slug: 'hr', label: 'HR', accent: '#2ec4b6',
+    description: 'Run the team you have: employees, contracts, rotas, timesheets, holiday, sickness, right-to-work, policies and payroll inputs.',
+    modules: [mod('overview', 'People home', 'Workspace'), mod('people', 'Employees', 'People'), mod('onboarding', 'Onboarding', 'People', standard), mod('contracts', 'Contracts', 'People', ['Draft', 'Sent', 'Signed', 'Ended']), mod('right-to-work', 'Right to work', 'Compliance', ['Requested', 'Submitted', 'Checked', 'Verified']), mod('documents', 'Documents', 'Compliance', ['Draft', 'Sent', 'Signed', 'Filed']), mod('policies', 'Policies & handbook', 'Compliance', ['Draft', 'Review', 'Published', 'Archived']), mod('rotas', 'Rotas & shifts', 'Time', ['Unfilled', 'Draft', 'Published', 'Worked']), mod('timesheets', 'Timesheets', 'Time', ['Draft', 'Submitted', 'Approved', 'Paid']), mod('time-off', 'Holiday', 'Time', ['Requested', 'Review', 'Approved', 'Complete']), mod('sickness', 'Sickness & absence', 'Time', ['Off sick', 'Returned', 'Return-to-work done', 'Closed']), mod('performance', 'Performance', 'Development', standard), mod('learning', 'Learning', 'Development', standard), mod('engagement', 'Engagement', 'Development'), mod('payroll', 'Payroll inputs', 'Reward', ['Preparing', 'Review', 'Approved', 'Paid']), mod('reports', 'HR reports', 'Intelligence'), mod('automations', 'Automations', 'Intelligence'), mod('team', 'Team & access', 'Administration'), mod('integrations', 'Integrations', 'Administration'), mod('security', 'Security & Access', 'Administration'), mod('settings', 'Settings', 'Administration')],
   },
   {
     slug: 'health', label: 'Health', accent: '#4cc9ff',

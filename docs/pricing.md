@@ -25,7 +25,9 @@ Internal tier keys are unchanged so gating and stored licences keep working:
 | Bolt-on | Price | Suite | Workspace enabled | What it unlocks |
 | --- | --- | --- | --- | --- |
 | Commerce Pro | +£25 | Core.Operations | `finance` | Invoicing, mobile money, purchasing, fulfilment, returns, cashflow |
-| Core.Workforce | +£29 | Core.Workforce | `talent` | Hiring, onboarding, time off, performance, payroll inputs |
+| Talent | +£19 | Core.Workforce | `talent` | Recruitment: jobs, candidates, interviews, offers, agency clients and placements |
+| HR | +£19 | Core.Workforce | `hr` | Employees, contracts, rotas/shifts, timesheets, holiday/sickness, right-to-work, documents, policies, payroll inputs |
+| Core.Workforce (Talent + HR) | +£29 | Core.Workforce | `talent`, `hr` | Both workspaces; selecting Talent and HR together is always billed as this bundle |
 | Core.Intelligence | +£35 | Core.Intelligence | `intelligence` | Signals, forecasts, anomalies, AI recommendations |
 
 ## Other add-ons
@@ -90,7 +92,7 @@ on both `founding-os-web` and `core-operations-backend`):
 
 - `STRIPE_SECRET_KEY`
 - `STRIPE_PRICE_CORE` (£19), `STRIPE_PRICE_COMPLETE` (£89)
-- `STRIPE_PRICE_COMMERCE_PRO` (£25), `STRIPE_PRICE_WORKFORCE` (£29), `STRIPE_PRICE_INTELLIGENCE` (£35)
+- `STRIPE_PRICE_COMMERCE_PRO` (£25), `STRIPE_PRICE_TALENT` (£19), `STRIPE_PRICE_HR` (£19), `STRIPE_PRICE_WORKFORCE` (£29, Talent + HR bundle), `STRIPE_PRICE_INTELLIGENCE` (£35)
 - `STRIPE_PRICE_EXTRA_SEAT` (£5, per-unit)
 
 If any price needed for a sign-up is missing, the account is still created but

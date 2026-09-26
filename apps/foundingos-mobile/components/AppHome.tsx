@@ -158,7 +158,8 @@ const WORKSPACES = [
   { name: 'Finance', icon: '💷', does: 'Sends invoices, chases late payers, matches bank lines, approves bills.' },
   { name: 'Marketing', icon: '📣', does: 'Plans campaigns, writes posts in your voice, publishes on schedule.' },
   { name: 'Logistics', icon: '🚚', does: 'Assigns drivers, plans routes, messages customers, rebooks misses.' },
-  { name: 'Talent', icon: '👥', does: 'Screens applicants, schedules interviews, prepares offers and payroll.' },
+  { name: 'Talent', icon: '🎯', does: 'Screens applicants, schedules interviews, chases references and prepares offers.' },
+  { name: 'HR', icon: '👥', does: 'Fills rota gaps, approves timesheets, tracks holiday and sickness, prepares payroll inputs.' },
   { name: 'Health', icon: '🩺', does: 'Confirms appointments, follows up patients, prepares claims.' },
   { name: 'Intelligence', icon: '✦', does: 'Spots risks and trends across everything and tells you what to do.' },
 ]

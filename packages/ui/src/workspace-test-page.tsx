@@ -10,7 +10,8 @@ const workspaces: Array<{ slug: TestWorkspaceSlug; label: string; suite: string;
   { slug: 'logistics', label: 'Logistics', suite: 'Core.Operations', summary: 'Dispatch, routes, deliveries, tracking, fleet, drivers, billing, and exceptions.', modules: 17, accent: '#2f80ed' },
   { slug: 'finance', label: 'Finance', suite: 'Core.Operations', summary: 'Cash flow, invoices, bills, banking, reconciliation, budgets, tax, and approvals.', modules: 18, accent: '#7c5ce7' },
   { slug: 'marketing', label: 'Marketing', suite: 'Core.Operations', summary: 'Campaigns, audiences, leads, content, journeys, channels, and attribution.', modules: 18, accent: '#ef6c57' },
-  { slug: 'talent', label: 'Talent', suite: 'Core.Workforce', summary: 'Hiring, interviews, onboarding, people, performance, leave, learning, and payroll.', modules: 18, accent: '#d65db1' },
+  { slug: 'talent', label: 'Talent', suite: 'Core.Workforce', summary: 'Recruitment: jobs, candidates, interviews, offers, checks, agency clients and placements.', modules: 15, accent: '#d65db1' },
+  { slug: 'hr', label: 'HR', suite: 'Core.Workforce', summary: 'Employees, contracts, rotas, timesheets, holiday, sickness, right-to-work, policies and payroll inputs.', modules: 21, accent: '#2ec4b6' },
   { slug: 'health', label: 'Health', suite: 'Core.Operations', summary: 'Appointments, patients, care plans, triage, practitioners, billing, claims, and compliance.', modules: 18, accent: '#00a6a6' },
   { slug: 'intelligence', label: 'SuperDashboard', suite: 'Core.Intelligence', summary: 'Executive control across every workspace, with signals, risks, forecasts, decisions, and the Event Feed.', modules: 17, accent: '#b77aff' },
 ]

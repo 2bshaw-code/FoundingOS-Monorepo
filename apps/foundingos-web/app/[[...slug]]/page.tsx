@@ -8,13 +8,14 @@ import { notFound } from 'next/navigation'
 
 const pages = new Set(['suites', 'workspaces', 'consoles', 'app', 'test-workspaces', 'marketing', 'intelligence', 'about', 'pricing', 'contact'])
 const workspaceSlugs = new Set<WorkspaceSlug>(['retail', 'logistics', 'finance', 'talent', 'health'])
-const testWorkspaceSlugs = new Set<TestWorkspaceSlug>(['retail', 'logistics', 'finance', 'marketing', 'talent', 'health', 'intelligence'])
+const testWorkspaceSlugs = new Set<TestWorkspaceSlug>(['retail', 'logistics', 'finance', 'marketing', 'talent', 'hr', 'health', 'intelligence'])
 const workspaceSections: Record<TestWorkspaceSlug, string[]> = {
   retail: ['overview', 'sales-pipeline', 'orders', 'point-of-sale', 'crm', 'segments', 'loyalty', 'inbox', 'campaigns', 'automations', 'content', 'products', 'inventory', 'promotions', 'channels', 'production-orders', 'boms', 'purchasing', 'suppliers', 'fulfilment', 'returns', 'service', 'payments', 'reports', 'team', 'integrations', 'settings'],
   logistics: ['overview', 'dispatch', 'routes', 'deliveries', 'tracking', 'exceptions', 'fleet', 'drivers', 'warehouses', 'customers', 'quotes', 'billing', 'reports', 'automations', 'team', 'integrations', 'settings'],
   finance: ['overview', 'cashflow', 'invoices', 'bills', 'banking', 'reconciliation', 'expenses', 'payments', 'budgets', 'forecasting', 'tax', 'approvals', 'reports', 'automations', 'team', 'integrations', 'settings'],
   marketing: ['overview', 'campaigns', 'calendar', 'audiences', 'segments', 'leads', 'content', 'brand-studio', 'channels', 'journeys', 'inbox', 'attribution', 'reports', 'automations', 'team', 'integrations', 'settings'],
-  talent: ['overview', 'candidates', 'jobs', 'interviews', 'offers', 'onboarding', 'people', 'performance', 'time-off', 'learning', 'payroll', 'engagement', 'reports', 'automations', 'team', 'integrations', 'settings'],
+  talent: ['overview', 'jobs', 'candidates', 'interviews', 'offers', 'references', 'talent-pool', 'clients', 'placements', 'reports', 'automations', 'team', 'integrations', 'settings'],
+  hr: ['overview', 'people', 'onboarding', 'contracts', 'right-to-work', 'documents', 'policies', 'rotas', 'timesheets', 'time-off', 'sickness', 'performance', 'learning', 'engagement', 'payroll', 'reports', 'automations', 'team', 'integrations', 'settings'],
   health: ['overview', 'appointments', 'patients', 'care-plans', 'triage', 'clinical-inbox', 'follow-ups', 'practitioners', 'locations', 'inventory', 'billing', 'claims', 'compliance', 'reports', 'automations', 'team', 'integrations', 'settings'],
   intelligence: ['overview', 'outcomes', 'strategic-overview', 'signals', 'risks', 'recommendations', 'forecasts', 'scenarios', 'anomalies', 'event-feed', 'workflows', 'models', 'data-sources', 'reports', 'automations', 'team', 'integrations', 'settings'],
 }

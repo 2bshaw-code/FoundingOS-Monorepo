@@ -403,7 +403,108 @@ const profiles: Record<string, ModuleProfile> = {
       { label: 'Acceptance rate', value: pct(inStatus(records, 'Accepted', 'Onboarding').length, notIn(records, 'Draft').length), tone: 'good' },
     ],
   },
-  'talent/onboarding': {
+  'talent/talent-pool': {
+    noun: 'profile', copy: 'People you want to hire again or keep warm for future roles.',
+    fields: { name: 'Name', secondary: 'Skills and availability', value: 'Day rate or salary', owner: 'Recruiter' }, valueHint: '£0',
+    kpis: (records, statuses) => [
+      { label: 'In pool', value: String(records.length), tone: 'info' },
+      { label: 'Available now', value: String(inStatus(records, first(statuses)).length), tone: 'good' },
+      { label: 'Placed', value: String(inStatus(records, last(statuses)).length), tone: 'good' },
+    ],
+  },
+  'talent/clients': {
+    noun: 'client', copy: 'Agency clients you recruit for, their open roles and agreed fees.',
+    fields: { name: 'Client', secondary: 'Contact and sector', value: 'Fee agreed', owner: 'Account manager' }, valueHint: 'e.g. 15% or £2,000',
+    kpis: (records, statuses) => [
+      { label: 'Active clients', value: String(inStatus(records, 'Active', 'Hiring').length), tone: 'info' },
+      { label: 'Prospects', value: String(inStatus(records, first(statuses)).length), tone: 'watch' },
+      { label: 'Account managers', value: String(owners(records)), tone: 'info' },
+    ],
+  },
+  'talent/placements': {
+    noun: 'placement', copy: 'Candidates placed with clients, their fees, and invoices due.',
+    fields: { name: 'Candidate', secondary: 'Client and role', value: 'Placement fee', owner: 'Recruiter' }, valueHint: '£0',
+    kpis: (records, statuses) => [
+      { label: 'Fees pipeline', value: gbp(sum(notIn(records, last(statuses)))), tone: 'info' },
+      { label: 'Fees invoiced', value: gbp(sum(inStatus(records, 'Invoiced', last(statuses)))), tone: 'good' },
+      { label: 'Placements', value: String(records.length), tone: 'info' },
+    ],
+  },
+  'talent/references': {
+    noun: 'reference', copy: 'Reference and background checks before anyone starts.',
+    fields: { name: 'Candidate', secondary: 'Referee', value: 'Outcome', owner: 'Checked by' }, valueHint: 'e.g. Positive',
+    kpis: (records, statuses) => [
+      { label: 'Outstanding', value: String(notIn(records, last(statuses)).length), tone: count(notIn(records, last(statuses)).length, 5, 0) },
+      { label: 'Cleared', value: String(inStatus(records, last(statuses)).length), tone: 'good' },
+      { label: 'Overdue', value: String(overdue(notIn(records, last(statuses)))), tone: count(overdue(notIn(records, last(statuses))), 1, 0) },
+    ],
+  },
+  // HR: people management
+  'hr/contracts': {
+    noun: 'contract', copy: 'Employment contracts, hours and salary terms, and when they renew or end.',
+    fields: { name: 'Employee', secondary: 'Contract type and hours', value: 'Salary or rate', owner: 'Signed off by' }, valueHint: '£0',
+    kpis: (records, statuses) => [
+      { label: 'Awaiting signature', value: String(inStatus(records, 'Sent').length), tone: count(inStatus(records, 'Sent').length, 3, 0) },
+      { label: 'Active', value: String(inStatus(records, 'Signed').length), tone: 'good' },
+      { label: 'Ending soon', value: String(overdue(inStatus(records, 'Signed'))), tone: count(overdue(inStatus(records, 'Signed')), 1, 0) },
+      { label: 'Drafts', value: String(inStatus(records, first(statuses)).length), tone: 'info' },
+    ],
+  },
+  'hr/rotas': {
+    noun: 'shift', copy: 'Who is working when. Plan the rota, publish it and cover gaps.',
+    fields: { name: 'Shift', secondary: 'Person and location', value: 'Hours', owner: 'Manager' }, valueHint: 'e.g. 8',
+    kpis: (records, statuses) => [
+      { label: 'Shifts planned', value: String(records.length), tone: 'info' },
+      { label: 'Unfilled', value: String(inStatus(records, first(statuses)).length), tone: count(inStatus(records, first(statuses)).length, 3, 0) },
+      { label: 'Hours rostered', value: String(records.reduce((t, r) => t + amount(r.value), 0)), tone: 'info' },
+    ],
+  },
+  'hr/timesheets': {
+    noun: 'timesheet', copy: 'Hours actually worked, approved before they go to payroll.',
+    fields: { name: 'Employee', secondary: 'Week', value: 'Hours', owner: 'Approver' }, valueHint: 'e.g. 37.5',
+    kpis: (records, statuses) => [
+      { label: 'To approve', value: String(inStatus(records, 'Submitted').length), tone: count(inStatus(records, 'Submitted').length, 5, 0) },
+      { label: 'Approved hours', value: String(inStatus(records, 'Approved', last(statuses)).reduce((t, r) => t + amount(r.value), 0)), tone: 'good' },
+      { label: 'Not submitted', value: String(inStatus(records, first(statuses)).length), tone: 'watch' },
+    ],
+  },
+  'hr/sickness': {
+    noun: 'absence', copy: 'Sickness and absence, return-to-work meetings and fit notes.',
+    fields: { name: 'Employee', secondary: 'Reason and dates', value: 'Days', owner: 'Manager' }, valueHint: 'e.g. 2',
+    kpis: (records, statuses) => [
+      { label: 'Off now', value: String(inStatus(records, first(statuses)).length), tone: count(inStatus(records, first(statuses)).length, 3, 0) },
+      { label: 'Return-to-work due', value: String(inStatus(records, 'Returned').length), tone: 'watch' },
+      { label: 'Days lost', value: String(records.reduce((t, r) => t + amount(r.value), 0)), tone: 'info' },
+    ],
+  },
+  'hr/right-to-work': {
+    noun: 'check', copy: 'Right-to-work and visa checks, with expiry dates so nothing lapses.',
+    fields: { name: 'Employee', secondary: 'Document type', value: 'Expiry', owner: 'Checked by' }, valueHint: 'e.g. 2027-03-01',
+    kpis: (records, statuses) => [
+      { label: 'Verified', value: String(inStatus(records, last(statuses)).length), tone: 'good' },
+      { label: 'Outstanding', value: String(notIn(records, last(statuses)).length), tone: count(notIn(records, last(statuses)).length, 2, 0) },
+      { label: 'Expired', value: String(overdue(records)), tone: count(overdue(records), 0, 0) },
+    ],
+  },
+  'hr/documents': {
+    noun: 'document', copy: 'Employee files: contracts, certificates, letters and signed forms.',
+    fields: { name: 'Document', secondary: 'Employee', value: 'Type', owner: 'Owner' }, valueHint: 'e.g. Certificate',
+    kpis: (records, statuses) => [
+      { label: 'Documents', value: String(records.length), tone: 'info' },
+      { label: 'Awaiting signature', value: String(inStatus(records, 'Sent').length), tone: 'watch' },
+      { label: 'Filed', value: String(inStatus(records, last(statuses)).length), tone: 'good' },
+    ],
+  },
+  'hr/policies': {
+    noun: 'policy', copy: 'Handbook policies and who has read and accepted them.',
+    fields: { name: 'Policy', secondary: 'Applies to', value: 'Acknowledged', owner: 'Owner' }, valueHint: 'e.g. 8/12',
+    kpis: (records, statuses) => [
+      { label: 'Published', value: String(inStatus(records, 'Published', last(statuses)).length), tone: 'good' },
+      { label: 'Drafts', value: String(inStatus(records, first(statuses)).length), tone: 'info' },
+      { label: 'Due for review', value: String(overdue(records)), tone: count(overdue(records), 0, 0) },
+    ],
+  },
+  'hr/onboarding': {
     noun: 'new starter', copy: 'Get new starters set up: documents, equipment, training and first-week plans.',
     fields: { name: 'New starter', secondary: 'Role', value: 'Start date', owner: 'Buddy' }, valueHint: 'e.g. 1 Oct',
     kpis: (records, statuses) => [
@@ -413,7 +514,7 @@ const profiles: Record<string, ModuleProfile> = {
       { label: 'Overdue tasks', value: String(overdue(notIn(records, last(statuses)))), tone: count(overdue(notIn(records, last(statuses))), 2, 0) },
     ],
   },
-  'talent/people': {
+  'hr/people': {
     noun: 'person', copy: 'Everyone in your team, their role, and who they report to.',
     fields: { name: 'Name', secondary: 'Role', value: 'Salary', owner: 'Manager' }, valueHint: '£0',
     kpis: (records) => [
@@ -422,7 +523,7 @@ const profiles: Record<string, ModuleProfile> = {
       { label: 'Annual payroll', value: gbp(sum(records)), tone: 'info' },
     ],
   },
-  'talent/performance': {
+  'hr/performance': {
     noun: 'review', copy: 'Reviews, goals and feedback, so everyone knows how they are doing.',
     fields: { name: 'Person', secondary: 'Review cycle', value: 'Rating', owner: 'Reviewer' }, valueHint: 'e.g. 4/5',
     kpis: (records, statuses) => [
@@ -431,7 +532,7 @@ const profiles: Record<string, ModuleProfile> = {
       { label: 'Overdue', value: String(overdue(notIn(records, last(statuses)))), tone: count(overdue(notIn(records, last(statuses))), 2, 0) },
     ],
   },
-  'talent/time-off': {
+  'hr/time-off': {
     noun: 'time-off request', copy: 'Holiday and leave requests, approvals, and who is off when.',
     fields: { name: 'Person', secondary: 'Dates', value: 'Days', owner: 'Approver' }, valueHint: 'e.g. 3',
     kpis: (records, statuses) => [
@@ -440,7 +541,7 @@ const profiles: Record<string, ModuleProfile> = {
       { label: 'Days booked', value: String(records.reduce((t, r) => t + amount(r.value), 0)), tone: 'info' },
     ],
   },
-  'talent/learning': {
+  'hr/learning': {
     noun: 'course', copy: 'Training and certifications, and who has completed what.',
     fields: { name: 'Course', secondary: 'Assigned to', value: 'Hours', owner: 'Owner' }, valueHint: 'e.g. 4',
     kpis: (records, statuses) => [
@@ -449,7 +550,7 @@ const profiles: Record<string, ModuleProfile> = {
       { label: 'Training hours', value: String(records.reduce((t, r) => t + amount(r.value), 0)), tone: 'info' },
     ],
   },
-  'talent/payroll': {
+  'hr/payroll': {
     noun: 'pay run', copy: 'Prepare, review and approve pay runs before money goes out.',
     fields: { name: 'Pay run', secondary: 'Period', value: 'Gross pay', owner: 'Approver' }, valueHint: '£0',
     kpis: (records, statuses) => [
@@ -458,7 +559,7 @@ const profiles: Record<string, ModuleProfile> = {
       { label: 'Paid', value: gbp(sum(inStatus(records, last(statuses)))), tone: 'good' },
     ],
   },
-  'talent/engagement': {
+  'hr/engagement': {
     noun: 'survey', copy: 'Pulse surveys and feedback that show how the team is feeling.',
     fields: { name: 'Survey', secondary: 'Audience', value: 'Score', owner: 'Owner' }, valueHint: 'e.g. 78',
     kpis: (records) => [

@@ -125,7 +125,7 @@ const registry: Record<string, KpiCalculator> = {
       { label: 'Total candidates', value: String(records.length), tone: 'info' },
     ]
   },
-  'talent/time-off': (records) => {
+  'hr/time-off': (records) => {
     const pending = countByStatus(records, 'Requested') + countByStatus(records, 'Review')
     return [
       { label: 'Needs approval', value: String(pending), tone: pending > 0 ? 'watch' : 'good' },
