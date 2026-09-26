@@ -5,8 +5,9 @@
 */
 // Founder SuperDash: subscriptions, revenue, upgrade requests, platform health,
 // growth, plus FoundingOS's own Finance (books, P&L, runway) and Marketing (FoundAI posts, campaigns, calendar).
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FounderFinancePanel, FounderMarketingPanel } from './founder-superdash-modules'
+import { founderDemoOverview } from './founder-superdash-demo'
 import { getProductionSession, loginToProduction, logoutProduction, productionRecords, productionRequest } from './workspace-production-client'
 import { FinanceReportsPage, MarketingReportsPage, SalesReportsPage } from './pro/reports'
 import { proRecordFromBackend } from './pro/models'
@@ -66,6 +67,7 @@ export function FounderSuperDash() {
   const [filter, setFilter] = useState('')
   const [tab, setTabState] = useState<Tab>('overview')
   const [sub, setSubState] = useState('')
+  const [demo, setDemo] = useState(false)
   useEffect(() => {
     const sync = () => { const [nextTab, nextSub] = readHash(); setTabState(nextTab); setSubState(nextSub) }
     sync()
@@ -80,6 +82,7 @@ export function FounderSuperDash() {
     try {
       setData(await productionRequest<FounderOverview>('/founder/overview'))
     } catch (err) {
+      setData(null)
       setError(err instanceof Error ? err.message : 'Could not load SuperDash')
     }
   }, [])
@@ -107,6 +110,10 @@ export function FounderSuperDash() {
   }
 
   const enable = async (tenantId: string, workspaces: string[]) => {
+    if (demo) {
+      setError('Example requests cannot be switched on. Return to live data first.')
+      return
+    }
     setBusy(tenantId)
     try {
       await productionRequest(`/founder/tenants/${tenantId}/workspaces`, { method: 'POST', body: JSON.stringify({ workspaces, enabled: true }) })
@@ -118,6 +125,8 @@ export function FounderSuperDash() {
     }
   }
 
+  const overview = useMemo(() => demo && data ? founderDemoOverview(data) : data, [data, demo])
+
   if (!signedIn) {
     return <main className="sd-shell"><form className="sd-login" onSubmit={signIn}>
       <p className="sd-eyebrow">Founder only</p><h1>SuperDash</h1>
@@ -125,19 +134,20 @@ export function FounderSuperDash() {
       <input autoComplete="current-password" onChange={(event) => setPassword(event.target.value)} placeholder="Password" type="password" value={password} />
       {error ? <p className="sd-error">{error}</p> : null}
       <button disabled={busy === 'login'} type="submit">{busy === 'login' ? 'Signing in…' : 'Sign in'}</button>
+      <a className="sd-site-link" href="/">← Back to website</a>
     </form></main>
   }
 
-  const s = data?.subscriptions
-  const f = data?.finance
-  const m = data?.monitoring
+  const s = overview?.subscriptions
+  const f = overview?.finance
+  const m = overview?.monitoring
   const maxSignups = Math.max(1, ...(s?.signupsByDay.map((day) => day.count) ?? [1]))
-  const pending = data?.upgradeRequests.filter((request) => request.pending.length) ?? []
-  const tenants = (data?.tenants ?? []).filter((tenant) => !filter || `${tenant.businessName} ${tenant.ownerEmail} ${tenant.planName}`.toLowerCase().includes(filter.toLowerCase()))
+  const pending = overview?.upgradeRequests.filter((request) => request.pending.length) ?? []
+  const tenants = (overview?.tenants ?? []).filter((tenant) => !filter || `${tenant.businessName} ${tenant.ownerEmail} ${tenant.planName}`.toLowerCase().includes(filter.toLowerCase()))
 
   const customersPanel = <>
       <section className="sd-panel sd-wide">
-        <div className="sd-panel-head"><h2>FoundingOS subscribers</h2><input onChange={(event) => setFilter(event.target.value)} placeholder="Search business, email or plan" value={filter} /></div>
+        <div className="sd-panel-head"><h2>FoundingOS subscribers{demo ? ' · EXAMPLE DATA' : ''}</h2><input onChange={(event) => setFilter(event.target.value)} placeholder="Search business, email or plan" value={filter} /></div>
         <table className="sd-table"><thead><tr><th>Business</th><th>Plan</th><th>Workspaces</th><th>Seats</th><th>£/mo</th><th>Joined</th><th>Last active</th></tr></thead><tbody>
           {tenants.map((tenant) => <tr key={tenant.tenantId}><td><strong>{tenant.businessName}</strong><small>{tenant.ownerEmail}</small></td><td>{tenant.planName}</td><td>{tenant.workspaces.map(title).join(', ')}</td><td>{tenant.seats}</td><td>{gbp(tenant.monthlyValueGbp)}</td><td>{ago(tenant.createdAt)}</td><td>{ago(tenant.lastActiveAt)}</td></tr>)}
           {!tenants.length ? <tr><td colSpan={7} className="sd-muted">No customers yet.</td></tr> : null}
@@ -148,10 +158,17 @@ export function FounderSuperDash() {
   return <main className="sd-shell">
     <header className="sd-top">
       <div><p className="sd-eyebrow">FoundingOS · Founder</p><h1>SuperDash</h1><small>{data ? `Updated ${ago(data.generatedAt)}` : 'Loading…'}</small></div>
-      <nav><span className="sd-plan">Complete · all Pro tools on</span><ExperienceToggle /><button onClick={() => void load()} type="button">Refresh</button><button className="ghost" onClick={() => { void logoutProduction().then(() => { setSignedIn(false); setData(null) }) }} type="button">Sign out</button></nav>
+      <nav><span className="sd-plan">Complete · all Pro tools on</span><ExperienceToggle /><button onClick={() => void load()} type="button">Refresh</button><button className="ghost" onClick={() => { void logoutProduction().then(() => { setSignedIn(false); setData(null); setDemo(false) }) }} type="button">Sign out</button></nav>
     </header>
-    <div className="sd-tabs" role="tablist">
-      {(['overview', 'finance', 'sales', 'marketing'] as const).map((key) => <button aria-selected={tab === key} className={tab === key ? 'on' : ''} key={key} onClick={() => setTab(key)} role="tab" type="button">{key === 'overview' ? 'Business' : key === 'finance' ? 'Finance' : key === 'sales' ? 'Sales' : 'Marketing'}</button>)}
+    <div className="sd-tab-bar">
+      <div className="sd-tabs" role="tablist">
+        {(['overview', 'finance', 'sales', 'marketing'] as const).map((key) => <button aria-selected={tab === key} className={tab === key ? 'on' : ''} key={key} onClick={() => setTab(key)} role="tab" type="button">{key === 'overview' ? 'Business' : key === 'finance' ? 'Finance' : key === 'sales' ? 'Sales' : 'Marketing'}</button>)}
+      </div>
+      <a className="sd-site-link" href="/">← Back to website</a>
+    </div>
+    <div className={`sd-demo-bar${demo ? ' is-on' : ''}`}>
+      <div><strong>{demo ? 'FoundingOS subscriber preview · EXAMPLE DATA' : 'Preview FoundingOS subscriptions'}</strong><small>{demo ? 'Subscriber figures and businesses are made up. No tenant was created, and no real data was changed. Platform health and workspace tools remain live.' : 'See how your company’s subscription dashboard could look with example subscribers. Your real numbers stay unchanged.'}</small></div>
+      <button disabled={!data} onClick={() => { setDemo(!demo); setFilter(''); setError('') }} type="button">{demo ? 'Back to live figures' : 'Load subscriber demo'}</button>
     </div>
     {tab !== 'overview' ? (() => {
       const items = sections[tab]
@@ -183,12 +200,12 @@ export function FounderSuperDash() {
         <h2>Upgrade requests</h2>
         {pending.length ? pending.map((request) => <div className="sd-row" key={request.id}>
           <div><strong>{request.business}</strong><small>{request.ownerEmail} · {ago(request.createdAt)}</small><small>Wants: {request.pending.map(title).join(', ')}{request.note ? ` — “${request.note}”` : ''}</small></div>
-          <button disabled={busy === request.tenantId} onClick={() => void enable(request.tenantId, request.pending)} type="button">{busy === request.tenantId ? 'Switching on…' : 'Switch on'}</button>
+          <button disabled={demo || busy === request.tenantId} onClick={() => void enable(request.tenantId, request.pending)} type="button">{demo ? 'Example only' : busy === request.tenantId ? 'Switching on…' : 'Switch on'}</button>
         </div>) : <p className="sd-muted">No pending requests.</p>}
       </section>
 
       <section className="sd-panel">
-        <h2>Platform health</h2>
+        <h2>Platform health · LIVE</h2>
         <ul className="sd-health">
           <li className={m?.apiOk ? 'ok' : 'bad'}>API &amp; database <em>{m ? `${m.dbLatencyMs} ms` : '…'}</em></li>
           <li className={m?.aiConfigured ? 'ok' : 'bad'}>FoundAI (Claude) <em>{m?.aiRequests24h ?? 0} requests / 24h</em></li>
