@@ -11,6 +11,7 @@ import { getProductionSession, loginToProduction, logoutProduction, productionRe
 import { FinanceReportsPage, MarketingReportsPage, SalesReportsPage } from './pro/reports'
 import { proRecordFromBackend } from './pro/models'
 import type { LoadRecords } from './pro/shared'
+import { defaultExperienceMode, ExperienceToggle } from './pro-coach'
 import { CompleteWorkspaceApplication, type BusinessWorkspaceSlug } from './complete-workspace-application'
 
 export type FounderOverview = {
@@ -83,6 +84,7 @@ export function FounderSuperDash() {
     }
   }, [])
 
+  useEffect(() => { defaultExperienceMode('pro') }, [])
   useEffect(() => {
     const has = Boolean(getProductionSession())
     setSignedIn(has)
@@ -146,7 +148,7 @@ export function FounderSuperDash() {
   return <main className="sd-shell">
     <header className="sd-top">
       <div><p className="sd-eyebrow">FoundingOS · Founder</p><h1>SuperDash</h1><small>{data ? `Updated ${ago(data.generatedAt)}` : 'Loading…'}</small></div>
-      <nav><button onClick={() => void load()} type="button">Refresh</button><button className="ghost" onClick={() => { void logoutProduction().then(() => { setSignedIn(false); setData(null) }) }} type="button">Sign out</button></nav>
+      <nav><span className="sd-plan">Complete · all Pro tools on</span><ExperienceToggle /><button onClick={() => void load()} type="button">Refresh</button><button className="ghost" onClick={() => { void logoutProduction().then(() => { setSignedIn(false); setData(null) }) }} type="button">Sign out</button></nav>
     </header>
     <div className="sd-tabs" role="tablist">
       {(['overview', 'finance', 'sales', 'marketing'] as const).map((key) => <button aria-selected={tab === key} className={tab === key ? 'on' : ''} key={key} onClick={() => setTab(key)} role="tab" type="button">{key === 'overview' ? 'Business' : key === 'finance' ? 'Finance' : key === 'sales' ? 'Sales' : 'Marketing'}</button>)}

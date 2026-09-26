@@ -21,7 +21,7 @@ import { addMerchantStaff, merchantWorkspace, ownerMerchantSummary, removeMercha
 import { listEvents, predictEventPattern, publishEvent, queryEvents, registerEventStreamClient, summarizeEventPattern } from './event-feed.js'
 import { generateInsightsFromRecentEvents, listInsights, registerInsightStreamClient } from './insights.js'
 import { listMessagingConnections, listMessagingParticipants, messagingReadiness, processWhatsAppWebhook, saveMessagingConnection, saveMessagingParticipant, sendMessagingIntelligenceBrief } from './messaging-core.js'
-import { acceptTeamInvitation, assertWorkspaceAccess, bootstrapTenant, checkIntegration, completeStripeCheckout, createWorkspaceRecord, deleteWorkspaceRecord, exportGovernanceCsv, getControlSettings, getIntegrationCredentials, getInvitationDetails, getOnboarding, inviteTeamMember, listAuditEvents, listIntegrations, listPendingInvitations, listTeam, listTenantWorkspaces, listWorkspaceRecords, platformReadiness, requestWorkspaceUpgrade, recordPaymentCheckout, revokeTeamInvitation, resendTeamInvitation, saveControlSettings, saveIntegration, saveOnboarding, saveTenantWorkspace, updateTeamMember, updateWorkspaceRecord, uploadWorkspaceRecordImage } from './platform.js'
+import { acceptTeamInvitation, assertWorkspaceAccess, bootstrapTenant, checkIntegration, completeStripeCheckout, createWorkspaceRecord, deleteWorkspaceRecord, exportGovernanceCsv, getControlSettings, getIntegrationCredentials, getInvitationDetails, getOnboarding, inviteTeamMember, listAuditEvents, listIntegrations, listPendingInvitations, listTeam, listTenantWorkspaces, listWorkspaceRecords, platformReadiness, requestWorkspaceUpgrade, ensureFounderEntitlements, recordPaymentCheckout, revokeTeamInvitation, resendTeamInvitation, saveControlSettings, saveIntegration, saveOnboarding, saveTenantWorkspace, updateTeamMember, updateWorkspaceRecord, uploadWorkspaceRecordImage } from './platform.js'
 import { verifyBootstrapToken } from './platform-security.js'
 import { createTenantCheckout, verifyStripeWebhookSignature } from './stripe.js'
 import { decideAgentAction, executeAgentAction, getAgentActionTrail, getAgentIntelligenceSummary, listAgentActions, proposeAgentAction, proposeReplenishmentAction, reverseAgentActionExecution } from './agent-actions.js'
@@ -303,6 +303,7 @@ apiRouter.get('/founder/access', requireSignedIn, (_req, res) => {
 })
 apiRouter.get('/founder/overview', requireFounderAccess, async (_req, res, next) => {
   try {
+    await ensureFounderEntitlements(res.locals.auth?.tenantId)
     res.json({ success: true, data: await founderOverview(res.locals.auth?.tenantId) })
   } catch (error) { next(error) }
 })

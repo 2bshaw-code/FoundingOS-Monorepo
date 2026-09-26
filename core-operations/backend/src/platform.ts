@@ -119,6 +119,24 @@ export async function saveOnboarding(tenantId: string, actorId: string, input: R
   return onboarding
 }
 
+// The founder's own company runs on the full platform: every workspace (including the Commerce Pro
+// and Core.Intelligence bolt-ons) and every suite, on the Complete (growth) plan.
+export async function ensureFounderEntitlements(tenantId?: string) {
+  if (!tenantId) return
+  const existing = await prisma.tenantWorkspace.findMany({ where: { tenantId }, select: { workspace: true, enabled: true, plan: true } })
+  const missing = workspaceSlugs.filter((workspace) => { const row = existing.find((item) => item.workspace === workspace); return !row || !row.enabled || row.plan !== 'growth' })
+  if (missing.length) await prisma.$transaction(missing.map((workspace) => prisma.tenantWorkspace.upsert({
+    where: { tenantId_workspace: { tenantId, workspace } },
+    create: { tenantId, workspace, enabled: true, plan: 'growth', modules: json([]) },
+    update: { enabled: true, plan: 'growth' },
+  })))
+  await prisma.$transaction(['core_operations', 'core_workforce', 'core_intelligence'].map((suite) => prisma.tenantSuiteLicense.upsert({
+    where: { tenantId_suite: { tenantId, suite } },
+    create: { tenantId, suite, enabled: true },
+    update: { enabled: true, trialEndsAt: null },
+  })))
+}
+
 export const listTenantWorkspaces = (tenantId: string) => prisma.tenantWorkspace.findMany({ where: { tenantId }, orderBy: { workspace: 'asc' } })
 
 export const getControlSettings = (tenantId: string) => prisma.tenantControlSettings.findUnique({ where: { tenantId } })

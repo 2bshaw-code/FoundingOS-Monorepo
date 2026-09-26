@@ -15380,3 +15380,9 @@ body:has(.cross-sell-ticker) .found-ai-fab { bottom: 64px; }
 .sd-module { border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
 .retail-product-shell.sd-embedded { display: block; min-height: 0; }
 .sd-embedded .retail-product-content { padding: 20px clamp(12px, 2.5vw, 28px) 28px; }
+.sd-top nav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sd-plan { color: #86efac; border: 1px solid rgba(134,239,172,.4); border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 800; }
+.sd-top .experience-toggle { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.14); }
+.sd-top nav .experience-toggle button { background: transparent; color: #9fb3c8; padding: 6px 12px; font-size: 12px; border-radius: 999px; }
+.sd-top nav .experience-toggle button[aria-pressed="true"] { background: #38bdf8; color: #04111f; }
+.sd-top .experience-toggle { border-radius: 999px; }

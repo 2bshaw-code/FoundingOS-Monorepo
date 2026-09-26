@@ -14,6 +14,15 @@ export function readExperienceMode(): ExperienceMode {
   try { return window.localStorage.getItem(MODE_KEY) === 'pro' ? 'pro' : 'guided' } catch { return 'guided' }
 }
 
+// Applies a surface's preferred mode unless the person has already chosen one (SuperDash defaults to Pro).
+export function defaultExperienceMode(mode: ExperienceMode) {
+  try {
+    if (window.localStorage.getItem(MODE_KEY)) return
+    window.localStorage.setItem(MODE_KEY, mode)
+    window.dispatchEvent(new Event(MODE_EVENT))
+  } catch { /* private mode */ }
+}
+
 // Guided (default) coaches people who are new to the job; Pro strips the coaching back for
 // people who already know it and adds keyboard shortcuts and a denser layout.
 export function useExperienceMode(): [ExperienceMode, (mode: ExperienceMode) => void] {
