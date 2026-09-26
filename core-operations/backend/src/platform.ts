@@ -135,6 +135,37 @@ export async function saveControlSettings(tenantId: string, actorId: string, inp
   return settings
 }
 
+// Records a customer's request to add workspaces. Billing is not self-serve yet, so the
+// FoundingOS team is emailed (when SALES_NOTIFY_EMAIL + RESEND_API_KEY are set) and enables it.
+export async function requestWorkspaceUpgrade(tenantId: string, actorId: string, input: Record<string, unknown>, requestId?: string) {
+  const workspaces = [...new Set((Array.isArray(input.workspaces) ? input.workspaces : []).map(assertWorkspace))]
+  if (!workspaces.length) throw Object.assign(new Error('Choose at least one workspace to add.'), { status: 400 })
+  const note = typeof input.note === 'string' ? input.note.trim().slice(0, 500) : ''
+  const [onboarding, actor] = await Promise.all([
+    prisma.tenantOnboarding.findUnique({ where: { tenantId } }),
+    prisma.authUser.findUnique({ where: { id: actorId }, select: { email: true } }),
+  ])
+  await audit({ tenantId, actorId, action: 'plan.upgrade_requested', requestId, metadata: { workspaces, note } })
+  let notified = false
+  const key = process.env.RESEND_API_KEY?.trim()
+  const to = process.env.SALES_NOTIFY_EMAIL?.trim()
+  if (key && to) {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: process.env.RESEND_FROM_EMAIL?.trim() || 'FoundingOS <no-reply@foundingos.com>',
+        to,
+        reply_to: actor?.email || undefined,
+        subject: `Upgrade request: ${onboarding?.businessName || tenantId} wants ${workspaces.join(', ')}`,
+        text: `Business: ${onboarding?.businessName || '-'}\nTenant: ${tenantId}\nRequested by: ${actor?.email || actorId}\nWorkspaces: ${workspaces.join(', ')}\n${note ? `Note: ${note}\n` : ''}`,
+      }),
+    }).catch(() => null)
+    notified = Boolean(response?.ok)
+  }
+  return { requested: workspaces, notified }
+}
+
 export async function saveTenantWorkspace(tenantId: string, actorId: string, workspaceValue: unknown, input: Record<string, unknown>, requestId?: string) {
   const workspace = assertWorkspace(workspaceValue)
   const data = { enabled: input.enabled !== false, plan: String(input.plan || 'growth'), modules: json(Array.isArray(input.modules) ? input.modules.map(String) : []) }

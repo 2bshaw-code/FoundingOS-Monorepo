@@ -20,7 +20,7 @@ import { addMerchantStaff, merchantWorkspace, ownerMerchantSummary, removeMercha
 import { listEvents, predictEventPattern, publishEvent, queryEvents, registerEventStreamClient, summarizeEventPattern } from './event-feed.js'
 import { generateInsightsFromRecentEvents, listInsights, registerInsightStreamClient } from './insights.js'
 import { listMessagingConnections, listMessagingParticipants, messagingReadiness, processWhatsAppWebhook, saveMessagingConnection, saveMessagingParticipant, sendMessagingIntelligenceBrief } from './messaging-core.js'
-import { acceptTeamInvitation, assertWorkspaceAccess, bootstrapTenant, checkIntegration, completeStripeCheckout, createWorkspaceRecord, deleteWorkspaceRecord, exportGovernanceCsv, getControlSettings, getIntegrationCredentials, getInvitationDetails, getOnboarding, inviteTeamMember, listAuditEvents, listIntegrations, listPendingInvitations, listTeam, listTenantWorkspaces, listWorkspaceRecords, platformReadiness, recordPaymentCheckout, revokeTeamInvitation, resendTeamInvitation, saveControlSettings, saveIntegration, saveOnboarding, saveTenantWorkspace, updateTeamMember, updateWorkspaceRecord, uploadWorkspaceRecordImage } from './platform.js'
+import { acceptTeamInvitation, assertWorkspaceAccess, bootstrapTenant, checkIntegration, completeStripeCheckout, createWorkspaceRecord, deleteWorkspaceRecord, exportGovernanceCsv, getControlSettings, getIntegrationCredentials, getInvitationDetails, getOnboarding, inviteTeamMember, listAuditEvents, listIntegrations, listPendingInvitations, listTeam, listTenantWorkspaces, listWorkspaceRecords, platformReadiness, requestWorkspaceUpgrade, recordPaymentCheckout, revokeTeamInvitation, resendTeamInvitation, saveControlSettings, saveIntegration, saveOnboarding, saveTenantWorkspace, updateTeamMember, updateWorkspaceRecord, uploadWorkspaceRecordImage } from './platform.js'
 import { verifyBootstrapToken } from './platform-security.js'
 import { createTenantCheckout, verifyStripeWebhookSignature } from './stripe.js'
 import { decideAgentAction, executeAgentAction, getAgentActionTrail, getAgentIntelligenceSummary, listAgentActions, proposeAgentAction, proposeReplenishmentAction, reverseAgentActionExecution } from './agent-actions.js'
@@ -295,6 +295,13 @@ apiRouter.get('/platform/workspaces', requireMerchantAccess, requireTenant, asyn
     const tenantId = readTenant(req, res)
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
     res.json({ success: true, data: await listTenantWorkspaces(tenantId) })
+  } catch (error) { next(error) }
+})
+apiRouter.post('/platform/upgrade-request', requireOwnerAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = writeTenant(req, res)
+    if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
+    res.json({ success: true, data: await requestWorkspaceUpgrade(tenantId, res.locals.auth.id, req.body || {}, res.locals.requestId) })
   } catch (error) { next(error) }
 })
 apiRouter.put('/platform/workspaces/:workspace', requireOwnerAccess, requireTenant, async (req, res, next) => {

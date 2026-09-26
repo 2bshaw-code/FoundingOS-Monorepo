@@ -850,3 +850,14 @@ export async function createFreeAccount(input: { ownerName: string; businessName
     return { ok: false, error: 'Could not reach FoundingOS. Check your connection and try again.' }
   }
 }
+
+// ── Workspace entitlements (what this company has paid for) ─────────────────
+export type TenantWorkspaceDTO = { workspace: string; enabled: boolean; plan: string }
+
+export const fetchTenantWorkspaces = () => authedRequest<TenantWorkspaceDTO[]>('/api/v1/ops/platform/workspaces')
+
+export const requestWorkspaceUpgrade = (workspaces: string[], note?: string) =>
+  authedRequest<{ requested: string[]; notified: boolean }>('/api/v1/ops/platform/upgrade-request', {
+    method: 'POST',
+    body: JSON.stringify({ workspaces, note }),
+  })

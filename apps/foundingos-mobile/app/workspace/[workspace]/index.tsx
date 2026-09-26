@@ -2,6 +2,7 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
+import { WorkspaceGate } from '../../../components/WorkspaceAccess'
 import { useMemo, useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
@@ -30,7 +31,7 @@ const SUNK_GROUPS = new Set(['Administration'])
 
 type ModuleGroup = { name: string; items: WorkspaceModuleDef[] }
 
-export default function WorkspaceModulesScreen() {
+function WorkspaceModulesScreenInner() {
   const { workspace: workspaceSlug } = useLocalSearchParams<{ workspace: string }>()
   const workspace = findWorkspace(String(workspaceSlug || ''))
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
@@ -129,3 +130,12 @@ const styles = StyleSheet.create({
   moduleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
   moduleCard: { minWidth: 150, flexGrow: 1 },
 })
+
+export default function WorkspaceModulesScreen() {
+  const { workspace: workspaceSlug } = useLocalSearchParams<{ workspace: string }>()
+  return (
+    <WorkspaceGate slug={String(workspaceSlug || '')}>
+      <WorkspaceModulesScreenInner />
+    </WorkspaceGate>
+  )
+}

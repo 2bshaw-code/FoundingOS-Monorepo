@@ -29,6 +29,7 @@ export default function AppStackLayout() {
       <Stack.Screen name="guardian" options={{ title: 'Guardian' }} />
       <Stack.Screen name="team" options={{ title: 'Team & Roles' }} />
       <Stack.Screen name="onboarding" options={{ title: 'Setup & Onboarding' }} />
+      <Stack.Screen name="upgrade" options={{ title: 'Your plan' }} />
     </Stack>
   )
 }

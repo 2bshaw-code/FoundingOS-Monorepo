@@ -11,7 +11,9 @@ import { SUITE_LINKS } from '../../../lib/nav-directory'
 import { WORKSPACES } from '../../../lib/workspace-modules'
 import { useQuantumStore } from '../../../lib/store'
 import { logAction } from '../../../lib/action-logger'
-import { QuantumCard, QuantumHeader, QuantumNotice, QuantumScreen, QuantumSectionHeader, QuantumText, quantumSpace } from '../../../components/QuantumUI'
+import { signOut, useWorkspaceAccess, WORKSPACE_OFFERS } from '../../../lib/workspace-access'
+import type { WorkspaceSlug } from '../../../lib/workspace-modules'
+import { QuantumButton, QuantumCard, QuantumHeader, QuantumNotice, QuantumScreen, QuantumSectionHeader, QuantumText, quantumSpace } from '../../../components/QuantumUI'
 
 // Every destination in the app — the suites, their dedicated dashboards, and the
 // live per-workspace module grids — lives on this one directory screen instead of
@@ -21,6 +23,7 @@ import { QuantumCard, QuantumHeader, QuantumNotice, QuantumScreen, QuantumSectio
 export default function WorkspaceDirectoryScreen() {
   const setActiveBrand = useQuantumStore((state) => state.setActiveBrand)
   const [connected, setConnected] = useState(false)
+  const { mine, locked } = useWorkspaceAccess()
 
   useEffect(() => {
     getSession().then((session) => setConnected(Boolean(session)))
@@ -71,13 +74,13 @@ export default function WorkspaceDirectoryScreen() {
         ))}
       </View>
 
-      <QuantumSectionHeader label="Live workspaces · full module access" />
+      <QuantumSectionHeader label="Your workspaces" />
       <QuantumText variant="caption">
         Every module below reads and writes the same real, tenant-scoped data as the web app — sales pipelines, orders,
         inventory, campaigns, payroll, and more.
       </QuantumText>
       <View style={styles.workspaceGrid}>
-        {WORKSPACES.map((workspace) => (
+        {mine.map((workspace) => (
           <Pressable key={workspace.slug} style={({ pressed }) => [styles.workspaceCard, { opacity: pressed ? 0.7 : 1 }]} onPress={() => router.push(`/workspace/${workspace.slug}`)}>
             <QuantumCard accent={workspace.accent}>
               <QuantumText variant="h3">{workspace.label}</QuantumText>
@@ -86,6 +89,25 @@ export default function WorkspaceDirectoryScreen() {
           </Pressable>
         ))}
       </View>
+
+      {locked.length ? (
+        <>
+          <QuantumSectionHeader label="Add to your plan" />
+          <View style={styles.workspaceGrid}>
+            {locked.map((workspace) => (
+              <Pressable key={workspace.slug} style={({ pressed }) => [styles.workspaceCard, { opacity: pressed ? 0.7 : 0.85 }]} onPress={() => router.push({ pathname: '/(app)/upgrade', params: { add: workspace.slug } } as never)}>
+                <QuantumCard>
+                  <QuantumText variant="h3">🔒 {workspace.label}</QuantumText>
+                  <QuantumText variant="caption">{WORKSPACE_OFFERS[workspace.slug as WorkspaceSlug].price} · Tap to add</QuantumText>
+                </QuantumCard>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      ) : null}
+
+      <QuantumButton tone="ghost" onPress={() => router.push('/(app)/upgrade' as never)}>Manage your plan</QuantumButton>
+      <QuantumButton tone="danger" onPress={() => { void signOut() }}>Sign out</QuantumButton>
     </QuantumScreen>
   )
 }

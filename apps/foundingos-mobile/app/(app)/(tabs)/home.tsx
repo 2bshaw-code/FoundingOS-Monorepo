@@ -35,6 +35,8 @@ import { enqueueOutboxAction } from '../../../lib/outbox-sync'
 import { useQuantumStore } from '../../../lib/store'
 import { useActionFeedback } from '../../../lib/use-action-feedback'
 import { AskFoundAiCard, FoundAiAutopilotCard } from '../../../components/FoundAi'
+import { WorkspaceQuickAccess } from '../../../components/WorkspaceAccess'
+import { signOut } from '../../../lib/workspace-access'
 
 const STATUS_LABEL: Record<ApprovalsQueueStatus, string> = {
   proposed: 'Suggested',
@@ -165,10 +167,14 @@ export default function TodayScreen() {
           </Pressable>
           <Text style={styles.title}>Today</Text>
         </View>
-        <Pressable style={styles.profile} onPress={() => router.push('/search')}>
-          <Text style={styles.profileText}>●</Text>
-          {connected ? <View style={styles.online} /> : null}
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable style={styles.planButton} onPress={() => router.push('/(app)/upgrade' as never)}>
+            <Text style={styles.planText}>Plan</Text>
+          </Pressable>
+          <Pressable style={styles.signOutButton} onPress={() => { void signOut() }}>
+            <Text style={styles.signOutText}>Sign out</Text>
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.trustStrip}>
@@ -204,6 +210,8 @@ export default function TodayScreen() {
 
       {connected && !loading ? (
         <>
+          <QuantumSectionHeader label="Your workspaces" />
+          <WorkspaceQuickAccess />
           <FoundAiAutopilotCard compact onChanged={loadAll} />
           <AskFoundAiCard />
           <QuantumSectionHeader label={attentionCount > 0 ? `Needs your attention · ${attentionCount}` : 'Needs your attention'} />
@@ -302,6 +310,11 @@ export default function TodayScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  planButton: { borderRadius: 999, borderWidth: 1, borderColor: '#38BDF866', paddingHorizontal: 12, paddingVertical: 7 },
+  planText: { color: '#38BDF8', fontSize: 13, fontWeight: '700' },
+  signOutButton: { borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 12, paddingVertical: 7 },
+  signOutText: { color: '#E5E7EB', fontSize: 13, fontWeight: '700' },
   screen: { gap: quantumSpace.lg },
   stack: { gap: quantumSpace.sm },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

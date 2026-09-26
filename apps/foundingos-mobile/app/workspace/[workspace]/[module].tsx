@@ -2,6 +2,7 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
+import { WorkspaceGate } from '../../../components/WorkspaceAccess'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
@@ -80,7 +81,7 @@ function firstImageUrl(record: WorkspaceRecordDTO): string | null {
 // backed by the same tenant-scoped WorkspaceRecord model the web app's
 // production mode uses (GET/POST /platform/workspaces/:workspace/:module/records,
 // PATCH /platform/records/:id) — no per-module backend or UI work required.
-export default function WorkspaceModuleScreen() {
+function WorkspaceModuleScreenInner() {
   const theme = useActiveQuantumTheme()
   const { workspace: workspaceSlug, module: moduleId } = useLocalSearchParams<{ workspace: string; module: string }>()
   const workspace = findWorkspace(String(workspaceSlug || ''))
@@ -488,3 +489,12 @@ const styles = StyleSheet.create({
   recordCard: { gap: quantumSpace.sm },
   recordHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', gap: quantumSpace.md },
 })
+
+export default function WorkspaceModuleScreen() {
+  const { workspace: workspaceSlug } = useLocalSearchParams<{ workspace: string; module: string }>()
+  return (
+    <WorkspaceGate slug={String(workspaceSlug || '')}>
+      <WorkspaceModuleScreenInner />
+    </WorkspaceGate>
+  )
+}
