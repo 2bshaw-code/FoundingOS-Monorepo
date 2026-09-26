@@ -12,7 +12,7 @@ import { publishSocial, type SocialChannel } from './social.js'
 import { OutboundBlocked } from './outbound.js'
 import { listWhatsAppTemplateStatus, submitWhatsAppTemplates } from './whatsapp-templates.js'
 import { decideAutopilotApproval, getAutopilotPolicy, listAutopilotActivity, listAutopilotApprovals, runAutopilot, runAutopilotForAllTenants, saveAutopilotPolicy } from './autopilot.js'
-import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess, requireFounderAccess } from './auth.js'
+import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess, requireFounderAccess, requireSignedIn, isFounderIdentity } from './auth.js'
 import { founderOverview, founderSetTenantWorkspaces } from './founder.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
@@ -297,6 +297,9 @@ apiRouter.get('/platform/workspaces', requireMerchantAccess, requireTenant, asyn
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
     res.json({ success: true, data: await listTenantWorkspaces(tenantId) })
   } catch (error) { next(error) }
+})
+apiRouter.get('/founder/access', requireSignedIn, (_req, res) => {
+  res.json({ success: true, data: { founder: isFounderIdentity(res.locals.auth) } })
 })
 apiRouter.get('/founder/overview', requireFounderAccess, async (_req, res, next) => {
   try {

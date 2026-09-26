@@ -4,7 +4,7 @@
 */
 import { useCallback, useEffect, useState } from 'react'
 import { router } from 'expo-router'
-import { fetchTenantWorkspaces, getSession, logout as coreOpsLogout } from './core-operations-api'
+import { fetchFounderAccess, fetchTenantWorkspaces, getSession, logout as coreOpsLogout } from './core-operations-api'
 import { logout as legacyLogout } from './api'
 import { logout as workforceLogout } from './core-workforce-api'
 import { WORKSPACES, WorkspaceSlug } from './workspace-modules'
@@ -58,9 +58,16 @@ export async function signOut() {
   router.replace('/')
 }
 
-// True only for the FoundingOS founder account (backend role founder_master).
+// True only for the FoundingOS founder account (founder_master role or FOUNDER_EMAILS on the backend).
 export function useIsFounder() {
   const [founder, setFounder] = useState(false)
-  useEffect(() => { getSession().then((session) => setFounder(session?.role === 'founder_master')) }, [])
+  useEffect(() => {
+    getSession().then(async (session) => {
+      if (!session) return
+      if (session.role === 'founder_master') { setFounder(true); return }
+      const access = await fetchFounderAccess().catch(() => null)
+      setFounder(Boolean(access?.founder))
+    })
+  }, [])
   return founder
 }

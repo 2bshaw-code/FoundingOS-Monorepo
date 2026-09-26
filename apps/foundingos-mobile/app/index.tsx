@@ -13,6 +13,7 @@ import { login as coreWorkforceLogin, getSession as getCoreWorkforceSession } fr
 import { FOUNDINGOS_ACCENT, FOUNDINGOS_BASE } from '../lib/brands'
 import { normalizeRole } from '../lib/permissions'
 import { useQuantumStore } from '../lib/store'
+import { signOut } from '../lib/workspace-access'
 import { QuantumSphere } from '../components/QuantumSphere'
 import { AppHomeSections, FoundAiMovie } from '../components/AppHome'
 import { QuantumButton, QuantumCard, QuantumFormField, QuantumNotice, QuantumPasswordInput, QuantumText, QuantumTextInput, quantumSpace, shadeColor } from '../components/QuantumUI'
@@ -25,6 +26,8 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [checkingSession, setCheckingSession] = useState(true)
+  const [signedInAs, setSignedInAs] = useState<string | null>(null)
+  const openBusiness = () => router.replace(destination as any)
   const scrollRef = useRef<ScrollView>(null)
   const [signInY, setSignInY] = useState(0)
   const goToSignIn = () => scrollRef.current?.scrollTo({ y: Math.max(0, signInY - quantumSpace.xl), animated: true })
@@ -66,8 +69,12 @@ export default function LoginScreen() {
         // completes, instead of flashing the login form for a frame first. Return to
         // whichever tab sent the user here (via ?returnTo=...) instead of always
         // dropping back onto Overview.
-        router.replace(destination as any)
-        return
+        // Deep links (returnTo) go straight through; opening the app shows the home page first.
+        if (typeof returnTo === 'string' && returnTo.startsWith('/')) {
+          router.replace(destination as any)
+          return
+        }
+        setSignedInAs(coreOpsSession?.email || 'your account')
       }
       setCheckingSession(false)
     }
@@ -167,7 +174,9 @@ export default function LoginScreen() {
                 <QuantumSphere size={30} />
                 <QuantumText variant="label">FoundingOS</QuantumText>
               </View>
-              <QuantumText variant="label" color={FOUNDINGOS_ACCENT} onPress={showSignIn}>Sign in</QuantumText>
+              {signedInAs
+                ? <QuantumText variant="label" color={FOUNDINGOS_ACCENT} onPress={() => { void signOut().then(() => setSignedInAs(null)) }}>Sign out</QuantumText>
+                : <QuantumText variant="label" color={FOUNDINGOS_ACCENT} onPress={showSignIn}>Sign in</QuantumText>}
             </View>
 
             <View style={styles.hero}>
@@ -178,8 +187,14 @@ export default function LoginScreen() {
                 FoundAI handles your invoices, stock, deliveries, customer messages, campaigns and social posts — and only asks you when a decision needs a human.
               </QuantumText>
               <View style={styles.ctaRow}>
-                <QuantumButton onPress={createAccount} style={styles.cta}>Get started free</QuantumButton>
-                <QuantumButton onPress={showSignIn} tone="secondary" style={styles.cta}>Sign in</QuantumButton>
+                {signedInAs ? (
+                  <QuantumButton onPress={openBusiness} style={styles.cta}>Open my business →</QuantumButton>
+                ) : (
+                  <>
+                    <QuantumButton onPress={createAccount} style={styles.cta}>Get started free</QuantumButton>
+                    <QuantumButton onPress={showSignIn} tone="secondary" style={styles.cta}>Sign in</QuantumButton>
+                  </>
+                )}
               </View>
             </View>
 
@@ -187,6 +202,15 @@ export default function LoginScreen() {
 
             <AppHomeSections />
 
+            {signedInAs ? (
+              <QuantumCard accent={FOUNDINGOS_ACCENT}>
+                <QuantumText variant="overline" color="#24C47A">Signed in</QuantumText>
+                <QuantumText variant="h3">{signedInAs}</QuantumText>
+                <QuantumText variant="caption" color="#A9B8C8">FoundAI has been working while you were away. Open your business to see what it did and what needs you.</QuantumText>
+                <QuantumButton onPress={openBusiness}>Open my business →</QuantumButton>
+              </QuantumCard>
+            ) : (
+              <>
             <View onLayout={(event) => setSignInY(event.nativeEvent.layout.y)} style={styles.signInHeading}>
               <QuantumText variant="h2">{mode === 'signup' ? 'Create your free account' : 'Sign in'}</QuantumText>
               <QuantumText variant="caption" color="#A9B8C8">
@@ -232,6 +256,8 @@ export default function LoginScreen() {
               <QuantumText variant="caption" color="#A9B8C8" align="center">
                 New to FoundingOS? <QuantumText variant="caption" color={FOUNDINGOS_ACCENT} onPress={createAccount}>Create your free account</QuantumText>
               </QuantumText>
+            )}
+              </>
             )}
           </ScrollView>
         </KeyboardAvoidingView>

@@ -876,3 +876,5 @@ export const fetchFounderOverview = () => authedRequest<FounderOverview>('/api/v
 
 export const founderEnableWorkspaces = (tenantId: string, workspaces: string[]) =>
   authedRequest(`/api/v1/ops/founder/tenants/${encodeURIComponent(tenantId)}/workspaces`, { method: 'POST', body: JSON.stringify({ workspaces, enabled: true }) })
+
+export const fetchFounderAccess = () => authedRequest<{ founder: boolean }>('/api/v1/ops/founder/access')

@@ -2,6 +2,7 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
+import { AccountNavLinks } from './account-nav'
 import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { boltOnKeys, commercialAddOns, commercialBoltOns, commercialPlans, extraSeat, marketingPlanFeatures } from '@foundingos/config/commercial'
@@ -227,9 +228,10 @@ async function SiteNav() {
         <Link href="/about">About</Link>
         <Link href="/contact">Contact</Link>
         <Link href="/signup">Sign up</Link>
+        <AccountNavLinks />
         <GlobalisationControls />
         <ThemeToggle />
-        {signedIn ? <form action="/api/access/logout" method="post" className="site-nav-logout"><button type="submit">Log out</button></form> : null}
+        {signedIn ? <form action="/api/access/logout" method="post" className="site-nav-logout"><button title="Lock the preview site again" type="submit">Lock site</button></form> : null}
       </div>
       {/* Closing the menu by tapping outside it: a full-screen label sits behind the open
           panel and re-checks the (hidden) toggle off via its `for` attribute. Pure CSS,

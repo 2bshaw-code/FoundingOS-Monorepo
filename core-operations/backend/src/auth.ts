@@ -27,7 +27,14 @@ export const requireOwnerAccess = createAccessMiddleware(authService, [roles.fou
 export const requireDecisionApprovalAccess = createAccessMiddleware(authService, [roles.founderMaster, roles.businessOwner, roles.businessManager, roles.retailManager])
 export const requireExecutionAccess = createAccessMiddleware(authService, [roles.founderMaster, roles.businessOwner])
 export const requireTenantOwnerAccess = createAccessMiddleware(authService, [roles.founderMaster, roles.businessOwner])
-export const requireFounderAccess = createAccessMiddleware(authService, [roles.founderMaster])
+const founderEmails = () => new Set([process.env.FOUNDER_EMAILS, process.env.DEMO_FOUNDER_EMAIL].filter(Boolean).join(',').split(',').map((email) => email.trim().toLowerCase()).filter(Boolean))
+// The platform owner: the founder_master role, or any account listed in FOUNDER_EMAILS.
+export const isFounderIdentity = (identity?: { role?: string; email?: string }) =>
+  identity?.role === roles.founderMaster || founderEmails().has(String(identity?.email || '').toLowerCase())
+const verifyAny = createAccessMiddleware(authService)
+export const requireFounderAccess = (req: Parameters<typeof verifyAny>[0], res: Parameters<typeof verifyAny>[1], next: Parameters<typeof verifyAny>[2]) =>
+  verifyAny(req, res, () => (isFounderIdentity(res.locals.auth) ? next() : res.status(403).json({ success: false, message: 'Founder access only' })))
+export const requireSignedIn = verifyAny
 
 const ensureDemoRetailUser = async () => {
   const email = process.env.DEMO_RETAIL_EMAIL || 'retail.manager@demo.local'

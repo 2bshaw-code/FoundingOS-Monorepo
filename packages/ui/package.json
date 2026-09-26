@@ -99,7 +99,8 @@
     "./superdash/SuperDashSurveyFeedPanel": "./src/superdash/SuperDashSurveyFeedPanel.tsx",
     "./superdash/SuperDashBrandMetricsPanel": "./src/superdash/SuperDashBrandMetricsPanel.tsx",
     "./superdash/CustomerPipelinePanel": "./src/superdash/CustomerPipelinePanel.tsx",
-    "./founder-superdash": "./src/founder-superdash.tsx"
+    "./founder-superdash": "./src/founder-superdash.tsx",
+    "./account-nav": "./src/account-nav.tsx"
   },
   "dependencies": {
     "@foundingos/config": "*",
