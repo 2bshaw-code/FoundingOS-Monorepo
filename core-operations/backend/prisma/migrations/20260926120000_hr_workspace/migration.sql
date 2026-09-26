@@ -5,3 +5,9 @@ SELECT 'hr_' || md5(random()::text || "tenantId"), "tenantId", 'hr', "enabled", 
 FROM "wros"."TenantWorkspace"
 WHERE "workspace" = 'talent'
 ON CONFLICT ("tenantId", "workspace") DO NOTHING;
+
+-- People-management records now live in the HR workspace.
+UPDATE "wros"."WorkspaceRecord"
+SET "workspace" = 'hr'
+WHERE "workspace" = 'talent'
+  AND "module" IN ('onboarding', 'people', 'performance', 'time-off', 'learning', 'payroll', 'engagement');
