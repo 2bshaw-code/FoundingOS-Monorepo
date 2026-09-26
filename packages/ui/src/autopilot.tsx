@@ -10,7 +10,7 @@ import { autopilotCategories, defaultAutopilotPolicy, normaliseAutopilotPolicy, 
 import { productionRequest } from './workspace-production-client'
 
 export type AutopilotApproval = { id: string; status: string; createdAt: string; decision: AutopilotDecision }
-export type AutopilotActivity = { id: string; createdAt: string; decision: AutopilotDecision & { approvedBy?: string | null } }
+export type AutopilotActivity = { id: string; createdAt: string; decision: AutopilotDecision & { approvedBy?: string | null; sent?: { channel: 'email' | 'whatsapp'; to: string; subject: string; body: string; draftedBy: string } | null } }
 export type AutopilotController = {
   policy: AutopilotPolicy
   approvals: AutopilotApproval[]
@@ -189,7 +189,7 @@ export function AutopilotPanel({ controller, label, workspace }: { controller: A
     {rulesOpen ? <AutopilotRules controller={controller} onClose={() => setRulesOpen(false)} /> : null}
     <div className="ap-cols">
       <div><h3>Needs your approval</h3>{pending.length ? <ul>{pending.slice(0, 8).map((approval) => <ApprovalRow approval={approval} key={approval.id} onDecide={(approve) => { void controller.decide(approval.id, approve) }} />)}</ul> : <p className="ap-empty">Nothing needs you right now.</p>}</div>
-      <div><h3>What FoundAI did</h3>{activity.length ? <ul>{activity.slice(0, 8).map((item) => <li className="ap-done" key={item.id}><span>✓</span><div><strong>{item.decision.action}</strong><small>{item.decision.recordName} · {item.decision.module.replaceAll('-', ' ')} · {when(item.createdAt)}{item.decision.approvedBy ? ' · approved' : ''}</small></div></li>)}</ul> : <p className="ap-empty">FoundAI hasn't needed to act yet.</p>}</div>
+      <div><h3>What FoundAI did</h3>{activity.length ? <ul>{activity.slice(0, 8).map((item) => <li className="ap-done" key={item.id}><span>✓</span><div><strong>{item.decision.action}</strong><small>{item.decision.recordName} · {item.decision.module.replaceAll('-', ' ')} · {when(item.createdAt)}{item.decision.approvedBy ? ' · approved' : ''}</small>{item.decision.sent ? <details className="ap-sent"><summary>{item.decision.sent.channel === 'email' ? 'Emailed' : 'WhatsApp sent'} to {item.decision.sent.to}{item.decision.sent.draftedBy === 'foundai' ? ' · written by FoundAI' : ''}</summary><p>{item.decision.sent.channel === 'email' ? <strong>{item.decision.sent.subject}<br /></strong> : null}{item.decision.sent.body}</p></details> : item.decision.outbound && !controller.production ? <small className="ap-sim">Message simulated in demo — live accounts send it by email or WhatsApp</small> : null}</div></li>)}</ul> : <p className="ap-empty">FoundAI hasn't needed to act yet.</p>}</div>
     </div>
   </section>
 }

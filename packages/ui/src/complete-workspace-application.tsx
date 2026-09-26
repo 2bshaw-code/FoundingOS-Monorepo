@@ -12,7 +12,7 @@ const workspaceRoot = productionModeEnabled ? '/app' : '/test-workspaces'
 
 export type BusinessWorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'marketing' | 'talent' | 'health' | 'intelligence'
 
-type WorkspaceRecord = { id: string; backendId?: string; version?: number; name: string; secondary: string; value: string; status: string; owner: string; updated: string; attachment?: string; attachmentName?: string; quantity?: number; reorderPoint?: number; log?: Array<{ time: string; note: string; kind?: string }>; dueDate?: string }
+type WorkspaceRecord = { id: string; backendId?: string; version?: number; name: string; secondary: string; value: string; status: string; owner: string; updated: string; attachment?: string; attachmentName?: string; quantity?: number; reorderPoint?: number; log?: Array<{ time: string; note: string; kind?: string }>; dueDate?: string; email?: string; phone?: string }
 type WorkspaceModule = { id: string; label: string; group: string; statuses?: string[] }
 type WorkspaceEvent = { id: string; workspace: BusinessWorkspaceSlug; text: string; time: string; type?: string; payload?: Record<string, unknown> }
 type WorkspaceState = {
@@ -396,6 +396,10 @@ const fromProductionRecord = (record: ProductionWorkspaceRecord): WorkspaceRecor
   status: record.status,
   owner: record.ownerId || String(data.owner || 'Unassigned'),
   updated: new Date(record.updatedAt).toLocaleString('en-GB', { timeZone: 'UTC' }),
+  ...(typeof data.dueDate === 'string' ? { dueDate: data.dueDate } : {}),
+  ...(typeof data.email === 'string' && data.email ? { email: data.email } : {}),
+  ...(typeof data.phone === 'string' && data.phone ? { phone: data.phone } : {}),
+  ...(Array.isArray(data.log) ? { log: (data.log as Array<{ time?: string; note?: string; kind?: string }>).map((entry) => ({ time: entry.time && !Number.isNaN(Date.parse(entry.time)) ? new Date(entry.time).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : String(entry.time ?? ''), note: String(entry.note ?? ''), kind: entry.kind })) } : {}),
 }}
 
 const describePlatformEvent = (event: { type: string; payload?: Record<string, unknown> }) => {
@@ -516,9 +520,9 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
   }
   // Edits a record's core fields directly from the detail panel — every module gets inline
   // editing of name/secondary/value/owner for free, without any module-specific wiring.
-  const updateRecord = async (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate'>>) => {
+  const updateRecord = async (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate' | 'email' | 'phone'>>) => {
     const nextRecord = production && record.backendId
-      ? fromProductionRecord(await productionRecords.update(record.backendId, { name: patch.name ?? record.name, data: { secondary: patch.secondary ?? record.secondary, value: patch.value ?? record.value, owner: patch.owner ?? record.owner, dueDate: patch.dueDate ?? record.dueDate }, version: record.version }))
+      ? fromProductionRecord(await productionRecords.update(record.backendId, { name: patch.name ?? record.name, data: { secondary: patch.secondary ?? record.secondary, value: patch.value ?? record.value, owner: patch.owner ?? record.owner, dueDate: patch.dueDate ?? record.dueDate, email: patch.email ?? record.email ?? '', phone: patch.phone ?? record.phone ?? '' }, version: record.version }))
       : { ...record, ...patch, updated: 'Now' }
     update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? nextRecord : item) } }), `${module}: ${record.name} details updated`)
   }
@@ -2076,7 +2080,7 @@ function ModuleKpiStrip({ kpis }: { kpis: ModuleKpi[] }) {
   return <div className="module-kpi-strip">{kpis.map((kpi) => <article data-tone={kpi.tone} key={kpi.label}><span>{kpi.label}</span><strong>{kpi.value}</strong></article>)}</div>
 }
 
-function RecordsPage({ autopilot, workspace, config, item, state, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff }: { autopilot?: AutopilotController; workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string, kind?: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
+function RecordsPage({ autopilot, workspace, config, item, state, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff }: { autopilot?: AutopilotController; workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string, kind?: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate' | 'email' | 'phone'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
   const records = state.records[item.id] ?? []
   const statuses = statusFor(item)
   const [sourceOpen, setSourceOpen] = useState(false)
@@ -2097,7 +2101,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
   const layout = getWorkspaceLayout(workspace, item.id)
   const [boardView, setBoardView] = useState<'workspace' | 'kanban' | 'list'>(layout ? 'workspace' : 'kanban')
   const [editing, setEditing] = useState(false)
-  const [editDraft, setEditDraft] = useState({ name: '', secondary: '', value: '', owner: '' })
+  const [editDraft, setEditDraft] = useState({ name: '', secondary: '', value: '', owner: '', email: '', phone: '' })
   const [dragRecordId, setDragRecordId] = useState<string | null>(null)
   const [dragOverStatus, setDragOverStatus] = useState<string | null>(null)
   const savedViewsKey = `founding-os:${workspace}:${item.id}:views`
@@ -2169,7 +2173,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
   }
   const startEdit = () => {
     if (!selected) return
-    setEditDraft({ name: selected.name, secondary: selected.secondary, value: selected.value, owner: selected.owner })
+    setEditDraft({ name: selected.name, secondary: selected.secondary, value: selected.value, owner: selected.owner, email: selected.email ?? '', phone: selected.phone ?? '' })
     setEditing(true)
   }
   const saveEdit = async () => {
@@ -2498,8 +2502,13 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
             <label>Value<input onChange={(event) => setEditDraft((current) => ({ ...current, value: event.target.value }))} value={editDraft.value} /></label>
             <label>Owner<input onChange={(event) => setEditDraft((current) => ({ ...current, owner: event.target.value }))} value={editDraft.owner} /></label>
           </div>
+          <div className="retail-app-form-grid">
+            <label>Contact email<input inputMode="email" onChange={(event) => setEditDraft((current) => ({ ...current, email: event.target.value.trim() }))} placeholder="name@company.com" type="email" value={editDraft.email} /></label>
+            <label>WhatsApp number<input inputMode="tel" onChange={(event) => setEditDraft((current) => ({ ...current, phone: event.target.value.trim() }))} placeholder="+447700900123" type="tel" value={editDraft.phone} /></label>
+          </div>
+          <small className="retail-app-hint">FoundAI uses these to send invoices, reminders and confirmations for this record.</small>
           <footer><button className="retail-app-secondary" onClick={() => setEditing(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} onClick={() => void saveEdit()} type="button">{saving ? 'Saving…' : 'Save changes'}</button></footer>
-        </div> : <dl><div><dt>{isDirectory ? 'Category' : 'Workflow'}</dt><dd>{item.label}</dd></div><div><dt>Status</dt><dd>{selected.status}</dd></div><div><dt>{fields.owner}</dt><dd>{selected.owner}</dd></div><div><dt>{fields.value}</dt><dd>{selected.value}</dd></div><div><dt>Updated</dt><dd>{selected.updated}</dd></div>{!isDirectory && !isCalendar ? <div><dt>Follow-up</dt><dd><input aria-label="Set follow-up date" onChange={(event) => void updateRecord(item.id, selected, { dueDate: event.target.value || undefined })} type="date" value={selected.dueDate ?? ''} />{dueBadge(selected.dueDate) ? <span className={`retail-app-due-badge retail-app-due-${dueBadge(selected.dueDate)!.tone}`}>{dueBadge(selected.dueDate)!.label}</span> : null}</dd></div> : null}</dl>}
+        </div> : <dl><div><dt>{isDirectory ? 'Category' : 'Workflow'}</dt><dd>{item.label}</dd></div><div><dt>Status</dt><dd>{selected.status}</dd></div><div><dt>{fields.owner}</dt><dd>{selected.owner}</dd></div><div><dt>{fields.value}</dt><dd>{selected.value}</dd></div><div><dt>Updated</dt><dd>{selected.updated}</dd></div>{selected.email || selected.phone ? <div><dt>Contact</dt><dd>{[selected.email, selected.phone].filter(Boolean).join(' · ')}</dd></div> : null}{!isDirectory && !isCalendar ? <div><dt>Follow-up</dt><dd><input aria-label="Set follow-up date" onChange={(event) => void updateRecord(item.id, selected, { dueDate: event.target.value || undefined })} type="date" value={selected.dueDate ?? ''} />{dueBadge(selected.dueDate) ? <span className={`retail-app-due-badge retail-app-due-${dueBadge(selected.dueDate)!.tone}`}>{dueBadge(selected.dueDate)!.label}</span> : null}</dd></div> : null}</dl>}
         {!editing ? <button className="retail-app-secondary retail-app-edit-toggle" onClick={startEdit} type="button">Edit details</button> : null}
         {!isContentStudio ? <ActivityLog entries={selected.log ?? []} kind={noteKind} note={noteText} onAdd={addNote} onKindChange={setNoteKind} onNoteChange={setNoteText} placeholder={isInventory ? 'Add a note about this stock' : 'Add an activity note'} /> : null}
         <button aria-expanded={sourceOpen} className="retail-app-source-toggle" onClick={() => setSourceOpen((open) => !open)} type="button"><span>Source: {origin.label}</span><b>{sourceOpen ? '−' : '+'}</b></button>

@@ -199,7 +199,8 @@ export async function updateWorkspaceRecord(tenantId: string, actorId: string, r
       ...(input.status !== undefined ? { status: requiredText(input.status, 'Status') } : {}),
       ...(input.ownerId !== undefined ? { ownerId: optionalText(input.ownerId) } : {}),
       ...(input.valuePence !== undefined ? { valuePence: input.valuePence === null ? null : Math.round(Number(input.valuePence)) } : {}),
-      ...(input.data !== undefined ? { data: json(input.data) } : {}),
+      // Merge so partial edits never wipe the activity log, images or contact details.
+      ...(input.data !== undefined ? { data: json({ ...(existing.data && typeof existing.data === 'object' && !Array.isArray(existing.data) ? existing.data as Record<string, unknown> : {}), ...(input.data && typeof input.data === 'object' ? input.data as Record<string, unknown> : {}) }) } : {}),
       version: { increment: 1 },
       updatedBy: actorId,
     },

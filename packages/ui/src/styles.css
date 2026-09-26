@@ -14949,3 +14949,9 @@ html[data-accessibility-simplified='true'] .btn {
 .ap-strip { align-items: center; background: #f0fdf6; border: 1px solid #c6f0d9; border-radius: 12px; color: #172033; display: flex; flex-wrap: wrap; font-size: 14px; gap: 8px; margin-bottom: 12px; padding: 10px 14px; }
 .ap-strip .ap-dot { margin-top: 0; }
 .ap-strip ul { flex-basis: 100%; }
+
+.ap-sent { font-size: 13px; margin-top: 2px; }
+.ap-sent summary { color: #067647; cursor: pointer; font-weight: 700; }
+.ap-sent p { background: #f8fafc; border-radius: 8px; color: #334155; margin: 6px 0 0; padding: 8px 10px; white-space: pre-wrap; }
+.ap-sim { color: #7a5af8; font-size: 12px; }
+.retail-app-hint { color: #5b6b80; display: block; font-size: 12px; margin: -4px 0 8px; }

@@ -10,6 +10,7 @@ import { normaliseAutopilotPolicy, planAutopilot, type AutopilotDecision, type A
 import { Prisma } from './generated/prisma/index.js'
 import { prisma } from './auth.js'
 import { publishEvent } from './event-feed.js'
+import { deliverOutbound, OutboundBlocked, type OutboundResult } from './outbound.js'
 
 export const AUTOPILOT_ACTOR = 'foundai-autopilot'
 const HOME = 'intelligence'
@@ -40,17 +41,39 @@ async function applyDecision(tenantId: string, actorId: string, decision: Autopi
   const record = await prisma.workspaceRecord.findFirst({ where: { id: decision.recordId, tenantId, deletedAt: null } })
   if (!record || record.status !== decision.from) return false
   const data = asObject(record.data)
+  // Outbound actions only move the record once the provider has accepted the message.
+  const sent: OutboundResult | null = decision.outbound
+    ? await deliverOutbound(tenantId, decision, { reference: record.reference, name: record.name, valuePence: record.valuePence, data })
+    : null
   const log = Array.isArray(data.log) ? data.log : []
-  const note = approvedBy ? `FoundAI: ${decision.action} (approved)` : `FoundAI: ${decision.action}`
+  const via = sent ? ` — ${sent.channel === 'email' ? 'emailed' : 'WhatsApp sent'} to ${sent.to}` : ''
+  const note = `FoundAI: ${decision.action}${via}${approvedBy ? ' (approved)' : ''}`
+  const messages = Array.isArray(data.messages) ? data.messages : []
   await prisma.workspaceRecord.update({
     where: { id: record.id },
-    data: { status: decision.to, data: json({ ...data, log: [{ time: new Date().toISOString(), note, kind: 'FoundAI' }, ...log].slice(0, 50) }), version: { increment: 1 }, updatedBy: actorId },
+    data: {
+      status: decision.to,
+      data: json({
+        ...data,
+        log: [{ time: new Date().toISOString(), note, kind: 'FoundAI' }, ...log].slice(0, 50),
+        ...(sent ? { messages: [{ sentAt: new Date().toISOString(), ...sent }, ...messages].slice(0, 20) } : {}),
+      }),
+      version: { increment: 1 },
+      updatedBy: actorId,
+    },
   })
   await Promise.all([
-    prisma.workspaceAuditEvent.create({ data: { tenantId, actorId, action: 'autopilot.executed', workspace: record.workspace, module: record.module, entityId: record.id, metadata: json({ ...decision, approvedBy: approvedBy ?? null }) } }),
-    publishEvent({ tenantId, type: 'autopilot.action.executed', source: record.workspace, payload: { module: record.module, recordId: record.id, reference: record.reference, from: decision.from, to: decision.to, action: decision.action, approvedBy: approvedBy ?? null } }),
+    prisma.workspaceAuditEvent.create({ data: { tenantId, actorId, action: 'autopilot.executed', workspace: record.workspace, module: record.module, entityId: record.id, metadata: json({ ...decision, approvedBy: approvedBy ?? null, sent }) } }),
+    publishEvent({ tenantId, type: 'autopilot.action.executed', source: record.workspace, payload: { module: record.module, recordId: record.id, reference: record.reference, from: decision.from, to: decision.to, action: decision.action, approvedBy: approvedBy ?? null, channel: sent?.channel ?? null } }),
   ])
   return true
+}
+
+async function queueApproval(tenantId: string, decision: AutopilotDecision) {
+  await prisma.workspaceRecord.create({
+    data: { tenantId, workspace: HOME, module: APPROVAL_MODULE, reference: decision.key, name: `${decision.action}: ${decision.recordName}`, status: 'Pending', valuePence: decision.valuePence, data: json(decision), createdBy: AUTOPILOT_ACTOR, updatedBy: AUTOPILOT_ACTOR },
+  })
+  await publishEvent({ tenantId, type: 'autopilot.approval.requested', source: decision.workspace, payload: { module: decision.module, recordId: decision.recordId, action: decision.action, reason: decision.reason } })
 }
 
 export async function runAutopilot(tenantId: string) {
@@ -68,16 +91,22 @@ export async function runAutopilot(tenantId: string) {
   const executed: AutopilotDecision[] = []
   const queued: AutopilotDecision[] = []
   for (const decision of decisions) {
-    if (decision.mode === 'auto') {
-      if (await applyDecision(tenantId, AUTOPILOT_ACTOR, decision)) executed.push(decision)
-      continue
-    }
-    const existing = await prisma.workspaceRecord.findUnique({ where: { tenantId_workspace_module_reference: { tenantId, workspace: HOME, module: APPROVAL_MODULE, reference: decision.key } } })
+    // One approval per record step: never re-queue, and respect a previous rejection.
+    const existing = await prisma.workspaceRecord.findUnique({ where: { tenantId_workspace_module_reference: { tenantId, workspace: HOME, module: APPROVAL_MODULE, reference: decision.key } }, select: { id: true } })
     if (existing) continue
-    await prisma.workspaceRecord.create({
-      data: { tenantId, workspace: HOME, module: APPROVAL_MODULE, reference: decision.key, name: `${decision.action}: ${decision.recordName}`, status: 'Pending', valuePence: decision.valuePence, data: json(decision), createdBy: AUTOPILOT_ACTOR, updatedBy: AUTOPILOT_ACTOR },
-    })
-    await publishEvent({ tenantId, type: 'autopilot.approval.requested', source: decision.workspace, payload: { module: decision.module, recordId: decision.recordId, action: decision.action, reason: decision.reason } })
+    if (decision.mode === 'auto') {
+      try {
+        if (await applyDecision(tenantId, AUTOPILOT_ACTOR, decision)) executed.push(decision)
+        continue
+      } catch (cause) {
+        const reason = cause instanceof OutboundBlocked ? cause.message : `Sending failed: ${cause instanceof Error ? cause.message : 'unknown error'}. Approve to retry.`
+        const blocked = { ...decision, mode: 'ask' as const, reason }
+        await queueApproval(tenantId, blocked)
+        queued.push(blocked)
+        continue
+      }
+    }
+    await queueApproval(tenantId, decision)
     queued.push(decision)
   }
   return { enabled: true, executed, queued }
@@ -90,7 +119,7 @@ export async function listAutopilotApprovals(tenantId: string) {
 
 export async function listAutopilotActivity(tenantId: string) {
   const items = await prisma.workspaceAuditEvent.findMany({ where: { tenantId, action: 'autopilot.executed' }, orderBy: { createdAt: 'desc' }, take: 50 })
-  return items.map((item) => ({ id: item.id, createdAt: item.createdAt, decision: item.metadata as unknown as AutopilotDecision & { approvedBy: string | null } }))
+  return items.map((item) => ({ id: item.id, createdAt: item.createdAt, decision: item.metadata as unknown as AutopilotDecision & { approvedBy: string | null; sent: OutboundResult | null } }))
 }
 
 export async function decideAutopilotApproval(tenantId: string, actorId: string, id: string, approve: boolean) {
@@ -98,7 +127,12 @@ export async function decideAutopilotApproval(tenantId: string, actorId: string,
   if (!approval) throw Object.assign(new Error('Approval request not found'), { status: 404 })
   if (approval.status !== 'Pending') throw Object.assign(new Error('This request has already been decided'), { status: 409 })
   const decision = approval.data as unknown as AutopilotDecision
-  const applied = approve ? await applyDecision(tenantId, actorId, decision, actorId) : false
+  let applied = false
+  if (approve) {
+    try { applied = await applyDecision(tenantId, actorId, decision, actorId) } catch (cause) {
+      throw Object.assign(new Error(cause instanceof Error ? cause.message : 'Action could not be completed'), { status: cause instanceof OutboundBlocked ? 409 : 502 })
+    }
+  }
   const status = approve ? (applied ? 'Approved' : 'Stale') : 'Rejected'
   await prisma.workspaceRecord.update({ where: { id }, data: { status, updatedBy: actorId, version: { increment: 1 } } })
   await prisma.workspaceAuditEvent.create({ data: { tenantId, actorId, action: approve ? 'autopilot.approved' : 'autopilot.rejected', workspace: decision.workspace, module: decision.module, entityId: decision.recordId, metadata: json(decision) } })

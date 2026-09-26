@@ -41,7 +41,10 @@ export function normaliseAutopilotPolicy(value: unknown): AutopilotPolicy {
   }
 }
 
-type Rule = { module: string; from: string; to: string; category: AutopilotCategory; action: string; when?: 'overdue' }
+// Outbound purposes: the backend drafts the message (Claude, with a template fallback) and
+// sends it by email or WhatsApp to the record's contact before the record moves on.
+export type AutopilotOutbound = 'invoice' | 'payment-reminder' | 'bill' | 'delivery-rebook' | 'lead-welcome' | 'appointment-confirmation' | 'supplier-order' | 'job-offer'
+type Rule = { module: string; from: string; to: string; category: AutopilotCategory; action: string; when?: 'overdue'; outbound?: AutopilotOutbound }
 
 export const autopilotRules: Rule[] = [
   { module: 'orders', from: 'New', to: 'Picking', category: 'operations', action: 'Confirmed the order and released it to picking' },
@@ -52,11 +55,11 @@ export const autopilotRules: Rule[] = [
   { module: 'inbox', from: 'Unread', to: 'Assigned', category: 'operations', action: 'Triaged and assigned the conversation' },
   { module: 'dispatch', from: 'Unassigned', to: 'Assigned', category: 'operations', action: 'Assigned a driver' },
   { module: 'routes', from: 'Planned', to: 'Optimised', category: 'operations', action: 'Optimised the route' },
-  { module: 'deliveries', from: 'Attempted', to: 'Booked', category: 'customers', action: 'Messaged the customer and rebooked the delivery' },
-  { module: 'exceptions', from: 'Open', to: 'Investigating', category: 'operations', action: 'Opened an investigation with the carrier' },
-  { module: 'invoices', from: 'Draft', to: 'Sent', category: 'customers', action: 'Sent the invoice' },
-  { module: 'invoices', from: 'Sent', to: 'Overdue', category: 'customers', action: 'Marked overdue and sent a payment reminder', when: 'overdue' },
-  { module: 'billing', from: 'Draft', to: 'Issued', category: 'customers', action: 'Issued the bill' },
+  { module: 'deliveries', from: 'Attempted', to: 'Booked', category: 'customers', action: 'Messaged the customer and rebooked the delivery', outbound: 'delivery-rebook' },
+  { module: 'exceptions', from: 'Open', to: 'Investigating', category: 'operations', action: 'Opened an investigation' },
+  { module: 'invoices', from: 'Draft', to: 'Sent', category: 'customers', action: 'Sent the invoice', outbound: 'invoice' },
+  { module: 'invoices', from: 'Sent', to: 'Overdue', category: 'customers', action: 'Marked overdue and sent a payment reminder', when: 'overdue', outbound: 'payment-reminder' },
+  { module: 'billing', from: 'Draft', to: 'Issued', category: 'customers', action: 'Issued the bill', outbound: 'bill' },
   { module: 'bills', from: 'Received', to: 'Approved', category: 'spending', action: 'Checked and approved the bill' },
   { module: 'bills', from: 'Approved', to: 'Scheduled', category: 'spending', action: 'Scheduled the payment' },
   { module: 'expenses', from: 'Submitted', to: 'Review', category: 'operations', action: 'Checked the receipt against policy' },
@@ -65,17 +68,17 @@ export const autopilotRules: Rule[] = [
   { module: 'reconciliation', from: 'Unmatched', to: 'Suggested', category: 'operations', action: 'Found a likely match' },
   { module: 'reconciliation', from: 'Suggested', to: 'Matched', category: 'operations', action: 'Accepted the match' },
   { module: 'purchasing', from: 'Draft', to: 'Approved', category: 'spending', action: 'Approved the purchase order' },
-  { module: 'purchasing', from: 'Approved', to: 'Ordered', category: 'spending', action: 'Placed the order with the supplier' },
+  { module: 'purchasing', from: 'Approved', to: 'Ordered', category: 'spending', action: 'Placed the order with the supplier', outbound: 'supplier-order' },
   { module: 'inventory', from: 'Low stock', to: 'Replenished', category: 'spending', action: 'Reordered stock from the supplier' },
   { module: 'approvals', from: 'Requested', to: 'Review', category: 'operations', action: 'Prepared the approval pack' },
   { module: 'approvals', from: 'Review', to: 'Approved', category: 'spending', action: 'Approved the request' },
   { module: 'campaigns', from: 'Draft', to: 'Scheduled', category: 'customers', action: 'Scheduled the campaign' },
   { module: 'content', from: 'Draft', to: 'Approved', category: 'customers', action: 'Checked and approved the copy' },
-  { module: 'leads', from: 'New', to: 'Nurturing', category: 'customers', action: 'Sent a welcome message and started nurturing' },
-  { module: 'appointments', from: 'Booked', to: 'Confirmed', category: 'customers', action: 'Sent an appointment confirmation' },
+  { module: 'leads', from: 'New', to: 'Nurturing', category: 'customers', action: 'Sent a welcome message and started nurturing', outbound: 'lead-welcome' },
+  { module: 'appointments', from: 'Booked', to: 'Confirmed', category: 'customers', action: 'Sent an appointment confirmation', outbound: 'appointment-confirmation' },
   { module: 'candidates', from: 'Applied', to: 'Screening', category: 'operations', action: 'Screened the application' },
   { module: 'candidates', from: 'Interview', to: 'Offer', category: 'people', action: 'Moved the candidate to offer' },
-  { module: 'offers', from: 'Draft', to: 'Sent', category: 'people', action: 'Sent the job offer' },
+  { module: 'offers', from: 'Draft', to: 'Sent', category: 'people', action: 'Sent the job offer', outbound: 'job-offer' },
   { module: 'time-off', from: 'Requested', to: 'Review', category: 'operations', action: 'Checked cover and leave balance' },
   { module: 'time-off', from: 'Review', to: 'Approved', category: 'people', action: 'Approved the time off' },
   { module: 'payroll', from: 'Preparing', to: 'Review', category: 'operations', action: 'Prepared the payroll run' },
@@ -104,6 +107,7 @@ export type AutopilotDecision = {
   valuePence: number | null
   mode: 'auto' | 'ask'
   reason: string
+  outbound?: AutopilotOutbound
 }
 
 const money = (pence: number) => `£${(pence / 100).toLocaleString('en-GB', { maximumFractionDigits: 0 })}`
@@ -135,6 +139,7 @@ export function planAutopilot(records: AutopilotRecord[], policy: AutopilotPolic
       action: rule.action,
       valuePence,
       mode,
+      ...(rule.outbound ? { outbound: rule.outbound } : {}),
       reason: mode === 'auto'
         ? `${categoryLabel(rule.category)} run automatically`
         : overLimit ? `${money(valuePence!)} is over your ${money(policy.spendLimitPence)} spend limit` : `${categoryLabel(rule.category)} need your approval`,
