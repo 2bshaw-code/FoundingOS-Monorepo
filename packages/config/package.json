@@ -7,6 +7,7 @@
     ".": "./src/index.ts",
     "./modules": "./src/modules.ts",
     "./autopilot": "./src/autopilot.ts",
+    "./cross-sell": "./src/cross-sell.ts",
     "./suites": "./src/suites.ts",
     "./commercial": "./src/commercial.ts",
     "./globalisation": "./src/globalisation.ts",

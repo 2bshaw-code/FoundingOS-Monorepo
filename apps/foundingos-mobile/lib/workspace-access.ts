@@ -50,7 +50,7 @@ export function useWorkspaceAccess() {
   const isEnabled = (slug: string) => !enabled || enabled.has(slug as WorkspaceSlug)
   const mine = WORKSPACES.filter((workspace) => isEnabled(workspace.slug))
   const locked = enabled ? WORKSPACES.filter((workspace) => !enabled.has(workspace.slug)) : []
-  return { loaded, isEnabled, mine, locked, refresh }
+  return { loaded, enabled, isEnabled, mine, locked, refresh }
 }
 
 export async function signOut() {
