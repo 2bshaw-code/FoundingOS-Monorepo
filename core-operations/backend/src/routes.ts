@@ -12,7 +12,8 @@ import { publishSocial, type SocialChannel } from './social.js'
 import { OutboundBlocked } from './outbound.js'
 import { listWhatsAppTemplateStatus, submitWhatsAppTemplates } from './whatsapp-templates.js'
 import { decideAutopilotApproval, getAutopilotPolicy, listAutopilotActivity, listAutopilotApprovals, runAutopilot, runAutopilotForAllTenants, saveAutopilotPolicy } from './autopilot.js'
-import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess } from './auth.js'
+import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess, requireFounderAccess } from './auth.js'
+import { founderOverview, founderSetTenantWorkspaces } from './founder.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
 import { assignDelivery, createCampaign, createDeliveryOperator, createDeliveryVehicle, createDeliveryZone, createInventoryItem, createInvoice, createOrder, createSocialPost, deleteInventoryItem, detectLocation, generateMedia, getBrandProfile, invoiceDocument, operationsSummary, orderDocument, saveBrandProfile, saveLocationProfile, searchInventory, sendInvoice, updateCampaign, updateDeliveryAssignment, updateDeliveryNotification, updateDeliveryOperator, updateDeliveryVehicle, updateDeliveryZone, updateInventoryItem, updateInvoice, updateOrder, updateSocialPost, weatherAt } from './operations.js'
@@ -295,6 +296,16 @@ apiRouter.get('/platform/workspaces', requireMerchantAccess, requireTenant, asyn
     const tenantId = readTenant(req, res)
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
     res.json({ success: true, data: await listTenantWorkspaces(tenantId) })
+  } catch (error) { next(error) }
+})
+apiRouter.get('/founder/overview', requireFounderAccess, async (_req, res, next) => {
+  try {
+    res.json({ success: true, data: await founderOverview(res.locals.auth?.tenantId) })
+  } catch (error) { next(error) }
+})
+apiRouter.post('/founder/tenants/:tenantId/workspaces', requireFounderAccess, async (req, res, next) => {
+  try {
+    res.json({ success: true, data: await founderSetTenantWorkspaces(res.locals.auth.id, req.params.tenantId, req.body || {}) })
   } catch (error) { next(error) }
 })
 apiRouter.post('/platform/upgrade-request', requireOwnerAccess, requireTenant, async (req, res, next) => {

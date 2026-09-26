@@ -861,3 +861,18 @@ export const requestWorkspaceUpgrade = (workspaces: string[], note?: string) =>
     method: 'POST',
     body: JSON.stringify({ workspaces, note }),
   })
+
+// ── Founder SuperDash (founder account only) ────────────────────────────────
+export type FounderOverview = {
+  generatedAt: string
+  subscriptions: { customers: number; paying: number; free: number; new7d: number; new30d: number; active7d: number; byPlan: Array<{ plan: string; name: string; customers: number; mrrGbp: number }>; workspaceAdoption: Array<{ workspace: string; customers: number }>; signupsByDay: Array<{ date: string; count: number }> }
+  finance: { mrrGbp: number; arrGbp: number; arpuGbp: number; boltOns: Array<{ workspace: string; customers: number; mrrGbp: number }>; billingLive: boolean; note: string }
+  monitoring: { apiOk: boolean; dbLatencyMs: number; aiConfigured: boolean; emailConfigured: boolean; upgradeEmailsConfigured: boolean; lastAutopilotRunAt: string | null; aiRequests24h: number; autopilotActions24h: number; recordsCreated24h: number; integrationsConnected: number; integrationsFailing: Array<{ business: string; provider: string; status: string }> }
+  upgradeRequests: Array<{ id: string; tenantId: string; business: string; ownerEmail: string; requested: string[]; pending: string[]; note: string; createdAt: string }>
+  tenants: Array<{ tenantId: string; businessName: string; ownerName: string; ownerEmail: string; plan: string; planName: string; workspaces: string[]; seats: number; monthlyValueGbp: number; status: string; createdAt: string; lastActiveAt: string | null }>
+}
+
+export const fetchFounderOverview = () => authedRequest<FounderOverview>('/api/v1/ops/founder/overview')
+
+export const founderEnableWorkspaces = (tenantId: string, workspaces: string[]) =>
+  authedRequest(`/api/v1/ops/founder/tenants/${encodeURIComponent(tenantId)}/workspaces`, { method: 'POST', body: JSON.stringify({ workspaces, enabled: true }) })

@@ -57,3 +57,10 @@ export async function signOut() {
   await Promise.all([coreOpsLogout(), legacyLogout().catch(() => undefined), workforceLogout().catch(() => undefined)])
   router.replace('/')
 }
+
+// True only for the FoundingOS founder account (backend role founder_master).
+export function useIsFounder() {
+  const [founder, setFounder] = useState(false)
+  useEffect(() => { getSession().then((session) => setFounder(session?.role === 'founder_master')) }, [])
+  return founder
+}

@@ -98,7 +98,8 @@
     "./superdash/SuperDashSurveyGuardian": "./src/superdash/SuperDashSurveyGuardian.ts",
     "./superdash/SuperDashSurveyFeedPanel": "./src/superdash/SuperDashSurveyFeedPanel.tsx",
     "./superdash/SuperDashBrandMetricsPanel": "./src/superdash/SuperDashBrandMetricsPanel.tsx",
-    "./superdash/CustomerPipelinePanel": "./src/superdash/CustomerPipelinePanel.tsx"
+    "./superdash/CustomerPipelinePanel": "./src/superdash/CustomerPipelinePanel.tsx",
+    "./founder-superdash": "./src/founder-superdash.tsx"
   },
   "dependencies": {
     "@foundingos/config": "*",

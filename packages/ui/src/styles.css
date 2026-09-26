@@ -15049,3 +15049,43 @@ html[data-accessibility-simplified='true'] .btn {
 @keyframes fai-cursor { 0% { transform: translate(120px, 30px); opacity: 0; } 40% { opacity: 1; } 75% { transform: translate(0, 0); } 85% { transform: scale(.8); } 100% { transform: scale(1); } }
 @media (max-width: 900px) { .hero.hero-ai { grid-template-columns: 1fr; } .fai-movie { max-width: 100%; } }
 @media (prefers-reduced-motion: reduce) { .fai-movie *, .fai-movie { animation: none !important; transition: none !important; } }
+
+/* Founder SuperDash */
+.sd-shell { min-height: 100vh; background: radial-gradient(circle at 10% 0%, #0d2a4a 0, #050b16 55%); color: #e8eef6; padding: 28px clamp(16px, 4vw, 48px) 64px; font-family: inherit; }
+.sd-eyebrow { color: #38bdf8; font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; margin: 0 0 4px; }
+.sd-top { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between; margin-bottom: 22px; }
+.sd-top h1, .sd-login h1 { font-size: clamp(28px, 4vw, 40px); margin: 0; }
+.sd-top small, .sd-muted, .sd-row small, .sd-table small { color: #8aa0b8; display: block; font-size: 13px; }
+.sd-top nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.sd-top nav a, .sd-top nav button, .sd-row button, .sd-login button { background: #38bdf8; color: #04111f; border: 0; border-radius: 999px; padding: 9px 16px; font-weight: 800; cursor: pointer; text-decoration: none; font-size: 14px; }
+.sd-top nav a { background: rgba(56,189,248,.14); color: #7dd3fc; }
+.sd-top nav .ghost { background: rgba(255,255,255,.08); color: #e8eef6; }
+.sd-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.sd-kpis article, .sd-panel { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 18px; padding: 18px; }
+.sd-kpis span { color: #8aa0b8; font-size: 13px; font-weight: 700; }
+.sd-kpis b { display: block; font-size: 30px; margin: 6px 0 2px; }
+.sd-kpis small { color: #8aa0b8; font-size: 12px; }
+.sd-kpis .is-alert { border-color: #fbbf24; background: rgba(251,191,36,.08); }
+.sd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
+.sd-wide { grid-column: 1 / -1; overflow-x: auto; }
+.sd-panel h2 { font-size: 17px; margin: 0 0 12px; }
+.sd-panel h3 { font-size: 14px; margin: 18px 0 8px; color: #8aa0b8; }
+.sd-panel-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.sd-panel-head input, .sd-login input { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; color: #fff; padding: 10px 12px; min-width: 240px; font-size: 14px; }
+.sd-row { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.06); }
+.sd-health { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.sd-health li { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding-left: 18px; position: relative; }
+.sd-health li::before { content: ''; position: absolute; left: 0; top: 6px; width: 9px; height: 9px; border-radius: 50%; background: #24c47a; }
+.sd-health li.warn::before { background: #fbbf24; }
+.sd-health li.bad::before { background: #f87171; }
+.sd-health em { color: #8aa0b8; font-style: normal; text-align: right; }
+.sd-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.sd-table th { text-align: left; color: #8aa0b8; font-weight: 700; font-size: 12px; padding: 6px 8px; }
+.sd-table td { padding: 9px 8px; border-top: 1px solid rgba(255,255,255,.06); vertical-align: top; }
+.sd-bars { display: flex; align-items: flex-end; gap: 6px; height: 120px; }
+.sd-bars i { flex: 1; background: linear-gradient(#38bdf8, #0ea5e9); border-radius: 6px 6px 2px 2px; position: relative; min-height: 4px; }
+.sd-bars b { position: absolute; top: -18px; left: 0; right: 0; text-align: center; font-size: 11px; font-style: normal; }
+.sd-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sd-chips span { background: rgba(255,255,255,.06); border-radius: 999px; padding: 5px 10px; font-size: 13px; }
+.sd-error { color: #fca5a5; font-size: 14px; }
+.sd-login { max-width: 380px; margin: 12vh auto 0; display: grid; gap: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 28px; }

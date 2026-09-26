@@ -11,7 +11,7 @@ import { SUITE_LINKS } from '../../../lib/nav-directory'
 import { WORKSPACES } from '../../../lib/workspace-modules'
 import { useQuantumStore } from '../../../lib/store'
 import { logAction } from '../../../lib/action-logger'
-import { signOut, useWorkspaceAccess, WORKSPACE_OFFERS } from '../../../lib/workspace-access'
+import { signOut, useIsFounder, useWorkspaceAccess, WORKSPACE_OFFERS } from '../../../lib/workspace-access'
 import type { WorkspaceSlug } from '../../../lib/workspace-modules'
 import { QuantumButton, QuantumCard, QuantumHeader, QuantumNotice, QuantumScreen, QuantumSectionHeader, QuantumText, quantumSpace } from '../../../components/QuantumUI'
 
@@ -24,6 +24,7 @@ export default function WorkspaceDirectoryScreen() {
   const setActiveBrand = useQuantumStore((state) => state.setActiveBrand)
   const [connected, setConnected] = useState(false)
   const { mine, locked } = useWorkspaceAccess()
+  const isFounder = useIsFounder()
 
   useEffect(() => {
     getSession().then((session) => setConnected(Boolean(session)))
@@ -106,6 +107,7 @@ export default function WorkspaceDirectoryScreen() {
         </>
       ) : null}
 
+      {isFounder ? <QuantumButton onPress={() => router.push('/(app)/superdash' as never)}>Open SuperDash</QuantumButton> : null}
       <QuantumButton tone="ghost" onPress={() => router.push('/(app)/upgrade' as never)}>Manage your plan</QuantumButton>
       <QuantumButton tone="danger" onPress={() => { void signOut() }}>Sign out</QuantumButton>
     </QuantumScreen>

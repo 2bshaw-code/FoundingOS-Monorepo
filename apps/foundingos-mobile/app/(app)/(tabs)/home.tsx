@@ -36,7 +36,7 @@ import { useQuantumStore } from '../../../lib/store'
 import { useActionFeedback } from '../../../lib/use-action-feedback'
 import { AskFoundAiCard, FoundAiAutopilotCard } from '../../../components/FoundAi'
 import { WorkspaceQuickAccess } from '../../../components/WorkspaceAccess'
-import { signOut } from '../../../lib/workspace-access'
+import { signOut, useIsFounder } from '../../../lib/workspace-access'
 
 const STATUS_LABEL: Record<ApprovalsQueueStatus, string> = {
   proposed: 'Suggested',
@@ -72,6 +72,7 @@ export default function TodayScreen() {
   const activeWorkspaceSlug = useQuantumStore((state) => state.activeBrandSlug)
   const pendingSyncCount = useQuantumStore((state) => state.pendingSyncCount)
   const isOnline = useQuantumStore((state) => state.isOnline)
+  const isFounder = useIsFounder()
 
   const [connected, setConnected] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -210,6 +211,13 @@ export default function TodayScreen() {
 
       {connected && !loading ? (
         <>
+          {isFounder ? (
+            <Pressable onPress={() => router.push('/(app)/superdash' as never)} style={styles.superdash}>
+              <Text style={styles.superdashEyebrow}>FOUNDER</Text>
+              <Text style={styles.superdashTitle}>SuperDash →</Text>
+              <Text style={styles.superdashCopy}>Subscriptions, revenue, upgrade requests and platform health</Text>
+            </Pressable>
+          ) : null}
           <QuantumSectionHeader label="Your workspaces" />
           <WorkspaceQuickAccess />
           <FoundAiAutopilotCard compact onChanged={loadAll} />
@@ -311,6 +319,10 @@ export default function TodayScreen() {
 
 const styles = StyleSheet.create({
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  superdash: { borderRadius: 18, borderWidth: 1, borderColor: '#38BDF8', backgroundColor: 'rgba(56,189,248,0.12)', padding: 16, gap: 2 },
+  superdashEyebrow: { color: '#38BDF8', fontSize: 11, fontWeight: '800', letterSpacing: 1.4 },
+  superdashTitle: { color: '#FFFFFF', fontSize: 20, fontWeight: '800' },
+  superdashCopy: { color: '#A9B8C8', fontSize: 13 },
   planButton: { borderRadius: 999, borderWidth: 1, borderColor: '#38BDF866', paddingHorizontal: 12, paddingVertical: 7 },
   planText: { color: '#38BDF8', fontSize: 13, fontWeight: '700' },
   signOutButton: { borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 12, paddingVertical: 7 },

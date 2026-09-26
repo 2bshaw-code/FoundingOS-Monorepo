@@ -27,6 +27,7 @@ export const requireOwnerAccess = createAccessMiddleware(authService, [roles.fou
 export const requireDecisionApprovalAccess = createAccessMiddleware(authService, [roles.founderMaster, roles.businessOwner, roles.businessManager, roles.retailManager])
 export const requireExecutionAccess = createAccessMiddleware(authService, [roles.founderMaster, roles.businessOwner])
 export const requireTenantOwnerAccess = createAccessMiddleware(authService, [roles.founderMaster, roles.businessOwner])
+export const requireFounderAccess = createAccessMiddleware(authService, [roles.founderMaster])
 
 const ensureDemoRetailUser = async () => {
   const email = process.env.DEMO_RETAIL_EMAIL || 'retail.manager@demo.local'
