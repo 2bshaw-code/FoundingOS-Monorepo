@@ -180,7 +180,7 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.hero}>
-              <View style={styles.pill}><QuantumText variant="overline" color="#04111f">FoundAI</QuantumText></View>
+              <View style={styles.pill}><QuantumText variant="overline" style={{ color: '#04111F' }}>FoundAI</QuantumText></View>
               <QuantumText variant="overline" color="#24C47A">The AI that runs your business</QuantumText>
               <QuantumText variant="h1" style={styles.heroTitle}>Your business, run by AI. Right inside WhatsApp.</QuantumText>
               <QuantumText color="#D8D8D8">

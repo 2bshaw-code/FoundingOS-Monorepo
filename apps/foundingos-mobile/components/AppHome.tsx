@@ -93,7 +93,7 @@ function FeedRow({ scene, approved, approvedText }: { scene: Scene; approved: bo
         <QuantumText variant="caption" color={quantumColors.neutral300} style={styles.small}>{scene.ask && approved ? approvedText : scene.detail}</QuantumText>
         {isAsk ? (
           <View style={styles.askButtons}>
-            <View style={styles.approve}><QuantumText variant="caption" color="#04111f">Approve</QuantumText></View>
+            <View style={styles.approve}><QuantumText variant="caption" style={{ color: '#04111F' }}>Approve</QuantumText></View>
             <View style={styles.decline}><QuantumText variant="caption" color={quantumColors.neutral100}>Decline</QuantumText></View>
           </View>
         ) : null}
@@ -165,13 +165,13 @@ export function WhatsAppHero() {
       <QuantumText variant="caption" color={quantumColors.neutral200}>Text FoundAI in plain words and it answers from your real invoices, orders and stock. When it needs a decision it messages you — reply YES or NO.</QuantumText>
       <View style={styles.waPhone}>
         <View style={styles.waHead}>
-          <View style={styles.waAvatar}><QuantumText variant="label" color="#04111f">F</QuantumText></View>
-          <View><QuantumText variant="label" color="#fff">FoundAI</QuantumText><QuantumText style={styles.small} color="#CFE9DA">WhatsApp Business · online</QuantumText></View>
+          <View style={styles.waAvatar}><QuantumText variant="label" style={styles.waAvatarText}>F</QuantumText></View>
+          <View><QuantumText variant="label" style={styles.waName}>FoundAI</QuantumText><QuantumText style={[styles.small, styles.waStatus]}>WhatsApp Business · online</QuantumText></View>
         </View>
         <View style={styles.waChat}>
           {CHAT.map((line, index) => (
             <View key={index} style={[styles.waBubble, line.from === 'you' ? styles.waYou : styles.waBot]}>
-              <QuantumText variant="caption" color="#0B1324">{line.text}</QuantumText>
+              <QuantumText variant="caption" style={styles.waText}>{line.text}</QuantumText>
             </View>
           ))}
         </View>
@@ -238,7 +238,7 @@ export function AppHomeSections() {
         <QuantumText variant="h2">Up and running in an afternoon</QuantumText>
         {STEPS.map((item) => (
           <View key={item.n} style={styles.card}>
-            <View style={styles.stepNumber}><QuantumText variant="label" color="#04111f">{item.n}</QuantumText></View>
+            <View style={styles.stepNumber}><QuantumText variant="label" style={{ color: '#04111F' }}>{item.n}</QuantumText></View>
             <View style={styles.flex}>
               <QuantumText variant="label">{item.title}</QuantumText>
               <QuantumText variant="caption" color={quantumColors.neutral200}>{item.body}</QuantumText>
@@ -284,6 +284,11 @@ const styles = StyleSheet.create({
   waAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: WA_GREEN, alignItems: 'center', justifyContent: 'center' },
   waChat: { gap: 8, padding: quantumSpace.md, backgroundColor: '#ECE5DD' },
   waBubble: { maxWidth: '85%', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10 },
+  // Colours set via style: QuantumText's colour prop is auto-lightened for the dark app theme.
+  waText: { color: '#111B21', fontWeight: '600', fontSize: 15, lineHeight: 20 },
+  waAvatarText: { color: '#04111F' },
+  waName: { color: '#FFFFFF' },
+  waStatus: { color: '#D1F4E0' },
   waYou: { alignSelf: 'flex-end', backgroundColor: '#DCF8C6' },
   waBot: { alignSelf: 'flex-start', backgroundColor: '#FFFFFF' },
   pricing: { padding: quantumSpace.lg, borderRadius: quantumRadius.lg, backgroundColor: 'rgba(36,196,122,0.1)', borderWidth: 1, borderColor: 'rgba(36,196,122,0.3)' },

@@ -33,7 +33,7 @@ const ago = (iso: string) => {
 const isToday = (iso: string) => new Date(iso).toDateString() === new Date().toDateString()
 
 function Badge() {
-  return <View style={styles.badge}><QuantumText variant="overline" color="#04111f">FoundAI</QuantumText></View>
+  return <View style={styles.badge}><QuantumText variant="overline" style={{ color: '#04111F' }}>FoundAI</QuantumText></View>
 }
 
 export function FoundAiAutopilotCard({ compact = false, onChanged }: { compact?: boolean; onChanged?: () => void }) {
@@ -167,7 +167,7 @@ export function AskFoundAiCard({ workspace }: { workspace?: string }) {
           style={styles.input}
           value={question}
         />
-        <Pressable disabled={busy} onPress={() => ask(question)} style={styles.send}><QuantumText variant="label" color="#04111f">{busy ? '…' : 'Ask'}</QuantumText></Pressable>
+        <Pressable disabled={busy} onPress={() => ask(question)} style={styles.send}><QuantumText variant="label" style={{ color: '#04111F' }}>{busy ? '…' : 'Ask'}</QuantumText></Pressable>
       </View>
       {!answer && !busy ? <View style={styles.pills}>{SUGGESTIONS.map((item) => <QuantumPill key={item} onPress={() => ask(item)}>{item}</QuantumPill>)}</View> : null}
       {busy ? <ActivityIndicator color="#38BDF8" style={{ marginTop: quantumSpace.md }} /> : null}
