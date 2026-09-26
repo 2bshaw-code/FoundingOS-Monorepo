@@ -12,7 +12,7 @@ export type AutopilotPolicy = { enabled: boolean; spendLimitPence: number; categ
 
 export const autopilotCategories: Array<{ id: AutopilotCategory; label: string; detail: string }> = [
   { id: 'operations', label: 'Routine operations', detail: 'Release orders, assign tickets and drivers, optimise routes, match bank lines, triage signals.' },
-  { id: 'customers', label: 'Customer messages', detail: 'Send invoices, payment reminders, confirmations, welcome messages and scheduled campaigns.' },
+  { id: 'customers', label: 'Customer messages', detail: 'Send invoices, payment reminders, confirmations, welcome messages, scheduled campaigns and social posts.' },
   { id: 'spending', label: 'Spending money', detail: 'Reorder stock, approve bills, purchase orders, expenses and supplier payments — up to your spend limit.' },
   { id: 'refunds', label: 'Refunds & returns', detail: 'Approve returns and issue refunds — up to your spend limit.' },
   { id: 'people', label: 'People decisions', detail: 'Job offers, hiring moves, time off and payroll runs.' },
@@ -44,7 +44,8 @@ export function normaliseAutopilotPolicy(value: unknown): AutopilotPolicy {
 // Outbound purposes: the backend drafts the message (Claude, with a template fallback) and
 // sends it by email or WhatsApp to the record's contact before the record moves on.
 export type AutopilotOutbound = 'invoice' | 'payment-reminder' | 'bill' | 'delivery-rebook' | 'lead-welcome' | 'appointment-confirmation' | 'supplier-order' | 'job-offer'
-type Rule = { module: string; from: string; to: string; category: AutopilotCategory; action: string; when?: 'overdue'; outbound?: AutopilotOutbound }
+// publish: the backend posts the record to its social channel (Facebook, Instagram, LinkedIn) first.
+type Rule = { module: string; from: string; to: string; category: AutopilotCategory; action: string; when?: 'overdue' | 'due'; outbound?: AutopilotOutbound; publish?: 'social' }
 
 export const autopilotRules: Rule[] = [
   { module: 'orders', from: 'New', to: 'Picking', category: 'operations', action: 'Confirmed the order and released it to picking' },
@@ -74,6 +75,7 @@ export const autopilotRules: Rule[] = [
   { module: 'approvals', from: 'Review', to: 'Approved', category: 'spending', action: 'Approved the request' },
   { module: 'campaigns', from: 'Draft', to: 'Scheduled', category: 'customers', action: 'Scheduled the campaign' },
   { module: 'content', from: 'Draft', to: 'Approved', category: 'customers', action: 'Checked and approved the copy' },
+  { module: 'content', from: 'Approved', to: 'Published', category: 'customers', action: 'Published the post', when: 'due', publish: 'social' },
   { module: 'leads', from: 'New', to: 'Nurturing', category: 'customers', action: 'Sent a welcome message and started nurturing', outbound: 'lead-welcome' },
   { module: 'appointments', from: 'Booked', to: 'Confirmed', category: 'customers', action: 'Sent an appointment confirmation', outbound: 'appointment-confirmation' },
   { module: 'candidates', from: 'Applied', to: 'Screening', category: 'operations', action: 'Screened the application' },
@@ -108,6 +110,7 @@ export type AutopilotDecision = {
   mode: 'auto' | 'ask'
   reason: string
   outbound?: AutopilotOutbound
+  publish?: 'social'
 }
 
 const money = (pence: number) => `£${(pence / 100).toLocaleString('en-GB', { maximumFractionDigits: 0 })}`
@@ -118,7 +121,7 @@ export function planAutopilot(records: AutopilotRecord[], policy: AutopilotPolic
   const decisions: AutopilotDecision[] = []
   let autoCount = 0
   for (const record of records) {
-    const rule = autopilotRules.find((item) => item.module === record.module && item.from === record.status && (!item.when || (record.dueDate && new Date(record.dueDate) < now)))
+    const rule = autopilotRules.find((item) => item.module === record.module && item.from === record.status && (!item.when || (item.when === 'due' ? !record.dueDate || new Date(record.dueDate) <= now : Boolean(record.dueDate && new Date(record.dueDate) < now))))
     if (!rule) continue
     const configured = policy.categories[rule.category]
     if (configured === 'off') continue
@@ -140,6 +143,7 @@ export function planAutopilot(records: AutopilotRecord[], policy: AutopilotPolic
       valuePence,
       mode,
       ...(rule.outbound ? { outbound: rule.outbound } : {}),
+      ...(rule.publish ? { publish: rule.publish } : {}),
       reason: mode === 'auto'
         ? `${categoryLabel(rule.category)} run automatically`
         : overLimit ? `${money(valuePence!)} is over your ${money(policy.spendLimitPence)} spend limit` : `${categoryLabel(rule.category)} need your approval`,

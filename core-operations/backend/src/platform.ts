@@ -23,6 +23,8 @@ const providerRequirements: Record<string, string[]> = {
   aws: ['region', 'bucket', 'accessKeyId', 'secretAccessKey'],
   sentry: ['dsn'],
   clerk: ['secretKey', 'publishableKey'],
+  meta: ['pageAccessToken', 'pageId'],
+  linkedin: ['accessToken', 'authorUrn'],
 }
 
 const json = (value: unknown): Prisma.InputJsonValue => JSON.parse(JSON.stringify(value ?? {})) as Prisma.InputJsonValue
@@ -339,6 +341,9 @@ async function verifyProvider(provider: string, credentials: Record<string, unkn
   } else if (provider === 'twilio') {
     url = `https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(String(credentials.accountSid))}.json`
     headers = { Authorization: `Basic ${Buffer.from(`${String(credentials.accountSid)}:${String(credentials.authToken)}`).toString('base64')}` }
+  } else if (provider === 'meta') {
+    url = `https://graph.facebook.com/v22.0/${encodeURIComponent(String(credentials.pageId))}?fields=name`
+    headers = { Authorization: `Bearer ${String(credentials.pageAccessToken)}` }
   } else if (provider === 'clerk') {
     url = 'https://api.clerk.com/v1/users?limit=1'
     headers = { Authorization: `Bearer ${String(credentials.secretKey)}` }

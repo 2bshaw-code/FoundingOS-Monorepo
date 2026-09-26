@@ -8,6 +8,8 @@ import { createModuleAccessMiddleware } from '@foundingos/service-auth'
 import { timingSafeEqual } from 'node:crypto'
 import { askFoundAi, isAiConfigured } from './ai.js'
 import { draftMarketingPost, planMarketingCampaign } from './marketing-ai.js'
+import { publishSocial, type SocialChannel } from './social.js'
+import { OutboundBlocked } from './outbound.js'
 import { listWhatsAppTemplateStatus, submitWhatsAppTemplates } from './whatsapp-templates.js'
 import { decideAutopilotApproval, getAutopilotPolicy, listAutopilotActivity, listAutopilotApprovals, runAutopilot, runAutopilotForAllTenants, saveAutopilotPolicy } from './autopilot.js'
 import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess } from './auth.js'
@@ -53,6 +55,24 @@ apiRouter.post('/ai/marketing/post', requireMerchantAccess, requireTenant, async
 })
 apiRouter.post('/ai/marketing/campaign', requireMerchantAccess, requireTenant, async (req, res, next) => {
   try { res.json({ success: true, data: await planMarketingCampaign(readTenant(req, res)!, req.body ?? {}) }) } catch (error) { next(error) }
+})
+// Publish a content record to its social channel right now (owner-triggered "Publish now").
+apiRouter.post('/social/publish', requireOwnerAccess, requireTenant, async (req, res, next) => {
+  try {
+    const tenantId = readTenant(req, res)!
+    const record = await prisma.workspaceRecord.findFirst({ where: { id: String(req.body?.recordId ?? ''), tenantId, deletedAt: null } })
+    if (!record) return res.status(404).json({ success: false, error: 'Post not found' })
+    const data = (record.data && typeof record.data === 'object' && !Array.isArray(record.data) ? record.data : {}) as Record<string, unknown>
+    const channel = ['facebook', 'instagram', 'linkedin'].includes(String(req.body?.channel)) ? String(req.body.channel) as SocialChannel : undefined
+    let posted
+    try { posted = await publishSocial(tenantId, { name: record.name, data }, channel) } catch (cause) {
+      return res.status(cause instanceof OutboundBlocked ? 409 : 502).json({ success: false, error: cause instanceof Error ? cause.message : 'Publishing failed' })
+    }
+    const log = Array.isArray(data.log) ? data.log : []
+    const where = posted.channel === 'linkedin' ? 'LinkedIn' : posted.channel === 'instagram' ? 'Instagram' : 'Facebook'
+    const updated = await prisma.workspaceRecord.update({ where: { id: record.id }, data: { status: 'Published', data: JSON.parse(JSON.stringify({ ...data, published: { at: new Date().toISOString(), ...posted }, log: [{ time: new Date().toISOString(), note: `Published to ${where}`, kind: 'FoundAI' }, ...log].slice(0, 50) })) } })
+    res.json({ success: true, data: { record: updated, posted } })
+  } catch (error) { next(error) }
 })
 apiRouter.get('/autopilot/cron', async (req, res, next) => {
   try {

@@ -9,6 +9,7 @@ import { GlobalisationControls, GlobalisationProvider, LocalizedGbp } from './gl
 import { BackButton } from './back-button'
 import { ThemeToggle } from './theme'
 import { WorkflowWalkthrough } from './workflow-walkthrough'
+import { FoundAiMovie } from './foundai-movie'
 import { WorkspacePreview, type WorkspacePreviewProduct } from './workspace-preview'
 import { MessagingDemo } from './messaging-demo'
 
@@ -455,33 +456,29 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
 
       {page !== 'home' ? <SecondaryPage page={page} workspaceSlug={workspaceSlug ?? consoleSlug} /> : <>
 
-      <section className="hero">
+      <section className="hero hero-ai">
         <div className="hero-copy">
-          <p className="eyebrow">One operating system for your business</p>
-          <h1>FoundingOS</h1>
+          <p className="eyebrow"><span className="hero-ai-pill">FoundAI</span> The AI that runs your business</p>
+          <h1>Your business, run by AI.</h1>
           <p>
-            OS means <strong>Operating System</strong>: run Retail, Logistics, Finance, Marketing,
-            Talent, and Health from one connected platform—starting with WhatsApp.
+            FoundingOS puts <strong>FoundAI</strong> to work on your invoices, stock, deliveries, customer messages,
+            campaigns and social posts—across Retail, Logistics, Finance, Marketing, Talent and Health.
+            It does the routine work itself and <strong>only asks you when a decision needs a human</strong>.
           </p>
           <div className="hero-actions">
-            <Link className="btn btn-primary" href="/#how-it-works">See how it works</Link>
-            <Link className="btn btn-secondary" href="/intelligence">Open Intelligence</Link>
-            <Link className="btn btn-secondary" href="/workspaces/marketing">Explore Marketing</Link>
+            <Link className="btn btn-primary" href="/signup">Put FoundAI to work</Link>
+            <Link className="btn btn-secondary" href="/test-workspaces/retail">Try the live demo</Link>
+            <Link className="btn btn-secondary" href="/#how-it-works">See how it works</Link>
           </div>
+          <ul className="hero-ai-points">
+            <li><b>Does the work</b> Sends invoices, chases payments, reorders stock, rebooks deliveries, writes and publishes posts.</li>
+            <li><b>Asks for approval</b> Refunds, big spends, job offers and anything regulated wait for your tap.</li>
+            <li><b>You set the rules</b> Auto, Ask me or Off for each kind of work, plus your own spend limit.</li>
+          </ul>
         </div>
 
-        <div className="hero-visual" aria-label="FoundingOS OS suite overview">
-          <div className="hero-panel card-premium glow-premium" style={{ background: 'linear-gradient(135deg, rgba(16,151,105,0.98), rgba(37,99,235,0.94) 58%, rgba(124,58,237,0.9))' }}>
-            <span>Your business operating system</span>
-            <strong>FoundingOS</strong>
-            <ul>
-              <li>Core.Operations</li>
-              <li>Core.Workforce</li>
-              <li>Core.Intelligence</li>
-              <li>Shared Event Feed</li>
-              <li>Shared Insights Panel</li>
-            </ul>
-          </div>
+        <div className="hero-visual">
+          <FoundAiMovie />
         </div>
       </section>
 
@@ -495,7 +492,7 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
             <span>Telegram · planned</span>
             <span>SMS · planned</span>
             <span>Messenger · planned</span>
-            <span>Instagram · planned</span>
+            <span className="channel-live">Facebook, Instagram &amp; LinkedIn posts</span>
           </div>
         </div>
         <div className="messaging-status">
@@ -579,7 +576,7 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
       <footer className="site-footer">
         <div>
           <strong>FoundingOS</strong>
-          <p>Shared operating stack for market-facing operations, workforce, and intelligence.</p>
+          <p>The AI that runs your business—across operations, workforce and intelligence.</p>
         </div>
       </footer>
     </main>

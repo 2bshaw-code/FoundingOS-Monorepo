@@ -11,6 +11,7 @@ import { Prisma } from './generated/prisma/index.js'
 import { prisma } from './auth.js'
 import { publishEvent } from './event-feed.js'
 import { deliverOutbound, OutboundBlocked, type OutboundResult } from './outbound.js'
+import { publishSocial, type SocialResult } from './social.js'
 
 export const AUTOPILOT_ACTOR = 'foundai-autopilot'
 const HOME = 'intelligence'
@@ -45,8 +46,9 @@ async function applyDecision(tenantId: string, actorId: string, decision: Autopi
   const sent: OutboundResult | null = decision.outbound
     ? await deliverOutbound(tenantId, decision, { reference: record.reference, name: record.name, valuePence: record.valuePence, data })
     : null
+  const posted: SocialResult | null = decision.publish === 'social' ? await publishSocial(tenantId, { name: record.name, data }) : null
   const log = Array.isArray(data.log) ? data.log : []
-  const via = sent ? ` — ${sent.channel === 'email' ? 'emailed' : 'WhatsApp sent'} to ${sent.to}` : ''
+  const via = sent ? ` — ${sent.channel === 'email' ? 'emailed' : 'WhatsApp sent'} to ${sent.to}` : posted ? ` to ${posted.channel === 'linkedin' ? 'LinkedIn' : posted.channel === 'instagram' ? 'Instagram' : 'Facebook'}` : ''
   const note = `FoundAI: ${decision.action}${via}${approvedBy ? ' (approved)' : ''}`
   const messages = Array.isArray(data.messages) ? data.messages : []
   await prisma.workspaceRecord.update({
@@ -57,13 +59,14 @@ async function applyDecision(tenantId: string, actorId: string, decision: Autopi
         ...data,
         log: [{ time: new Date().toISOString(), note, kind: 'FoundAI' }, ...log].slice(0, 50),
         ...(sent ? { messages: [{ sentAt: new Date().toISOString(), ...sent }, ...messages].slice(0, 20) } : {}),
+        ...(posted ? { published: { at: new Date().toISOString(), ...posted } } : {}),
       }),
       version: { increment: 1 },
       updatedBy: actorId,
     },
   })
   await Promise.all([
-    prisma.workspaceAuditEvent.create({ data: { tenantId, actorId, action: 'autopilot.executed', workspace: record.workspace, module: record.module, entityId: record.id, metadata: json({ ...decision, approvedBy: approvedBy ?? null, sent }) } }),
+    prisma.workspaceAuditEvent.create({ data: { tenantId, actorId, action: 'autopilot.executed', workspace: record.workspace, module: record.module, entityId: record.id, metadata: json({ ...decision, approvedBy: approvedBy ?? null, sent, posted }) } }),
     publishEvent({ tenantId, type: 'autopilot.action.executed', source: record.workspace, payload: { module: record.module, recordId: record.id, reference: record.reference, from: decision.from, to: decision.to, action: decision.action, approvedBy: approvedBy ?? null, channel: sent?.channel ?? null } }),
   ])
   return true

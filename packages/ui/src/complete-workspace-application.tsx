@@ -13,7 +13,7 @@ const workspaceRoot = productionModeEnabled ? '/app' : '/test-workspaces'
 
 export type BusinessWorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'marketing' | 'talent' | 'health' | 'intelligence'
 
-type WorkspaceRecord = { id: string; backendId?: string; version?: number; name: string; secondary: string; value: string; status: string; owner: string; updated: string; attachment?: string; attachmentName?: string; quantity?: number; reorderPoint?: number; log?: Array<{ time: string; note: string; kind?: string }>; dueDate?: string; email?: string; phone?: string }
+type WorkspaceRecord = { id: string; backendId?: string; version?: number; name: string; secondary: string; value: string; status: string; owner: string; updated: string; attachment?: string; attachmentName?: string; quantity?: number; reorderPoint?: number; log?: Array<{ time: string; note: string; kind?: string }>; dueDate?: string; email?: string; phone?: string; channel?: string; postText?: string; publishedUrl?: string }
 type WorkspaceModule = { id: string; label: string; group: string; statuses?: string[] }
 type WorkspaceEvent = { id: string; workspace: BusinessWorkspaceSlug; text: string; time: string; type?: string; payload?: Record<string, unknown> }
 type WorkspaceState = {
@@ -145,6 +145,7 @@ const seedWorkspace = (workspace: BusinessWorkspaceSlug): WorkspaceState => {
       { id: 'INT-1', name: 'WhatsApp Cloud API', category: 'Messaging', connected: true },
       { id: 'INT-2', name: 'Stripe', category: 'Payments', connected: workspace !== 'talent' },
       { id: 'INT-3', name: 'Google Workspace', category: 'Productivity', connected: true },
+      ...(workspace === 'marketing' || workspace === 'retail' ? [{ id: 'INT-5', name: 'Facebook & Instagram', category: 'Social publishing', connected: true }, { id: 'INT-6', name: 'LinkedIn', category: 'Social publishing', connected: false }] : []),
       { id: 'INT-4', name: workspace === 'health' ? 'FHIR gateway' : 'Accounting connector', category: 'Operations', connected: false },
     ],
     settings: { businessName: 'FoundingOS Demo Company', region: 'United Kingdom', notifications: true },
@@ -400,6 +401,9 @@ const fromProductionRecord = (record: ProductionWorkspaceRecord): WorkspaceRecor
   ...(typeof data.dueDate === 'string' ? { dueDate: data.dueDate } : {}),
   ...(typeof data.email === 'string' && data.email ? { email: data.email } : {}),
   ...(typeof data.phone === 'string' && data.phone ? { phone: data.phone } : {}),
+  ...(typeof data.channel === 'string' && data.channel ? { channel: data.channel } : {}),
+  ...(typeof data.postText === 'string' && data.postText ? { postText: data.postText } : {}),
+  ...(data.published && typeof (data.published as { url?: unknown }).url === 'string' ? { publishedUrl: String((data.published as { url: string }).url) } : {}),
   ...(Array.isArray(data.log) ? { log: (data.log as Array<{ time?: string; note?: string; kind?: string }>).map((entry) => ({ time: entry.time && !Number.isNaN(Date.parse(entry.time)) ? new Date(entry.time).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : String(entry.time ?? ''), note: String(entry.note ?? ''), kind: entry.kind })) } : {}),
 }}
 
@@ -479,7 +483,7 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
       return record
     }
     const numericValue = Number(record.value.replace(/[^0-9.-]/g, ''))
-    const created = await productionRecords.create(workspace, module, { reference: record.id, name: record.name, status: record.status, ownerId: record.owner, valuePence: Number.isFinite(numericValue) ? Math.round(numericValue * 100) : null, data: { secondary: record.secondary, value: record.value, owner: record.owner } })
+    const created = await productionRecords.create(workspace, module, { reference: record.id, name: record.name, status: record.status, ownerId: record.owner, valuePence: Number.isFinite(numericValue) ? Math.round(numericValue * 100) : null, data: { secondary: record.secondary, value: record.value, owner: record.owner, ...Object.fromEntries((['dueDate', 'email', 'phone', 'channel', 'postText'] as const).filter((key) => record[key]).map((key) => [key, record[key]])), ...(record.attachment && record.attachment.length < 1_500_000 ? { attachment: record.attachment } : {}) } })
     const mapped = fromProductionRecord(created)
     update((current) => ({ ...current, records: { ...current.records, [module]: [mapped, ...(current.records[module] ?? [])] } }))
     return mapped
@@ -1392,7 +1396,8 @@ function InboxListView({ records, selectedId, onSelect, statuses }: { records: W
   </div>
 }
 
-type ContentDraft = { headline: string; body: string; hashtags: string[]; cta: string; type: string; image?: string; imageIdea?: string }
+type ContentDraft = { headline: string; body: string; hashtags: string[]; cta: string; type: string; image?: string; imageIdea?: string; channel?: string }
+const STUDIO_CHANNELS = ['Instagram', 'Facebook', 'LinkedIn', 'Other'] as const
 
 const STUDIO_TYPES = ['Social post', 'Email', 'Blog intro', 'Ad copy'] as const
 const STUDIO_TONES = ['Professional', 'Playful', 'Bold', 'Minimal'] as const
@@ -1489,10 +1494,36 @@ function ContentPreviewCard({ headline, body, hashtags, cta, type, image }: { he
 // "try another version" regenerate loop, an image upload for the creative, a rendered preview
 // box showing exactly what gets published, one-click downloads, and a save straight into the
 // pipeline below.
+// "Publish now" for a content record: live accounts post to the connected Facebook Page,
+// Instagram or LinkedIn via the backend; the demo only marks it Published.
+function PublishPanel({ record, live, onPublished }: { record: WorkspaceRecord; live: boolean; onPublished: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState('')
+  const channel = record.channel || ['Instagram', 'Facebook', 'LinkedIn'].find((name) => record.secondary.includes(name)) || ''
+  if (record.status === 'Published') return <div className="mk-publish"><b>Published{channel ? ` to ${channel}` : ''}</b>{record.publishedUrl ? <a href={record.publishedUrl} rel="noreferrer" target="_blank">View post ↗</a> : null}</div>
+  const publish = async () => {
+    setBusy(true); setMessage('')
+    try {
+      if (live) {
+        if (!record.backendId) throw new Error('Save this post first')
+        await productionRequest('/social/publish', { method: 'POST', body: JSON.stringify({ recordId: record.backendId }) })
+      }
+      await onPublished()
+      setMessage(live ? 'Published ✓' : 'Demo: marked as published (nothing was posted)')
+    } catch (cause) { setMessage(cause instanceof Error ? cause.message : 'Publishing failed') } finally { setBusy(false) }
+  }
+  return <div className="mk-publish">
+    <div><b>{channel ? `Post to ${channel}` : 'Publish'}</b><small>{live ? 'FoundAI posts it to your connected account. Autopilot also publishes approved posts on their scheduled date.' : 'Demo: connect Facebook, Instagram or LinkedIn in Integrations on a live account to post for real.'}</small></div>
+    <button className="mk-primary" disabled={busy} onClick={() => { void publish() }} type="button">{busy ? 'Publishing…' : 'Publish now'}</button>
+    {message ? <p className="mk-note">{message}</p> : null}
+  </div>
+}
+
 function ContentStudioPanel({ onSave, saving, live }: { onSave: (draft: ContentDraft) => void; saving: boolean; live: boolean }) {
   const [topic, setTopic] = useState('')
   const [type, setType] = useState<(typeof STUDIO_TYPES)[number]>(STUDIO_TYPES[0])
   const [tone, setTone] = useState<(typeof STUDIO_TONES)[number]>(STUDIO_TONES[0])
+  const [channel, setChannel] = useState<(typeof STUDIO_CHANNELS)[number]>(STUDIO_CHANNELS[0])
   const [image, setImage] = useState<string | undefined>(undefined)
   const [imageName, setImageName] = useState('')
   const [draft, setDraft] = useState<ContentDraft | null>(null)
@@ -1511,7 +1542,7 @@ function ContentStudioPanel({ onSave, saving, live }: { onSave: (draft: ContentD
       return
     }
     try {
-      const written = await productionRequest<ContentDraft>('/ai/marketing/post', { method: 'POST', body: JSON.stringify({ topic, type, tone, previous: draft?.headline }) })
+      const written = await productionRequest<ContentDraft>('/ai/marketing/post', { method: 'POST', body: JSON.stringify({ topic, type, tone, platform: channel, previous: draft?.headline }) })
       setDraft({ ...written, image })
     } catch (cause) {
       setAiError(cause instanceof Error ? cause.message : 'FoundAI could not write that post')
@@ -1533,7 +1564,7 @@ function ContentStudioPanel({ onSave, saving, live }: { onSave: (draft: ContentD
   }
   const save = () => {
     if (!draft) return
-    onSave(draft)
+    onSave({ ...draft, channel: channel === 'Other' ? undefined : channel })
     setSaved(true)
   }
   return <div className="retail-app-studio-card">
@@ -1541,6 +1572,7 @@ function ContentStudioPanel({ onSave, saving, live }: { onSave: (draft: ContentD
     <div className="retail-app-studio-form">
       <label>Topic or product<input onChange={(event) => setTopic(event.target.value)} placeholder="e.g. the new loyalty rewards tier" value={topic} /></label>
       <label>Format<select onChange={(event) => setType(event.target.value as (typeof STUDIO_TYPES)[number])} value={type}>{STUDIO_TYPES.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+      <label>Post to<select onChange={(event) => setChannel(event.target.value as (typeof STUDIO_CHANNELS)[number])} value={channel}>{STUDIO_CHANNELS.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
       <label>Tone<select onChange={(event) => setTone(event.target.value as (typeof STUDIO_TONES)[number])} value={tone}>{STUDIO_TONES.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
       <button className="retail-app-primary" disabled={thinking} onClick={() => { void generate() }} type="button">{thinking ? 'FoundAI is writing\u2026' : draft ? 'Write another version' : '\u2728 Write with FoundAI'}</button>
     </div>
@@ -2262,7 +2294,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
   const saveContentDraft = async (draft: ContentDraft) => {
     setSaving(true)
     setError('')
-    const record: WorkspaceRecord = { id: `${item.id.slice(0, 3).toUpperCase()}-${100 + records.length + 1}`, name: draft.headline, secondary: `${draft.type} \u00b7 ${draft.body}`, value: draft.cta, status: statuses[0], owner: 'You', updated: 'Just now', attachment: draft.image }
+    const record: WorkspaceRecord = { id: `${item.id.slice(0, 3).toUpperCase()}-${100 + records.length + 1}`, name: draft.headline, secondary: `${draft.type} \u00b7 ${draft.body}`, value: draft.cta, status: statuses[0], owner: 'You', updated: 'Just now', attachment: draft.image, ...(draft.channel ? { channel: draft.channel } : {}), postText: [draft.headline, draft.body, draft.hashtags.join(' ')].filter(Boolean).join('\n\n') }
     try {
       const created = await createRecord(item.id, record)
       setSelectedId(created.id)
@@ -2278,7 +2310,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
     const campaign = await createRecord('campaigns', { id: `CMP-${stamp}`, name: plan.name, secondary: `${plan.channels.join(', ')} \u00b7 ${plan.durationDays} days \u00b7 ${plan.posts.length} posts \u00b7 ${plan.summary}`, value: brief.budget || '\u2014', status: 'Draft', owner: 'FoundAI', updated: 'Just now', dueDate: lastDay })
     if (config.modules.some((module) => module.id === 'content')) {
       for (const [index, post] of plan.posts.entries()) {
-        await createRecord('content', { id: `CNT-${stamp}-${index + 1}`, name: post.headline, secondary: `${post.type} \u00b7 ${post.channel} \u00b7 ${post.body}${post.hashtags.length ? ` ${post.hashtags.join(' ')}` : ''}`, value: post.cta, status: 'Draft', owner: 'FoundAI', updated: 'Just now', dueDate: dateFor(post.day) })
+        await createRecord('content', { id: `CNT-${stamp}-${index + 1}`, name: post.headline, secondary: `${post.type} \u00b7 ${post.channel} \u00b7 ${post.body}${post.hashtags.length ? ` ${post.hashtags.join(' ')}` : ''}`, value: post.cta, status: 'Draft', owner: 'FoundAI', updated: 'Just now', dueDate: dateFor(post.day), channel: post.channel, postText: [post.headline, post.body, post.hashtags.join(' ')].filter(Boolean).join('\n\n') })
       }
     }
     setSelectedId(campaign.id)
@@ -2524,6 +2556,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
         {isCandidates ? <CandidateProfilePanel record={selected} statuses={statuses} /> : null}
         {isPatients ? <PatientSnapshotPanel record={selected} /> : null}
         {isCampaigns ? <CampaignPerformancePanel record={selected} /> : null}
+        {isContentStudio ? <PublishPanel live={liveAi} onPublished={() => advanceRecord(item.id, selected, 'Published')} record={selected} /> : null}
         {editing ? <div className="retail-app-edit-form">
           <label>Name<input onChange={(event) => setEditDraft((current) => ({ ...current, name: event.target.value }))} value={editDraft.name} /></label>
           <label>{isDirectory ? 'Category' : 'Context'}<input onChange={(event) => setEditDraft((current) => ({ ...current, secondary: event.target.value }))} value={editDraft.secondary} /></label>
@@ -2556,6 +2589,8 @@ const providerCatalog = [
   { id: 'whatsapp', name: 'WhatsApp Cloud API', category: 'Messaging', fields: ['accessToken', 'phoneNumberId', 'verifyToken', 'appSecret', 'businessAccountId'], optional: ['businessAccountId'] },
   { id: 'stripe', name: 'Stripe', category: 'Payments', fields: ['secretKey', 'webhookSecret'] },
   { id: 'resend', name: 'Resend', category: 'Email', fields: ['apiKey', 'fromAddress'] },
+  { id: 'meta', name: 'Facebook & Instagram', category: 'Social publishing', fields: ['pageAccessToken', 'pageId', 'instagramAccountId'], optional: ['instagramAccountId'] },
+  { id: 'linkedin', name: 'LinkedIn', category: 'Social publishing', fields: ['accessToken', 'authorUrn'] },
   { id: 'twilio', name: 'Twilio', category: 'SMS', fields: ['accountSid', 'authToken', 'fromNumber'] },
   { id: 'aws', name: 'AWS', category: 'Storage', fields: ['region', 'bucket', 'accessKeyId', 'secretAccessKey'] },
   { id: 'sentry', name: 'Sentry', category: 'Monitoring', fields: ['dsn'] },

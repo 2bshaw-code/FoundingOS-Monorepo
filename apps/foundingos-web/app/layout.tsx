@@ -9,8 +9,8 @@ import { QuantumBackground } from '@foundingos/ui/quantum'
 import '@foundingos/ui/styles.css'
 
 export const metadata = {
-  title: 'FoundingOS | Your Business Operating System',
-  description: 'One connected operating system for Retail, Logistics, Finance, Talent, and Health workflows.',
+  title: 'FoundingOS | AI that runs your business',
+  description: 'FoundAI runs your invoices, stock, deliveries, customer messages, campaigns and posts across Retail, Logistics, Finance, Marketing, Talent and Health — and only asks you when a decision needs a human.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
