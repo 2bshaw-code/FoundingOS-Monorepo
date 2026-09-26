@@ -69,7 +69,7 @@
     "fsevents@2.3.3": true
   },
   "engines": {
-    "node": ">=20 <21",
+    "node": "24.x",
     "npm": ">=10"
   },
   "packageManager": "npm@11.19.0"

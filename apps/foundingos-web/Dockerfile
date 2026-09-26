@@ -1,4 +1,4 @@
-FROM node:20-bookworm-slim AS build
+FROM node:24-bookworm-slim AS build
 WORKDIR /app
 ARG NEXT_PUBLIC_APP_MODE=production
 ARG NEXT_PUBLIC_FOUNDINGOS_API_URL
@@ -9,7 +9,7 @@ RUN npm ci \
   && npm run build --workspace @foundingos/service-auth \
   && npm run build --workspace @foundingos/foundingos-website
 
-FROM node:20-bookworm-slim
+FROM node:24-bookworm-slim
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app /app

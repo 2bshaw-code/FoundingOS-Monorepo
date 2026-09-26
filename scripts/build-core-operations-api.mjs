@@ -22,7 +22,7 @@ await build({
   outfile: path.join(root, 'dist/core-operations-api/index.js'),
   bundle: true,
   platform: 'node',
-  target: 'node20',
+  target: 'node24',
   // CJS output (not ESM) avoids esbuild's runtime __require shim, which
   // breaks for bundled CJS deps (e.g. "debug") that conditionally
   // require() Node builtins like "tty" at runtime.
