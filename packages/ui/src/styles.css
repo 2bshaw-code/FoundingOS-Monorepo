@@ -15372,3 +15372,11 @@ body:has(.cross-sell-ticker) .found-ai-fab { bottom: 64px; }
 .ops-letter pre { white-space: pre-wrap; font: 13px/1.55 ui-serif, Georgia, serif; background: #f8fafc; border: 1px solid rgba(15, 23, 42, .1); border-radius: 10px; padding: 16px; color: #0f172a; }
 .experience-pro .ops-kpi strong { font-size: 17px; }
 .experience-pro .ops-intro { display: none; }
+
+/* SuperDash: sub-sections and embedded workspace modules */
+.sd-subtabs { display: flex; flex-wrap: wrap; gap: 6px; margin: -6px 0 16px; }
+.sd-subtabs button { background: rgba(255,255,255,.04); color: #9fb3c8; border: 1px solid rgba(255,255,255,.1); border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.sd-subtabs button.on { background: rgba(56,189,248,.16); border-color: rgba(56,189,248,.55); color: #e0f2fe; }
+.sd-module { border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+.retail-product-shell.sd-embedded { display: block; min-height: 0; }
+.sd-embedded .retail-product-content { padding: 20px clamp(12px, 2.5vw, 28px) 28px; }

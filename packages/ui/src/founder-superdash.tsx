@@ -11,6 +11,7 @@ import { getProductionSession, loginToProduction, logoutProduction, productionRe
 import { FinanceReportsPage, MarketingReportsPage, SalesReportsPage } from './pro/reports'
 import { proRecordFromBackend } from './pro/models'
 import type { LoadRecords } from './pro/shared'
+import { CompleteWorkspaceApplication, type BusinessWorkspaceSlug } from './complete-workspace-application'
 
 export type FounderOverview = {
   generatedAt: string
@@ -32,8 +33,24 @@ const ago = (iso: string | null) => {
 // The founder's own tenant workspaces power the professional reports below.
 const loadFounderRecords: LoadRecords = async (workspace, module) => (await productionRecords.list(workspace, module)).map(proRecordFromBackend)
 
-function ProTools({ links }: { links: Array<[string, string]> }) {
-  return <nav className="sd-pro-links" aria-label="Open professional tools">{links.map(([href, label]) => <a href={href} key={href}>{label} ›</a>)}</nav>
+type Tab = 'overview' | 'finance' | 'sales' | 'marketing'
+// Each SuperDash tab hosts FoundingOS's own records. 'workspace/module' entries render the full
+// professional workspace module inline; other keys are SuperDash-only views.
+const sections: Record<Exclude<Tab, 'overview'>, Array<[key: string, label: string]>> = {
+  finance: [['books', 'Books & runway'], ['finance/invoices', 'Invoices'], ['finance/bills', 'Bills'], ['finance/expenses', 'Expenses'], ['finance/banking', 'Banking'], ['finance/reconciliation', 'Reconciliation'], ['finance/budgets', 'Budgets'], ['finance/tax', 'Tax & VAT'], ['reports', 'Reports']],
+  sales: [['forecast', 'Forecast'], ['retail/sales-pipeline', 'Deals & quotes'], ['subscribers', 'Subscribers'], ['retail/crm', 'Customers'], ['marketing/leads', 'Leads'], ['retail/orders', 'Orders'], ['retail/service', 'Support']],
+  marketing: [['posts', 'FoundAI posts'], ['marketing/campaigns', 'Campaigns'], ['marketing/content', 'Content'], ['marketing/calendar', 'Calendar'], ['marketing/audiences', 'Audiences'], ['marketing/journeys', 'Journeys'], ['reports', 'ROI & attribution']],
+}
+const tabs: Tab[] = ['overview', 'finance', 'sales', 'marketing']
+const readHash = (): [Tab, string] => {
+  if (typeof window === 'undefined') return ['overview', '']
+  const [tab, ...rest] = window.location.hash.replace(/^#/, '').split('/')
+  return tabs.includes(tab as Tab) ? [tab as Tab, rest.join('/')] : ['overview', '']
+}
+
+function EmbeddedModule({ path }: { path: string }) {
+  const [workspace, section] = path.split('/') as [BusinessWorkspaceSlug, string]
+  return <section className="sd-module"><CompleteWorkspaceApplication embedded key={path} section={section} workspace={workspace} /></section>
 }
 
 const title = (slug: string) => slug.charAt(0).toUpperCase() + slug.slice(1)
@@ -46,7 +63,16 @@ export function FounderSuperDash() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [filter, setFilter] = useState('')
-  const [tab, setTab] = useState<'overview' | 'finance' | 'sales' | 'marketing'>('overview')
+  const [tab, setTabState] = useState<Tab>('overview')
+  const [sub, setSubState] = useState('')
+  useEffect(() => {
+    const sync = () => { const [nextTab, nextSub] = readHash(); setTabState(nextTab); setSubState(nextSub) }
+    sync()
+    window.addEventListener('hashchange', sync)
+    return () => window.removeEventListener('hashchange', sync)
+  }, [])
+  const go = (nextTab: Tab, nextSub = '') => { setTabState(nextTab); setSubState(nextSub); window.history.replaceState(null, '', `#${nextTab}${nextSub ? `/${nextSub}` : ''}`) }
+  const setTab = (nextTab: Tab) => go(nextTab)
 
   const load = useCallback(async () => {
     setError('')
@@ -107,6 +133,16 @@ export function FounderSuperDash() {
   const pending = data?.upgradeRequests.filter((request) => request.pending.length) ?? []
   const tenants = (data?.tenants ?? []).filter((tenant) => !filter || `${tenant.businessName} ${tenant.ownerEmail} ${tenant.planName}`.toLowerCase().includes(filter.toLowerCase()))
 
+  const customersPanel = <>
+      <section className="sd-panel sd-wide">
+        <div className="sd-panel-head"><h2>FoundingOS subscribers</h2><input onChange={(event) => setFilter(event.target.value)} placeholder="Search business, email or plan" value={filter} /></div>
+        <table className="sd-table"><thead><tr><th>Business</th><th>Plan</th><th>Workspaces</th><th>Seats</th><th>£/mo</th><th>Joined</th><th>Last active</th></tr></thead><tbody>
+          {tenants.map((tenant) => <tr key={tenant.tenantId}><td><strong>{tenant.businessName}</strong><small>{tenant.ownerEmail}</small></td><td>{tenant.planName}</td><td>{tenant.workspaces.map(title).join(', ')}</td><td>{tenant.seats}</td><td>{gbp(tenant.monthlyValueGbp)}</td><td>{ago(tenant.createdAt)}</td><td>{ago(tenant.lastActiveAt)}</td></tr>)}
+          {!tenants.length ? <tr><td colSpan={7} className="sd-muted">No customers yet.</td></tr> : null}
+        </tbody></table>
+      </section>
+  </>
+
   return <main className="sd-shell">
     <header className="sd-top">
       <div><p className="sd-eyebrow">FoundingOS · Founder</p><h1>SuperDash</h1><small>{data ? `Updated ${ago(data.generatedAt)}` : 'Loading…'}</small></div>
@@ -115,15 +151,20 @@ export function FounderSuperDash() {
     <div className="sd-tabs" role="tablist">
       {(['overview', 'finance', 'sales', 'marketing'] as const).map((key) => <button aria-selected={tab === key} className={tab === key ? 'on' : ''} key={key} onClick={() => setTab(key)} role="tab" type="button">{key === 'overview' ? 'Business' : key === 'finance' ? 'Finance' : key === 'sales' ? 'Sales' : 'Marketing'}</button>)}
     </div>
-    {tab === 'finance' ? <>
-      <FounderFinancePanel />
-      <section className="sd-pro"><h2>Invoices, VAT &amp; aged debt</h2><ProTools links={[['/app/finance/invoices', 'Invoices'], ['/app/finance/bills', 'Bills'], ['/app/finance/expenses', 'Expenses']]} /><FinanceReportsPage loadRecords={loadFounderRecords} /></section>
-    </> : null}
-    {tab === 'sales' ? <section className="sd-pro"><h2>Sales pipeline &amp; forecast</h2><ProTools links={[['/app/retail/sales-pipeline', 'Deals & quotes'], ['/app/retail/customers', 'Customers']]} /><SalesReportsPage loadRecords={loadFounderRecords} workspace="retail" /></section> : null}
-    {tab === 'marketing' ? <>
-      <FounderMarketingPanel />
-      <section className="sd-pro"><h2>Campaign ROI &amp; attribution</h2><ProTools links={[['/app/marketing/campaigns', 'Campaigns'], ['/app/marketing/content', 'Content']]} /><MarketingReportsPage loadRecords={loadFounderRecords} workspace="marketing" /></section>
-    </> : null}
+    {tab !== 'overview' ? (() => {
+      const items = sections[tab]
+      const active = items.some(([key]) => key === sub) ? sub : items[0][0]
+      return <>
+        <nav className="sd-subtabs" aria-label={`${title(tab)} sections`}>{items.map(([key, label]) => <button className={key === active ? 'on' : ''} key={key} onClick={() => go(tab, key)} type="button">{label}</button>)}</nav>
+        {active.includes('/') ? <EmbeddedModule path={active} /> : null}
+        {tab === 'finance' && active === 'books' ? <FounderFinancePanel /> : null}
+        {tab === 'finance' && active === 'reports' ? <section className="sd-pro"><h2>P&amp;L, VAT &amp; aged debt</h2><FinanceReportsPage loadRecords={loadFounderRecords} /></section> : null}
+        {tab === 'sales' && active === 'forecast' ? <section className="sd-pro"><h2>Sales pipeline &amp; forecast</h2><SalesReportsPage loadRecords={loadFounderRecords} workspace="retail" /></section> : null}
+        {tab === 'sales' && active === 'subscribers' ? <div className="sd-grid">{customersPanel}</div> : null}
+        {tab === 'marketing' && active === 'posts' ? <FounderMarketingPanel /> : null}
+        {tab === 'marketing' && active === 'reports' ? <section className="sd-pro"><h2>Campaign ROI &amp; attribution</h2><MarketingReportsPage loadRecords={loadFounderRecords} workspace="marketing" /></section> : null}
+      </>
+    })() : null}
     {tab === 'overview' ? <>
     {error ? <p className="sd-error">{error}{error.toLowerCase().includes('forbidden') || error.includes('403') ? ' — SuperDash needs the founder account.' : ''}</p> : null}
 
@@ -174,13 +215,7 @@ export function FounderSuperDash() {
         <div className="sd-chips">{s?.workspaceAdoption.map((row) => <span key={row.workspace}>{title(row.workspace)} <b>{row.customers}</b></span>)}</div>
       </section>
 
-      <section className="sd-panel sd-wide">
-        <div className="sd-panel-head"><h2>Customers</h2><input onChange={(event) => setFilter(event.target.value)} placeholder="Search business, email or plan" value={filter} /></div>
-        <table className="sd-table"><thead><tr><th>Business</th><th>Plan</th><th>Workspaces</th><th>Seats</th><th>£/mo</th><th>Joined</th><th>Last active</th></tr></thead><tbody>
-          {tenants.map((tenant) => <tr key={tenant.tenantId}><td><strong>{tenant.businessName}</strong><small>{tenant.ownerEmail}</small></td><td>{tenant.planName}</td><td>{tenant.workspaces.map(title).join(', ')}</td><td>{tenant.seats}</td><td>{gbp(tenant.monthlyValueGbp)}</td><td>{ago(tenant.createdAt)}</td><td>{ago(tenant.lastActiveAt)}</td></tr>)}
-          {!tenants.length ? <tr><td colSpan={7} className="sd-muted">No customers yet.</td></tr> : null}
-        </tbody></table>
-      </section>
+      {customersPanel}
     </div>
     </> : null}
   </main>
