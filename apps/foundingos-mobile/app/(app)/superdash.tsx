@@ -3,12 +3,13 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 // Founder SuperDash: run FoundingOS itself — subscriptions, revenue, upgrade
-// requests, platform health, growth, plus FoundingOS's own Marketing and Finance.
+// requests, platform health, growth, plus FoundingOS's own Finance and Marketing tabs.
 import { useCallback, useEffect, useState } from 'react'
 import { RefreshControl, StyleSheet, View } from 'react-native'
-import { router } from 'expo-router'
+import { FounderFinancePanel } from '../../components/founder/FounderFinance'
+import { FounderMarketingPanel } from '../../components/founder/FounderMarketing'
 import { FounderOverview, fetchFounderOverview, founderEnableWorkspaces } from '../../lib/core-operations-api'
-import { QuantumButton, QuantumCard, QuantumNotice, QuantumScreen, QuantumSectionHeader, QuantumText, quantumColors, quantumSpace } from '../../components/QuantumUI'
+import { QuantumButton, QuantumCard, QuantumNotice, QuantumPill, QuantumScreen, QuantumSectionHeader, QuantumText, quantumColors, quantumSpace } from '../../components/QuantumUI'
 
 const gbp = (value: number) => `£${value.toLocaleString('en-GB', { maximumFractionDigits: 2 })}`
 const ago = (iso: string | null) => {
@@ -46,6 +47,8 @@ export default function SuperDashScreen() {
   const [error, setError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
   const [busy, setBusy] = useState('')
+  const [tab, setTab] = useState<'business' | 'finance' | 'marketing'>('business')
+  const [reloadKey, setReloadKey] = useState(0)
 
   const load = useCallback(async () => {
     try {
@@ -76,12 +79,20 @@ export default function SuperDashScreen() {
   const maxSignups = Math.max(1, ...(s?.signupsByDay.map((day) => day.count) ?? [1]))
 
   return (
-    <QuantumScreen refreshControl={<RefreshControl refreshing={refreshing} tintColor="#38BDF8" onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false) }} />}>
+    <QuantumScreen refreshControl={<RefreshControl refreshing={refreshing} tintColor="#38BDF8" onRefresh={async () => { setRefreshing(true); setReloadKey((key) => key + 1); await load(); setRefreshing(false) }} />}>
       <View style={styles.head}>
         <QuantumText variant="overline" color="#38BDF8">FoundingOS · Founder</QuantumText>
         <QuantumText variant="h1">SuperDash</QuantumText>
         <QuantumText variant="caption" color={quantumColors.neutral300}>{data ? `Updated ${ago(data.generatedAt)} · pull to refresh` : 'Loading…'}</QuantumText>
       </View>
+      <View style={styles.links}>
+        <QuantumPill active={tab === 'business'} onPress={() => setTab('business')}>Business</QuantumPill>
+        <QuantumPill active={tab === 'finance'} onPress={() => setTab('finance')}>Finance</QuantumPill>
+        <QuantumPill active={tab === 'marketing'} onPress={() => setTab('marketing')}>Marketing</QuantumPill>
+      </View>
+      {tab === 'finance' ? <FounderFinancePanel reloadKey={reloadKey} /> : null}
+      {tab === 'marketing' ? <FounderMarketingPanel reloadKey={reloadKey} /> : null}
+      {tab === 'business' ? <>
       {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
 
       <View style={styles.kpis}>
@@ -89,12 +100,6 @@ export default function SuperDashScreen() {
         <Kpi label="Customers" value={String(s?.customers ?? 0)} sub={`${s?.paying ?? 0} paying · ${s?.free ?? 0} free`} />
         <Kpi label="New sign-ups" value={String(s?.new7d ?? 0)} sub={`7 days · ${s?.new30d ?? 0} in 30`} />
         <Kpi label="Upgrade requests" value={String(pending.length)} sub="waiting for you" alert={pending.length > 0} />
-      </View>
-
-      <View style={styles.links}>
-        <QuantumButton style={styles.flex} tone="secondary" onPress={() => router.push('/workspace/marketing' as never)}>Marketing</QuantumButton>
-        <QuantumButton style={styles.flex} tone="secondary" onPress={() => router.push('/workspace/finance' as never)}>Finance</QuantumButton>
-        <QuantumButton style={styles.flex} tone="secondary" onPress={() => router.push('/marketing' as never)}>Write a post</QuantumButton>
       </View>
 
       <QuantumSectionHeader label="Upgrade requests" />
@@ -162,6 +167,7 @@ export default function SuperDashScreen() {
           <QuantumText variant="caption" color={quantumColors.neutral300}>Joined {ago(tenant.createdAt)} · active {ago(tenant.lastActiveAt)}</QuantumText>
         </QuantumCard>
       ))}
+      </> : null}
     </QuantumScreen>
   )
 }

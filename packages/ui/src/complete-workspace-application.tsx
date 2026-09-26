@@ -434,10 +434,13 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
       setError('')
       const requests: Promise<void>[] = []
       if (!['overview', 'reports', 'forecasting', 'attribution', 'settings', 'integrations', 'security', 'automations'].includes(activeModule)) {
-        requests.push(
-          productionRecords.list(workspace, activeModule)
-            .then((records) => setState((current) => ({ ...current, records: { ...current.records, [activeModule]: records.filter((record): record is ProductionWorkspaceRecord => Boolean(record && typeof record === 'object')).map(fromProductionRecord) } }))),
-        )
+        // Calendar modules also pull the records they display (e.g. Marketing's Calendar shows content + campaigns).
+        for (const source of [...new Set([activeModule, ...(CALENDAR_SOURCES[activeModule] ?? [])])]) {
+          requests.push(
+            productionRecords.list(workspace, source)
+              .then((records) => setState((current) => ({ ...current, records: { ...current.records, [source]: records.filter((record): record is ProductionWorkspaceRecord => Boolean(record && typeof record === 'object')).map(fromProductionRecord) } }))),
+          )
+        }
       }
       if (activeModule === 'integrations') {
         requests.push(
@@ -1268,48 +1271,73 @@ function DirectoryKPIBar({ records, metricLabel }: { records: WorkspaceRecord[];
   </div>
 }
 
-function assignCalendarDay(id: string, totalDays: number) {
-  const hash = [...id].reduce((total, char) => total + char.charCodeAt(0), 0)
-  return 1 + (hash % Math.max(totalDays, 1))
+const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+// Scheduling modules render as a real month calendar. Marketing's Calendar shows content and campaigns.
+const CALENDAR_SOURCES: Record<string, string[]> = {
+  calendar: ['content', 'campaigns'], appointments: ['appointments'], interviews: ['interviews'], 'time-off': ['time-off'], deliveries: ['deliveries'],
+  dispatch: ['dispatch'], 'follow-ups': ['follow-ups'], shifts: ['shifts'], rotas: ['rotas'], bookings: ['bookings'],
+}
+type CalendarEntry = { record: WorkspaceRecord; module: string }
+const localDayKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+const entryDay = (record: WorkspaceRecord) => {
+  if (!record.dueDate) return null
+  const parsed = new Date(/^\d{4}-\d{2}-\d{2}$/.test(record.dueDate) ? `${record.dueDate}T09:00:00` : record.dueDate)
+  return Number.isNaN(parsed.getTime()) ? null : localDayKey(parsed)
 }
 
-const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
-// A real month calendar — not a directory list pretending to be one. Records land on a
-// deterministic day of the month (hashed from their id) so the layout is stable between
-// renders. The month itself defaults to a fixed anchor on first paint (SSR-safe) and swaps to
-// the real current month client-side via useEffect, so there is never a server/client mismatch.
-function CalendarGridView({ records, selectedId, onSelect }: { records: WorkspaceRecord[]; selectedId?: string; onSelect: (id: string) => void }) {
+// A real month calendar: every record sits on its actual scheduled date (dueDate), you can
+// move between months, pick a day to see what's on it, and schedule undated items onto it.
+function CalendarGridView({ entries, selectedId, onSelect, onSchedule, onCreate }: { entries: CalendarEntry[]; selectedId?: string; onSelect: (entry: CalendarEntry) => void; onSchedule: (entry: CalendarEntry, day: string) => void; onCreate: (day: string) => void }) {
   const [anchor, setAnchor] = useState(() => new Date(2026, 0, 1))
-  useEffect(() => setAnchor(new Date()), [])
-  const totalDays = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0).getDate()
-  const startWeekday = new Date(anchor.getFullYear(), anchor.getMonth(), 1).getDay()
-  const monthLabel = anchor.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
-  const recordsByDay = new Map<number, WorkspaceRecord[]>()
-  records.forEach((record) => {
-    const day = assignCalendarDay(record.id, totalDays)
-    recordsByDay.set(day, [...(recordsByDay.get(day) ?? []), record])
-  })
-  const cells: Array<{ day: number | null; records: WorkspaceRecord[] }> = []
-  for (let i = 0; i < startWeekday; i++) cells.push({ day: null, records: [] })
-  for (let day = 1; day <= totalDays; day++) cells.push({ day, records: recordsByDay.get(day) ?? [] })
-  while (cells.length % 7 !== 0) cells.push({ day: null, records: [] })
-  const weeks: Array<typeof cells> = []
+  const [today, setToday] = useState('')
+  const [selectedDay, setSelectedDay] = useState('')
+  useEffect(() => { const now = new Date(); setAnchor(new Date(now.getFullYear(), now.getMonth(), 1)); setToday(localDayKey(now)); setSelectedDay(localDayKey(now)) }, [])
+  const byDay = new Map<string, CalendarEntry[]>()
+  const undated: CalendarEntry[] = []
+  entries.forEach((entry) => { const day = entryDay(entry.record); if (day) byDay.set(day, [...(byDay.get(day) ?? []), entry]); else undated.push(entry) })
+  const lead = (anchor.getDay() + 6) % 7
+  const cells = Array.from({ length: 42 }, (_, index) => new Date(anchor.getFullYear(), anchor.getMonth(), index - lead + 1))
+  const weeks: Date[][] = []
   for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7))
+  const monthCount = [...byDay.keys()].filter((day) => day.startsWith(localDayKey(anchor).slice(0, 7))).reduce((total, day) => total + (byDay.get(day)?.length ?? 0), 0)
+  const dayEntries = selectedDay ? byDay.get(selectedDay) ?? [] : []
+  const dayLabel = selectedDay ? new Date(`${selectedDay}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }) : ''
   return <div className="retail-app-calendar-card">
-    <div className="retail-app-panel-heading"><div><p>Schedule</p><h2>{monthLabel}</h2></div><span>{records.length} scheduled</span></div>
+    <div className="retail-app-panel-heading">
+      <div><p>Schedule</p><h2>{anchor.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</h2></div>
+      <div className="retail-app-calendar-nav">
+        <button aria-label="Previous month" onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1))} type="button">‹</button>
+        <button onClick={() => { const now = new Date(); setAnchor(new Date(now.getFullYear(), now.getMonth(), 1)); setSelectedDay(localDayKey(now)) }} type="button">Today</button>
+        <button aria-label="Next month" onClick={() => setAnchor(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1))} type="button">›</button>
+        <span>{monthCount} this month</span>
+      </div>
+    </div>
     <div className="retail-app-calendar-weekdays">{weekdayLabels.map((day) => <span key={day}>{day}</span>)}</div>
     <div className="retail-app-calendar-grid">
       {weeks.map((week, weekIndex) => <div className="retail-app-calendar-row" key={weekIndex}>
-        {week.map((cell, cellIndex) => <div className={`retail-app-calendar-cell${cell.day === anchor.getDate() ? ' is-today' : ''}${cell.day === null ? ' is-empty' : ''}`} key={cellIndex}>
-          {cell.day ? <span className="retail-app-calendar-daynum">{cell.day}</span> : null}
-          <div className="retail-app-calendar-chips">
-            {cell.records.map((record) => <button className={`retail-app-calendar-chip${record.id === selectedId ? ' selected' : ''}`} key={record.id} onClick={() => onSelect(record.id)} title={record.name} type="button">{record.name}</button>)}
+        {week.map((date) => {
+          const key = localDayKey(date)
+          const list = byDay.get(key) ?? []
+          return <div className={`retail-app-calendar-cell${key === today ? ' is-today' : ''}${date.getMonth() !== anchor.getMonth() ? ' is-empty' : ''}${key === selectedDay ? ' is-selected' : ''}`} key={key} onClick={() => setSelectedDay(key)} role="button" tabIndex={0}>
+            <span className="retail-app-calendar-daynum">{date.getDate()}</span>
+            <div className="retail-app-calendar-chips">
+              {list.slice(0, 3).map((entry) => <button className={`retail-app-calendar-chip${entry.record.id === selectedId ? ' selected' : ''}`} key={`${entry.module}-${entry.record.id}`} onClick={(event) => { event.stopPropagation(); setSelectedDay(key); onSelect(entry) }} title={`${entry.record.name} · ${entry.record.status}`} type="button">{entry.record.name}</button>)}
+              {list.length > 3 ? <small>+{list.length - 3} more</small> : null}
+            </div>
           </div>
-        </div>)}
+        })}
       </div>)}
     </div>
-    {records.length === 0 ? <p className="retail-app-board-empty">Nothing scheduled this month</p> : null}
+    {selectedDay ? <div className="retail-app-calendar-day">
+      <div className="retail-app-calendar-day-head"><h3>{dayLabel}</h3><button className="retail-app-primary" onClick={() => onCreate(selectedDay)} type="button">+ Add on this day</button></div>
+      {dayEntries.length ? dayEntries.map((entry) => <button className="retail-app-calendar-item" key={`${entry.module}-${entry.record.id}`} onClick={() => onSelect(entry)} type="button"><strong>{entry.record.name}</strong><span>{entry.record.status}{entry.record.secondary ? ` · ${entry.record.secondary}` : ''}</span></button>) : <p className="retail-app-board-empty">Nothing scheduled on this day.</p>}
+    </div> : null}
+    {undated.length ? <div className="retail-app-calendar-day">
+      <h3>Not scheduled yet ({undated.length})</h3>
+      {undated.slice(0, 20).map((entry) => <div className="retail-app-calendar-item" key={`${entry.module}-${entry.record.id}`}><strong>{entry.record.name}</strong><span>{entry.record.status}</span>{selectedDay ? <button onClick={() => onSchedule(entry, selectedDay)} type="button">Schedule for {new Date(`${selectedDay}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</button> : null}</div>)}
+    </div> : null}
+    {!entries.length ? <p className="retail-app-board-empty">Nothing scheduled yet — pick a day and add the first one.</p> : null}
   </div>
 }
 
@@ -2136,6 +2164,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState(records[0]?.id)
   const [creating, setCreating] = useState(false)
+  const [createDay, setCreateDay] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [retry, setRetry] = useState<(() => void) | null>(null)
@@ -2260,10 +2289,14 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
     const form = new FormData(event.currentTarget)
     const file = form.get('attachment') as File | null
     const attachment = file && file.size > 0 ? await readFileAsDataUrl(file) : undefined
-    const record: WorkspaceRecord = { id: `${item.id.slice(0, 3).toUpperCase()}-${100 + records.length + 1}`, name: String(form.get('name')), secondary: String(form.get('secondary')), value: String(form.get('value')), status: statuses[0], owner: String(form.get('owner')), updated: 'Now', attachment, attachmentName: file?.name }
+    // Marketing's Calendar has no records of its own; new entries become scheduled content.
+    const targetId = CALENDAR_SOURCES[item.id]?.[0] ?? item.id
+    const targetStatuses = targetId === item.id ? statuses : statusFor(config.modules.find((entry) => entry.id === targetId) ?? item)
+    const dueDate = String(form.get('dueDate') || '') || undefined
+    const record: WorkspaceRecord = { id: `${targetId.slice(0, 3).toUpperCase()}-${100 + (state.records[targetId] ?? []).length + 1}`, name: String(form.get('name')), secondary: String(form.get('secondary')), value: String(form.get('value')), status: targetStatuses[0], owner: String(form.get('owner')), updated: 'Now', attachment, attachmentName: file?.name, dueDate }
     try {
-      const created = await createRecord(item.id, record)
-      setSelectedId(created.id)
+      const created = await createRecord(targetId, record)
+      if (targetId === item.id) setSelectedId(created.id)
       setCreating(false)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Record could not be created')
@@ -2387,7 +2420,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
   }
   const origin = selected ? recordOrigin(selected, config) : null
   const isDirectory = !item.statuses
-  const isCalendar = item.id === 'calendar' || item.id === 'interviews' || item.id === 'appointments'
+  const isCalendar = Boolean(CALENDAR_SOURCES[item.id])
   const isInbox = item.id === 'inbox' || item.id.endsWith('-inbox')
   const isContentStudio = item.id === 'content'
   const isInventory = item.id === 'inventory'
@@ -2462,7 +2495,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
       <button onClick={() => setCheckedIds([])} type="button">Clear selection</button>
     </div> : null}
     {isInbox ? <InboxListView onSelect={selectRecord} records={visible} selectedId={selected?.id} statuses={statuses} /> : <section className="retail-app-record-layout">
-      {isCalendar ? <CalendarGridView onSelect={selectRecord} records={visible} selectedId={selected?.id} /> : isProducts ? <ProductGridView checked={checked} onSelect={selectRecord} onToggle={toggleChecked} records={visible} selectedId={selected?.id} /> : isDirectory ? <div className="retail-app-directory-card">
+      {isCalendar ? <CalendarGridView entries={(CALENDAR_SOURCES[item.id] ?? [item.id]).flatMap((source) => (source === item.id ? visible : state.records[source] ?? []).map((record) => ({ record, module: source })))} onCreate={(day) => { setCreateDay(day); setCreating(true) }} onSchedule={(entry, day) => void updateRecord(entry.module, entry.record, { dueDate: day })} onSelect={(entry) => { if (entry.module === item.id) selectRecord(entry.record.id) }} selectedId={selected?.id} /> : isProducts ? <ProductGridView checked={checked} onSelect={selectRecord} onToggle={toggleChecked} records={visible} selectedId={selected?.id} /> : isDirectory ? <div className="retail-app-directory-card">
         <div className="retail-app-panel-heading"><div><p>{item.group}</p><h2>{visible.length} {item.label.toLowerCase()}</h2></div></div>
         <div className="retail-app-directory-grid">
           {visible.map((record) => {
@@ -2577,7 +2610,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
         {sourceOpen ? <p className="retail-app-source-detail">{origin.detail}</p> : null}
         {!isDirectory ? <div className="retail-app-stage">{statuses.map((status) => <span className={status === selected.status ? 'active' : ''} key={status}>{status}</span>)}</div> : null}{error ? <div className="complete-workspace-error" role="alert"><span>{error}</span>{retry ? <button type="button" className="complete-workspace-error__retry" onClick={retry}>Retry</button> : null}</div> : null}{productionModeEnabled && item.id === 'payments' && selected.status !== 'Paid' ? <button className="retail-app-primary" disabled={saving || !selected.backendId} onClick={() => void collectPayment()} type="button">Collect with Stripe</button> : !isDirectory && selected.status !== statuses.at(-1) ? <button className="retail-app-primary" disabled={saving} onClick={() => void advance()} type="button">Move to {statuses[Math.min(statuses.indexOf(selected.status) + 1, statuses.length - 1)]}</button> : null}<button className="retail-app-secondary" disabled={saving} onClick={() => void publishHandoff(item.id, selected, handoffTarget).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Handoff could not be published'))} type="button">Handoff to {configs[handoffTarget].label}</button></aside> : null}
     </section>}
-    {creating ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void create(event)}><div><p>{item.label}</p><h2>New {noun}</h2></div><label>{fields.name}<input name="name" required /></label><label>{fields.secondary}<input name="secondary" required /></label><div className="retail-app-form-grid"><label>{fields.value}<input name="value" placeholder={profile?.valueHint ?? '£0 or priority'} required /></label><label>{fields.owner}<select name="owner"><option>Maya</option><option>Noah</option><option>Ava</option><option>Bobby</option></select></label></div><label>Attachment (optional)<input accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv" name="attachment" type="file" /></label>{error ? <div className="complete-workspace-error" role="alert"><span>{error}</span>{retry ? <button type="button" className="complete-workspace-error__retry" onClick={retry}>Retry</button> : null}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setCreating(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Saving…' : `Create ${noun}`}</button></footer></form></div> : null}
+    {creating ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void create(event)}><div><p>{item.label}</p><h2>New {noun}</h2></div><label>{fields.name}<input name="name" required /></label><label>{fields.secondary}<input name="secondary" required /></label><div className="retail-app-form-grid"><label>{fields.value}<input name="value" placeholder={profile?.valueHint ?? '£0 or priority'} required /></label><label>{fields.owner}<select name="owner"><option>Maya</option><option>Noah</option><option>Ava</option><option>Bobby</option></select></label></div>{isCalendar ? <label>Date<input defaultValue={createDay} key={createDay} name="dueDate" required type="date" /></label> : null}<label>Attachment (optional)<input accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv" name="attachment" type="file" /></label>{error ? <div className="complete-workspace-error" role="alert"><span>{error}</span>{retry ? <button type="button" className="complete-workspace-error__retry" onClick={retry}>Retry</button> : null}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setCreating(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Saving…' : `Create ${noun}`}</button></footer></form></div> : null}
   </>
 }
 

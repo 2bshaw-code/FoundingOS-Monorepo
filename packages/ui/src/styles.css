@@ -15092,3 +15092,86 @@ html[data-accessibility-simplified='true'] .btn {
 
 .site-nav-links .site-nav-account { background: #38bdf8; color: #04111f; border: 0; border-radius: 999px; padding: 7px 14px; font-weight: 800; cursor: pointer; font-size: inherit; text-decoration: none; }
 .site-nav-links .site-nav-superdash { color: #38bdf8; font-weight: 800; }
+
+/* SuperDash modules: tabs, forms, P&L, marketing queue */
+.sd-tabs { display: flex; gap: 6px; margin: 0 0 18px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 999px; padding: 4px; width: fit-content; }
+.sd-tabs button { background: transparent; color: #8aa0b8; border: 0; border-radius: 999px; padding: 9px 20px; font-weight: 800; font-size: 14px; cursor: pointer; }
+.sd-tabs button.on { background: #38bdf8; color: #04111f; }
+.sd-module button, .sd-actions button { background: #38bdf8; color: #04111f; border: 0; border-radius: 999px; padding: 9px 16px; font-weight: 800; cursor: pointer; font-size: 14px; }
+.sd-module button.ghost { background: rgba(255,255,255,.08); color: #e8eef6; }
+.sd-module button:disabled { opacity: .5; cursor: default; }
+.sd-form { display: grid; gap: 10px; margin-bottom: 18px; }
+.sd-form input, .sd-form select, .sd-form textarea { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; color: #fff; padding: 10px 12px; font-size: 14px; font-family: inherit; width: 100%; box-sizing: border-box; }
+.sd-form select option { color: #04111f; }
+.sd-form-row { display: flex; gap: 8px; align-items: center; }
+.sd-form-row > * { flex: 1; }
+.sd-form-row > button { flex: 0 0 auto; }
+.sd-check { display: flex; gap: 8px; align-items: center; font-size: 14px; color: #c8d4e2; }
+.sd-check input { width: auto; }
+.sd-seg { display: flex; gap: 4px; background: rgba(255,255,255,.05); border-radius: 999px; padding: 3px; }
+.sd-module .sd-seg button { flex: 1; background: transparent; color: #8aa0b8; padding: 7px 10px; }
+.sd-module .sd-seg button.on { background: rgba(56,189,248,.2); color: #7dd3fc; }
+.sd-notice { color: #86efac; font-size: 14px; }
+.sd-pnl { display: flex; gap: 14px; align-items: flex-end; height: 170px; margin: 8px 0 16px; }
+.sd-pnl-col { flex: 1; display: grid; gap: 4px; text-align: center; height: 100%; grid-template-rows: 1fr auto auto; }
+.sd-pnl-bars { display: flex; gap: 4px; align-items: flex-end; justify-content: center; }
+.sd-pnl-bars i { width: 40%; max-width: 28px; min-height: 3px; border-radius: 6px 6px 2px 2px; }
+.sd-pnl-bars i.in { background: linear-gradient(#34d399, #10b981); }
+.sd-pnl-bars i.out { background: linear-gradient(#fb7185, #e11d48); }
+.sd-pnl-col b { font-size: 13px; }
+.sd-pnl-col small { color: #8aa0b8; font-size: 12px; }
+.neg { color: #fca5a5; }
+.sd-bar { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 4px; }
+.sd-bar i { width: 100%; }
+.sd-bar small { color: #8aa0b8; font-size: 10px; }
+.sd-post { align-items: flex-start; }
+.sd-post p { margin: 6px 0 0; font-size: 13px; color: #c8d4e2; white-space: pre-wrap; }
+.sd-post a { color: #7dd3fc; font-size: 13px; }
+.sd-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; max-width: 45%; }
+.sd-actions button { padding: 7px 12px; font-size: 13px; }
+.sd-actions button.ghost { background: rgba(255,255,255,.08); color: #e8eef6; }
+.sd-plan { border-top: 1px solid rgba(255,255,255,.08); padding-top: 10px; }
+.sd-plan p, .sd-plan li { font-size: 13px; color: #c8d4e2; }
+.sd-day { margin-top: 14px; }
+.sd-kpis small a { color: #7dd3fc; }
+
+/* Month calendar (shared by SuperDash, marketing, appointments, interviews, deliveries, rotas) */
+.mc-calendar { display: grid; gap: 10px; }
+.mc-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mc-head strong { font-size: 16px; min-width: 150px; text-align: center; }
+.mc-head small { margin-left: auto; opacity: .7; font-size: 12px; }
+.mc-head button { background: rgba(127,127,127,.14); color: inherit; border: 0; border-radius: 10px; padding: 6px 12px; font-weight: 800; cursor: pointer; font-size: 15px; }
+.mc-head .mc-today { font-size: 13px; }
+.mc-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.mc-weekday { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; opacity: .6; padding: 0 4px 2px; }
+.mc-day { min-height: 92px; border: 1px solid rgba(127,127,127,.2); border-radius: 10px; padding: 4px; display: flex; flex-direction: column; gap: 3px; cursor: pointer; overflow: hidden; }
+.mc-day:hover { border-color: rgba(56,189,248,.6); }
+.mc-day.is-out { opacity: .38; }
+.mc-day.is-today { border-color: #38bdf8; box-shadow: inset 0 0 0 1px #38bdf8; }
+.mc-day.is-selected { background: rgba(56,189,248,.12); }
+.mc-date { font-size: 12px; font-weight: 800; opacity: .8; }
+.mc-event { display: block; width: 100%; text-align: left; border: 0; border-radius: 6px; padding: 3px 5px; font-size: 11px; line-height: 1.25; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+.mc-event.tone-info { background: rgba(56,189,248,.22); color: #0369a1; }
+.mc-event.tone-good { background: rgba(52,211,153,.22); color: #047857; }
+.mc-event.tone-warn { background: rgba(251,191,36,.25); color: #92400e; }
+.mc-event.tone-muted { background: rgba(127,127,127,.18); color: inherit; }
+.sd-shell .mc-event.tone-info { color: #7dd3fc; }
+.sd-shell .mc-event.tone-good { color: #6ee7b7; }
+.sd-shell .mc-event.tone-warn { color: #fcd34d; }
+.mc-more { font-size: 11px; opacity: .7; }
+.mc-empty { font-size: 13px; opacity: .7; margin: 0; }
+@media (max-width: 640px) { .mc-day { min-height: 58px; } .mc-event { font-size: 0; padding: 0; height: 6px; } .sd-actions { max-width: none; } .sd-post { flex-direction: column; } }
+
+/* Real workspace calendar: month navigation, selected day, day agenda */
+.retail-app-calendar-nav { display: flex; align-items: center; gap: 6px; }
+.retail-app-calendar-nav button { border: 1px solid rgba(127,127,127,.25); background: transparent; color: inherit; border-radius: 10px; padding: 6px 12px; font-weight: 800; cursor: pointer; }
+.retail-app-calendar-nav span { font-size: 12px; opacity: .7; margin-left: 6px; }
+.retail-app-calendar-cell { cursor: pointer; }
+.retail-app-calendar-cell.is-selected { outline: 2px solid var(--workspace-accent, #38bdf8); outline-offset: -2px; }
+.retail-app-calendar-chips small { font-size: 11px; opacity: .7; }
+.retail-app-calendar-day { margin-top: 16px; display: grid; gap: 8px; }
+.retail-app-calendar-day h3 { margin: 0; font-size: 15px; }
+.retail-app-calendar-day-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.retail-app-calendar-item { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; text-align: left; border: 1px solid rgba(127,127,127,.2); background: transparent; color: inherit; border-radius: 12px; padding: 10px 12px; font: inherit; cursor: pointer; }
+.retail-app-calendar-item span { opacity: .7; font-size: 13px; flex: 1; }
+.retail-app-calendar-item button { border: 0; border-radius: 999px; padding: 6px 12px; font-weight: 800; cursor: pointer; background: rgba(56,189,248,.18); color: inherit; }

@@ -3,6 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { WorkspaceGate } from '../../../components/WorkspaceAccess'
+import { MonthCalendar, dayKey } from '../../../components/MonthCalendar'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
@@ -49,13 +50,38 @@ function formatValue(pence: number | null): string {
 // are quiet config screens, not a funnel. This classifies each module once so
 // the single screen below can render the right shape for it instead of
 // forcing every module into the same list-with-status-pills template.
-type ModuleKind = 'kanban' | 'inbox' | 'dashboard' | 'config' | 'records'
+type ModuleKind = 'kanban' | 'inbox' | 'dashboard' | 'config' | 'records' | 'calendar'
+
+// Scheduling modules render as a real month calendar. The value lists which modules'
+// records appear on it (Marketing's Calendar shows content and campaigns).
+const CALENDAR_SOURCES: Record<string, string[]> = {
+  calendar: ['content', 'campaigns'],
+  appointments: ['appointments'],
+  interviews: ['interviews'],
+  'time-off': ['time-off'],
+  deliveries: ['deliveries'],
+  dispatch: ['dispatch'],
+  'follow-ups': ['follow-ups'],
+  shifts: ['shifts'],
+  rotas: ['rotas'],
+  bookings: ['bookings'],
+}
+const DATE_FIELDS = ['dueDate', 'date', 'startsAt', 'scheduledAt', 'scheduledFor', 'publishAt']
+function recordDate(record: WorkspaceRecordDTO): string | null {
+  const data = (record.data || {}) as Record<string, unknown>
+  for (const field of DATE_FIELDS) {
+    const value = data[field]
+    if (typeof value === 'string' && !Number.isNaN(Date.parse(value))) return value
+  }
+  return null
+}
 
 const DASHBOARD_MODULE_IDS = new Set([
   'reports', 'forecasts', 'forecasting', 'attribution', 'scenarios', 'outcomes', 'strategic-overview', 'engagement', 'analytics',
 ])
 
 function classifyModuleKind(module: WorkspaceModuleDef): ModuleKind {
+  if (CALENDAR_SOURCES[module.id]) return 'calendar'
   if (module.group === 'Administration') return 'config'
   if (module.id.includes('inbox')) return 'inbox'
   if (DASHBOARD_MODULE_IDS.has(module.id)) return 'dashboard'
@@ -95,6 +121,7 @@ function WorkspaceModuleScreenInner() {
   const isOnline = useQuantumStore((state) => state.isOnline)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [filter, setFilter] = useState<string>('All')
+  const [selectedDay, setSelectedDay] = useState(() => dayKey(new Date()))
   const [photoBusyId, setPhotoBusyId] = useState<string | null>(null)
   const photoEnabled = module ? PHOTO_ENABLED_MODULES.has(module.id) : false
   const { feedback, showError } = useActionFeedback()
@@ -127,7 +154,8 @@ function WorkspaceModuleScreenInner() {
       }
       setLoadError('')
       try {
-        const data = await fetchWorkspaceRecords(workspace.slug, module.id)
+        const sources = CALENDAR_SOURCES[module.id] ?? [module.id]
+        const data = (await Promise.all(sources.map((source) => fetchWorkspaceRecords(workspace.slug, source)))).flat()
         if (latestRequestKey.current !== requestKey) return
         setRecords(data)
       } catch (err) {
@@ -193,29 +221,46 @@ function WorkspaceModuleScreenInner() {
     // Optimistic: show the new record in the list immediately with a
     // temporary id, then swap in the server's real record once it responds.
     const tempId = `temp-${Date.now()}`
+    const calendarTarget = CALENDAR_SOURCES[module.id]?.[0]
+    const targetModule = calendarTarget ? findModule(workspace.slug, calendarTarget) : module
+    const scheduled = calendarTarget ? (() => { const due = new Date(`${selectedDay}T09:00:00`); return { dueDate: due.toISOString() } })() : undefined
     const optimisticRecord: WorkspaceRecordDTO = {
       id: tempId,
-      reference: `${module.id}-${Date.now()}`,
-      name: `New ${module.label.toLowerCase()}`,
-      status: statuses?.[0] ?? 'New',
+      reference: `${targetModule?.id ?? module.id}-${Date.now()}`,
+      name: `New ${(targetModule ?? module).label.toLowerCase().replace(/s$/, '')}`,
+      status: (targetModule ?? module).statuses?.[0] ?? 'New',
       ownerId: null,
       valuePence: null,
-      data: {},
+      data: scheduled ?? {},
       version: 0,
       updatedAt: new Date().toISOString(),
     }
     setRecords((current) => [optimisticRecord, ...current])
     try {
-      const created = await createWorkspaceRecord(workspace.slug, module.id, {
+      const created = await createWorkspaceRecord(workspace.slug, targetModule?.id ?? module.id, {
         reference: optimisticRecord.reference,
         name: optimisticRecord.name,
         status: optimisticRecord.status,
+        ...(scheduled ? { data: scheduled } : {}),
       })
       setRecords((current) => current.map((item) => (item.id === tempId ? created : item)))
       logAction('record_created', 'success', { module: module.id })
     } catch (err) {
       setRecords((current) => current.filter((item) => item.id !== tempId))
       showError(err, addRecord)
+    }
+  }
+
+  async function scheduleOn(record: WorkspaceRecordDTO, day: string) {
+    setBusyId(record.id)
+    try {
+      const due = new Date(`${day}T09:00:00`)
+      const updated = await updateWorkspaceRecord(record.id, { version: record.version, data: { ...(record.data || {}), dueDate: due.toISOString() } })
+      setRecords((current) => current.map((item) => (item.id === record.id ? updated : item)))
+    } catch (err) {
+      showError(err, () => scheduleOn(record, day))
+    } finally {
+      setBusyId(null)
     }
   }
 
@@ -358,7 +403,40 @@ function WorkspaceModuleScreenInner() {
     )
   }
 
+  function renderCalendar() {
+    const dated = records.filter((record) => recordDate(record))
+    const undated = records.filter((record) => !recordDate(record))
+    const items = dated.map((record) => ({ id: record.id, date: recordDate(record)!, title: record.name, tone: (/complete|published|done|approved|confirmed|delivered|paid/i.test(record.status) ? 'good' : /cancel|miss|late|overdue/i.test(record.status) ? 'warn' : 'info') as 'good' | 'warn' | 'info' }))
+    const onDay = dated.filter((record) => dayKey(new Date(recordDate(record)!)) === selectedDay).sort((a, b) => recordDate(a)!.localeCompare(recordDate(b)!))
+    const label = new Date(`${selectedDay}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+    return (
+      <View style={styles.list}>
+        <QuantumCard accent={workspace!.accent}>
+          <MonthCalendar accent={workspace!.accent} items={items} onSelectDay={setSelectedDay} selectedDay={selectedDay} />
+        </QuantumCard>
+        <View style={styles.headerRow}>
+          <QuantumText variant="label">{label}</QuantumText>
+          <QuantumButton tone="secondary" onPress={addRecord}>+ Add on this day</QuantumButton>
+        </View>
+        {onDay.length ? onDay.map(renderRecordCard) : <QuantumText variant="caption" color={quantumColors.neutral300}>Nothing booked on this day.</QuantumText>}
+        {undated.length ? (
+          <>
+            <QuantumText variant="overline" color={quantumColors.neutral300}>Not scheduled yet ({undated.length})</QuantumText>
+            {undated.slice(0, renderLimit).map((record) => (
+              <QuantumCard key={record.id}>
+                <QuantumText variant="label">{record.name}</QuantumText>
+                <QuantumText variant="caption" color={quantumColors.neutral300}>{record.status}</QuantumText>
+                <QuantumButton disabled={busyId === record.id} tone="secondary" onPress={() => scheduleOn(record, selectedDay)}>Schedule for {new Date(`${selectedDay}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</QuantumButton>
+              </QuantumCard>
+            ))}
+          </>
+        ) : null}
+      </View>
+    )
+  }
+
   function renderBody() {
+    if (kind === 'calendar') return renderCalendar()
     if (records.length === 0) {
       const copy = module ? getGroupCopy(module.group, [module]) : null
       const headline = kind === 'inbox' ? 'Nothing to review yet' : 'You\'re all caught up'

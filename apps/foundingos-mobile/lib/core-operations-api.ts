@@ -878,3 +878,31 @@ export const founderEnableWorkspaces = (tenantId: string, workspaces: string[]) 
   authedRequest(`/api/v1/ops/founder/tenants/${encodeURIComponent(tenantId)}/workspaces`, { method: 'POST', body: JSON.stringify({ workspaces, enabled: true }) })
 
 export const fetchFounderAccess = () => authedRequest<{ founder: boolean }>('/api/v1/ops/founder/access')
+
+// SuperDash Finance / Marketing — FoundingOS's own books and growth marketing.
+export type FounderLedgerEntry = { id: string; label: string; kind: string; category: string; recurring: boolean; date: string; amountGbp: number; note: string }
+export type FounderPnlRow = { month: string; subscriptions: number; otherIncome: number; revenue: number; costs: number; net: number }
+export type FounderFinance = {
+  mrrGbp: number; arrGbp: number; arpuGbp: number; payingCustomers: number; billingLive: boolean; recurringCostsGbp: number
+  thisMonth: FounderPnlRow; cashGbp: number | null; cashAsOf: string | null; monthlyBurnGbp: number; runwayMonths: number | null
+  pnl: FounderPnlRow[]; byCategory: Array<{ category: string; monthlyGbp: number }>; topCustomers: Array<{ business: string; plan: string; monthlyGbp: number }>
+  entries: FounderLedgerEntry[]; categories: string[]; note: string
+}
+export type FounderPost = { id: string; title: string; status: string; channel: string; text: string; hashtags: string; dueDate: string | null; campaign: string; publishedUrl: string | null; publishedAt: string | null; updatedAt: string }
+export type FounderMarketing = {
+  funnel: { signups30d: number; signups7d: number; customers: number; paying: number; conversionPct: number; upgradeRequests90d: number; active7d: number; signupsByWeek: Array<{ weekOf: string; signups: number }> }
+  channels: { facebookInstagram: boolean; linkedin: boolean }
+  posts: FounderPost[]
+  campaigns: Array<{ id: string; name: string; status: string; summary: string; updatedAt: string }>
+}
+export const fetchFounderFinance = () => authedRequest<FounderFinance>('/api/v1/ops/founder/finance')
+export const addFounderLedgerEntry = (input: { kind: string; label: string; category?: string; amountGbp: number; recurring: boolean; date: string }) =>
+  authedRequest('/api/v1/ops/founder/ledger', { method: 'POST', body: JSON.stringify(input) })
+export const deleteFounderLedgerEntry = (id: string) => authedRequest(`/api/v1/ops/founder/ledger/${encodeURIComponent(id)}`, { method: 'DELETE' })
+export const fetchFounderMarketing = () => authedRequest<FounderMarketing>('/api/v1/ops/founder/marketing')
+export const saveFounderPost = (input: { title: string; text: string; hashtags?: string; channel: string; dueDate: string | null; status: 'Approved' | 'Draft'; campaign?: string }) =>
+  authedRequest('/api/v1/ops/founder/marketing/posts', { method: 'POST', body: JSON.stringify(input) })
+export const updateFounderPost = (id: string, input: { status?: string; dueDate?: string | null }) =>
+  authedRequest(`/api/v1/ops/founder/marketing/posts/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(input) })
+export const deleteFounderPost = (id: string) => authedRequest(`/api/v1/ops/founder/marketing/posts/${encodeURIComponent(id)}`, { method: 'DELETE' })
+export const publishSocialNow = (recordId: string) => authedRequest('/api/v1/ops/social/publish', { method: 'POST', body: JSON.stringify({ recordId }) })

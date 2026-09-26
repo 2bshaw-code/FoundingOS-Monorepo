@@ -13,7 +13,7 @@ import { OutboundBlocked } from './outbound.js'
 import { listWhatsAppTemplateStatus, submitWhatsAppTemplates } from './whatsapp-templates.js'
 import { decideAutopilotApproval, getAutopilotPolicy, listAutopilotActivity, listAutopilotApprovals, runAutopilot, runAutopilotForAllTenants, saveAutopilotPolicy } from './autopilot.js'
 import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess, requireFounderAccess, requireSignedIn, isFounderIdentity } from './auth.js'
-import { founderOverview, founderSetTenantWorkspaces, applyBillingEntitlements } from './founder.js'
+import { founderOverview, founderSetTenantWorkspaces, applyBillingEntitlements, founderFinance, founderAddLedgerEntry, founderDeleteRecord, founderMarketing, founderSavePost, founderUpdatePost } from './founder.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
 import { assignDelivery, createCampaign, createDeliveryOperator, createDeliveryVehicle, createDeliveryZone, createInventoryItem, createInvoice, createOrder, createSocialPost, deleteInventoryItem, detectLocation, generateMedia, getBrandProfile, invoiceDocument, operationsSummary, orderDocument, saveBrandProfile, saveLocationProfile, searchInventory, sendInvoice, updateCampaign, updateDeliveryAssignment, updateDeliveryNotification, updateDeliveryOperator, updateDeliveryVehicle, updateDeliveryZone, updateInventoryItem, updateInvoice, updateOrder, updateSocialPost, weatherAt } from './operations.js'
@@ -305,6 +305,27 @@ apiRouter.get('/founder/overview', requireFounderAccess, async (_req, res, next)
   try {
     res.json({ success: true, data: await founderOverview(res.locals.auth?.tenantId) })
   } catch (error) { next(error) }
+})
+apiRouter.get('/founder/finance', requireFounderAccess, async (_req, res, next) => {
+  try { res.json({ success: true, data: await founderFinance(res.locals.auth?.tenantId) }) } catch (error) { next(error) }
+})
+apiRouter.post('/founder/ledger', requireFounderAccess, async (req, res, next) => {
+  try { res.status(201).json({ success: true, data: await founderAddLedgerEntry(res.locals.auth?.tenantId, res.locals.auth.id, req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.delete('/founder/ledger/:id', requireFounderAccess, async (req, res, next) => {
+  try { res.json({ success: true, data: await founderDeleteRecord(res.locals.auth?.tenantId, String(req.params.id), 'founder-ledger') }) } catch (error) { next(error) }
+})
+apiRouter.get('/founder/marketing', requireFounderAccess, async (_req, res, next) => {
+  try { res.json({ success: true, data: await founderMarketing(res.locals.auth?.tenantId) }) } catch (error) { next(error) }
+})
+apiRouter.post('/founder/marketing/posts', requireFounderAccess, async (req, res, next) => {
+  try { res.status(201).json({ success: true, data: await founderSavePost(res.locals.auth?.tenantId, res.locals.auth.id, req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.patch('/founder/marketing/posts/:id', requireFounderAccess, async (req, res, next) => {
+  try { res.json({ success: true, data: await founderUpdatePost(res.locals.auth?.tenantId, String(req.params.id), req.body || {}) }) } catch (error) { next(error) }
+})
+apiRouter.delete('/founder/marketing/posts/:id', requireFounderAccess, async (req, res, next) => {
+  try { res.json({ success: true, data: await founderDeleteRecord(res.locals.auth?.tenantId, String(req.params.id), 'content') }) } catch (error) { next(error) }
 })
 apiRouter.post('/founder/tenants/:tenantId/workspaces', requireFounderAccess, async (req, res, next) => {
   try {

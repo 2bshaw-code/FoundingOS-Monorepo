@@ -4,8 +4,9 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 // Founder SuperDash: subscriptions, revenue, upgrade requests, platform health,
-// growth and quick links into FoundingOS's own Marketing and Finance workspaces.
+// growth, plus FoundingOS's own Finance (books, P&L, runway) and Marketing (FoundAI posts, campaigns, calendar).
 import { useCallback, useEffect, useState } from 'react'
+import { FounderFinancePanel, FounderMarketingPanel } from './founder-superdash-modules'
 import { getProductionSession, loginToProduction, logoutProduction, productionRequest } from './workspace-production-client'
 
 export type FounderOverview = {
@@ -35,6 +36,7 @@ export function FounderSuperDash() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [filter, setFilter] = useState('')
+  const [tab, setTab] = useState<'overview' | 'finance' | 'marketing'>('overview')
 
   const load = useCallback(async () => {
     setError('')
@@ -98,8 +100,14 @@ export function FounderSuperDash() {
   return <main className="sd-shell">
     <header className="sd-top">
       <div><p className="sd-eyebrow">FoundingOS · Founder</p><h1>SuperDash</h1><small>{data ? `Updated ${ago(data.generatedAt)}` : 'Loading…'}</small></div>
-      <nav><button onClick={() => void load()} type="button">Refresh</button><a href="/app/marketing">Marketing</a><a href="/app/finance">Finance</a><button className="ghost" onClick={() => { void logoutProduction().then(() => { setSignedIn(false); setData(null) }) }} type="button">Sign out</button></nav>
+      <nav><button onClick={() => void load()} type="button">Refresh</button><button className="ghost" onClick={() => { void logoutProduction().then(() => { setSignedIn(false); setData(null) }) }} type="button">Sign out</button></nav>
     </header>
+    <div className="sd-tabs" role="tablist">
+      {(['overview', 'finance', 'marketing'] as const).map((key) => <button aria-selected={tab === key} className={tab === key ? 'on' : ''} key={key} onClick={() => setTab(key)} role="tab" type="button">{key === 'overview' ? 'Business' : key === 'finance' ? 'Finance' : 'Marketing'}</button>)}
+    </div>
+    {tab === 'finance' ? <FounderFinancePanel /> : null}
+    {tab === 'marketing' ? <FounderMarketingPanel /> : null}
+    {tab === 'overview' ? <>
     {error ? <p className="sd-error">{error}{error.toLowerCase().includes('forbidden') || error.includes('403') ? ' — SuperDash needs the founder account.' : ''}</p> : null}
 
     <section className="sd-kpis">
@@ -157,5 +165,6 @@ export function FounderSuperDash() {
         </tbody></table>
       </section>
     </div>
+    </> : null}
   </main>
 }
