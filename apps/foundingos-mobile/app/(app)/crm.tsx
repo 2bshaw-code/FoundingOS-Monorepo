@@ -31,7 +31,7 @@ import {
 // same. Backed by the real, tenant-scoped Lead model (POST/PATCH
 // /api/v1/ops/leads) — stage moves persist to the real database, not just
 // on this device.
-const STAGES = ['Lead', 'Qualified', 'Proposal', 'Won'] as const
+const STAGES = ['Lead', 'Qualified', 'Proposal', 'Negotiation', 'Won'] as const
 type Stage = (typeof STAGES)[number]
 const LOST_STAGE = 'Lost'
 
@@ -39,6 +39,7 @@ const STAGE_ACCENT: Record<Stage, string> = {
   Lead: '#38BDF8',
   Qualified: '#A78BFA',
   Proposal: '#FBBF24',
+  Negotiation: '#FB923C',
   Won: '#26E07F',
 }
 

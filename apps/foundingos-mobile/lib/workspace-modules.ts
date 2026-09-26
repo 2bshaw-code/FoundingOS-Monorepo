@@ -21,7 +21,7 @@ export const WORKSPACES: WorkspaceDef[] = [
     slug: 'retail', label: 'Retail', accent: '#159151',
     description: 'Run sales, customer relationships, marketing, commerce, service, and finance from one connected workspace.',
     modules: [
-      mod('overview', 'Home', 'Workspace'), mod('sales-pipeline', 'Sales pipeline', 'Sales', ['Lead', 'Qualified', 'Proposal', 'Won']), mod('orders', 'Orders', 'Sales', ['New', 'Picking', 'Ready', 'Delivered']), mod('point-of-sale', 'Point of sale', 'Sales', ['Open basket', 'Payment due', 'Paid', 'Closed']),
+      mod('overview', 'Home', 'Workspace'), mod('sales-pipeline', 'Sales pipeline', 'Sales', ['Lead', 'Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost']), mod('orders', 'Orders', 'Sales', ['New', 'Picking', 'Ready', 'Delivered']), mod('point-of-sale', 'Point of sale', 'Sales', ['Open basket', 'Payment due', 'Paid', 'Closed']),
       mod('crm', 'CRM', 'Customers', ['New', 'Engaged', 'Active', 'VIP']), mod('segments', 'Segments', 'Customers'), mod('loyalty', 'Loyalty', 'Customers'), mod('inbox', 'Omnichannel inbox', 'Customers', ['Unread', 'Assigned', 'Waiting', 'Resolved']),
       mod('campaigns', 'Campaigns', 'Marketing', ['Draft', 'Scheduled', 'Live', 'Complete']), mod('automations', 'Automations', 'Marketing'), mod('content', 'Content studio', 'Marketing', ['Idea', 'Draft', 'Approved', 'Published']),
       mod('products', 'Products', 'Commerce'), mod('inventory', 'Inventory', 'Commerce', ['Low stock', 'Available', 'Reserved', 'Replenished']), mod('promotions', 'Promotions', 'Commerce', ['Draft', 'Scheduled', 'Live', 'Ended']), mod('channels', 'Sales channels', 'Commerce'),

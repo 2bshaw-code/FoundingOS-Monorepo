@@ -40,14 +40,16 @@ const profiles: Record<string, ModuleProfile> = {
   'retail/sales-pipeline': {
     noun: 'deal', copy: 'Track every deal from first conversation to won, and see what is likely to close this month.',
     fields: { name: 'Deal', secondary: 'Company', value: 'Deal value', owner: 'Salesperson' }, valueHint: '£0',
-    kpis: (records, statuses) => {
-      const won = inStatus(records, last(statuses))
-      const open = notIn(records, last(statuses))
+    kpis: (records) => {
+      const won = inStatus(records, 'Won')
+      const lost = inStatus(records, 'Lost')
+      const open = records.filter((record) => record.status !== 'Won' && record.status !== 'Lost')
+      const closed = won.length + lost.length
       return [
         { label: 'Open pipeline', value: gbp(sum(open)), tone: 'info' },
         { label: 'Won', value: gbp(sum(won)), tone: 'good' },
-        { label: 'Win rate', value: pct(won.length, records.length), tone: won.length / Math.max(records.length, 1) >= 0.25 ? 'good' : 'watch' },
-        { label: 'Average deal', value: gbp(sum(records) / Math.max(records.length, 1)), tone: 'info' },
+        { label: 'Win rate', value: closed ? pct(won.length, closed) : '—', tone: !closed || won.length / closed >= 0.25 ? 'good' : 'watch' },
+        { label: 'Average deal', value: gbp(sum(won.length ? won : open) / Math.max((won.length ? won : open).length, 1)), tone: 'info' },
       ]
     },
   },

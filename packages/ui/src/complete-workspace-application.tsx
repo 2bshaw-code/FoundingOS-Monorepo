@@ -7,13 +7,19 @@ import { getWorkspaceLayout, ModuleAiBar, moduleSamples, ModuleWorkspaceView, ne
 import { useRouter } from 'next/navigation'
 import { Fragment, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { CampaignPlanner, type CampaignBrief, type CampaignPlan } from './marketing-studio'
+import { DocumentPanel, DocumentSettingsPanel, useDocumentProfile } from './pro/document-panel'
+import { documentTotals, type BusinessDocument, type DocumentKind, type DocumentProfile } from './pro/documents'
+import { CampaignPortfolioPanel, CampaignProPanel } from './pro/marketing'
+import { AgedPanel, FinanceReportsPage, MarketingReportsPage, SalesReportsPage } from './pro/reports'
+import { DealPanel, SalesForecastPanel } from './pro/sales'
+import { addDays, todayIso, type LoadRecords, type ProPatch, type ProRecord } from './pro/shared'
 import { bootstrapProduction, getProductionSession, loginToProduction, logoutProduction, productionAgentActions, productionApiConfigured, productionModeEnabled, productionPlatform, productionRecords, productionRequest, type AgentAction, type AgentIntelligenceSummary, type ControlSettings, type ProductionInvitation, type ProductionSession, type ProductionWorkspaceRecord } from './workspace-production-client'
 
 const workspaceRoot = productionModeEnabled ? '/app' : '/test-workspaces'
 
 export type BusinessWorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'marketing' | 'talent' | 'hr' | 'health' | 'intelligence'
 
-type WorkspaceRecord = { id: string; backendId?: string; version?: number; name: string; secondary: string; value: string; status: string; owner: string; updated: string; attachment?: string; attachmentName?: string; quantity?: number; reorderPoint?: number; log?: Array<{ time: string; note: string; kind?: string }>; dueDate?: string; email?: string; phone?: string; channel?: string; postText?: string; publishedUrl?: string }
+type WorkspaceRecord = { id: string; backendId?: string; version?: number; name: string; secondary: string; value: string; status: string; owner: string; updated: string; attachment?: string; attachmentName?: string; quantity?: number; reorderPoint?: number; log?: Array<{ time: string; note: string; kind?: string }>; dueDate?: string; email?: string; phone?: string; channel?: string; postText?: string; publishedUrl?: string; data?: Record<string, unknown> }
 type WorkspaceModule = { id: string; label: string; group: string; statuses?: string[] }
 type WorkspaceEvent = { id: string; workspace: BusinessWorkspaceSlug; text: string; time: string; type?: string; payload?: Record<string, unknown> }
 type WorkspaceState = {
@@ -41,7 +47,7 @@ const configs: Record<BusinessWorkspaceSlug, WorkspaceConfig> = {
     subjects: ['Harbour Cafe', 'Amina Yusuf', 'North & Co', 'Sofia Martins', 'Willowbrook Bakery', 'Deacon & Rye', 'Priya Anand', 'The Corner Deli'],
     metrics: [{ label: 'Revenue', value: '£18.6k', change: '+12.4% this week' }, { label: 'Pipeline', value: '£42.8k', change: '14 open opportunities' }, { label: 'Customers', value: '1,284', change: '+38 this month' }, { label: 'Conversion', value: '8.7%', change: '+1.3 points' }],
     modules: [
-      module('overview', 'Home', 'Workspace'), module('sales-pipeline', 'Sales pipeline', 'Sales', ['Lead', 'Qualified', 'Proposal', 'Won']), module('orders', 'Orders', 'Sales', ['New', 'Picking', 'Ready', 'Delivered']), module('point-of-sale', 'Point of sale', 'Sales', ['Open basket', 'Payment due', 'Paid', 'Closed']),
+      module('overview', 'Home', 'Workspace'), module('sales-pipeline', 'Sales pipeline', 'Sales', ['Lead', 'Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost']), module('orders', 'Orders', 'Sales', ['New', 'Picking', 'Ready', 'Delivered']), module('point-of-sale', 'Point of sale', 'Sales', ['Open basket', 'Payment due', 'Paid', 'Closed']),
       module('crm', 'CRM', 'Customers', ['New', 'Engaged', 'Active', 'VIP']), module('segments', 'Segments', 'Customers'), module('loyalty', 'Loyalty', 'Customers'), module('inbox', 'Omnichannel inbox', 'Customers', ['Unread', 'Assigned', 'Waiting', 'Resolved']),
       module('campaigns', 'Campaigns', 'Marketing', ['Draft', 'Scheduled', 'Live', 'Complete']), module('automations', 'Automations', 'Marketing'), module('content', 'Content studio', 'Marketing', ['Idea', 'Draft', 'Approved', 'Published']),
       module('products', 'Products', 'Commerce'), module('inventory', 'Inventory', 'Commerce', ['Low stock', 'Available', 'Reserved', 'Replenished']), module('promotions', 'Promotions', 'Commerce', ['Draft', 'Scheduled', 'Live', 'Ended']), module('channels', 'Sales channels', 'Commerce'),
@@ -404,6 +410,7 @@ const fromProductionRecord = (record: ProductionWorkspaceRecord): WorkspaceRecor
   status: record.status,
   owner: record.ownerId || String(data.owner || 'Unassigned'),
   updated: new Date(record.updatedAt).toLocaleString('en-GB', { timeZone: 'UTC' }),
+  data,
   ...(typeof data.dueDate === 'string' ? { dueDate: data.dueDate } : {}),
   ...(typeof data.email === 'string' && data.email ? { email: data.email } : {}),
   ...(typeof data.phone === 'string' && data.phone ? { phone: data.phone } : {}),
@@ -540,6 +547,43 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
       : { ...record, ...patch, updated: 'Now' }
     update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? nextRecord : item) } }), `${module}: ${record.name} details updated`)
   }
+  // Saves structured professional data (invoice lines, deal terms, campaign results) onto a record.
+  // The backend merges `data`, so contact details and activity logs are never wiped.
+  const saveRecordData = async (module: string, record: WorkspaceRecord, patch: ProPatch) => {
+    const nextRecord = production && record.backendId
+      ? fromProductionRecord(await productionRecords.update(record.backendId, patch))
+      : {
+          ...record,
+          ...(patch.name ? { name: patch.name } : {}),
+          ...(patch.status ? { status: patch.status } : {}),
+          ...(patch.valuePence !== undefined ? { value: displayMoney(patch.valuePence) } : {}),
+          ...(typeof patch.data?.secondary === 'string' && patch.data.secondary ? { secondary: patch.data.secondary } : {}),
+          ...(typeof patch.data?.dueDate === 'string' ? { dueDate: patch.data.dueDate } : {}),
+          ...(typeof patch.data?.email === 'string' ? { email: patch.data.email } : {}),
+          data: { ...(record.data ?? {}), ...(patch.data ?? {}) },
+          updated: 'Now',
+        }
+    update((current) => ({ ...current, records: { ...current.records, [module]: (current.records[module] ?? []).map((item) => item.id === record.id ? nextRecord : item) } }), `${module}: ${record.name} updated`)
+  }
+  // Creates a record in another workspace/module (e.g. converting a quote into a Finance invoice).
+  const createLinkedRecord = async (targetWorkspace: BusinessWorkspaceSlug, module: string, input: { reference: string; name: string; status: string; valuePence: number; data: Record<string, unknown> }) => {
+    if (production) {
+      await productionRecords.create(targetWorkspace, module, input)
+      return
+    }
+    const record: WorkspaceRecord = { id: input.reference, name: input.name, secondary: String(input.data.secondary || ''), value: displayMoney(input.valuePence), status: input.status, owner: 'Unassigned', updated: 'Now', data: input.data, ...(typeof input.data.dueDate === 'string' ? { dueDate: input.data.dueDate } : {}) }
+    if (targetWorkspace === workspace) update((current) => ({ ...current, records: { ...current.records, [module]: [record, ...(current.records[module] ?? [])] } }), `${module}: ${record.name} created`)
+    else appendDemoRecord(targetWorkspace, module, record)
+  }
+  const loadRecords = async (targetWorkspace: string, module: string): Promise<ProRecord[]> => {
+    if (production) return (await productionRecords.list(targetWorkspace, module)).map(fromProductionRecord)
+    // Demo mode: read the persisted simulation so reports see edits even before this page hydrates.
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(storageKey(targetWorkspace as BusinessWorkspaceSlug)) || 'null') as WorkspaceState | null
+      if (stored?.records?.[module]) return stored.records[module]
+    } catch { /* fall back to in-memory state */ }
+    return targetWorkspace === workspace ? state.records[module] ?? [] : seedWorkspace(targetWorkspace as BusinessWorkspaceSlug).records[module] ?? []
+  }
   // Moves every record in a set to the same next status in one action — powers the bulk-select
   // toolbar so an operator can advance a whole batch of orders/deals/candidates together.
   const bulkAdvance = async (module: string, records: WorkspaceRecord[], status: string) => {
@@ -554,7 +598,7 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
     window.localStorage.removeItem(storageKey(workspace))
     setState(seedWorkspace(workspace))
   }
-  return { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff }
+  return { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords }
 }
 
 function appendDemoRecord(workspace: BusinessWorkspaceSlug, module: string, record: WorkspaceRecord) {
@@ -1695,26 +1739,6 @@ function StockTakePanel({ record, count, onCountChange, onRecord }: { record: Wo
   </div>
 }
 
-// Weighted revenue forecast for the sales pipeline: probability-weights each open deal by how
-// far along the stage it's in (later stages count for more), so the number reflects likely
-// close value, not just the raw sum of everything in the funnel.
-function PipelineForecastBar({ statuses, records }: { statuses: string[]; records: WorkspaceRecord[] }) {
-  const open = records.filter((record) => record.status !== statuses.at(-1))
-  const total = open.reduce((sum, record) => sum + parseCurrency(record.value), 0)
-  const weighted = open.reduce((sum, record) => {
-    const stageIndex = statuses.indexOf(record.status)
-    const probability = statuses.length > 1 ? (stageIndex + 1) / statuses.length : 1
-    return sum + parseCurrency(record.value) * probability
-  }, 0)
-  const won = records.filter((record) => record.status === statuses.at(-1)).reduce((sum, record) => sum + parseCurrency(record.value), 0)
-  return <div className="retail-app-forecast-bar">
-    <div><strong>{formatCurrency(total)}</strong><span>Open pipeline</span></div>
-    <div><strong>{formatCurrency(weighted)}</strong><span>Weighted forecast</span></div>
-    <div><strong>{formatCurrency(won)}</strong><span>Won this period</span></div>
-    <div><strong>{total ? Math.round((won / (total + won)) * 100) : 0}%</strong><span>Win rate</span></div>
-  </div>
-}
-
 // A conversion funnel for any board module: shows how many records are at (or have passed)
 // each stage, and the drop-off percentage stage-to-stage — the same shape recruiters/sales
 // teams expect from a real funnel chart, generated purely from `statuses`/`records` so it works
@@ -1881,40 +1905,6 @@ function BOMComponentsPanel({ record }: { record: WorkspaceRecord }) {
   </div>
 }
 
-// A Sage/Xero-style aging summary for Finance's Invoices module — a real accounts-receivable
-// view (current / 30 / 60 / 90+ buckets, worst-offender list) instead of a generic value bar,
-// which is what any professional finance team expects to see first.
-const invoiceAgingBuckets = ['Current', '1-30 days', '31-60 days', '61-90 days', '90+ days'] as const
-function InvoiceAgingPanel({ records }: { records: WorkspaceRecord[] }) {
-  const rows = records.filter((record) => record.status !== 'Paid').map((record) => {
-    const daysOverdue = hashSpread(`${record.id}-aging`, 0, 120)
-    const bucket = daysOverdue === 0 ? invoiceAgingBuckets[0] : daysOverdue <= 30 ? invoiceAgingBuckets[1] : daysOverdue <= 60 ? invoiceAgingBuckets[2] : daysOverdue <= 90 ? invoiceAgingBuckets[3] : invoiceAgingBuckets[4]
-    return { record, daysOverdue, bucket, amount: parseCurrency(record.value) }
-  })
-  const totals = invoiceAgingBuckets.map((bucket) => ({ bucket, amount: rows.filter((row) => row.bucket === bucket).reduce((sum, row) => sum + row.amount, 0) }))
-  const totalOutstanding = totals.reduce((sum, row) => sum + row.amount, 0)
-  const maxBucket = Math.max(1, ...totals.map((row) => row.amount))
-  const worst = [...rows].sort((a, b) => b.daysOverdue - a.daysOverdue).slice(0, 3)
-  return <div className="retail-app-invoice-aging-panel">
-    <div className="retail-app-panel-heading"><div><p>Accounts receivable</p><h2>{formatCurrency(totalOutstanding)} outstanding</h2></div></div>
-    <div className="retail-app-aging-chart">
-      {totals.map(({ bucket, amount }) => <div className="retail-app-aging-col" data-risk={bucket === '61-90 days' || bucket === '90+ days'} key={bucket}>
-        <div className="retail-app-aging-bar" style={{ height: `${Math.max(6, Math.round((amount / maxBucket) * 100))}px` }} />
-        <b>{formatCurrency(amount)}</b>
-        <span>{bucket}</span>
-      </div>)}
-    </div>
-    {worst.length > 0 ? <div className="retail-app-aging-worst">
-      <p className="retail-app-attachment-label">Most overdue</p>
-      {worst.map(({ record, daysOverdue, amount }) => <div className="retail-app-aging-worst-row" key={record.id}>
-        <span>{record.name}</span>
-        <i data-risk={daysOverdue > 60}>{daysOverdue}d overdue</i>
-        <b>{formatCurrency(amount)}</b>
-      </div>)}
-    </div> : null}
-  </div>
-}
-
 // A recruiting-profile card for Talent's Candidates module — role applied for, years of
 // experience, source channel, and a stage-progress rail, the depth a real ATS candidate
 // record needs instead of the generic name/value/owner fields every module gets.
@@ -1939,36 +1929,6 @@ function CandidateProfilePanel({ record, statuses }: { record: WorkspaceRecord; 
 // A clinical patient snapshot for Health's Patients module — last visit, next appointment, and
 // allergy flags, the at-a-glance clinical context a directory record on its own can't show.
 const patientAllergies = ['No known allergies', 'Penicillin allergy', 'Latex allergy', 'Nut allergy', 'Seasonal pollen allergy']
-// A per-campaign performance breakdown for Marketing's Campaigns module — channel mix,
-// reach/CTR/ROAS, deterministically derived from the record id and its budget (value) so the
-// numbers stay stable between renders without needing extra backend fields.
-const campaignChannels = ['Email', 'WhatsApp', 'Paid social', 'Organic social']
-function CampaignPerformancePanel({ record }: { record: WorkspaceRecord }) {
-  const budget = parseCurrency(record.value) || hashSpread(record.id, 400, 4000)
-  const reach = hashSpread(`${record.id}-reach`, 1200, 26000)
-  const ctr = (hashPercent(`${record.id}-ctr`, 18, 62) / 10).toFixed(1)
-  const roas = (hashPercent(`${record.id}-roas`, 180, 620) / 100).toFixed(1)
-  const spend = campaignChannels.map((channel, index) => ({ channel, pct: hashPercent(`${record.id}-${channel}`, 8, 46 - index * 3) }))
-  const total = spend.reduce((sum, row) => sum + row.pct, 0) || 1
-  return <div className="retail-app-patient-panel">
-    <p className="retail-app-attachment-label">Campaign performance</p>
-    <dl className="retail-app-crm-fields">
-      <div><dt>Reach</dt><dd>{reach.toLocaleString('en-GB')}</dd></div>
-      <div><dt>Click-through rate</dt><dd>{ctr}%</dd></div>
-      <div><dt>Return on ad spend</dt><dd>{roas}x</dd></div>
-      <div><dt>Budget</dt><dd>{formatCurrency(budget)}</dd></div>
-    </dl>
-    <p className="retail-app-attachment-label">Channel mix</p>
-    <div className="retail-app-channel-mix">
-      {spend.map((row) => <div className="retail-app-channel-mix-row" key={row.channel}>
-        <span>{row.channel}</span>
-        <div className="retail-app-channel-mix-bar"><i style={{ width: `${Math.round((row.pct / total) * 100)}%` }} /></div>
-        <b>{Math.round((row.pct / total) * 100)}%</b>
-      </div>)}
-    </div>
-  </div>
-}
-
 function PatientSnapshotPanel({ record }: { record: WorkspaceRecord }) {
   const allergy = patientAllergies[hashSpread(record.id, 0, patientAllergies.length)]
   const daysSinceVisit = 1 + hashSpread(`${record.id}-visit`, 0, 89)
@@ -2163,8 +2123,46 @@ function ModuleKpiStrip({ kpis }: { kpis: ModuleKpi[] }) {
   return <div className="module-kpi-strip">{kpis.map((kpi) => <article data-tone={kpi.tone} key={kpi.label}><span>{kpi.label}</span><strong>{kpi.value}</strong></article>)}</div>
 }
 
-function RecordsPage({ autopilot, workspace, config, item, state, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff }: { autopilot?: AutopilotController; workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string, kind?: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate' | 'email' | 'phone'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void> }) {
+const DOCUMENT_MODULES: Record<string, DocumentKind> = {
+  'finance/invoices': 'invoice', 'finance/bills': 'bill', 'logistics/quotes': 'quote', 'logistics/billing': 'invoice', 'health/billing': 'invoice',
+}
+const documentKindFor = (workspace: BusinessWorkspaceSlug, module: string): DocumentKind | undefined => DOCUMENT_MODULES[`${workspace}/${module}`]
+
+// Business, VAT and bank details printed on documents — stored as one record per workspace.
+function useProDocuments(workspace: BusinessWorkspaceSlug, scope: string, loadRecords: LoadRecords) {
+  const recordRef = useRef<ProRecord | undefined>(undefined)
+  const production = productionModeEnabled && productionApiConfigured
+  const load = async () => {
+    const found = (await loadRecords(workspace, 'document-profile')).find((record) => record.id === 'PROFILE')
+    recordRef.current = found
+    return (found?.data?.profile as Record<string, unknown> | undefined) ?? null
+  }
+  const persist = async (profile: DocumentProfile) => {
+    if (!production) return
+    const existing = recordRef.current
+    if (existing?.backendId) await productionRecords.update(existing.backendId, { data: { profile } })
+    else recordRef.current = fromProductionRecord(await productionRecords.create(workspace, 'document-profile', { reference: 'PROFILE', name: 'Document settings', status: 'Active', data: { profile, secondary: 'Business, VAT and bank details' } }))
+  }
+  return useDocumentProfile(scope, load, persist)
+}
+
+async function convertToInvoice(create: (workspace: BusinessWorkspaceSlug, module: string, input: { reference: string; name: string; status: string; valuePence: number; data: Record<string, unknown> }) => Promise<void>, [targetWorkspace, module]: [BusinessWorkspaceSlug, string], quote: BusinessDocument, profile: DocumentProfile) {
+  const issueDate = todayIso()
+  const number = `INV-${Date.now().toString().slice(-6)}`
+  const invoice: BusinessDocument = { ...quote, kind: 'invoice', number, issueDate, termsDays: profile.defaultTermsDays, dueDate: addDays(issueDate, profile.defaultTermsDays), payments: [], sentAt: undefined, notes: quote.notes || `From quote ${quote.number}` }
+  try {
+    await create(targetWorkspace, module, { reference: number, name: number, status: 'Draft', valuePence: documentTotals(invoice).total, data: { document: invoice, secondary: invoice.party.name, email: invoice.party.email || undefined, dueDate: invoice.dueDate, sourceQuote: quote.number } })
+  } catch (error) {
+    if (error instanceof Error && /403|not enabled|forbidden|access/i.test(error.message)) throw new Error(`Add the ${configs[targetWorkspace].label} workspace to raise invoices from quotes.`)
+    throw error
+  }
+  return `Draft invoice ${number} created in ${configs[targetWorkspace].label}`
+}
+
+function RecordsPage({ autopilot, workspace, config, item, state, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords }: { autopilot?: AutopilotController; workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string, kind?: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate' | 'email' | 'phone'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void>; saveRecordData: (module: string, record: WorkspaceRecord, patch: ProPatch) => Promise<void>; createLinkedRecord: (workspace: BusinessWorkspaceSlug, module: string, input: { reference: string; name: string; status: string; valuePence: number; data: Record<string, unknown> }) => Promise<void>; loadRecords: LoadRecords }) {
   const records = state.records[item.id] ?? []
+  const documentKind = documentKindFor(workspace, item.id)
+  const proDocuments = useProDocuments(workspace, documentKind || item.id === 'sales-pipeline' ? workspace : '', loadRecords)
   const statuses = statusFor(item)
   const [sourceOpen, setSourceOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -2442,7 +2440,6 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
   const isCarePlans = item.id === 'care-plans'
   const isProductionOrders = item.id === 'production-orders'
   const isBOM = item.id === 'boms'
-  const isInvoices = item.id === 'invoices'
   const isCandidates = item.id === 'candidates'
   const isPatients = item.id === 'patients'
   const isCampaigns = item.id === 'campaigns'
@@ -2459,14 +2456,16 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
     {isContentStudio ? <ContentStudioPanel live={liveAi} onSave={(draft) => void saveContentDraft(draft)} saving={saving} /> : null}
     {profile && records.length > 0 ? <ModuleKpiStrip kpis={profile.kpis(records, statuses)} /> : null}
     {genericCharts && !isDirectory && !isInbox ? <div className="complete-workspace-stage-summary">{statuses.map((status) => <article key={status}><strong>{records.filter((record) => record.status === status).length}</strong><span>{status}</span></article>)}</div> : null}
-    {isSalesPipeline && records.length > 0 ? <PipelineForecastBar records={records} statuses={statuses} /> : null}
+    {isSalesPipeline && records.length > 0 ? <SalesForecastPanel records={records} /> : null}
+    {isCampaigns && records.length > 0 ? <CampaignPortfolioPanel records={records} /> : null}
+    {documentKind ? <DocumentSettingsPanel onSave={proDocuments.save} profile={proDocuments.profile} /> : null}
     {isCashflow ? <CashFlowChart seed={`${workspace}-${config.subjects[0]}`} /> : null}
     {isTracking && records.length > 0 ? <DeliveryMapPanel onSelect={selectRecord} records={records} selectedId={selected?.id} /> : null}
     {isCandidates && records.length > 0 ? <TalentLocationMapPanel cityFilter={cityFilter} onCityFilterChange={setCityFilter} onSelect={selectRecord} records={records} selectedId={selected?.id} statuses={statuses} /> : null}
     {isPayroll && records.length > 0 ? <PayrollSummaryPanel records={records} statuses={statuses} /> : null}
     {isPerformance && records.length > 0 ? <PerformanceScorePanel records={records} /> : null}
     {isBudgets && records.length > 0 ? <BudgetProgressPanel records={records} /> : null}
-    {isInvoices && !layout && records.length > 0 ? <InvoiceAgingPanel records={records} /> : null}
+    {(documentKind === 'invoice' || documentKind === 'bill') && records.length > 0 ? <AgedPanel kind={documentKind} records={records} /> : null}
     {genericCharts && !isDirectory && !isInbox && !isCalendar && !isContentStudio && !isSalesPipeline && !isInventory && !isPerformance && records.length > 0 ? <ValueByStageBar records={records} statuses={statuses} /> : null}
     {genericCharts && !isDirectory && !isInbox && !isCalendar && !isContentStudio && !isSalesPipeline && !isInventory && !isPerformance && records.length > 0 ? <ConversionFunnel records={records} statuses={statuses} /> : null}
     {genericCharts && !isInbox && !isCalendar && !isPerformance && !isBudgets && !isProducts && records.length > 0 ? (isDirectory ? <DirectoryKPIBar metricLabel={metricLabel} records={records} /> : <PipelineKPIBar records={records} statuses={statuses} />) : null}
@@ -2594,7 +2593,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
         {isBOM ? <BOMComponentsPanel record={selected} /> : null}
         {isCandidates ? <CandidateProfilePanel record={selected} statuses={statuses} /> : null}
         {isPatients ? <PatientSnapshotPanel record={selected} /> : null}
-        {isCampaigns ? <CampaignPerformancePanel record={selected} /> : null}
+        {isCampaigns || documentKind || isSalesPipeline ? <a className="pro-jump" href="#pro-editor">{isCampaigns ? 'Open campaign results & tracking' : isSalesPipeline ? 'Open deal & quote builder' : `Open full ${documentKind === 'bill' ? 'bill' : documentKind === 'quote' ? 'quote' : 'invoice'} editor`} ↓</a> : null}
         {isContentStudio ? <PublishPanel live={liveAi} onPublished={() => advanceRecord(item.id, selected, 'Published')} record={selected} /> : null}
         {editing ? <div className="retail-app-edit-form">
           <label>Name<input onChange={(event) => setEditDraft((current) => ({ ...current, name: event.target.value }))} value={editDraft.name} /></label>
@@ -2616,6 +2615,12 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
         {sourceOpen ? <p className="retail-app-source-detail">{origin.detail}</p> : null}
         {!isDirectory ? <div className="retail-app-stage">{statuses.map((status) => <span className={status === selected.status ? 'active' : ''} key={status}>{status}</span>)}</div> : null}{error ? <div className="complete-workspace-error" role="alert"><span>{error}</span>{retry ? <button type="button" className="complete-workspace-error__retry" onClick={retry}>Retry</button> : null}</div> : null}{productionModeEnabled && item.id === 'payments' && selected.status !== 'Paid' ? <button className="retail-app-primary" disabled={saving || !selected.backendId} onClick={() => void collectPayment()} type="button">Collect with Stripe</button> : !isDirectory && selected.status !== statuses.at(-1) ? <button className="retail-app-primary" disabled={saving} onClick={() => void advance()} type="button">Move to {statuses[Math.min(statuses.indexOf(selected.status) + 1, statuses.length - 1)]}</button> : null}<button className="retail-app-secondary" disabled={saving} onClick={() => void publishHandoff(item.id, selected, handoffTarget).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Handoff could not be published'))} type="button">Handoff to {configs[handoffTarget].label}</button></aside> : null}
     </section>}
+    {selected && (isCampaigns || documentKind || isSalesPipeline) ? <div className="pro-record-workspace" id="pro-editor">
+      {isCampaigns ? <CampaignProPanel key={selected.id} record={selected} save={(patch) => saveRecordData(item.id, selected, patch)} /> : null}
+      {documentKind ? <DocumentPanel key={selected.id} kind={documentKind} profile={proDocuments.profile} record={selected} save={(patch) => saveRecordData(item.id, selected, patch)} statuses={statuses}
+        {...(documentKind === 'quote' ? { convertLabel: 'Convert to invoice', onConvert: (doc: BusinessDocument) => convertToInvoice(createLinkedRecord, workspace === 'logistics' ? ['logistics', 'billing'] : ['finance', 'invoices'], doc, proDocuments.profile) } : {})} /> : null}
+      {isSalesPipeline ? <DealPanel key={selected.id} createInvoice={(doc) => convertToInvoice(createLinkedRecord, ['finance', 'invoices'], doc, proDocuments.profile)} profile={proDocuments.profile} record={selected} save={(patch) => saveRecordData(item.id, selected, patch)} /> : null}
+    </div> : null}
     {creating ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void create(event)}><div><p>{item.label}</p><h2>New {noun}</h2></div><label>{fields.name}<input name="name" required /></label><label>{fields.secondary}<input name="secondary" required /></label><div className="retail-app-form-grid"><label>{fields.value}<input name="value" placeholder={profile?.valueHint ?? '£0 or priority'} required /></label><label>{fields.owner}<select name="owner"><option>Maya</option><option>Noah</option><option>Ava</option><option>Bobby</option></select></label></div>{isCalendar ? <label>Date<input defaultValue={createDay} key={createDay} name="dueDate" required type="date" /></label> : null}<label>Attachment (optional)<input accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv" name="attachment" type="file" /></label>{error ? <div className="complete-workspace-error" role="alert"><span>{error}</span>{retry ? <button type="button" className="complete-workspace-error__retry" onClick={retry}>Retry</button> : null}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setCreating(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Saving…' : `Create ${noun}`}</button></footer></form></div> : null}
   </>
 }
@@ -3024,7 +3029,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
     setSession(getProductionSession())
     setHydrated(true)
   }, [])
-  const { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff } = useWorkspaceState(workspace, current.id, session)
+  const { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords } = useWorkspaceState(workspace, current.id, session)
   const autopilot = useAutopilot({
     workspace,
     production,
@@ -3089,10 +3094,13 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
   else if (current.id === 'integrations') content = <IntegrationsPage production={production} state={state} update={update} />
   else if (current.id === 'security') content = <SecurityPage workspace={workspace} />
   else if (current.id === 'team' && production) content = <TeamPage workspace={workspace} />
+  else if (workspace === 'finance' && current.id === 'reports') content = <><WorkspaceHeading eyebrow="Core.Operations · Finance" title="Financial reports" copy="Profit & loss, VAT return boxes and aged debtors/creditors calculated from your real invoices, bills and expenses — export anything for your accountant." /><FinanceReportsPage loadRecords={loadRecords} /></>
+  else if (workspace === 'retail' && current.id === 'reports') content = <><WorkspaceHeading eyebrow="Core.Operations · Retail" title="Sales & marketing reports" copy="Revenue won, pipeline by stage, performance by salesperson and lead source, and campaign return — all from your live records." /><SalesReportsPage loadRecords={loadRecords} workspace={workspace} /><MarketingReportsPage loadRecords={loadRecords} workspace={workspace} /></>
+  else if (workspace === 'marketing' && ['reports', 'attribution'].includes(current.id)) content = <><WorkspaceHeading eyebrow="Core.Operations · Marketing" title={current.id === 'attribution' ? 'Attribution' : 'Marketing analytics'} copy="Spend, leads, cost per lead, conversions and ROAS by campaign and by channel — from the results logged on each campaign." /><MarketingReportsPage loadRecords={loadRecords} workspace={workspace} /></>
   else if (['reports', 'forecasting', 'attribution'].includes(current.id)) content = <ReportsPage config={config} />
   else if (current.id === 'event-feed') content = <EventFeedPage events={events} />
   else if (current.id === 'settings') content = <SettingsPage config={config} production={production} state={state} update={update} />
-  else content = <RecordsPage key={`${workspace}/${current.id}`} autopilot={autopilot} adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} />
+  else content = <RecordsPage key={`${workspace}/${current.id}`} autopilot={autopilot} adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} saveRecordData={saveRecordData} createLinkedRecord={createLinkedRecord} loadRecords={loadRecords} />
   if (current.id === 'overview') content = <><AutopilotPanel controller={autopilot} label={config.label} workspace={workspace} />{content}</>
   return <main className="retail-product-shell complete-workspace-shell" style={{ ['--retail-accent' as string]: config.accent }}>
     <aside className="retail-product-sidebar"><Link className="retail-product-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{config.suite}</small></div></Link><div className="retail-product-store"><span>{config.label.slice(0, 2).toUpperCase()}</span><div><strong>{state.settings.businessName}</strong><small>{config.label} Workspace</small></div><b>⌄</b></div><nav aria-label={`${config.label} workspace navigation`}>{groups.map((group) => { const expanded = group === activeGroup || !collapsedGroups.includes(group); const sunk = group === 'Administration'; return <div className={sunk ? 'retail-product-nav-group-sunk' : undefined} key={group}><button aria-expanded={expanded} className="retail-product-nav-group" onClick={() => toggleGroup(group)} type="button"><p>{group}</p><i className={expanded ? 'retail-product-nav-chevron open' : 'retail-product-nav-chevron'}>›</i></button>{expanded ? config.modules.filter((item) => item.group === group).map((item) => <Link className={item.id === current.id ? 'active' : ''} href={`${workspaceRoot}/${workspace}${item.id === 'overview' ? '' : `/${item.id}`}`} key={item.id}><i>{item.id === 'overview' ? '⌂' : '◇'}</i><span>{item.label}</span>{state.records[item.id]?.length ? <em>{state.records[item.id].length}</em> : null}{overdueCount(state.records[item.id]) ? <b aria-label={`${overdueCount(state.records[item.id])} follow-ups due`} className="retail-product-nav-dot" title={`${overdueCount(state.records[item.id])} follow-up${overdueCount(state.records[item.id]) === 1 ? '' : 's'} due`} /> : null}</Link>) : null}</div> })}</nav><Link className="retail-product-switcher" href={workspaceRoot}><span>Switch workspace</span><b>↗</b></Link></aside>
