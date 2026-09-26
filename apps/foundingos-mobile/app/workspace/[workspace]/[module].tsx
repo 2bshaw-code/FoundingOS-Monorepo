@@ -24,6 +24,7 @@ import { getModuleKpis } from '../../../lib/module-kpis'
 import { useActionFeedback } from '../../../lib/use-action-feedback'
 import { useQuantumStore } from '../../../lib/store'
 import { logAction } from '../../../lib/action-logger'
+import { isDemoData, setDemoData, subscribeDemoData } from '../../../lib/demo-data'
 import { dtoToPro, loadDocumentProfile, proKindFor, proReportFor } from '../../../lib/pro-records'
 import { ProRecordSheet } from '../../../components/pro/ProSheet'
 import { OpsInsightsCard, OpsSheet } from '../../../components/pro/OpsSheet'
@@ -188,6 +189,9 @@ function WorkspaceModuleScreenInner() {
     },
     [workspace, module],
   )
+
+  const [demo, setDemo] = useState(isDemoData)
+  useEffect(() => subscribeDemoData((on) => { setDemo(on); setReportRefresh((count) => count + 1); void load() }), [load])
 
   useEffect(() => {
     load()
@@ -569,6 +573,14 @@ function WorkspaceModuleScreenInner() {
         </View>
       ) : null}
 
+      <View style={[styles.demoBar, demo ? styles.demoBarOn : null]}>
+        <View style={{ flex: 1, gap: 2 }}>
+          <QuantumText variant="label" color={demo ? quantumColors.warning : undefined}>{demo ? 'Demo data on' : 'See it in action'}</QuantumText>
+          <QuantumText variant="caption" color={quantumColors.neutral300}>{demo ? 'Made-up example records. Changes stay on this phone and never touch your real account.' : `Fill ${module?.label ?? 'this module'} with realistic example records to explore every tool.`}</QuantumText>
+        </View>
+        <QuantumButton tone={demo ? 'secondary' : undefined} onPress={() => setDemoData(!demo)}>{demo ? 'Back to my data' : 'Load demo data'}</QuantumButton>
+      </View>
+
       {proKind === 'deal' && proRecords.length ? <SalesSummaryCard accent={workspace.accent} records={proRecords} /> : null}
       {proKind === 'campaign' && proRecords.length ? <CampaignSummaryCard accent={workspace.accent} records={proRecords} /> : null}
       {opsSchema && records.length ? <OpsInsightsCard accent={workspace.accent} onOpen={setSheetRecordId} records={records} schema={opsSchema} statuses={statuses ?? []} /> : null}
@@ -620,6 +632,8 @@ const styles = StyleSheet.create({
   thumbnailImage: { width: '100%', height: '100%' },
   list: { gap: quantumSpace.md },
   emptyState: { gap: quantumSpace.sm },
+  demoBar: { flexDirection: 'row', alignItems: 'center', gap: quantumSpace.sm, padding: quantumSpace.sm, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(148,163,184,0.45)' },
+  demoBarOn: { borderStyle: 'solid', borderColor: quantumColors.warning, backgroundColor: 'rgba(245,158,11,0.08)' },
   emptyExampleBox: { gap: 2, paddingVertical: quantumSpace.xs },
   recordCard: { gap: quantumSpace.sm },
   recordHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', gap: quantumSpace.md },

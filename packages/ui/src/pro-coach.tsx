@@ -14,6 +14,27 @@ export function readExperienceMode(): ExperienceMode {
   try { return window.localStorage.getItem(MODE_KEY) === 'pro' ? 'pro' : 'guided' } catch { return 'guided' }
 }
 
+const DEMO_KEY = 'foundingos-demo-data'
+
+// Demo data swaps a signed-in workspace onto made-up example records held only in this browser,
+// so people can see what a busy business looks like without touching their real account data.
+export function useDemoData(): [boolean, (on: boolean) => void] {
+  const [on, setOn] = useState(false)
+  useEffect(() => {
+    const sync = () => { try { setOn(window.localStorage.getItem(DEMO_KEY) === 'on') } catch { setOn(false) } }
+    sync()
+    window.addEventListener(DEMO_KEY, sync)
+    window.addEventListener('storage', sync)
+    return () => { window.removeEventListener(DEMO_KEY, sync); window.removeEventListener('storage', sync) }
+  }, [])
+  const set = (next: boolean) => {
+    try { if (next) window.localStorage.setItem(DEMO_KEY, 'on'); else window.localStorage.removeItem(DEMO_KEY) } catch { /* private mode */ }
+    setOn(next)
+    window.dispatchEvent(new Event(DEMO_KEY))
+  }
+  return [on, set]
+}
+
 // Applies a surface's preferred mode unless the person has already chosen one (SuperDash defaults to Pro).
 export function defaultExperienceMode(mode: ExperienceMode) {
   try {

@@ -3,6 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { getStoredValue, setStoredValue, deleteStoredValue } from './platform-storage'
+import { demoCreate, demoList, demoUpdate, isDemoData } from './demo-data'
 
 export const CORE_OPS_API_BASE = 'https://core-operations-backend.vercel.app'
 
@@ -624,14 +625,14 @@ export type WorkspaceRecordDTO = {
   updatedAt: string
 }
 
-export const fetchWorkspaceRecords = (workspace: string, module: string) =>
+export const fetchWorkspaceRecords = async (workspace: string, module: string): Promise<WorkspaceRecordDTO[]> => isDemoData() ? demoList(workspace, module) :
   authedRequest<WorkspaceRecordDTO[]>(`/api/v1/ops/platform/workspaces/${workspace}/${module}/records`)
 
 export const createWorkspaceRecord = (
   workspace: string,
   module: string,
   input: { reference: string; name: string; status: string; ownerId?: string; valuePence?: number; data?: Record<string, unknown> },
-) =>
+) => isDemoData() ? Promise.resolve(demoCreate(workspace, module, input)) :
   authedRequest<WorkspaceRecordDTO>(`/api/v1/ops/platform/workspaces/${workspace}/${module}/records`, {
     method: 'POST',
     body: JSON.stringify(input),
@@ -640,7 +641,7 @@ export const createWorkspaceRecord = (
 export const updateWorkspaceRecord = (
   id: string,
   input: { version: number; status?: string; name?: string; valuePence?: number; data?: Record<string, unknown> },
-) => authedRequest<WorkspaceRecordDTO>(`/api/v1/ops/platform/records/${id}`, { method: 'PATCH', body: JSON.stringify(input) })
+) => id.startsWith('demo-') ? Promise.resolve().then(() => demoUpdate(id, input)) : authedRequest<WorkspaceRecordDTO>(`/api/v1/ops/platform/records/${id}`, { method: 'PATCH', body: JSON.stringify(input) })
 
 // Uploads a photo captured/picked on-device (via expo-image-picker in the
 // workspace/[module] screen's photo capture button) and attaches it to a
@@ -653,6 +654,7 @@ export async function uploadWorkspaceRecordImage(
   localUri: string,
   mimeType: string,
 ): Promise<{ record: WorkspaceRecordDTO; url: string }> {
+  if (recordId.startsWith('demo-')) throw new Error('Photos are turned off for demo data — switch demo data off to add real photos.')
   const fileResponse = await fetch(localUri)
   const blob = await fileResponse.blob()
   return authedRequest<{ record: WorkspaceRecordDTO; url: string }>(`/api/v1/ops/platform/records/${recordId}/images`, {

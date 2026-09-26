@@ -7,7 +7,7 @@ import { getWorkspaceLayout, ModuleAiBar, moduleSamples, ModuleWorkspaceView, ne
 import { useRouter } from 'next/navigation'
 import { Fragment, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { CrossSellTicker } from './cross-sell-banner'
-import { ExperienceToggle, ProCoach, useExperienceMode } from './pro-coach'
+import { ExperienceToggle, ProCoach, useDemoData, useExperienceMode } from './pro-coach'
 import { CampaignPlanner, type CampaignBrief, type CampaignPlan } from './marketing-studio'
 import { DocumentPanel, DocumentSettingsPanel, useDocumentProfile } from './pro/document-panel'
 import { type BusinessDocument, type DocumentProfile } from './pro/documents'
@@ -437,8 +437,16 @@ const describePlatformEvent = (event: { type: string; payload?: Record<string, u
 }
 
 function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: string, session: ProductionSession | null) {
-  const production = productionModeEnabled && productionApiConfigured
+  const [demo, setDemo] = useDemoData()
+  const production = productionModeEnabled && productionApiConfigured && !demo
   const [state, setState] = useState<WorkspaceState>(() => production ? emptyWorkspace(workspace) : seedWorkspace(workspace))
+  const demoRef = useRef(demo)
+  useEffect(() => {
+    if (demoRef.current === demo) return
+    demoRef.current = demo
+    const stored = demo ? window.localStorage.getItem(storageKey(workspace)) : null
+    setState(demo ? (stored ? JSON.parse(stored) as WorkspaceState : seedWorkspace(workspace)) : emptyWorkspace(workspace))
+  }, [demo, workspace])
   const [events, setEvents] = useState<WorkspaceEvent[]>([])
   const [loading, setLoading] = useState(production)
   const [error, setError] = useState('')
@@ -603,7 +611,7 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
     window.localStorage.removeItem(storageKey(workspace))
     setState(seedWorkspace(workspace))
   }
-  return { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords }
+  return { state, events, update, reset, loading, error, production, demo, setDemo, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords }
 }
 
 function appendDemoRecord(workspace: BusinessWorkspaceSlug, module: string, record: WorkspaceRecord) {
@@ -3047,7 +3055,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview', 
     setSession(getProductionSession())
     setHydrated(true)
   }, [])
-  const { state, events, update, reset, loading, error, production, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords } = useWorkspaceState(workspace, current.id, session)
+  const { state, events, update, reset, loading, error, production, demo, setDemo, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords } = useWorkspaceState(workspace, current.id, session)
   const autopilot = useAutopilot({
     workspace,
     production,
@@ -3121,10 +3129,13 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview', 
   else if (current.id === 'settings') content = <SettingsPage config={config} production={production} state={state} update={update} />
   else content = <RecordsPage key={`${workspace}/${current.id}`} autopilot={autopilot} adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} saveRecordData={saveRecordData} createLinkedRecord={createLinkedRecord} loadRecords={loadRecords} />
   if (current.id === 'overview') content = <><AutopilotPanel controller={autopilot} label={config.label} workspace={workspace} />{content}</>
-  if (embedded) return <div className={`retail-product-shell complete-workspace-shell sd-embedded experience-${experienceMode}`} style={{ ['--retail-accent' as string]: config.accent }}><section className="retail-product-main"><div className="retail-product-content">{loading || error ? <div className="retail-product-notice"><span>{loading ? '…' : '!'}</span>{loading ? 'Loading…' : error}</div> : null}{content}</div></section></div>
+  const demoBar = productionModeEnabled && productionApiConfigured ? <div className={`demo-data-bar${demo ? ' is-on' : ''}`}>{demo
+    ? <><strong>Demo data on</strong><span>Made-up example records so you can see what a busy {config.label} workspace looks like. Changes stay in this browser — nothing touches your real account.</span><button onClick={() => { reset(); setDemo(false) }} type="button">Back to my data</button></>
+    : <><strong>See it in action</strong><span>Fill {config.label} with realistic example records to explore every tool.</span><button onClick={() => setDemo(true)} type="button">Load demo data</button></>}</div> : null
+  if (embedded) return <div className={`retail-product-shell complete-workspace-shell sd-embedded experience-${experienceMode}`} style={{ ['--retail-accent' as string]: config.accent }}><section className="retail-product-main"><div className="retail-product-content">{loading || error ? <div className="retail-product-notice"><span>{loading ? '…' : '!'}</span>{loading ? 'Loading…' : error}</div> : null}{demoBar}{content}</div></section></div>
   return <main className={`retail-product-shell complete-workspace-shell experience-${experienceMode}`} style={{ ['--retail-accent' as string]: config.accent }}>
     <aside className="retail-product-sidebar"><Link className="retail-product-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{config.suite}</small></div></Link><div className="retail-product-store"><span>{config.label.slice(0, 2).toUpperCase()}</span><div><strong>{state.settings.businessName}</strong><small>{config.label} Workspace</small></div><b>⌄</b></div><nav aria-label={`${config.label} workspace navigation`}>{groups.map((group) => { const expanded = group === activeGroup || !collapsedGroups.includes(group); const sunk = group === 'Administration'; return <div className={sunk ? 'retail-product-nav-group-sunk' : undefined} key={group}><button aria-expanded={expanded} className="retail-product-nav-group" onClick={() => toggleGroup(group)} type="button"><p>{group}</p><i className={expanded ? 'retail-product-nav-chevron open' : 'retail-product-nav-chevron'}>›</i></button>{expanded ? config.modules.filter((item) => item.group === group).map((item) => <Link className={item.id === current.id ? 'active' : ''} href={`${workspaceRoot}/${workspace}${item.id === 'overview' ? '' : `/${item.id}`}`} key={item.id}><i>{item.id === 'overview' ? '⌂' : '◇'}</i><span>{item.label}</span>{state.records[item.id]?.length ? <em>{state.records[item.id].length}</em> : null}{overdueCount(state.records[item.id]) ? <b aria-label={`${overdueCount(state.records[item.id])} follow-ups due`} className="retail-product-nav-dot" title={`${overdueCount(state.records[item.id])} follow-up${overdueCount(state.records[item.id]) === 1 ? '' : 's'} due`} /> : null}</Link>) : null}</div> })}</nav><Link className="retail-product-switcher" href={workspaceRoot}><span>Switch workspace</span><b>↗</b></Link></aside>
-    <section className="retail-product-main"><header className="retail-product-topbar"><form onSubmit={(event) => { event.preventDefault(); setPaletteOpen(true) }}><span>⌕</span><input aria-label="Global workspace search" onFocus={(event) => { event.target.blur(); setPaletteOpen(true) }} placeholder={`Search ${config.label}, or ask FoundAI… (⌘K)`} readOnly /></form><div><ExperienceToggle /><span className="complete-workspace-live">● {production ? 'PRODUCTION' : 'SIMULATION'} LIVE</span>{production ? <button className="complete-workspace-signout" onClick={() => void logoutProduction().then(() => setSession(null))} type="button">Sign out</button> : null}<form action="/api/access/logout" method="post"><button className="complete-workspace-signout" type="submit">Log out</button></form><span className="retail-product-user">{session?.user.email.slice(0, 2).toUpperCase() || 'BS'}</span></div></header><div className="retail-product-content"><div className="retail-product-notice"><span>{loading ? '…' : error ? '!' : '✓'}</span>{loading ? 'Loading tenant data…' : error ? error : production ? 'Tenant data is secured in PostgreSQL and every action is audited' : 'Interactive simulation · actions persist in this browser'}</div>{content}</div><CrossSellTicker production={production} workspace={workspace} /><footer className="retail-product-footer"><span>{config.label} Workspace · {production ? 'tenant-isolated production data' : 'browser-persistent shared simulation'}</span>{!production ? <button onClick={reset} type="button">Reset {config.label} data</button> : null}</footer></section>
+    <section className="retail-product-main"><header className="retail-product-topbar"><form onSubmit={(event) => { event.preventDefault(); setPaletteOpen(true) }}><span>⌕</span><input aria-label="Global workspace search" onFocus={(event) => { event.target.blur(); setPaletteOpen(true) }} placeholder={`Search ${config.label}, or ask FoundAI… (⌘K)`} readOnly /></form><div><ExperienceToggle /><span className="complete-workspace-live">● {production ? 'PRODUCTION' : 'SIMULATION'} LIVE</span>{production ? <button className="complete-workspace-signout" onClick={() => void logoutProduction().then(() => setSession(null))} type="button">Sign out</button> : null}<form action="/api/access/logout" method="post"><button className="complete-workspace-signout" type="submit">Log out</button></form><span className="retail-product-user">{session?.user.email.slice(0, 2).toUpperCase() || 'BS'}</span></div></header><div className="retail-product-content">{demoBar}<div className="retail-product-notice"><span>{loading ? '…' : error ? '!' : '✓'}</span>{loading ? 'Loading tenant data…' : error ? error : production ? 'Tenant data is secured in PostgreSQL and every action is audited' : 'Interactive simulation · actions persist in this browser'}</div>{content}</div><CrossSellTicker production={production} workspace={workspace} /><footer className="retail-product-footer"><span>{config.label} Workspace · {production ? 'tenant-isolated production data' : 'browser-persistent shared simulation'}</span>{!production ? <button onClick={reset} type="button">Reset {config.label} data</button> : null}</footer></section>
     <CommandPalette onClose={() => setPaletteOpen(false)} open={paletteOpen} state={state} workspace={workspace} />
   </main>
 }

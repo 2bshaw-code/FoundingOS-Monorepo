@@ -15386,3 +15386,10 @@ body:has(.cross-sell-ticker) .found-ai-fab { bottom: 64px; }
 .sd-top nav .experience-toggle button { background: transparent; color: #9fb3c8; padding: 6px 12px; font-size: 12px; border-radius: 999px; }
 .sd-top nav .experience-toggle button[aria-pressed="true"] { background: #38bdf8; color: #04111f; }
 .sd-top .experience-toggle { border-radius: 999px; }
+.demo-data-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 0 0 14px; padding: 10px 14px; border: 1px dashed #c7d2e0; border-radius: 10px; background: #f8fafc; color: #334155; font-size: 13px; }
+.demo-data-bar strong { color: #0f1d33; }
+.demo-data-bar span { flex: 1 1 260px; }
+.demo-data-bar button { border: 0; border-radius: 999px; padding: 7px 14px; font-weight: 800; font-size: 12px; cursor: pointer; background: var(--retail-accent, #2563eb); color: #fff; }
+.demo-data-bar.is-on { border-style: solid; border-color: #f59e0b; background: #fffbeb; }
+.demo-data-bar.is-on strong { color: #b45309; }
+.demo-data-bar.is-on button { background: #0f1d33; }
