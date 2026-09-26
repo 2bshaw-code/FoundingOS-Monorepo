@@ -10,9 +10,10 @@ import { prisma } from './auth.js'
 import { isAiConfigured } from './ai.js'
 import { getIntegrationCredentials } from './platform.js'
 import { sendWhatsAppText } from './whatsapp.js'
+import { insideServiceWindow, sendWhatsAppTemplate, templateParams } from './whatsapp-templates.js'
 
 export type OutboundRecord = { reference: string; name: string; valuePence: number | null; data: Record<string, unknown> }
-export type OutboundResult = { channel: 'email' | 'whatsapp'; to: string; subject: string; body: string; providerId: string | null; draftedBy: 'foundai' | 'template' }
+export type OutboundResult = { channel: 'email' | 'whatsapp'; to: string; subject: string; body: string; providerId: string | null; draftedBy: 'foundai' | 'template' | 'whatsapp-template' }
 export class OutboundBlocked extends Error {}
 
 const purposeBrief: Record<AutopilotOutbound, string> = {
@@ -32,6 +33,7 @@ const subjects: Record<AutopilotOutbound, string> = {
 
 const money = (pence: number | null) => pence === null ? '' : `£${(pence / 100).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 const text = (value: unknown) => String(value ?? '').trim()
+const displayDate = (value: unknown) => { const raw = text(value); const date = new Date(raw); return raw && !Number.isNaN(date.getTime()) ? date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : raw }
 const emailOf = (data: Record<string, unknown>) => { const value = text(data.email || data.contactEmail); return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? value : '' }
 const phoneOf = (data: Record<string, unknown>) => text(data.phone || data.contactPhone || data.whatsapp).replace(/[^\d]/g, '')
 
@@ -45,7 +47,7 @@ async function businessName(tenantId: string) {
 
 function templateMessage(purpose: AutopilotOutbound, record: OutboundRecord, business: string) {
   const amount = money(record.valuePence)
-  const due = text(record.data.dueDate)
+  const due = displayDate(record.data.dueDate)
   const ref = record.reference
   const lines: Record<AutopilotOutbound, string> = {
     invoice: `Hello,\n\nPlease find invoice ${ref}${amount ? ` for ${amount}` : ''}${due ? `, due on ${due}` : ''}.\n\nThank you for your business.`,
@@ -69,7 +71,7 @@ async function draftWithClaude(purpose: AutopilotOutbound, record: OutboundRecor
       max_tokens: 500,
       temperature: 0.3,
       system: `You write short business messages on behalf of ${business}. Use only the facts supplied; never invent amounts, dates, links, bank details or terms. British English. ${channel === 'whatsapp' ? 'This is a WhatsApp message: under 600 characters, no subject line, no markdown.' : 'This is a plain-text email: no markdown.'} Sign off as ${business}. Return strict JSON: {"subject": string, "body": string}.`,
-      messages: [{ role: 'user', content: JSON.stringify({ task: purposeBrief[purpose], reference: record.reference, name: record.name, amount: money(record.valuePence) || null, dueDate: text(record.data.dueDate) || null, context: text(record.data.secondary) || null }) }],
+      messages: [{ role: 'user', content: JSON.stringify({ task: purposeBrief[purpose], reference: record.reference, name: record.name, amount: money(record.valuePence) || null, dueDate: displayDate(record.data.dueDate) || null, context: text(record.data.secondary) || null }) }],
     }),
     signal: AbortSignal.timeout(20_000),
   })
@@ -109,6 +111,18 @@ export async function deliverOutbound(tenantId: string, decision: AutopilotDecis
   const channel: 'email' | 'whatsapp' | null = email && hasEmail ? 'email' : phone && hasWhatsApp ? 'whatsapp' : null
   if (!channel) throw new OutboundBlocked(email ? 'Connect email (Resend) in Integrations so FoundAI can send this' : 'Connect WhatsApp in Integrations so FoundAI can send this')
   const business = await businessName(tenantId)
+  // Outside WhatsApp's 24-hour customer-service window only an approved template may be sent.
+  if (channel === 'whatsapp' && !(await insideServiceWindow(tenantId, phone))) {
+    const credentials = await getIntegrationCredentials(tenantId, 'whatsapp')
+    const params = templateParams(purpose, { reference: record.reference, name: record.name, business, amount: money(record.valuePence), due: displayDate(record.data.dueDate) })
+    try {
+      const sent = await sendWhatsAppTemplate(phone, purpose, params, credentials)
+      return { channel, to: `+${phone}`, subject: subjects[purpose], body: sent.body, providerId: sent.providerId, draftedBy: 'whatsapp-template' }
+    } catch (cause) {
+      if ((cause as { templateMissing?: boolean }).templateMissing) throw new OutboundBlocked('WhatsApp templates are not approved yet — submit them from Autopilot → Rules, or add an email for this contact')
+      throw cause
+    }
+  }
   let draft = templateMessage(purpose, record, business)
   let draftedBy: OutboundResult['draftedBy'] = 'template'
   if (isAiConfigured()) {

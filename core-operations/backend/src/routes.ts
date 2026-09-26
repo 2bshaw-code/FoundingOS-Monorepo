@@ -7,6 +7,7 @@ import { createBobRouter } from '@foundingos/bob'
 import { createModuleAccessMiddleware } from '@foundingos/service-auth'
 import { timingSafeEqual } from 'node:crypto'
 import { askFoundAi, isAiConfigured } from './ai.js'
+import { listWhatsAppTemplateStatus, submitWhatsAppTemplates } from './whatsapp-templates.js'
 import { decideAutopilotApproval, getAutopilotPolicy, listAutopilotActivity, listAutopilotApprovals, runAutopilot, runAutopilotForAllTenants, saveAutopilotPolicy } from './autopilot.js'
 import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess } from './auth.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
@@ -67,6 +68,12 @@ apiRouter.put('/autopilot/policy', requireOwnerAccess, requireTenant, async (req
 })
 apiRouter.post('/autopilot/run', requireMerchantAccess, requireTenant, async (req, res, next) => {
   try { res.json({ success: true, data: await runAutopilot(readTenant(req, res)!) }) } catch (error) { next(error) }
+})
+apiRouter.get('/autopilot/whatsapp-templates', requireOwnerAccess, requireTenant, async (req, res, next) => {
+  try { res.json({ success: true, data: await listWhatsAppTemplateStatus(readTenant(req, res)!) }) } catch (error) { next(error) }
+})
+apiRouter.post('/autopilot/whatsapp-templates', requireOwnerAccess, requireTenant, async (req, res, next) => {
+  try { res.json({ success: true, data: await submitWhatsAppTemplates(readTenant(req, res)!, res.locals.auth.id) }) } catch (error) { next(error) }
 })
 apiRouter.post('/autopilot/approvals/:id/decision', requireOwnerAccess, requireTenant, async (req, res, next) => {
   try { res.json({ success: true, data: await decideAutopilotApproval(readTenant(req, res)!, res.locals.auth.id, String(req.params.id), req.body?.approve === true) }) } catch (error) { next(error) }

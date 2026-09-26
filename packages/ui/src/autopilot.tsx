@@ -150,6 +150,32 @@ function ApprovalRow({ approval, onDecide }: { approval: AutopilotApproval; onDe
   </li>
 }
 
+type TemplateStatus = { businessAccountId: string | null; templates: Array<{ name: string; status: string; error?: string }> }
+const templateLabel: Record<string, string> = { APPROVED: 'Approved', PENDING: 'In review', IN_APPEAL: 'In review', REJECTED: 'Rejected', PAUSED: 'Paused', DISABLED: 'Disabled', NOT_SUBMITTED: 'Not submitted', ERROR: 'Error' }
+
+// WhatsApp only allows free-form messages within 24h of the customer's last message; outside
+// that window FoundAI needs these Meta-approved templates.
+function WhatsAppTemplates() {
+  const [status, setStatus] = useState<TemplateStatus | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  useEffect(() => { productionRequest<TemplateStatus>('/autopilot/whatsapp-templates').then(setStatus).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'WhatsApp is not connected')) }, [])
+  const submit = async () => {
+    setBusy(true); setError('')
+    try { setStatus(await productionRequest<TemplateStatus>('/autopilot/whatsapp-templates', { method: 'POST' })) } catch (cause) { setError(cause instanceof Error ? cause.message : 'Templates could not be submitted') } finally { setBusy(false) }
+  }
+  const approved = status?.templates.filter((t) => t.status === 'APPROVED').length ?? 0
+  const needsSubmit = status?.templates.some((t) => ['NOT_SUBMITTED', 'REJECTED', 'ERROR'].includes(t.status))
+  return <div className="ap-rule ap-wa">
+    <div><strong>WhatsApp message templates</strong><small>WhatsApp only allows free-form messages within 24 hours of a customer's last message. Outside that window FoundAI sends these Meta-approved templates for invoices, reminders, confirmations and orders.</small>
+      {status ? <small>{status.businessAccountId ? `${approved} of ${status.templates.length} approved` : 'Add your WhatsApp Business Account ID in Integrations to submit templates.'}</small> : null}
+      {status?.businessAccountId ? <ul className="ap-wa-list">{status.templates.map((t) => <li data-status={t.status} key={t.name}>{t.name.replace('foundingos_', '').replaceAll('_', ' ')} · {templateLabel[t.status] ?? t.status}{t.error ? ` — ${t.error}` : ''}</li>)}</ul> : null}
+      {error ? <small className="ap-error">{error}</small> : null}
+    </div>
+    {status?.businessAccountId && needsSubmit ? <button disabled={busy} onClick={() => { void submit() }} type="button">{busy ? 'Submitting…' : 'Submit to WhatsApp'}</button> : null}
+  </div>
+}
+
 export function AutopilotRules({ controller, onClose }: { controller: AutopilotController; onClose: () => void }) {
   const [draft, setDraft] = useState<AutopilotPolicy>(controller.policy)
   useEffect(() => setDraft(controller.policy), [controller.policy])
@@ -162,6 +188,7 @@ export function AutopilotRules({ controller, onClose }: { controller: AutopilotC
       <div className="ap-seg" role="group" aria-label={category.label}>{(['auto', 'ask', 'off'] as AutopilotMode[]).map((mode) => <button aria-pressed={draft.categories[category.id] === mode} key={mode} onClick={() => setMode(category.id, mode)} type="button">{mode === 'auto' ? 'Auto' : mode === 'ask' ? 'Ask me' : 'Off'}</button>)}</div>
     </div>)}
     <label className="ap-limit">Ask me before spending or refunding more than <span>£<input min={0} onChange={(event) => setDraft({ ...draft, spendLimitPence: Math.max(0, Math.round(Number(event.target.value) * 100)) })} type="number" value={draft.spendLimitPence / 100} /></span></label>
+    {controller.production ? <WhatsAppTemplates /> : null}
     <footer><button className="ap-approve" onClick={() => { void controller.savePolicy(draft).then(onClose) }} type="button">Save rules</button><button onClick={onClose} type="button">Cancel</button></footer>
   </div>
 }

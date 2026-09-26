@@ -14955,3 +14955,8 @@ html[data-accessibility-simplified='true'] .btn {
 .ap-sent p { background: #f8fafc; border-radius: 8px; color: #334155; margin: 6px 0 0; padding: 8px 10px; white-space: pre-wrap; }
 .ap-sim { color: #7a5af8; font-size: 12px; }
 .retail-app-hint { color: #5b6b80; display: block; font-size: 12px; margin: -4px 0 8px; }
+
+.ap-wa-list { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 6px 0 0; padding: 0; }
+.ap-wa-list li { background: #eef2f6; border-radius: 999px; font-size: 12px; padding: 3px 10px; text-transform: capitalize; }
+.ap-wa-list li[data-status='APPROVED'] { background: #ecfdf3; color: #067647; }
+.ap-wa-list li[data-status='REJECTED'], .ap-wa-list li[data-status='ERROR'] { background: #fef2f2; color: #b42318; }
