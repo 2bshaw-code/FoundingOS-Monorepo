@@ -50,7 +50,7 @@ export function WorkspaceGate({ slug, children }: { slug: string; children: Reac
         <QuantumText>{offer?.pitch}</QuantumText>
         <QuantumText variant="caption">{offer ? `${offer.offer} · ${offer.price}` : ''}</QuantumText>
         <QuantumButton onPress={() => router.push({ pathname: '/(app)/upgrade', params: { add: slug } } as never)}>Add {workspace?.label ?? 'workspace'}</QuantumButton>
-        <QuantumButton tone="ghost" onPress={() => router.back()}>Back</QuantumButton>
+        <QuantumButton tone="ghost" onPress={() => (router.canGoBack() ? router.back() : router.replace('/(app)/home' as never))}>Back</QuantumButton>
       </QuantumCard>
     </QuantumScreen>
   )

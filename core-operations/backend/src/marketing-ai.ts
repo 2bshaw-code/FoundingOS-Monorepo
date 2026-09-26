@@ -2,6 +2,7 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
+import { anthropicHeaders } from './ai.js'
 // FoundAI for marketing: writes posts/emails/ads and plans whole campaigns with Claude, in the
 // tenant's own brand voice and grounded in its real products, customers and past campaigns.
 // Output is always a draft — nothing is published from here.
@@ -52,7 +53,7 @@ async function callClaude(system: string, payload: unknown, maxTokens: number) {
   const { apiKey, model } = configuration()
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    headers: anthropicHeaders(apiKey),
     body: JSON.stringify({ model, max_tokens: maxTokens, temperature: 0.7, system, messages: [{ role: 'user', content: JSON.stringify(payload) }] }),
     signal: AbortSignal.timeout(45_000),
   })

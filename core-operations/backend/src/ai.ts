@@ -50,6 +50,12 @@ function requireAiConfiguration() {
 
 // Cheap, side-effect-free capability check clients can call before showing "Ask FoundAI" UI,
 // instead of only discovering misconfiguration when a real question fails.
+// Keys that aren't scoped to one Anthropic workspace need that workspace named on every request.
+export function anthropicHeaders(apiKey: string): Record<string, string> {
+  const workspaceId = String(process.env.ANTHROPIC_WORKSPACE_ID || '').trim()
+  return { 'content-type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', ...(workspaceId ? { 'anthropic-workspace-id': workspaceId } : {}) }
+}
+
 export function isAiConfigured(): boolean {
   return process.env.AI_ENABLED !== 'false' && Boolean(String(process.env.ANTHROPIC_API_KEY || '').trim())
 }
@@ -240,11 +246,7 @@ export async function askFoundAi(input: {
   ].filter(Boolean).join(' ')
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
+    headers: anthropicHeaders(apiKey),
     body: JSON.stringify({
       model,
       max_tokens: 900,

@@ -186,8 +186,8 @@ export default function OnboardingScreen() {
         <QuantumText variant="caption">
           {readiness ? `${readiness.authorizedParticipants} authorized participant(s)` : 'Connection status unavailable.'}
         </QuantumText>
-        {!whatsappConnected && readiness?.webFallbackUrl ? (
-          <QuantumButton tone="secondary" onPress={() => Linking.openURL(readiness.webFallbackUrl)}>
+        {!whatsappConnected ? (
+          <QuantumButton tone="secondary" onPress={() => Linking.openURL('https://www.foundingos.com/app/retail/integrations')}>
             Connect WhatsApp
           </QuantumButton>
         ) : null}

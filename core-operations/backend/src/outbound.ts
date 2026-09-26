@@ -2,6 +2,7 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
+import { anthropicHeaders } from './ai.js'
 // Real outbound delivery for FoundAI Autopilot: drafts the message (Claude when configured,
 // otherwise a plain template) and sends it through the tenant's own Resend or WhatsApp
 // connection. Nothing is marked as sent unless the provider accepted it.
@@ -65,7 +66,7 @@ function templateMessage(purpose: AutopilotOutbound, record: OutboundRecord, bus
 async function draftWithClaude(purpose: AutopilotOutbound, record: OutboundRecord, business: string, channel: 'email' | 'whatsapp') {
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-api-key': String(process.env.ANTHROPIC_API_KEY).trim(), 'anthropic-version': '2023-06-01' },
+    headers: anthropicHeaders(String(process.env.ANTHROPIC_API_KEY).trim()),
     body: JSON.stringify({
       model: String(process.env.AI_REASONING_MODEL || 'claude-sonnet-4-5').trim(),
       max_tokens: 500,
