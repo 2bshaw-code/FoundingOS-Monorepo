@@ -7,7 +7,7 @@ import bcrypt from 'bcrypt'
 import { put } from '@vercel/blob'
 import { roles } from '@foundingos/service-auth'
 import { Prisma } from './generated/prisma/index.js'
-import { prisma } from './auth.js'
+import { isReservedFounderEmail, prisma } from './auth.js'
 import { publishEvent } from './event-feed.js'
 import { assertExpectedVersion, decryptIntegrationCredentials, encryptIntegrationCredentials, isActiveIdempotencyRecord, roleCanAccessWorkspace } from './platform-security.js'
 
@@ -76,6 +76,7 @@ export async function bootstrapTenant(input: Record<string, unknown>) {
   const ownerName = requiredText(input.ownerName, 'Owner name')
   const existing = await prisma.authUser.findUnique({ where: { email } })
   if (existing) throw Object.assign(new Error('An account already exists for this email'), { status: 409 })
+  if (isReservedFounderEmail(email)) throw Object.assign(new Error('This email address is reserved'), { status: 403 })
   const requestedWorkspaces = Array.isArray(input.workspaces) ? input.workspaces.map(String) : null
   const enabledWorkspaces = new Set(requestedWorkspaces ? workspaceSlugs.filter((workspace) => requestedWorkspaces.includes(workspace)) : workspaceSlugs)
   if (!enabledWorkspaces.size) throw Object.assign(new Error('At least one workspace must be enabled'), { status: 400 })
@@ -87,6 +88,10 @@ export async function bootstrapTenant(input: Record<string, unknown>) {
     })
     await tx.tenantWorkspace.createMany({ data: workspaceSlugs.map((workspace) => ({ tenantId, workspace, enabled: enabledWorkspaces.has(workspace), plan: String(input.plan || 'growth'), modules: json([]) })) })
     await tx.workspaceAuditEvent.create({ data: { tenantId, actorId: user.id, action: 'tenant.bootstrapped', metadata: json({ businessName, email, plan: String(input.plan || 'growth'), workspaces: [...enabledWorkspaces] }) } })
+    const pending = input.requestedUpgrade as { plan?: unknown; workspaces?: unknown } | undefined
+    if (pending && Array.isArray(pending.workspaces) && pending.workspaces.length) {
+      await tx.workspaceAuditEvent.create({ data: { tenantId, actorId: user.id, action: 'plan.upgrade_requested', metadata: json({ workspaces: pending.workspaces.map(String), note: `Chose ${String(pending.plan || 'a paid plan')} at sign-up — activates when payment completes.` }) } })
+    }
     return { tenantId, owner: { id: user.id, email: user.email, role: user.role }, onboarding }
   })
 }
@@ -166,9 +171,17 @@ export async function requestWorkspaceUpgrade(tenantId: string, actorId: string,
   return { requested: workspaces, notified }
 }
 
-export async function saveTenantWorkspace(tenantId: string, actorId: string, workspaceValue: unknown, input: Record<string, unknown>, requestId?: string) {
+export async function saveTenantWorkspace(tenantId: string, actorId: string, workspaceValue: unknown, input: Record<string, unknown>, requestId?: string, options: { canChangeEntitlement?: boolean } = {}) {
   const workspace = assertWorkspace(workspaceValue)
-  const data = { enabled: input.enabled !== false, plan: String(input.plan || 'growth'), modules: json(Array.isArray(input.modules) ? input.modules.map(String) : []) }
+  const modules = json(Array.isArray(input.modules) ? input.modules.map(String) : [])
+  if (!options.canChangeEntitlement) {
+    const current = await prisma.tenantWorkspace.findUnique({ where: { tenantId_workspace: { tenantId, workspace } } })
+    if (!current?.enabled) throw Object.assign(new Error(`${workspace} is not on your plan. Request an upgrade to add it.`), { status: 403 })
+    const result = await prisma.tenantWorkspace.update({ where: { tenantId_workspace: { tenantId, workspace } }, data: { modules } })
+    await audit({ tenantId, actorId, action: 'workspace.configured', workspace, requestId, metadata: { modules } })
+    return result
+  }
+  const data = { enabled: input.enabled !== false, plan: String(input.plan || 'growth'), modules }
   const result = await prisma.tenantWorkspace.upsert({ where: { tenantId_workspace: { tenantId, workspace } }, create: { tenantId, workspace, ...data }, update: data })
   await audit({ tenantId, actorId, action: 'workspace.configured', workspace, requestId, metadata: data })
   return result
@@ -456,6 +469,7 @@ export async function getInvitationDetails(tokenValue: unknown) {
 
 export async function inviteTeamMember(tenantId: string, actorId: string, input: Record<string, unknown>, requestId?: string) {
   const email = requiredText(input.email, 'Email').toLowerCase()
+  if (isReservedFounderEmail(email)) throw Object.assign(new Error('This email address is reserved'), { status: 403 })
   const role = String(input.role || roles.businessStaff)
   if (!teamRoles.has(role)) throw Object.assign(new Error('Unsupported team role'), { status: 400 })
   const permissions = { workspaces: Array.isArray(input.workspaces) ? input.workspaces.map(assertWorkspace) : workspaceSlugs }
@@ -482,6 +496,7 @@ export async function acceptTeamInvitation(tokenValue: unknown, passwordValue: u
     if (!invitation || invitation.revokedAt || invitation.acceptedAt || invitation.expiresAt <= new Date()) throw Object.assign(new Error('Invitation is invalid or expired'), { status: 410 })
     const existing = await tx.authUser.findUnique({ where: { email: invitation.email }, select: { id: true } })
     if (existing) throw Object.assign(new Error('A user with this email already exists'), { status: 409 })
+    if (isReservedFounderEmail(invitation.email)) throw Object.assign(new Error('This email address is reserved'), { status: 403 })
     const user = await tx.authUser.create({ data: { email: invitation.email, passwordHash: await bcrypt.hash(password, 12), role: invitation.role, tenantId: invitation.tenantId, active: true, permissions: json(invitation.permissions) } })
     await tx.tenantInvitation.update({ where: { id: invitation.id }, data: { acceptedAt: new Date(), acceptedUserId: user.id } })
     await tx.workspaceAuditEvent.create({ data: { tenantId: invitation.tenantId, actorId: user.id, action: 'team.invitation.accepted', workspace: 'intelligence', entityId: invitation.id, metadata: json({ userId: user.id, email: user.email }) } })

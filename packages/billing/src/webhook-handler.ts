@@ -7,7 +7,7 @@ import { isBillingConfigured } from '@foundingos/config/commercial-mode'
 import { syncSubscriptionFromStripe } from './stripe-service.ts'
 import type Stripe from 'stripe'
 
-export type WebhookResult = { status: number; message: string }
+export type WebhookResult = { status: number; message: string; event?: Stripe.Event }
 
 // Verifies the Stripe signature and processes subscription lifecycle events.
 // Returns a plain result object so the calling API route stays a thin wrapper —
@@ -37,7 +37,7 @@ export async function handleStripeWebhook(rawBody: string, signature: string | n
     const plan = subscription.metadata?.plan ?? 'unknown'
 
     if (!brandSlug) {
-      return { status: 200, message: 'Ignored — subscription metadata missing brandSlug.' }
+      return { status: 200, message: 'Subscription has no brandSlug; handled by the caller.', event }
     }
 
     await syncSubscriptionFromStripe({
@@ -49,5 +49,5 @@ export async function handleStripeWebhook(rawBody: string, signature: string | n
     })
   }
 
-  return { status: 200, message: `Processed ${event.type}` }
+  return { status: 200, message: `Processed ${event.type}`, event }
 }

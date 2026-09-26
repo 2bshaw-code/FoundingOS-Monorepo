@@ -29,7 +29,7 @@ function apiRoot() {
 
 const text = (value: unknown, max = 200) => (typeof value === 'string' ? value.trim().slice(0, max) : '')
 
-async function createStripeCheckout(params: { plan: Exclude<SelfServePlan, 'lite'>; boltOns: BoltOnKey[]; extraSeats: number; email: string; tenantId: string; origin: string }) {
+async function createStripeCheckout(params: { plan: Exclude<SelfServePlan, 'lite'>; boltOns: BoltOnKey[]; extraSeats: number; workspaces: string[]; email: string; tenantId: string; origin: string }) {
   const secret = process.env.STRIPE_SECRET_KEY?.trim()
   const items: Array<{ env: string; quantity: number }> = [{ env: PRICE_ENV[params.plan], quantity: 1 }]
   for (const key of params.boltOns) items.push({ env: PRICE_ENV[key], quantity: 1 })
@@ -45,7 +45,8 @@ async function createStripeCheckout(params: { plan: Exclude<SelfServePlan, 'lite
     'metadata[boltOns]': params.boltOns.join(','),
     'metadata[extraSeats]': String(params.extraSeats),
     'subscription_data[metadata][tenantId]': params.tenantId,
-    'subscription_data[metadata][plan]': params.plan,
+    'subscription_data[metadata][plan]': PLAN_TIER[params.plan],
+    'subscription_data[metadata][workspaces]': params.workspaces.join(','),
     success_url: `${params.origin}/signup?checkout=success&plan=${params.plan}`,
     cancel_url: `${params.origin}/signup?checkout=cancelled&plan=${params.plan}`,
   })
@@ -105,7 +106,8 @@ export async function POST(request: Request) {
   const created = await fetch(`${root}/ops/platform/bootstrap`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-bootstrap-token': token },
-    body: JSON.stringify({ email, password, ownerName, businessName, plan: tier, workspaces }),
+    // Paid workspaces switch on only when Stripe confirms payment (billing webhook).
+    body: JSON.stringify({ email, password, ownerName, businessName, plan: 'lite', workspaces: planBaseWorkspaces.lite, requestedUpgrade: plan === 'lite' ? undefined : { plan, workspaces } }),
   }).catch(() => null)
   const createdBody = await created?.json().catch(() => null) as { data?: { tenantId?: string }; message?: string } | null
   if (!created?.ok || !createdBody?.data?.tenantId) {
@@ -115,7 +117,7 @@ export async function POST(request: Request) {
 
   if (plan === 'lite') return NextResponse.json({ ok: true, nextStep: 'signin' }, { status: 201 })
   try {
-    const checkoutUrl = await createStripeCheckout({ plan, boltOns, extraSeats, email, tenantId: createdBody.data.tenantId, origin: new URL(request.url).origin })
+    const checkoutUrl = await createStripeCheckout({ plan, boltOns, extraSeats, workspaces, email, tenantId: createdBody.data.tenantId, origin: new URL(request.url).origin })
     return NextResponse.json({ ok: true, nextStep: checkoutUrl ? 'checkout' : 'signin', checkoutUrl }, { status: 201 })
   } catch (error) {
     return NextResponse.json({ ok: true, nextStep: 'signin', message: error instanceof Error ? error.message : 'Payment checkout could not be started.' }, { status: 201 })

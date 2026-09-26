@@ -27,8 +27,11 @@ export const requireOwnerAccess = createAccessMiddleware(authService, [roles.fou
 export const requireDecisionApprovalAccess = createAccessMiddleware(authService, [roles.founderMaster, roles.businessOwner, roles.businessManager, roles.retailManager])
 export const requireExecutionAccess = createAccessMiddleware(authService, [roles.founderMaster, roles.businessOwner])
 export const requireTenantOwnerAccess = createAccessMiddleware(authService, [roles.founderMaster, roles.businessOwner])
-const founderEmails = () => new Set([process.env.FOUNDER_EMAILS, process.env.DEMO_FOUNDER_EMAIL].filter(Boolean).join(',').split(',').map((email) => email.trim().toLowerCase()).filter(Boolean))
-// The platform owner: the founder_master role, or any account listed in FOUNDER_EMAILS.
+// The demo founder address only counts when the demo seeder actually owns it.
+const founderEmails = () => new Set([process.env.FOUNDER_EMAILS, process.env.APP_MODE === 'demo' ? process.env.DEMO_FOUNDER_EMAIL : ''].filter(Boolean).join(',').split(',').map((email) => email.trim().toLowerCase()).filter(Boolean))
+// Founder addresses can never be claimed through public signup or team invitations.
+export const isReservedFounderEmail = (email: string) => founderEmails().has(email.trim().toLowerCase())
+// The platform owner: the founder_master role, or an existing account listed in FOUNDER_EMAILS.
 export const isFounderIdentity = (identity?: { role?: string; email?: string }) =>
   identity?.role === roles.founderMaster || founderEmails().has(String(identity?.email || '').toLowerCase())
 const verifyAny = createAccessMiddleware(authService)

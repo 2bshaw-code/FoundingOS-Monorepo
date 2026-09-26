@@ -144,3 +144,26 @@ export async function founderSetTenantWorkspaces(founderId: string, tenantId: st
   ])
   return { tenantId, workspaces: requested, enabled, plan }
 }
+
+// Paid entitlements come only from a signature-verified Stripe subscription event
+// (relayed by the web billing webhook). Cancelled/unpaid subscriptions drop back to Lite.
+const LITE_WORKSPACES = ['retail']
+export async function applyBillingEntitlements(input: Record<string, unknown>) {
+  const tenantId = typeof input.tenantId === 'string' ? input.tenantId.trim() : ''
+  if (!tenantId) throw Object.assign(new Error('tenantId required'), { status: 400 })
+  const existing = await prisma.tenantWorkspace.findMany({ where: { tenantId } })
+  if (!existing.length) throw Object.assign(new Error('Company not found.'), { status: 404 })
+  const active = input.active === true
+  const plan = active && typeof input.plan === 'string' && PLAN_NAME[input.plan] ? input.plan : 'lite'
+  const paid = (Array.isArray(input.workspaces) ? input.workspaces : []).map(String).filter((workspace) => (workspaceSlugs as readonly string[]).includes(workspace))
+  const enabled = new Set(active ? [...LITE_WORKSPACES, ...paid] : LITE_WORKSPACES)
+  await prisma.$transaction([
+    ...workspaceSlugs.map((workspace) => prisma.tenantWorkspace.upsert({
+      where: { tenantId_workspace: { tenantId, workspace } },
+      create: { tenantId, workspace, enabled: enabled.has(workspace), plan, modules: [] },
+      update: { enabled: enabled.has(workspace), plan },
+    })),
+    prisma.workspaceAuditEvent.create({ data: { tenantId, actorId: 'billing', action: 'plan.billing_synced', metadata: { plan, active, workspaces: [...enabled] } } }),
+  ])
+  return { tenantId, plan, workspaces: [...enabled] }
+}

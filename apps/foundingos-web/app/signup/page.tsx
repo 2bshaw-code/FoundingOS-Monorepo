@@ -65,6 +65,7 @@ export default function SignupPage() {
       }
       setStatus('done')
       if (body.message) setMessage(body.message)
+      else if (plan !== 'lite') setMessage('Your account is ready on Lite. Your chosen plan switches on as soon as payment is set up — our team will be in touch.')
     } catch (error) {
       setStatus('form')
       setMessage(error instanceof Error ? error.message : 'Your account could not be created.')

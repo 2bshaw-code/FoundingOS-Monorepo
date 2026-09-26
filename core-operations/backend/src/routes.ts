@@ -13,7 +13,7 @@ import { OutboundBlocked } from './outbound.js'
 import { listWhatsAppTemplateStatus, submitWhatsAppTemplates } from './whatsapp-templates.js'
 import { decideAutopilotApproval, getAutopilotPolicy, listAutopilotActivity, listAutopilotApprovals, runAutopilot, runAutopilotForAllTenants, saveAutopilotPolicy } from './autopilot.js'
 import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess, requireFounderAccess, requireSignedIn, isFounderIdentity } from './auth.js'
-import { founderOverview, founderSetTenantWorkspaces } from './founder.js'
+import { founderOverview, founderSetTenantWorkspaces, applyBillingEntitlements } from './founder.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
 import { assignDelivery, createCampaign, createDeliveryOperator, createDeliveryVehicle, createDeliveryZone, createInventoryItem, createInvoice, createOrder, createSocialPost, deleteInventoryItem, detectLocation, generateMedia, getBrandProfile, invoiceDocument, operationsSummary, orderDocument, saveBrandProfile, saveLocationProfile, searchInventory, sendInvoice, updateCampaign, updateDeliveryAssignment, updateDeliveryNotification, updateDeliveryOperator, updateDeliveryVehicle, updateDeliveryZone, updateInventoryItem, updateInvoice, updateOrder, updateSocialPost, weatherAt } from './operations.js'
@@ -142,7 +142,7 @@ apiRouter.get('/module-access/:tenantId/:module', requireMerchantAccess, async (
 apiRouter.get('/platform/suite-licenses', requireOwnerAccess, requireTenant, async (req, res, next) => {
   try { res.json({ success: true, data: await listTenantSuiteLicenses(readTenant(req, res) || '') }) } catch (error) { next(error) }
 })
-apiRouter.put('/platform/suite-licenses/:suite', requireTenantOwnerAccess, requireTenant, async (req, res, next) => {
+apiRouter.put('/platform/suite-licenses/:suite', requireFounderAccess, requireTenant, async (req, res, next) => {
   try { res.json({ success: true, data: await setTenantSuiteLicense(readTenant(req, res) || '', String(req.params.suite), Boolean(req.body?.enabled)) }) } catch (error) { next(error) }
 })
 apiRouter.post('/platform/bootstrap', async (req, res, next) => {
@@ -311,6 +311,11 @@ apiRouter.post('/founder/tenants/:tenantId/workspaces', requireFounderAccess, as
     res.json({ success: true, data: await founderSetTenantWorkspaces(res.locals.auth.id, req.params.tenantId, req.body || {}) })
   } catch (error) { next(error) }
 })
+// Called by the web billing webhook after Stripe verifies a subscription change.
+apiRouter.post('/platform/billing/entitlements', async (req, res, next) => {
+  if (!verifyBootstrapToken(req.header('x-bootstrap-token'))) return res.status(401).json({ success: false, message: 'Valid bootstrap token required' })
+  try { res.json({ success: true, data: await applyBillingEntitlements(req.body || {}) }) } catch (error) { next(error) }
+})
 apiRouter.post('/platform/upgrade-request', requireOwnerAccess, requireTenant, async (req, res, next) => {
   try {
     const tenantId = writeTenant(req, res)
@@ -322,7 +327,7 @@ apiRouter.put('/platform/workspaces/:workspace', requireOwnerAccess, requireTena
   try {
     const tenantId = writeTenant(req, res)
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
-    const data = await saveTenantWorkspace(tenantId, res.locals.auth.id, req.params.workspace, req.body || {}, res.locals.requestId)
+    const data = await saveTenantWorkspace(tenantId, res.locals.auth.id, req.params.workspace, req.body || {}, res.locals.requestId, { canChangeEntitlement: isFounderIdentity(res.locals.auth) })
     emitBackendTelemetry(tenantId, 'workspace.access', { workspace: req.params.workspace })
     res.json({ success: true, data })
   } catch (error) { next(error) }
