@@ -7,6 +7,7 @@ import { getWorkspaceLayout, ModuleAiBar, moduleSamples, ModuleWorkspaceView, ne
 import { useRouter } from 'next/navigation'
 import { Fragment, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { CrossSellTicker } from './cross-sell-banner'
+import { ExperienceToggle, ProCoach, useExperienceMode } from './pro-coach'
 import { CampaignPlanner, type CampaignBrief, type CampaignPlan } from './marketing-studio'
 import { DocumentPanel, DocumentSettingsPanel, useDocumentProfile } from './pro/document-panel'
 import { type BusinessDocument, type DocumentProfile } from './pro/documents'
@@ -2409,6 +2410,19 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
     })
   }
   const catalogue = state.records.products ?? []
+  const [experience] = useExperienceMode()
+  const searchRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (experience !== 'pro') return
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (event.metaKey || event.ctrlKey || event.altKey || (target && (/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) || target.isContentEditable))) return
+      if (event.key === '/') { event.preventDefault(); searchRef.current?.focus() }
+      else if (event.key.toLowerCase() === 'n') { event.preventDefault(); setCreating(true) }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [experience])
   const liveAi = productionModeEnabled && productionApiConfigured && Boolean(getProductionSession())
   const askLive = (question: string) => productionRequest<LiveAnswer>('/ai/ask', { method: 'POST', body: JSON.stringify({ question, workspace, module: item.id }) })
   const handoffTarget = workspaceOrder[(workspaceOrder.indexOf(workspace) + 1) % workspaceOrder.length]
@@ -2446,6 +2460,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
   return <>
     <WorkspaceHeading eyebrow={`${config.suite} · ${item.group}`} title={item.label} copy={profile && !isInbox && !isCalendar && !isContentStudio ? profile.copy : isInbox ? `Every conversation for ${config.label.toLowerCase()} in one inbox — open a message to read the full thread and reply.` : isCalendar ? `See every scheduled ${item.label.toLowerCase()} entry laid out by day, and click through to its details.` : isContentStudio ? `Brief FoundAI on what you're promoting and it will draft the copy — then send it straight into the pipeline below.` : isDirectory ? `Browse every ${item.label.toLowerCase()} record with health, owner, and connected handoff.` : `Manage every ${item.label.toLowerCase()} record, owner, stage, activity, and connected handoff.`} action={<button className="retail-app-primary" onClick={() => setCreating(true)} type="button">+ New {noun}</button>} />
     {autopilot && !isDirectory ? <AutopilotStrip controller={autopilot} moduleId={item.id} workspace={workspace} /> : null}
+    {!isInbox && !isContentStudio && !isDirectory && !isCalendar ? <ProCoach askLive={liveAi ? askLive : undefined} moduleId={item.id} moduleLabel={item.label} noun={noun} onAdvanceWaiting={statuses.length > 2 ? () => void bulkAdvance(item.id, records.filter((record) => record.status === statuses[0]), statuses[1]) : undefined} onOpen={selectRecord} onShowStatus={setStatusFilter} records={records} statuses={statuses} valued={profile ? /£|value|amount|price|total|salary|fee|cost|budget|revenue|spend/i.test(`${profile.fields.value} ${profile.valueHint}`) : true} workspace={workspace} /> : null}
     {!isInbox && !isContentStudio && !isDirectory ? <ModuleAiBar kpis={profile && records.length ? profile.kpis(records, statuses) : []} askLive={liveAi ? askLive : undefined} moduleId={item.id} moduleLabel={item.label} noun={noun} onApply={applyAiPlan} records={records} statuses={statuses} /> : null}
     {isCampaigns ? <CampaignPlanner live={liveAi} onCreate={addCampaignPlan} /> : null}
     {isContentStudio ? <ContentStudioPanel live={liveAi} onSave={(draft) => void saveContentDraft(draft)} saving={saving} /> : null}
@@ -2465,7 +2480,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
     {genericCharts && !isDirectory && !isInbox && !isCalendar && !isContentStudio && !isSalesPipeline && !isInventory && !isPerformance && records.length > 0 ? <ConversionFunnel records={records} statuses={statuses} /> : null}
     {genericCharts && !isInbox && !isCalendar && !isPerformance && !isBudgets && !isProducts && records.length > 0 ? (isDirectory ? <DirectoryKPIBar metricLabel={metricLabel} records={records} /> : <PipelineKPIBar records={records} statuses={statuses} />) : null}
     {!isInbox ? <div className="retail-app-toolbar">
-      <input aria-label={`Search ${item.label}`} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${item.label.toLowerCase()}`} value={query} />
+      <input aria-label={`Search ${item.label}`} ref={searchRef} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${item.label.toLowerCase()}`} value={query} />
       {!isDirectory && !isCalendar ? <select aria-label={`Filter ${item.label} by status`} onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}><option value="all">All stages</option>{statuses.map((status) => <option key={status} value={status}>{status}</option>)}</select> : null}
       <select aria-label={`Sort ${item.label}`} onChange={(event) => setSortBy(event.target.value as typeof sortBy)} value={sortBy}><option value="default">Sort: default</option><option value="name">Sort: name A–Z</option><option value="value">Sort: value high–low</option><option value="owner">Sort: owner A–Z</option>{item.id === 'crm' ? <option value="score">Sort: lead score high–low</option> : null}</select>
       {!isDirectory && !isCalendar && !isProducts ? <div className="retail-app-view-toggle" role="group">
@@ -3043,6 +3058,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
     },
   })
   const agent = useAgentActions(production, session, (text) => update((current) => current, text))
+  const [experienceMode] = useExperienceMode()
   const groups = useMemo(() => [...new Set(config.modules.map((item) => item.group))], [config.modules])
   const [paletteOpen, setPaletteOpen] = useState(false)
   // Collapsible nav groups — several workspaces (Retail, Marketing) have 20+ modules across
@@ -3097,9 +3113,9 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview' }
   else if (current.id === 'settings') content = <SettingsPage config={config} production={production} state={state} update={update} />
   else content = <RecordsPage key={`${workspace}/${current.id}`} autopilot={autopilot} adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} saveRecordData={saveRecordData} createLinkedRecord={createLinkedRecord} loadRecords={loadRecords} />
   if (current.id === 'overview') content = <><AutopilotPanel controller={autopilot} label={config.label} workspace={workspace} />{content}</>
-  return <main className="retail-product-shell complete-workspace-shell" style={{ ['--retail-accent' as string]: config.accent }}>
+  return <main className={`retail-product-shell complete-workspace-shell experience-${experienceMode}`} style={{ ['--retail-accent' as string]: config.accent }}>
     <aside className="retail-product-sidebar"><Link className="retail-product-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{config.suite}</small></div></Link><div className="retail-product-store"><span>{config.label.slice(0, 2).toUpperCase()}</span><div><strong>{state.settings.businessName}</strong><small>{config.label} Workspace</small></div><b>⌄</b></div><nav aria-label={`${config.label} workspace navigation`}>{groups.map((group) => { const expanded = group === activeGroup || !collapsedGroups.includes(group); const sunk = group === 'Administration'; return <div className={sunk ? 'retail-product-nav-group-sunk' : undefined} key={group}><button aria-expanded={expanded} className="retail-product-nav-group" onClick={() => toggleGroup(group)} type="button"><p>{group}</p><i className={expanded ? 'retail-product-nav-chevron open' : 'retail-product-nav-chevron'}>›</i></button>{expanded ? config.modules.filter((item) => item.group === group).map((item) => <Link className={item.id === current.id ? 'active' : ''} href={`${workspaceRoot}/${workspace}${item.id === 'overview' ? '' : `/${item.id}`}`} key={item.id}><i>{item.id === 'overview' ? '⌂' : '◇'}</i><span>{item.label}</span>{state.records[item.id]?.length ? <em>{state.records[item.id].length}</em> : null}{overdueCount(state.records[item.id]) ? <b aria-label={`${overdueCount(state.records[item.id])} follow-ups due`} className="retail-product-nav-dot" title={`${overdueCount(state.records[item.id])} follow-up${overdueCount(state.records[item.id]) === 1 ? '' : 's'} due`} /> : null}</Link>) : null}</div> })}</nav><Link className="retail-product-switcher" href={workspaceRoot}><span>Switch workspace</span><b>↗</b></Link></aside>
-    <section className="retail-product-main"><header className="retail-product-topbar"><form onSubmit={(event) => { event.preventDefault(); setPaletteOpen(true) }}><span>⌕</span><input aria-label="Global workspace search" onFocus={(event) => { event.target.blur(); setPaletteOpen(true) }} placeholder={`Search ${config.label}, or ask FoundAI… (⌘K)`} readOnly /></form><div><span className="complete-workspace-live">● {production ? 'PRODUCTION' : 'SIMULATION'} LIVE</span>{production ? <button className="complete-workspace-signout" onClick={() => void logoutProduction().then(() => setSession(null))} type="button">Sign out</button> : null}<form action="/api/access/logout" method="post"><button className="complete-workspace-signout" type="submit">Log out</button></form><span className="retail-product-user">{session?.user.email.slice(0, 2).toUpperCase() || 'BS'}</span></div></header><div className="retail-product-content"><div className="retail-product-notice"><span>{loading ? '…' : error ? '!' : '✓'}</span>{loading ? 'Loading tenant data…' : error ? error : production ? 'Tenant data is secured in PostgreSQL and every action is audited' : 'Interactive simulation · actions persist in this browser'}</div>{content}</div><CrossSellTicker production={production} workspace={workspace} /><footer className="retail-product-footer"><span>{config.label} Workspace · {production ? 'tenant-isolated production data' : 'browser-persistent shared simulation'}</span>{!production ? <button onClick={reset} type="button">Reset {config.label} data</button> : null}</footer></section>
+    <section className="retail-product-main"><header className="retail-product-topbar"><form onSubmit={(event) => { event.preventDefault(); setPaletteOpen(true) }}><span>⌕</span><input aria-label="Global workspace search" onFocus={(event) => { event.target.blur(); setPaletteOpen(true) }} placeholder={`Search ${config.label}, or ask FoundAI… (⌘K)`} readOnly /></form><div><ExperienceToggle /><span className="complete-workspace-live">● {production ? 'PRODUCTION' : 'SIMULATION'} LIVE</span>{production ? <button className="complete-workspace-signout" onClick={() => void logoutProduction().then(() => setSession(null))} type="button">Sign out</button> : null}<form action="/api/access/logout" method="post"><button className="complete-workspace-signout" type="submit">Log out</button></form><span className="retail-product-user">{session?.user.email.slice(0, 2).toUpperCase() || 'BS'}</span></div></header><div className="retail-product-content"><div className="retail-product-notice"><span>{loading ? '…' : error ? '!' : '✓'}</span>{loading ? 'Loading tenant data…' : error ? error : production ? 'Tenant data is secured in PostgreSQL and every action is audited' : 'Interactive simulation · actions persist in this browser'}</div>{content}</div><CrossSellTicker production={production} workspace={workspace} /><footer className="retail-product-footer"><span>{config.label} Workspace · {production ? 'tenant-isolated production data' : 'browser-persistent shared simulation'}</span>{!production ? <button onClick={reset} type="button">Reset {config.label} data</button> : null}</footer></section>
     <CommandPalette onClose={() => setPaletteOpen(false)} open={paletteOpen} state={state} workspace={workspace} />
   </main>
 }

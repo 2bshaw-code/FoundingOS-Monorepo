@@ -15294,3 +15294,41 @@ html[data-accessibility-simplified='true'] .btn {
 @keyframes cross-sell-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @media (max-width: 700px) { .cross-sell-ticker { left: 0; } .cross-sell-ticker-tag, .cross-sell-ticker p em { display: none; } }
 body:has(.cross-sell-ticker) .found-ai-fab { bottom: 64px; }
+
+/* Guided / Pro experience */
+.experience-toggle { background: #eef2f7; border: 1px solid #dfe5ed; border-radius: 8px; display: inline-flex; padding: 2px; }
+.experience-toggle button { background: transparent; border: 0; border-radius: 6px; color: #50627a; cursor: pointer; font-size: 12px; font-weight: 800; padding: 5px 10px; }
+.experience-toggle button[aria-pressed="true"] { background: #0f1d33; color: #fff; }
+.pro-coach { background: #fff; border: 1px solid #dfe5ed; border-left: 4px solid #38bdf8; border-radius: 10px; margin-bottom: 16px; }
+.pro-coach-good { border-left-color: #22c55e; }
+.pro-coach-watch { border-left-color: #f59e0b; }
+.pro-coach-risk { border-left-color: #ef4444; }
+.pro-coach-bar { align-items: center; background: transparent; border: 0; color: #0f1d33; cursor: pointer; display: flex; gap: 12px; padding: 10px 14px; text-align: left; width: 100%; }
+.pro-coach-score { background: #0f1d33; border-radius: 6px; color: #fff; font-size: 13px; font-weight: 900; min-width: 48px; padding: 4px 8px; text-align: center; }
+.pro-coach-good .pro-coach-score { background: #16a34a; }
+.pro-coach-watch .pro-coach-score { background: #d97706; }
+.pro-coach-risk .pro-coach-score { background: #dc2626; }
+.pro-coach-title { flex: 1; font-size: 13px; }
+.pro-coach-summary { color: #5b6b82; font-size: 12px; }
+.pro-coach-chevron { color: #8a98ab; font-size: 10px; }
+.pro-coach-body { border-top: 1px solid #eef2f7; display: grid; gap: 18px; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); padding: 12px 14px 14px; }
+.pro-coach-label { color: #5b6b82; font-size: 11px; font-weight: 800; letter-spacing: .05em; margin: 0 0 4px; text-transform: uppercase; }
+.pro-coach-standard > p:not(.pro-coach-label) { color: #0f1d33; font-size: 14px; font-weight: 600; margin: 0 0 12px; }
+.pro-coach-standard ol { color: #34445c; font-size: 13px; margin: 0; padding-left: 18px; }
+.pro-coach-standard li { margin: 3px 0; }
+.pro-coach-checks ul { list-style: none; margin: 0 0 10px; padding: 0; }
+.pro-coach-checks li { align-items: center; border-bottom: 1px dashed #eef2f7; display: flex; flex-wrap: wrap; font-size: 13px; gap: 8px; padding: 6px 0; }
+.pro-coach-checks li > span:first-child { border-radius: 50%; color: #fff; display: inline-grid; font-size: 11px; font-weight: 900; height: 18px; place-items: center; width: 18px; }
+.pro-coach-checks li.ok > span:first-child { background: #22c55e; }
+.pro-coach-checks li.todo > span:first-child { background: #f59e0b; }
+.pro-coach-fix { display: inline-flex; gap: 6px; margin-left: auto; }
+.pro-coach-fix button { background: #f1f5fb; border: 1px solid #d6e2f5; border-radius: 6px; color: #1d4ed8; cursor: pointer; font-size: 12px; font-weight: 700; padding: 3px 8px; }
+.pro-coach-ask { background: linear-gradient(135deg, #0f1d33, #1e3a8a); border: 0; border-radius: 8px; color: #fff; cursor: pointer; font-size: 13px; font-weight: 800; padding: 8px 12px; }
+.pro-coach-ask:disabled { opacity: .7; }
+.pro-coach-answer { background: #f5f8fd; border-radius: 8px; color: #1f2d44; font-size: 13px; margin: 10px 0 0; padding: 10px 12px; white-space: pre-line; }
+@media (max-width: 900px) { .pro-coach-body { grid-template-columns: 1fr; } .pro-coach-summary { display: none; } }
+/* Pro mode: denser layout for people who live in the system all day */
+.experience-pro .retail-product-content { padding-top: 18px; }
+.experience-pro .retail-app-heading > div > span { display: none; }
+.experience-pro table td, .experience-pro table th { padding-bottom: 6px; padding-top: 6px; }
+.experience-pro .pro-coach { margin-bottom: 10px; }

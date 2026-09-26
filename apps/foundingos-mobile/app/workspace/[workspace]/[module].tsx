@@ -3,6 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { WorkspaceGate } from '../../../components/WorkspaceAccess'
+import { ProCoach } from '../../../components/ProCoach'
 import { MonthCalendar, dayKey } from '../../../components/MonthCalendar'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
@@ -528,6 +529,8 @@ function WorkspaceModuleScreenInner() {
       {!isOnline ? <QuantumNotice tone="warning">Working offline — changes will sync later.</QuantumNotice> : null}
       {loadError ? <QuantumNotice tone="danger">{loadError}</QuantumNotice> : null}
       {feedback ? <QuantumNotice tone={feedback.tone} onRetry={feedback.onRetry}>{feedback.message}</QuantumNotice> : null}
+
+      <ProCoach accent={workspace.accent} moduleId={module.id} moduleLabel={module.label} onShowStatus={setFilter} records={records} statuses={statuses ?? []} workspace={workspace.slug} />
 
       {kpis ? (
         <View style={styles.kpiRow}>
