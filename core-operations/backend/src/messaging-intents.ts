@@ -26,6 +26,7 @@ export type MessagingIntent =
   | { type: 'mark_delivered'; reference: string }
   | { type: 'create_invoice'; reference: string }
   | { type: 'create_campaign'; name: string; audience: string; objective: string }
+  | { type: 'autopilot_decision'; approve: boolean }
   | { type: 'help' }
   | { type: 'unknown' }
 
@@ -42,6 +43,9 @@ export function classifyMessagingIntent(input: string): MessagingIntent {
   if (/^\/?(status|today)$/i.test(value)) return { type: 'status' }
   if (/^\/?(snapshot|intelligence)$/i.test(value)) return { type: 'intelligence_snapshot' }
   if (/^\/?help$/i.test(value)) return { type: 'help' }
+  // Replies to a FoundAI approval request.
+  if (/^(yes|y|ok|okay|go|go ahead|do it|approved|👍|✅)[.!]*$/iu.test(value)) return { type: 'autopilot_decision', approve: true }
+  if (/^(no|n|nope|decline|don'?t|stop|👎|❌)[.!]*$/iu.test(value)) return { type: 'autopilot_decision', approve: false }
   const decision = value.match(/^\/?(approve|reject)(?:\s+(.+))?$/i)
   if (decision) return { type: 'agent_decision', decision: decision[1].toLowerCase() as 'approve' | 'reject', actionReference: decision[2]?.trim() }
   const execution = value.match(/^\/?(execute|undo|reverse)(?:\s+(.+))?$/i)

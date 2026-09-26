@@ -14,6 +14,7 @@ import {
   askFoundAi,
   decideAutopilotApproval,
   fetchAutopilot,
+  fetchMessagingReadiness,
   runAutopilotNow,
   writeFoundAiPost,
 } from '../lib/core-operations-api'
@@ -112,6 +113,34 @@ export function FoundAiAutopilotCard({ compact = false, onChanged }: { compact?:
 }
 
 const SUGGESTIONS = ['What needs my attention today?', 'Who owes me money?', 'What stock is running low?', 'How did sales do this week?']
+
+// WhatsApp is the main way owners talk to FoundAI; show whether it is live and what to do.
+export function FoundAiWhatsAppCard({ onConnect }: { onConnect: () => void }) {
+  const [state, setState] = useState<'loading' | 'live' | 'setup'>('loading')
+  const [numbers, setNumbers] = useState(0)
+  useEffect(() => {
+    fetchMessagingReadiness()
+      .then((readiness) => {
+        setNumbers(readiness.authorizedParticipants)
+        setState(readiness.activeConnections.some((item) => item.channel === 'whatsapp' && item.active) && readiness.authorizedParticipants > 0 ? 'live' : 'setup')
+      })
+      .catch(() => setState('setup'))
+  }, [])
+  if (state === 'loading') return null
+  return (
+    <QuantumCard style={{ gap: quantumSpace.sm, borderColor: 'rgba(37,211,102,0.45)', borderWidth: 1 }}>
+      <QuantumText variant="overline" color="#25D366">FoundAI on WhatsApp</QuantumText>
+      {state === 'live' ? <>
+        <QuantumText variant="label">Live — text your business number</QuantumText>
+        <QuantumText variant="caption" color={quantumColors.neutral200}>Ask anything in plain words ("who owes me money?"), log orders, and reply YES or NO when FoundAI asks for your OK. {numbers} {numbers === 1 ? 'number is' : 'numbers are'} allowed to message it.</QuantumText>
+      </> : <>
+        <QuantumText variant="label">Run the business from WhatsApp</QuantumText>
+        <QuantumText variant="caption" color={quantumColors.neutral200}>Connect your WhatsApp Business number and add your own phone. Then text FoundAI questions and approve its work by replying YES.</QuantumText>
+        <QuantumButton onPress={onConnect}>Connect WhatsApp</QuantumButton>
+      </>}
+    </QuantumCard>
+  )
+}
 
 export function AskFoundAiCard({ workspace }: { workspace?: string }) {
   const [question, setQuestion] = useState('')

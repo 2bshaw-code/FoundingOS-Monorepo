@@ -112,6 +112,10 @@ export async function runAutopilot(tenantId: string) {
     await queueApproval(tenantId, decision)
     queued.push(decision)
   }
+  if (queued.length) {
+    // Loaded lazily: messaging-core imports this module.
+    await import('./messaging-core.js').then(({ notifyOwnersOfApprovals }) => notifyOwnersOfApprovals(tenantId)).catch(() => undefined)
+  }
   return { enabled: true, executed, queued }
 }
 

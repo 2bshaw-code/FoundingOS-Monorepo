@@ -11,6 +11,9 @@ import { sendWhatsAppText } from './whatsapp.js'
 import { getIntegrationCredentials } from './platform.js'
 import { decideAgentAction, executeAgentAction, getAgentIntelligenceSummary, reverseAgentActionExecution } from './agent-actions.js'
 import { buildIntelligenceBrief, explainActionForMessaging } from './intelligence-messaging.js'
+import { askFoundAi, isAiConfigured } from './ai.js'
+import { decideAutopilotApproval, listAutopilotApprovals } from './autopilot.js'
+import { insideServiceWindow, sendWhatsAppTemplate, templateParams } from './whatsapp-templates.js'
 
 const json = (value: unknown): Prisma.InputJsonValue =>
   JSON.parse(JSON.stringify(value ?? {})) as Prisma.InputJsonValue
@@ -30,6 +33,7 @@ const storedIntentType = (value: unknown): MessagingIntent['type'] => {
     case 'mark_delivered':
     case 'create_invoice':
     case 'create_campaign':
+    case 'autopilot_decision':
     case 'help':
       return value
     default:
@@ -38,8 +42,8 @@ const storedIntentType = (value: unknown): MessagingIntent['type'] => {
 }
 
 const allowedIntents: Record<string, MessagingIntent['type'][]> = {
-  founder: ['status', 'intelligence_snapshot', 'agent_decision', 'agent_execution', 'agent_explanation', 'create_order', 'mark_delivered', 'create_invoice', 'create_campaign', 'help'],
-  admin: ['status', 'intelligence_snapshot', 'agent_decision', 'agent_execution', 'agent_explanation', 'create_order', 'mark_delivered', 'create_invoice', 'create_campaign', 'help'],
+  founder: ['status', 'intelligence_snapshot', 'agent_decision', 'agent_execution', 'agent_explanation', 'create_order', 'mark_delivered', 'create_invoice', 'create_campaign', 'autopilot_decision', 'help'],
+  admin: ['status', 'intelligence_snapshot', 'agent_decision', 'agent_execution', 'agent_explanation', 'create_order', 'mark_delivered', 'create_invoice', 'create_campaign', 'autopilot_decision', 'help'],
   operator: ['status', 'intelligence_snapshot', 'agent_explanation', 'create_order', 'mark_delivered', 'help'],
   driver: ['status', 'intelligence_snapshot', 'agent_explanation', 'mark_delivered', 'help'],
   finance: ['status', 'intelligence_snapshot', 'agent_explanation', 'create_invoice', 'help'],
@@ -53,7 +57,14 @@ const assertIntentAllowed = (role: string, intent: MessagingIntent['type']) => {
   }
 }
 
+// Roles that may chat with FoundAI in plain language (answers draw on the whole business).
+const AI_CHAT_ROLES = ['founder', 'admin']
+const WHATSAPP_MAX = 3500
+
 const helpText = [
+  'Just ask FoundAI anything in plain words, e.g. "who owes me money?" or "what should I do today?"',
+  'Reply YES or NO when FoundAI asks for your OK.',
+  '',
   'FoundingOS WhatsApp commands:',
   '/status',
   '/snapshot',
@@ -75,14 +86,63 @@ async function resolveMessagingAction(tenantId: string, reference: string | unde
   return action
 }
 
+const money = (pence: number | null | undefined) => (pence ? ` (£${(pence / 100).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : '')
+const approvalLine = (decision: { action: string; recordName: string; valuePence: number | null }) => `${decision.action}: ${decision.recordName}${money(decision.valuePence)}`
+
+export function approvalRequestText(first: { decision: { action: string; recordName: string; valuePence: number | null; reason?: string } }, waiting: number) {
+  return [
+    'FoundAI needs your OK',
+    approvalLine(first.decision),
+    first.decision.reason ? `Why: ${first.decision.reason}` : '',
+    '',
+    'Reply YES to approve or NO to decline.',
+    waiting > 1 ? `${waiting - 1} more waiting after this.` : '',
+  ].filter((line, index, lines) => line || lines[index - 1]).join('\n').trim()
+}
+
+type IntentResult = string | { reply: string; state: Record<string, unknown> }
+
+async function answerWithFoundAi(tenantId: string, sender: string, question: string, actorId: string | null | undefined) {
+  const result = await askFoundAi({ tenantId, actorId: actorId || `whatsapp:${sender}`, question: question.slice(0, 1000) })
+  const next = result.suggestedActions.length ? `\n\nNext steps:\n${result.suggestedActions.map((item) => `• ${item}`).join('\n')}` : ''
+  const text = `${result.answer.trim()}${next}`
+  return text.length > WHATSAPP_MAX ? `${text.slice(0, WHATSAPP_MAX - 1)}…` : text
+}
+
+async function decideFromWhatsApp(tenantId: string, sender: string, approve: boolean, context?: { participantUserId?: string | null; conversationState?: unknown }): Promise<IntentResult> {
+  const pending = (await listAutopilotApprovals(tenantId)).filter((item) => item.status === 'Pending')
+  const selectedId = clean(record(context?.conversationState).lastAutopilotApprovalId)
+  const target = pending.find((item) => item.id === selectedId) ?? pending[pending.length - 1]
+  if (!target) return { reply: 'Nothing is waiting for your OK right now. FoundAI will message you here when it needs a decision.', state: { lastAutopilotApprovalId: null } }
+  const result = await decideAutopilotApproval(tenantId, context?.participantUserId || `whatsapp:${sender}`, target.id, approve)
+  const done = result.status === 'Approved'
+    ? `Done ✅ ${approvalLine(target.decision)}`
+    : result.status === 'Stale'
+      ? `That item already moved on, so nothing changed: ${target.decision.recordName}.`
+      : `Declined. FoundAI won't do this: ${approvalLine(target.decision)}`
+  const remaining = pending.filter((item) => item.id !== target.id)
+  if (!remaining.length) return { reply: `${done}\n\nThat's everything for now.`, state: { lastAutopilotApprovalId: null } }
+  const next = remaining[remaining.length - 1]
+  return { reply: `${done}\n\n${approvalRequestText(next, remaining.length)}`, state: { lastAutopilotApprovalId: next.id } }
+}
+
 async function executeIntent(
   tenantId: string,
   sender: string,
   intent: MessagingIntent,
-  context?: { participantUserId?: string | null; conversationState?: unknown },
-) {
+  context?: { participantUserId?: string | null; conversationState?: unknown; role?: string; body?: string },
+): Promise<IntentResult> {
+  if (intent.type === 'autopilot_decision') return decideFromWhatsApp(tenantId, sender, intent.approve, context)
   if (intent.type === 'help' || intent.type === 'unknown') {
     if (intent.type === 'help') return helpText
+    const question = clean(context?.body)
+    if (question && AI_CHAT_ROLES.includes(clean(context?.role)) && isAiConfigured()) {
+      try {
+        return await answerWithFoundAi(tenantId, sender, question, context?.participantUserId)
+      } catch {
+        // Fall through to the safe command guidance below.
+      }
+    }
     const selectedId = clean(record(context?.conversationState).lastAgentActionId)
     const selected = selectedId ? await prisma.agentAction.findFirst({ where: { id: selectedId, tenantId } }) : null
     const next = selected?.status === 'proposed'
@@ -335,13 +395,16 @@ async function processInboundMessage(input: WhatsAppInbound) {
     where: { tenantId_channel_address: { tenantId: connection.tenantId, channel: 'whatsapp', address: sender } },
   })
   let reply: string
+  let statePatch: Record<string, unknown> = {}
   let intentSucceeded = false
   if (!participant?.active) {
     reply = `This number is not authorized to run FoundingOS actions. Ask your account owner to add it in Messaging settings.\n\nWeb fallback: ${webFallbackUrl()}`
   } else {
     try {
       assertIntentAllowed(participant.role, intent.type)
-      reply = await executeIntent(connection.tenantId, sender, intent, { participantUserId: participant.userId, conversationState: conversation.state })
+      const result = await executeIntent(connection.tenantId, sender, intent, { participantUserId: participant.userId, conversationState: conversation.state, role: participant.role, body })
+      reply = typeof result === 'string' ? result : result.reply
+      if (typeof result !== 'string') statePatch = result.state
       intentSucceeded = true
       await publishEvent({
         tenantId: connection.tenantId,
@@ -368,6 +431,7 @@ async function processInboundMessage(input: WhatsAppInbound) {
         lastIntent: intent.type,
         lastProviderMessageId: providerMessageId,
         ...(intentSucceeded && 'actionReference' in intent && intent.actionReference ? { lastAgentActionId: intent.actionReference } : {}),
+        ...statePatch,
       }),
     },
   })
@@ -428,6 +492,47 @@ export async function sendMessagingIntelligenceBrief(tenantId: string, participa
     payload: { channel: participant.channel, participantId: participant.id, actionId: action?.id || null, conversationId: conversation.id },
   })
   return { sent, channel: participant.channel, participantId: participant.id, actionId: action?.id || null, characters: text.length }
+}
+
+// Pushes FoundAI approval requests to the owner's WhatsApp so they can reply YES or NO.
+// Uses free text inside WhatsApp's 24-hour window, otherwise the owner-approval template.
+export async function notifyOwnersOfApprovals(tenantId: string) {
+  const connection = await prisma.messagingChannelConnection.findFirst({ where: { tenantId, channel: 'whatsapp', active: true } })
+  if (!connection) return { notified: 0 }
+  const pending = (await listAutopilotApprovals(tenantId)).filter((item) => item.status === 'Pending')
+  if (!pending.length) return { notified: 0 }
+  const owners = await prisma.messagingParticipant.findMany({ where: { tenantId, channel: 'whatsapp', active: true, role: { in: AI_CHAT_ROLES } } })
+  const first = pending[pending.length - 1]
+  const text = approvalRequestText(first, pending.length)
+  let notified = 0
+  for (const owner of owners) {
+    const existing = await prisma.messagingConversation.findUnique({
+      where: { tenantId_channel_externalConversationId: { tenantId, channel: 'whatsapp', externalConversationId: owner.address } },
+    })
+    const conversation = await prisma.messagingConversation.upsert({
+      where: { tenantId_channel_externalConversationId: { tenantId, channel: 'whatsapp', externalConversationId: owner.address } },
+      create: { tenantId, channel: 'whatsapp', externalConversationId: owner.address, participantAddress: owner.address, state: json({ lastAutopilotApprovalId: first.id }) },
+      update: { lastMessageAt: new Date(), state: json({ ...record(existing?.state), lastAutopilotApprovalId: first.id }) },
+    })
+    let sent = false
+    if (await insideServiceWindow(tenantId, owner.address.replace(/\D/g, ''))) {
+      sent = await sendAndStoreReply({ tenantId, conversationId: conversation.id, phoneNumberId: connection.externalAccountId, recipient: owner.address, intent: 'autopilot_decision', text })
+    } else {
+      try {
+        const credentials = await getIntegrationCredentials(tenantId, 'whatsapp')
+        const params = templateParams('owner-approval', { reference: '', name: approvalLine(first.decision), business: '', amount: '', due: '' })
+        const result = await sendWhatsAppTemplate(owner.address, 'owner-approval', params, { ...credentials, phoneNumberId: connection.externalAccountId })
+        await prisma.messagingMessage.create({
+          data: { tenantId, conversationId: conversation.id, providerMessageId: result.providerId || `template-${crypto.randomUUID()}`, direction: 'outbound', messageType: 'template', body: result.body, intent: 'autopilot_decision', status: 'sent' },
+        })
+        sent = true
+      } catch (error) {
+        await publishEvent({ tenantId, type: 'messaging.delivery_failed', source: 'messaging_core', payload: { channel: 'whatsapp', recipient: owner.address, intent: 'autopilot_decision', error: error instanceof Error ? error.message : String(error) } })
+      }
+    }
+    if (sent) notified += 1
+  }
+  return { notified }
 }
 
 export const listMessagingConnections = (tenantId: string) =>

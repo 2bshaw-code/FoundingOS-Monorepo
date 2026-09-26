@@ -15009,6 +15009,8 @@ html[data-accessibility-simplified='true'] .btn {
 .hero.hero-ai h1 { font-size: clamp(40px, 6vw, 72px); line-height: 1.02; }
 .hero-ai .eyebrow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .hero-ai-pill { background: linear-gradient(135deg, #24c47a, #38bdf8); color: #04111f; border-radius: 6px; padding: 3px 8px; letter-spacing: .04em; }
+.hero-wa-pill { background: #25d366; color: #04111f; border-radius: 6px; padding: 3px 8px; letter-spacing: .04em; margin-right: 4px; }
+.whatsapp-chat .chat-bubble p { white-space: pre-line; }
 .hero-ai-points { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 10px; }
 .hero-ai-points li { color: var(--muted); font-size: 15px; line-height: 1.5; padding-left: 26px; position: relative; }
 .hero-ai-points li::before { content: '✓'; position: absolute; left: 0; top: 0; color: #24c47a; font-weight: 800; }

@@ -147,9 +147,43 @@ export function FoundAiMovie() {
   )
 }
 
+const WA_GREEN = '#25D366'
+const CHAT: Array<{ from: 'you' | 'foundai'; text: string }> = [
+  { from: 'you', text: 'Who owes me money this week?' },
+  { from: 'foundai', text: 'Three customers owe £1,240. Harbour Cafe is 9 days late on £620.' },
+  { from: 'foundai', text: 'FoundAI needs your OK: send Harbour Cafe a payment reminder (£620). Reply YES or NO.' },
+  { from: 'you', text: 'YES' },
+  { from: 'foundai', text: 'Done ✅ Reminder sent and logged.' },
+]
+
+// WhatsApp is the front door: owners chat with FoundAI and approve its work by replying YES.
+export function WhatsAppHero() {
+  return (
+    <View style={styles.block}>
+      <QuantumText variant="overline" color={WA_GREEN}>WhatsApp is the front door</QuantumText>
+      <QuantumText variant="h2">Run the whole business from one chat</QuantumText>
+      <QuantumText variant="caption" color={quantumColors.neutral200}>Text FoundAI in plain words and it answers from your real invoices, orders and stock. When it needs a decision it messages you — reply YES or NO.</QuantumText>
+      <View style={styles.waPhone}>
+        <View style={styles.waHead}>
+          <View style={styles.waAvatar}><QuantumText variant="label" color="#04111f">F</QuantumText></View>
+          <View><QuantumText variant="label" color="#fff">FoundAI</QuantumText><QuantumText style={styles.small} color="#CFE9DA">WhatsApp Business · online</QuantumText></View>
+        </View>
+        <View style={styles.waChat}>
+          {CHAT.map((line, index) => (
+            <View key={index} style={[styles.waBubble, line.from === 'you' ? styles.waYou : styles.waBot]}>
+              <QuantumText variant="caption" color="#0B1324">{line.text}</QuantumText>
+            </View>
+          ))}
+        </View>
+      </View>
+    </View>
+  )
+}
+
 const POINTS = [
+  { title: 'Lives in WhatsApp', body: 'Ask questions, take orders and approve work in the chat you already open all day.', tint: WA_GREEN },
   { title: 'Does the work', body: 'Sends invoices, chases payments, reorders stock, rebooks deliveries, writes and publishes posts.', tint: GREEN },
-  { title: 'Asks for approval', body: 'Refunds, big spends, job offers and anything regulated wait for your tap.', tint: AMBER },
+  { title: 'Asks for approval', body: 'Refunds, big spends, job offers and anything regulated wait for your YES on WhatsApp.', tint: AMBER },
   { title: 'You set the rules', body: 'Auto, Ask me or Off for each kind of work, plus your own spend limit.', tint: BLUE },
 ]
 
@@ -216,7 +250,7 @@ export function AppHomeSections() {
       <View style={[styles.block, styles.pricing]}>
         <QuantumText variant="overline" color={GREEN}>Simple pricing</QuantumText>
         <QuantumText variant="h2">Start free. Core from £19/month.</QuantumText>
-        <QuantumText variant="caption" color={quantumColors.neutral200}>Add only the workspaces you need — Finance, Logistics, Talent, Health, Intelligence — as bolt-ons. No lock-in.</QuantumText>
+        <QuantumText variant="caption" color={quantumColors.neutral200}>Retail & Logistics, Talent and HR are £19/month each — take one or combine them. Add Finance or Intelligence when you need them. WhatsApp included. No lock-in.</QuantumText>
       </View>
     </View>
   )
@@ -245,5 +279,12 @@ const styles = StyleSheet.create({
   point: { flexDirection: 'row', gap: quantumSpace.md },
   card: { flexDirection: 'row', gap: quantumSpace.md, alignItems: 'center', padding: quantumSpace.md, borderRadius: quantumRadius.md, backgroundColor: 'rgba(148,163,184,0.07)', borderWidth: 1, borderColor: 'rgba(148,163,184,0.14)' },
   stepNumber: { width: 30, height: 30, borderRadius: 15, backgroundColor: BLUE, alignItems: 'center', justifyContent: 'center' },
+  waPhone: { borderRadius: quantumRadius.lg, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(37,211,102,0.35)' },
+  waHead: { flexDirection: 'row', alignItems: 'center', gap: quantumSpace.sm, padding: quantumSpace.md, backgroundColor: '#075E54' },
+  waAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: WA_GREEN, alignItems: 'center', justifyContent: 'center' },
+  waChat: { gap: 8, padding: quantumSpace.md, backgroundColor: '#ECE5DD' },
+  waBubble: { maxWidth: '85%', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10 },
+  waYou: { alignSelf: 'flex-end', backgroundColor: '#DCF8C6' },
+  waBot: { alignSelf: 'flex-start', backgroundColor: '#FFFFFF' },
   pricing: { padding: quantumSpace.lg, borderRadius: quantumRadius.lg, backgroundColor: 'rgba(36,196,122,0.1)', borderWidth: 1, borderColor: 'rgba(36,196,122,0.3)' },
 })

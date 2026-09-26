@@ -476,21 +476,23 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
 
       <section className="hero hero-ai">
         <div className="hero-copy">
-          <p className="eyebrow"><span className="hero-ai-pill">FoundAI</span> The AI that runs your business</p>
-          <h1>Your business, run by AI.</h1>
+          <p className="eyebrow"><span className="hero-ai-pill">FoundAI</span> <span className="hero-wa-pill">WhatsApp</span> The AI that runs your business</p>
+          <h1>Your business, run by AI. Right inside WhatsApp.</h1>
           <p>
-            FoundingOS puts <strong>FoundAI</strong> to work on your invoices, stock, deliveries, customer messages,
+            Message FoundAI like you would a manager. Ask who owes you money, take an order, approve a refund with one word—all from <strong>WhatsApp</strong>.
+            Behind the chat, FoundingOS puts <strong>FoundAI</strong> to work on your invoices, stock, deliveries, customer messages,
             campaigns and social posts—across Retail, Logistics, Finance, Marketing, Talent and Health.
             It does the routine work itself and <strong>only asks you when a decision needs a human</strong>.
           </p>
           <div className="hero-actions">
             <Link className="btn btn-primary" href="/signup">Put FoundAI to work</Link>
+            <Link className="btn btn-secondary" href="/#whatsapp">See it on WhatsApp</Link>
             <Link className="btn btn-secondary" href="/test-workspaces/retail">Try the live demo</Link>
-            <Link className="btn btn-secondary" href="/#how-it-works">See how it works</Link>
           </div>
           <ul className="hero-ai-points">
+            <li><b>Lives in WhatsApp</b> Ask questions, take orders and get approval requests in the chat you already open all day.</li>
             <li><b>Does the work</b> Sends invoices, chases payments, reorders stock, rebooks deliveries, writes and publishes posts.</li>
-            <li><b>Asks for approval</b> Refunds, big spends, job offers and anything regulated wait for your tap.</li>
+            <li><b>Asks for approval</b> Refunds, big spends, job offers and anything regulated wait for your YES on WhatsApp.</li>
             <li><b>You set the rules</b> Auto, Ask me or Off for each kind of work, plus your own spend limit.</li>
           </ul>
         </div>
@@ -500,11 +502,11 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
         </div>
       </section>
 
-      <section className="messaging-first">
+      <section className="messaging-first" id="whatsapp">
         <div className="messaging-first-copy">
-          <p className="eyebrow">WhatsApp-first by design</p>
-          <h2>Run the business from the conversation your team already opens.</h2>
-          <p>FoundingOS connects everyday messages to the same customers, orders, deliveries, invoices, campaigns, and operating events used by every workspace. People can work through familiar conversations while FoundingOS keeps the structured system of record behind them.</p>
+          <p className="eyebrow">WhatsApp is the front door</p>
+          <h2>Run the whole business from one WhatsApp chat.</h2>
+          <p>Text FoundAI in plain words and it answers from your real invoices, orders, stock and customers. When it needs a decision it messages you—reply YES or NO and it gets on with it. Your team logs orders, deliveries and invoices the same way, and every message lands in the same records the web and app use.</p>
           <div className="channel-pills" aria-label="Messaging channel direction">
             <span className="channel-live">WhatsApp · first</span>
             <span>Telegram · planned</span>
@@ -515,19 +517,19 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
         </div>
         <div className="messaging-status">
           <article>
-            <span>Implemented foundation</span>
-            <strong>Meta WhatsApp Cloud API</strong>
-            <p>Verified webhook security and authenticated outbound text delivery are wired. Each business connects its approved Meta credentials.</p>
+            <span>Ask anything</span>
+            <strong>“What should I do today?”</strong>
+            <p>FoundAI answers owners in the chat using live business data, with next steps. Questions never change a record on their own.</p>
           </article>
           <article>
-            <span>One operational record</span>
-            <strong>Chat becomes structured work</strong>
-            <p>Messaging actions can connect to delivery notifications, campaigns, customers, orders, and the shared Event Feed.</p>
+            <span>Approve with one word</span>
+            <strong>Reply YES or NO</strong>
+            <p>Refunds, big spends and anything you have set to “Ask me” arrive on WhatsApp. Your reply is logged with who approved it and when.</p>
           </article>
           <article>
-            <span>Channel-ready architecture</span>
-            <strong>More than one inbox</strong>
-            <p>Telegram and other channels follow the same adapter contract as their production provider connections are completed.</p>
+            <span>Your team, by text</span>
+            <strong>Orders, deliveries, invoices</strong>
+            <p>Staff numbers get role-based commands—drivers mark deliveries, finance raises invoices—on the official Meta WhatsApp Business API.</p>
           </article>
         </div>
       </section>

@@ -34,7 +34,7 @@ import { PlatformEvent, TenantOnboarding, fetchEventFeed, fetchOnboarding, getSe
 import { enqueueOutboxAction } from '../../../lib/outbox-sync'
 import { useQuantumStore } from '../../../lib/store'
 import { useActionFeedback } from '../../../lib/use-action-feedback'
-import { AskFoundAiCard, FoundAiAutopilotCard } from '../../../components/FoundAi'
+import { AskFoundAiCard, FoundAiAutopilotCard, FoundAiWhatsAppCard } from '../../../components/FoundAi'
 import { WorkspaceQuickAccess } from '../../../components/WorkspaceAccess'
 import { signOut, useIsFounder } from '../../../lib/workspace-access'
 
@@ -220,6 +220,7 @@ export default function TodayScreen() {
           ) : null}
           <QuantumSectionHeader label="Your workspaces" />
           <WorkspaceQuickAccess />
+          <FoundAiWhatsAppCard onConnect={() => router.push('/(app)/onboarding')} />
           <FoundAiAutopilotCard compact onChanged={loadAll} />
           <AskFoundAiCard />
           <QuantumSectionHeader label={attentionCount > 0 ? `Needs your attention · ${attentionCount}` : 'Needs your attention'} />

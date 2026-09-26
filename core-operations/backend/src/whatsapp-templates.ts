@@ -13,7 +13,10 @@ export const TEMPLATE_LANGUAGE = 'en_GB'
 type TemplateInput = { reference: string; name: string; business: string; amount: string; due: string }
 type TemplateDefinition = { name: string; text: string; example: string[]; params: (input: TemplateInput) => string[] }
 
-export const whatsappTemplates: Record<AutopilotOutbound, TemplateDefinition> = {
+// 'owner-approval' goes to the business owner (not customers) when FoundAI needs a decision.
+export type WhatsAppTemplatePurpose = AutopilotOutbound | 'owner-approval'
+
+export const whatsappTemplates: Record<WhatsAppTemplatePurpose, TemplateDefinition> = {
   invoice: {
     name: 'foundingos_invoice',
     text: 'Hello, here is invoice {{1}} from {{2}} for {{3}}, due {{4}}. Reply to this message with any questions.',
@@ -62,12 +65,18 @@ export const whatsappTemplates: Record<AutopilotOutbound, TemplateDefinition> = 
     example: ['Mei', 'Harbour Cafe'],
     params: (i) => [i.name, i.business],
   },
+  'owner-approval': {
+    name: 'foundingos_owner_approval',
+    text: 'FoundAI needs your OK: {{1}}. Reply YES to approve or NO to decline.',
+    example: ['Send invoice INV-1042 to Harbour Cafe (£420.00)'],
+    params: (i) => [i.name],
+  },
 }
 
 const graph = (version: unknown) => `https://graph.facebook.com/${String(version || process.env.WHATSAPP_GRAPH_VERSION || 'v22.0')}`
 const clean = (value: string, fallback: string) => (value.trim() || fallback).replace(/\s+/g, ' ').slice(0, 200)
 
-export function templateParams(purpose: AutopilotOutbound, input: TemplateInput) {
+export function templateParams(purpose: WhatsAppTemplatePurpose, input: TemplateInput) {
   const safe = { reference: clean(input.reference, 'your reference'), name: clean(input.name, 'there'), business: clean(input.business, 'our team'), amount: clean(input.amount, 'the agreed amount'), due: clean(input.due, 'on receipt') }
   return whatsappTemplates[purpose].params(safe)
 }
@@ -124,7 +133,7 @@ export async function insideServiceWindow(tenantId: string, phoneDigits: string)
   return Boolean(inbound)
 }
 
-export async function sendWhatsAppTemplate(to: string, purpose: AutopilotOutbound, params: string[], credentials: Record<string, unknown>) {
+export async function sendWhatsAppTemplate(to: string, purpose: WhatsAppTemplatePurpose, params: string[], credentials: Record<string, unknown>) {
   const template = whatsappTemplates[purpose]
   const response = await fetch(`${graph(credentials.graphVersion)}/${String(credentials.phoneNumberId)}/messages`, {
     method: 'POST',

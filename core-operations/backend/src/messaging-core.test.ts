@@ -97,3 +97,11 @@ test('extracts inbound WhatsApp messages with account context', () => {
     message: { id: 'wamid.1', from: '447700900000', type: 'text', text: { body: '/status' } },
   }])
 })
+
+test('YES and NO replies map to FoundAI approval decisions', () => {
+  assert.deepEqual(classifyMessagingIntent('Yes'), { type: 'autopilot_decision', approve: true })
+  assert.deepEqual(classifyMessagingIntent('👍'), { type: 'autopilot_decision', approve: true })
+  assert.deepEqual(classifyMessagingIntent('no!'), { type: 'autopilot_decision', approve: false })
+  assert.equal(classifyMessagingIntent('approve').type, 'agent_decision')
+  assert.equal(classifyMessagingIntent('who owes me money?').type, 'unknown')
+})

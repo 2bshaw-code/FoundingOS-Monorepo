@@ -15,7 +15,7 @@ import { normalizeRole } from '../lib/permissions'
 import { useQuantumStore } from '../lib/store'
 import { signOut } from '../lib/workspace-access'
 import { QuantumSphere } from '../components/QuantumSphere'
-import { AppHomeSections, FoundAiMovie } from '../components/AppHome'
+import { AppHomeSections, FoundAiMovie, WhatsAppHero } from '../components/AppHome'
 import { QuantumButton, QuantumCard, QuantumFormField, QuantumNotice, QuantumPasswordInput, QuantumText, QuantumTextInput, quantumSpace, shadeColor } from '../components/QuantumUI'
 
 export default function LoginScreen() {
@@ -182,9 +182,9 @@ export default function LoginScreen() {
             <View style={styles.hero}>
               <View style={styles.pill}><QuantumText variant="overline" color="#04111f">FoundAI</QuantumText></View>
               <QuantumText variant="overline" color="#24C47A">The AI that runs your business</QuantumText>
-              <QuantumText variant="h1" style={styles.heroTitle}>Your business, run by AI.</QuantumText>
+              <QuantumText variant="h1" style={styles.heroTitle}>Your business, run by AI. Right inside WhatsApp.</QuantumText>
               <QuantumText color="#D8D8D8">
-                FoundAI handles your invoices, stock, deliveries, customer messages, campaigns and social posts — and only asks you when a decision needs a human.
+                Message FoundAI like a manager: ask who owes you money, take an order, approve a refund with one word. It handles invoices, stock, deliveries, customers and posts — and only asks you when a decision needs a human.
               </QuantumText>
               <View style={styles.ctaRow}>
                 {signedInAs ? (
@@ -197,6 +197,8 @@ export default function LoginScreen() {
                 )}
               </View>
             </View>
+
+            <WhatsAppHero />
 
             <FoundAiMovie />
 

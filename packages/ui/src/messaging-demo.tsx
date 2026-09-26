@@ -18,6 +18,32 @@ type DemoScenario = {
 
 const scenarios: DemoScenario[] = [
   {
+    id: 'ask',
+    label: 'Ask FoundAI',
+    inbound: 'Who owes me money this week?',
+    sender: '+44 7700 900123',
+    role: 'Owner',
+    intent: 'Question for FoundAI',
+    workspace: 'Finance',
+    action: 'FoundAI read the live invoices, payments and customer history for this business and answered in plain words. Nothing was changed.',
+    record: '3 overdue invoices · £1,240 outstanding',
+    event: 'ai.answered recorded with the question and sources',
+    reply: 'Three customers owe you £1,240. Harbour Cafe is the biggest at £620 and 9 days late.\n\nNext steps:\n• Send Harbour Cafe a reminder\n• Call Nova Foods about INV-1036',
+  },
+  {
+    id: 'approve',
+    label: 'Approve with YES',
+    inbound: 'YES',
+    sender: '+44 7700 900123',
+    role: 'Owner',
+    intent: 'Approve FoundAI request',
+    workspace: 'Finance',
+    action: 'FoundAI had asked: "Send payment reminder INV-1042 to Harbour Cafe (£620.00) — reply YES or NO". The owner replied YES, so the reminder was sent and logged.',
+    record: 'INV-1042 · Reminder sent · Approved on WhatsApp',
+    event: 'autopilot.approved and autopilot.action.executed published',
+    reply: 'Done ✅ Send payment reminder: INV-1042 Harbour Cafe (£620.00)\n\nThat\'s everything for now.',
+  },
+  {
     id: 'order',
     label: 'New order',
     inbound: 'New order for John - 2x Blue T-shirts, deliver tomorrow',
