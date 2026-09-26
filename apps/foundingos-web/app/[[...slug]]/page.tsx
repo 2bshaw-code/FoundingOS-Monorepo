@@ -7,7 +7,7 @@ import { WorkspaceDirectory, WorkspaceTestPage, type TestWorkspaceSlug } from '@
 import { notFound } from 'next/navigation'
 
 const pages = new Set(['suites', 'workspaces', 'consoles', 'app', 'test-workspaces', 'marketing', 'intelligence', 'about', 'pricing', 'contact'])
-const workspaceSlugs = new Set<WorkspaceSlug>(['retail', 'logistics', 'finance', 'talent', 'health'])
+const workspaceSlugs = new Set<WorkspaceSlug>(['retail', 'logistics', 'finance', 'talent', 'hr', 'health'])
 const testWorkspaceSlugs = new Set<TestWorkspaceSlug>(['retail', 'logistics', 'finance', 'marketing', 'talent', 'hr', 'health', 'intelligence'])
 const workspaceSections: Record<TestWorkspaceSlug, string[]> = {
   retail: ['overview', 'sales-pipeline', 'orders', 'point-of-sale', 'crm', 'segments', 'loyalty', 'inbox', 'campaigns', 'automations', 'content', 'products', 'inventory', 'promotions', 'channels', 'production-orders', 'boms', 'purchasing', 'suppliers', 'fulfilment', 'returns', 'service', 'payments', 'reports', 'team', 'integrations', 'settings'],
@@ -35,6 +35,7 @@ export function generateStaticParams() {
     { slug: ['workspaces', 'finance'] },
     { slug: ['workspaces', 'marketing'] },
     { slug: ['workspaces', 'talent'] },
+    { slug: ['workspaces', 'hr'] },
     { slug: ['workspaces', 'health'] },
     ...Object.entries(workspaceSections).flatMap(([workspace, sections]) => [
       { slug: ['test-workspaces', workspace] },

@@ -28,7 +28,7 @@ type SuiteCard = {
 }
 
 type FounderPage = 'home' | 'suites' | 'workspaces' | 'consoles' | 'marketing' | 'intelligence' | 'pricing' | 'about' | 'contact'
-export type WorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'talent' | 'health'
+export type WorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'talent' | 'hr' | 'health'
 export type ConsoleSlug = WorkspaceSlug
 
 type WorkspaceProduct = WorkspacePreviewProduct & {
@@ -44,7 +44,7 @@ const suiteCards: SuiteCard[] = [
   },
   {
     name: 'Core.Workforce',
-    summary: 'Talent, hiring, payroll, scheduling, and workforce operations across the organisation.',
+    summary: 'Talent for recruitment and HR for the team you have: hiring, rotas, timesheets, holiday and payroll inputs.',
     accent: '#F59E0B',
     href: '/suites#workforce',
   },
@@ -127,23 +127,45 @@ const workspaceProducts: WorkspaceProduct[] = [
     slug: 'talent',
     name: 'Talent Workspace',
     suite: 'Core Workforce',
-    audience: 'For people teams, recruiters, workforce planners, and managers',
-    summary: 'Manage candidates, employees, onboarding, scheduling, payroll inputs, and performance.',
-    outcome: 'Move people from application to productive work with fewer handoffs and clearer workforce decisions.',
-    modules: ['ATS', 'CRM', 'Onboarding', 'Candidates', 'Jobs', 'Pipelines', 'Interviews', 'Offers', 'Candidate pipeline', 'CV parser'],
+    audience: 'For in-house hiring teams and recruitment agencies',
+    summary: 'Recruitment: jobs, job boards, candidates, interviews, offers, references, agency clients and placements.',
+    outcome: 'Fill roles faster with one pipeline from advert to signed offer—and hand hires straight to HR.',
+    modules: ['Jobs', 'Job boards', 'Candidates', 'Pipelines', 'Interviews', 'Scorecards', 'Offers', 'References', 'Talent pool', 'Agency clients', 'Placements'],
     metrics: [
-      { label: 'Active workforce', value: '412', change: '+18 this month' },
       { label: 'Open roles', value: '24', change: '9 priority' },
-      { label: 'Payroll ready', value: '96%', change: '16 exceptions' },
+      { label: 'Candidates in play', value: '186', change: '+32 this week' },
+      { label: 'Time to hire', value: '17 days', change: '-5 days' },
+    ],
+    workQueue: [
+      { task: 'Progress candidates', detail: '8 screened candidates match priority roles', status: 'Action' },
+      { task: 'Chase references', detail: '3 offers are waiting on references', status: 'Risk' },
+      { task: 'Re-engage talent pool', detail: '12 past applicants fit the new Saturday roles', status: 'Insight' },
+    ],
+    workflow: ['Job posted', 'Candidates screened', 'Interviews held', 'Offer accepted', 'Handed to HR'],
+    automation: 'FoundAI screens applicants, books interviews, chases references and prepares offers for your approval.',
+    insight: 'Promoting qualified internal candidates could fill four priority roles 19 days faster than external hiring.',
+  },
+  {
+    slug: 'hr',
+    name: 'HR Workspace',
+    suite: 'Core Workforce',
+    audience: 'For owners, managers and people teams running an existing team',
+    summary: 'People management: employee records, contracts, rotas, timesheets, holiday, sickness, right-to-work and payroll inputs.',
+    outcome: 'Keep every employee record, shift and absence in one place so payroll and compliance are never a scramble.',
+    modules: ['People', 'Onboarding', 'Contracts', 'Right to work', 'Documents', 'Policies', 'Rotas', 'Timesheets', 'Time off', 'Sickness', 'Performance', 'Payroll inputs'],
+    metrics: [
+      { label: 'Team members', value: '412', change: '+18 this month' },
+      { label: 'Shifts covered', value: '97%', change: '3 gaps this weekend' },
+      { label: 'Payroll ready', value: '96%', change: '16 timesheets to approve' },
     ],
     workQueue: [
       { task: 'Complete onboarding', detail: '11 new starters have outstanding documents', status: 'Action' },
-      { task: 'Fill schedule gaps', detail: 'Three locations are below required weekend cover', status: 'Risk' },
-      { task: 'Progress candidates', detail: '8 screened candidates match priority roles', status: 'Insight' },
+      { task: 'Fill rota gaps', detail: 'Three locations are below required weekend cover', status: 'Risk' },
+      { task: 'Right-to-work renewals', detail: '2 visas expire within 60 days', status: 'Insight' },
     ],
-    workflow: ['Candidate selected', 'Documents verified', 'Worker onboarded', 'Shift completed', 'Payroll approved'],
-    automation: 'Readiness checks identify missing documents, schedule gaps, and payroll exceptions before deadlines.',
-    insight: 'Promoting qualified internal candidates could fill four priority roles 19 days faster than external hiring.',
+    workflow: ['Hire accepted', 'Contract signed', 'Onboarded', 'Shifts worked', 'Payroll approved'],
+    automation: 'FoundAI fills rota gaps, approves routine timesheets, tracks holiday and sickness, and prepares payroll inputs.',
+    insight: 'Moving two part-timers to Saturday would close every weekend rota gap without overtime.',
   },
   {
     slug: 'health',
@@ -275,7 +297,7 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
 
   if (page === 'workspaces' || page === 'consoles') return (
     <>
-      <PageIntro eyebrow="One account · Modular workspaces" title="Every part of the business, inside one FoundingOS" copy="Retail, Logistics, Finance, Marketing, Talent, and Health are connected workspaces—not separate products or operating systems. Your team signs into one account and sees the workspaces their role and plan enable." />
+      <PageIntro eyebrow="One account · Modular workspaces" title="Every part of the business, inside one FoundingOS" copy="Retail, Logistics, Finance, Marketing, Talent, HR, and Health are connected workspaces—not separate products or operating systems. Your team signs into one account and sees the workspaces their role and plan enable." />
       <section className="module-grid">
         {workspaceCards.map((workspace, index) => (
           <article id={workspace.name.split(' ')[0].toLowerCase()} key={workspace.name} className="card-premium">
@@ -286,7 +308,7 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
           </article>
         ))}
         <article id="marketing" className="card-premium">
-          <p className="eyebrow">06</p><h2>Marketing Workspace</h2>
+          <p className="eyebrow">{String(workspaceCards.length + 1).padStart(2, '0')}</p><h2>Marketing Workspace</h2>
           <p>Campaigns, audiences, brand-aware content, publishing, conversion, and revenue attribution.</p>
           <Link className="btn btn-primary" href="/test-workspaces/marketing">Test workspace</Link>
           <Link className="text-link" href="/workspaces/marketing">View capabilities</Link>
@@ -481,7 +503,7 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
           <p>
             Message FoundAI like you would a manager. Ask who owes you money, take an order, approve a refund with one word—all from <strong>WhatsApp</strong>.
             Behind the chat, FoundingOS puts <strong>FoundAI</strong> to work on your invoices, stock, deliveries, customer messages,
-            campaigns and social posts—across Retail, Logistics, Finance, Marketing, Talent and Health.
+            campaigns and social posts—across Retail, Logistics, Finance, Marketing, Talent, HR and Health.
             It does the routine work itself and <strong>only asks you when a decision needs a human</strong>.
           </p>
           <div className="hero-actions">
