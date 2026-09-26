@@ -8,6 +8,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { RefreshControl, StyleSheet, View } from 'react-native'
 import { FounderFinancePanel } from '../../components/founder/FounderFinance'
 import { FounderMarketingPanel } from '../../components/founder/FounderMarketing'
+import { FinanceReport, MarketingReport, SalesReport } from '../../components/pro/ProReports'
+import { router } from 'expo-router'
 import { FounderOverview, fetchFounderOverview, founderEnableWorkspaces } from '../../lib/core-operations-api'
 import { QuantumButton, QuantumCard, QuantumNotice, QuantumPill, QuantumScreen, QuantumSectionHeader, QuantumText, quantumColors, quantumSpace } from '../../components/QuantumUI'
 
@@ -47,7 +49,7 @@ export default function SuperDashScreen() {
   const [error, setError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
   const [busy, setBusy] = useState('')
-  const [tab, setTab] = useState<'business' | 'finance' | 'marketing'>('business')
+  const [tab, setTab] = useState<'business' | 'finance' | 'sales' | 'marketing'>('business')
   const [reloadKey, setReloadKey] = useState(0)
 
   const load = useCallback(async () => {
@@ -88,10 +90,32 @@ export default function SuperDashScreen() {
       <View style={styles.links}>
         <QuantumPill active={tab === 'business'} onPress={() => setTab('business')}>Business</QuantumPill>
         <QuantumPill active={tab === 'finance'} onPress={() => setTab('finance')}>Finance</QuantumPill>
+        <QuantumPill active={tab === 'sales'} onPress={() => setTab('sales')}>Sales</QuantumPill>
         <QuantumPill active={tab === 'marketing'} onPress={() => setTab('marketing')}>Marketing</QuantumPill>
       </View>
-      {tab === 'finance' ? <FounderFinancePanel reloadKey={reloadKey} /> : null}
-      {tab === 'marketing' ? <FounderMarketingPanel reloadKey={reloadKey} /> : null}
+      {tab === 'finance' ? <>
+        <FounderFinancePanel reloadKey={reloadKey} />
+        <QuantumSectionHeader label="Invoices, VAT & aged debt" />
+        <View style={styles.proLinks}>
+          <QuantumButton tone="secondary" onPress={() => router.push('/workspace/finance/invoices')}>Invoices</QuantumButton>
+          <QuantumButton tone="secondary" onPress={() => router.push('/workspace/finance/bills')}>Bills</QuantumButton>
+        </View>
+        <FinanceReport accent={PRO_ACCENT} refreshKey={reloadKey} />
+      </> : null}
+      {tab === 'sales' ? <>
+        <View style={styles.proLinks}>
+          <QuantumButton tone="secondary" onPress={() => router.push('/workspace/retail/sales-pipeline')}>Deals & quotes</QuantumButton>
+        </View>
+        <SalesReport accent={PRO_ACCENT} refreshKey={reloadKey} workspace="retail" />
+      </> : null}
+      {tab === 'marketing' ? <>
+        <FounderMarketingPanel reloadKey={reloadKey} />
+        <QuantumSectionHeader label="Campaign ROI & attribution" />
+        <View style={styles.proLinks}>
+          <QuantumButton tone="secondary" onPress={() => router.push('/workspace/marketing/campaigns')}>Campaigns</QuantumButton>
+        </View>
+        <MarketingReport accent={PRO_ACCENT} refreshKey={reloadKey} />
+      </> : null}
       {tab === 'business' ? <>
       {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
 
@@ -172,6 +196,8 @@ export default function SuperDashScreen() {
   )
 }
 
+const PRO_ACCENT = '#38bdf8'
+
 const styles = StyleSheet.create({
   head: { gap: 2 },
   flex: { flex: 1 },
@@ -182,6 +208,7 @@ const styles = StyleSheet.create({
   requestRow: { flexDirection: 'row', alignItems: 'center', gap: quantumSpace.sm, paddingVertical: 6 },
   healthRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
   healthDot: { width: 9, height: 9, borderRadius: 5 },
+  proLinks: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
   tableRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 3 },
   amount: { minWidth: 64, textAlign: 'right' },
   bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 90 },

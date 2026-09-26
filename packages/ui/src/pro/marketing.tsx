@@ -4,81 +4,8 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { useEffect, useMemo, useState } from 'react'
-import { isoDate, money, numberAt, objectAt, penceFrom, poundsInput, ProRecord, ratio, SaveRecord, shortMoney, textAt } from './shared'
-
-export const campaignObjectives = ['Awareness', 'Traffic', 'Engagement', 'Leads', 'Sales', 'App installs', 'Retention']
-export const campaignChannels = ['Email', 'Meta ads', 'Google ads', 'Instagram', 'Facebook', 'LinkedIn', 'TikTok', 'X', 'SEO', 'WhatsApp', 'SMS', 'Print', 'Events', 'Influencer']
-
-export type Campaign = {
-  objective: string
-  channels: string[]
-  startDate: string
-  endDate: string
-  budgetPence: number
-  spendPence: number
-  impressions: number
-  clicks: number
-  leads: number
-  conversions: number
-  revenuePence: number
-  landingUrl: string
-  utmSource: string
-  utmMedium: string
-  utmCampaign: string
-  audience: string
-}
-
-export function readCampaign(record: ProRecord): Campaign {
-  const campaign = objectAt(record.data?.campaign)
-  const channel = textAt(record.data?.channel)
-  return {
-    objective: textAt(campaign.objective),
-    channels: Array.isArray(campaign.channels) ? campaign.channels.filter((item): item is string => typeof item === 'string') : channel ? [channel] : [],
-    startDate: isoDate(campaign.startDate),
-    endDate: isoDate(campaign.endDate) || isoDate(record.dueDate),
-    budgetPence: Math.round(numberAt(campaign.budgetPence, penceFrom(record.value))),
-    spendPence: Math.round(numberAt(campaign.spendPence)),
-    impressions: numberAt(campaign.impressions),
-    clicks: numberAt(campaign.clicks),
-    leads: numberAt(campaign.leads),
-    conversions: numberAt(campaign.conversions),
-    revenuePence: Math.round(numberAt(campaign.revenuePence)),
-    landingUrl: textAt(campaign.landingUrl),
-    utmSource: textAt(campaign.utmSource),
-    utmMedium: textAt(campaign.utmMedium),
-    utmCampaign: textAt(campaign.utmCampaign) || record.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-    audience: textAt(campaign.audience),
-  }
-}
-
-export function campaignMetrics(campaign: Campaign) {
-  const { spendPence: spend, impressions, clicks, leads, conversions, revenuePence: revenue, budgetPence: budget } = campaign
-  return {
-    ctr: ratio(clicks, impressions, 2),
-    cpc: clicks ? money(Math.round(spend / clicks)) : '—',
-    cpm: impressions ? money(Math.round((spend / impressions) * 1000)) : '—',
-    cpl: leads ? money(Math.round(spend / leads)) : '—',
-    conversionRate: ratio(conversions, clicks || leads, 2),
-    cpa: conversions ? money(Math.round(spend / conversions)) : '—',
-    roas: spend ? `${(revenue / spend).toFixed(2)}×` : '—',
-    roi: spend ? ratio(revenue - spend, spend, 0) : '—',
-    budgetUsed: ratio(spend, budget, 0),
-    budgetUsedPct: budget ? Math.min(100, (spend / budget) * 100) : 0,
-  }
-}
-
-export function utmUrl(campaign: Campaign) {
-  if (!campaign.landingUrl) return ''
-  try {
-    const url = new URL(/^https?:\/\//i.test(campaign.landingUrl) ? campaign.landingUrl : `https://${campaign.landingUrl}`)
-    if (campaign.utmSource) url.searchParams.set('utm_source', campaign.utmSource)
-    if (campaign.utmMedium) url.searchParams.set('utm_medium', campaign.utmMedium)
-    if (campaign.utmCampaign) url.searchParams.set('utm_campaign', campaign.utmCampaign)
-    return url.toString()
-  } catch {
-    return ''
-  }
-}
+import { money, penceFrom, poundsInput, ProRecord, ratio, SaveRecord, shortMoney } from './shared'
+import { Campaign, campaignChannels, campaignMetrics, campaignObjectives, readCampaign, utmUrl } from './models'
 
 const NumberField = ({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) => (
   <label>{label}<input type="number" min={0} value={value} onChange={(event) => onChange(Math.max(0, Number(event.target.value) || 0))} /></label>

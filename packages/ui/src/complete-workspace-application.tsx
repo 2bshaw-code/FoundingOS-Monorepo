@@ -8,11 +8,12 @@ import { useRouter } from 'next/navigation'
 import { Fragment, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { CampaignPlanner, type CampaignBrief, type CampaignPlan } from './marketing-studio'
 import { DocumentPanel, DocumentSettingsPanel, useDocumentProfile } from './pro/document-panel'
-import { documentTotals, type BusinessDocument, type DocumentKind, type DocumentProfile } from './pro/documents'
+import { type BusinessDocument, type DocumentProfile } from './pro/documents'
 import { CampaignPortfolioPanel, CampaignProPanel } from './pro/marketing'
 import { AgedPanel, FinanceReportsPage, MarketingReportsPage, SalesReportsPage } from './pro/reports'
 import { DealPanel, SalesForecastPanel } from './pro/sales'
-import { addDays, todayIso, type LoadRecords, type ProPatch, type ProRecord } from './pro/shared'
+import { documentKindFor, invoiceFromQuote, invoiceTargetFor } from './pro/models'
+import { type LoadRecords, type ProPatch, type ProRecord } from './pro/shared'
 import { bootstrapProduction, getProductionSession, loginToProduction, logoutProduction, productionAgentActions, productionApiConfigured, productionModeEnabled, productionPlatform, productionRecords, productionRequest, type AgentAction, type AgentIntelligenceSummary, type ControlSettings, type ProductionInvitation, type ProductionSession, type ProductionWorkspaceRecord } from './workspace-production-client'
 
 const workspaceRoot = productionModeEnabled ? '/app' : '/test-workspaces'
@@ -2123,11 +2124,6 @@ function ModuleKpiStrip({ kpis }: { kpis: ModuleKpi[] }) {
   return <div className="module-kpi-strip">{kpis.map((kpi) => <article data-tone={kpi.tone} key={kpi.label}><span>{kpi.label}</span><strong>{kpi.value}</strong></article>)}</div>
 }
 
-const DOCUMENT_MODULES: Record<string, DocumentKind> = {
-  'finance/invoices': 'invoice', 'finance/bills': 'bill', 'logistics/quotes': 'quote', 'logistics/billing': 'invoice', 'health/billing': 'invoice',
-}
-const documentKindFor = (workspace: BusinessWorkspaceSlug, module: string): DocumentKind | undefined => DOCUMENT_MODULES[`${workspace}/${module}`]
-
 // Business, VAT and bank details printed on documents — stored as one record per workspace.
 function useProDocuments(workspace: BusinessWorkspaceSlug, scope: string, loadRecords: LoadRecords) {
   const recordRef = useRef<ProRecord | undefined>(undefined)
@@ -2147,16 +2143,14 @@ function useProDocuments(workspace: BusinessWorkspaceSlug, scope: string, loadRe
 }
 
 async function convertToInvoice(create: (workspace: BusinessWorkspaceSlug, module: string, input: { reference: string; name: string; status: string; valuePence: number; data: Record<string, unknown> }) => Promise<void>, [targetWorkspace, module]: [BusinessWorkspaceSlug, string], quote: BusinessDocument, profile: DocumentProfile) {
-  const issueDate = todayIso()
-  const number = `INV-${Date.now().toString().slice(-6)}`
-  const invoice: BusinessDocument = { ...quote, kind: 'invoice', number, issueDate, termsDays: profile.defaultTermsDays, dueDate: addDays(issueDate, profile.defaultTermsDays), payments: [], sentAt: undefined, notes: quote.notes || `From quote ${quote.number}` }
+  const input = invoiceFromQuote(quote, profile)
   try {
-    await create(targetWorkspace, module, { reference: number, name: number, status: 'Draft', valuePence: documentTotals(invoice).total, data: { document: invoice, secondary: invoice.party.name, email: invoice.party.email || undefined, dueDate: invoice.dueDate, sourceQuote: quote.number } })
+    await create(targetWorkspace, module, input)
   } catch (error) {
     if (error instanceof Error && /403|not enabled|forbidden|access/i.test(error.message)) throw new Error(`Add the ${configs[targetWorkspace].label} workspace to raise invoices from quotes.`)
     throw error
   }
-  return `Draft invoice ${number} created in ${configs[targetWorkspace].label}`
+  return `Draft invoice ${input.reference} created in ${configs[targetWorkspace].label}`
 }
 
 function RecordsPage({ autopilot, workspace, config, item, state, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords }: { autopilot?: AutopilotController; workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string, kind?: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate' | 'email' | 'phone'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void>; saveRecordData: (module: string, record: WorkspaceRecord, patch: ProPatch) => Promise<void>; createLinkedRecord: (workspace: BusinessWorkspaceSlug, module: string, input: { reference: string; name: string; status: string; valuePence: number; data: Record<string, unknown> }) => Promise<void>; loadRecords: LoadRecords }) {
@@ -2618,7 +2612,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
     {selected && (isCampaigns || documentKind || isSalesPipeline) ? <div className="pro-record-workspace" id="pro-editor">
       {isCampaigns ? <CampaignProPanel key={selected.id} record={selected} save={(patch) => saveRecordData(item.id, selected, patch)} /> : null}
       {documentKind ? <DocumentPanel key={selected.id} kind={documentKind} profile={proDocuments.profile} record={selected} save={(patch) => saveRecordData(item.id, selected, patch)} statuses={statuses}
-        {...(documentKind === 'quote' ? { convertLabel: 'Convert to invoice', onConvert: (doc: BusinessDocument) => convertToInvoice(createLinkedRecord, workspace === 'logistics' ? ['logistics', 'billing'] : ['finance', 'invoices'], doc, proDocuments.profile) } : {})} /> : null}
+        {...(documentKind === 'quote' ? { convertLabel: 'Convert to invoice', onConvert: (doc: BusinessDocument) => convertToInvoice(createLinkedRecord, invoiceTargetFor(workspace) as [BusinessWorkspaceSlug, string], doc, proDocuments.profile) } : {})} /> : null}
       {isSalesPipeline ? <DealPanel key={selected.id} createInvoice={(doc) => convertToInvoice(createLinkedRecord, ['finance', 'invoices'], doc, proDocuments.profile)} profile={proDocuments.profile} record={selected} save={(patch) => saveRecordData(item.id, selected, patch)} /> : null}
     </div> : null}
     {creating ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void create(event)}><div><p>{item.label}</p><h2>New {noun}</h2></div><label>{fields.name}<input name="name" required /></label><label>{fields.secondary}<input name="secondary" required /></label><div className="retail-app-form-grid"><label>{fields.value}<input name="value" placeholder={profile?.valueHint ?? '£0 or priority'} required /></label><label>{fields.owner}<select name="owner"><option>Maya</option><option>Noah</option><option>Ava</option><option>Bobby</option></select></label></div>{isCalendar ? <label>Date<input defaultValue={createDay} key={createDay} name="dueDate" required type="date" /></label> : null}<label>Attachment (optional)<input accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv" name="attachment" type="file" /></label>{error ? <div className="complete-workspace-error" role="alert"><span>{error}</span>{retry ? <button type="button" className="complete-workspace-error__retry" onClick={retry}>Retry</button> : null}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setCreating(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Saving…' : `Create ${noun}`}</button></footer></form></div> : null}

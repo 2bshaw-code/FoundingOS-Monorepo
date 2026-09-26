@@ -148,7 +148,7 @@ export const readProfile = (value: unknown): DocumentProfile => {
   return profile
 }
 
-export function printDocument(doc: BusinessDocument, profile: DocumentProfile) {
+export function documentHtml(doc: BusinessDocument, profile: DocumentProfile, autoPrint = false) {
   const totals = documentTotals(doc)
   const title = documentLabel[doc.kind]
   const fromLabel = doc.kind === 'bill' ? 'Supplier' : 'Bill to'
@@ -179,7 +179,12 @@ th{background:#f1f5f9;text-align:left;padding:8px;font-size:11px;text-transform:
 <tr class="grand"><td>Total</td><td class="n">${money(totals.total)}</td></tr>${totals.paid ? `<tr><td>Paid</td><td class="n">−${money(totals.paid)}</td></tr><tr><td><b>Balance due</b></td><td class="n ${totals.balance <= 0 ? 'paid' : ''}"><b>${totals.balance <= 0 ? 'PAID' : money(totals.balance)}</b></td></tr>` : ''}</tbody></table>
 ${bank}${doc.notes ? `<div class="box"><h3>Notes</h3><p>${escapeHtml(doc.notes).replace(/\n/g, '<br>')}</p></div>` : ''}
 <footer>${escapeHtml(profile.footer)}${profile.companyNumber ? ` · Company no. ${escapeHtml(profile.companyNumber)}` : ''}${profile.vatNumber ? ` · VAT reg. ${escapeHtml(profile.vatNumber)}` : ''}</footer>
-<script>window.onload=()=>setTimeout(()=>window.print(),250)</script></body></html>`
+${autoPrint ? '<script>window.onload=()=>setTimeout(()=>window.print(),250)</script>' : ''}</body></html>`
+  return html
+}
+
+export function printDocument(doc: BusinessDocument, profile: DocumentProfile) {
+  const html = documentHtml(doc, profile, true)
   const win = window.open('', '_blank')
   if (!win) return false
   win.document.open()
@@ -204,4 +209,20 @@ export function emailDocumentLink(doc: BusinessDocument, profile: DocumentProfil
     profile.businessName,
   ].join('\n')
   return `mailto:${encodeURIComponent(doc.party.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+}
+
+// Plain-text version for share sheets and messaging apps.
+export function documentText(doc: BusinessDocument, profile: DocumentProfile) {
+  const totals = documentTotals(doc)
+  return [
+    `${documentLabel[doc.kind]} ${doc.number}${profile.businessName ? ` — ${profile.businessName}` : ''}`,
+    `${doc.kind === 'bill' ? 'Supplier' : 'To'}: ${doc.party.name || '—'}`,
+    `Issued ${doc.issueDate} · ${doc.kind === 'quote' ? 'Valid until' : 'Due'} ${doc.dueDate}`,
+    '',
+    ...doc.lines.map((line) => `${line.quantity} × ${line.description || 'Item'} @ ${money(line.unitPence)}${line.vatRate > 0 ? ` (+${line.vatRate}% VAT)` : ''}`),
+    '',
+    `Net ${money(totals.net)} · VAT ${money(totals.vat)} · Total ${money(totals.total)}`,
+    totals.paid ? `Paid ${money(totals.paid)} · Balance due ${money(totals.balance)}` : '',
+    profile.accountNumber ? `Pay to ${profile.accountName} · ${profile.sortCode} · ${profile.accountNumber} · Ref ${doc.number}` : '',
+  ].filter((line, index, all) => line || all[index - 1]).join('\n').trim()
 }

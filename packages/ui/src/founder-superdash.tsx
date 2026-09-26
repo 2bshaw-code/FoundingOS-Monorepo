@@ -7,7 +7,10 @@
 // growth, plus FoundingOS's own Finance (books, P&L, runway) and Marketing (FoundAI posts, campaigns, calendar).
 import { useCallback, useEffect, useState } from 'react'
 import { FounderFinancePanel, FounderMarketingPanel } from './founder-superdash-modules'
-import { getProductionSession, loginToProduction, logoutProduction, productionRequest } from './workspace-production-client'
+import { getProductionSession, loginToProduction, logoutProduction, productionRecords, productionRequest } from './workspace-production-client'
+import { FinanceReportsPage, MarketingReportsPage, SalesReportsPage } from './pro/reports'
+import { proRecordFromBackend } from './pro/models'
+import type { LoadRecords } from './pro/shared'
 
 export type FounderOverview = {
   generatedAt: string
@@ -26,6 +29,13 @@ const ago = (iso: string | null) => {
   if (minutes < 1440) return `${Math.round(minutes / 60)}h ago`
   return `${Math.round(minutes / 1440)}d ago`
 }
+// The founder's own tenant workspaces power the professional reports below.
+const loadFounderRecords: LoadRecords = async (workspace, module) => (await productionRecords.list(workspace, module)).map(proRecordFromBackend)
+
+function ProTools({ links }: { links: Array<[string, string]> }) {
+  return <nav className="sd-pro-links" aria-label="Open professional tools">{links.map(([href, label]) => <a href={href} key={href}>{label} ›</a>)}</nav>
+}
+
 const title = (slug: string) => slug.charAt(0).toUpperCase() + slug.slice(1)
 
 export function FounderSuperDash() {
@@ -36,7 +46,7 @@ export function FounderSuperDash() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [filter, setFilter] = useState('')
-  const [tab, setTab] = useState<'overview' | 'finance' | 'marketing'>('overview')
+  const [tab, setTab] = useState<'overview' | 'finance' | 'sales' | 'marketing'>('overview')
 
   const load = useCallback(async () => {
     setError('')
@@ -103,10 +113,17 @@ export function FounderSuperDash() {
       <nav><button onClick={() => void load()} type="button">Refresh</button><button className="ghost" onClick={() => { void logoutProduction().then(() => { setSignedIn(false); setData(null) }) }} type="button">Sign out</button></nav>
     </header>
     <div className="sd-tabs" role="tablist">
-      {(['overview', 'finance', 'marketing'] as const).map((key) => <button aria-selected={tab === key} className={tab === key ? 'on' : ''} key={key} onClick={() => setTab(key)} role="tab" type="button">{key === 'overview' ? 'Business' : key === 'finance' ? 'Finance' : 'Marketing'}</button>)}
+      {(['overview', 'finance', 'sales', 'marketing'] as const).map((key) => <button aria-selected={tab === key} className={tab === key ? 'on' : ''} key={key} onClick={() => setTab(key)} role="tab" type="button">{key === 'overview' ? 'Business' : key === 'finance' ? 'Finance' : key === 'sales' ? 'Sales' : 'Marketing'}</button>)}
     </div>
-    {tab === 'finance' ? <FounderFinancePanel /> : null}
-    {tab === 'marketing' ? <FounderMarketingPanel /> : null}
+    {tab === 'finance' ? <>
+      <FounderFinancePanel />
+      <section className="sd-pro"><h2>Invoices, VAT &amp; aged debt</h2><ProTools links={[['/app/finance/invoices', 'Invoices'], ['/app/finance/bills', 'Bills'], ['/app/finance/expenses', 'Expenses']]} /><FinanceReportsPage loadRecords={loadFounderRecords} /></section>
+    </> : null}
+    {tab === 'sales' ? <section className="sd-pro"><h2>Sales pipeline &amp; forecast</h2><ProTools links={[['/app/retail/sales-pipeline', 'Deals & quotes'], ['/app/retail/customers', 'Customers']]} /><SalesReportsPage loadRecords={loadFounderRecords} workspace="retail" /></section> : null}
+    {tab === 'marketing' ? <>
+      <FounderMarketingPanel />
+      <section className="sd-pro"><h2>Campaign ROI &amp; attribution</h2><ProTools links={[['/app/marketing/campaigns', 'Campaigns'], ['/app/marketing/content', 'Content']]} /><MarketingReportsPage loadRecords={loadFounderRecords} workspace="marketing" /></section>
+    </> : null}
     {tab === 'overview' ? <>
     {error ? <p className="sd-error">{error}{error.toLowerCase().includes('forbidden') || error.includes('403') ? ' — SuperDash needs the founder account.' : ''}</p> : null}
 

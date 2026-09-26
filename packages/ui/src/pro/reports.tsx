@@ -5,12 +5,8 @@
 */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { documentTotals, readDocument } from './documents'
-import { campaignMetrics, readCampaign } from './marketing'
-import { dealStages, readDeal } from './sales'
-import {
-  daysBetween, downloadCsv, inPeriod, isoDate, lastMonths, LoadRecords, money, monthKey, monthLabel, numberAt, penceFrom,
-  ProRecord, ratio, reportingPeriods, shortMoney, todayIso,
-} from './shared'
+import { agedBalances, approvedExpenses, Bucket, campaignMetrics, dealStages, emptyBucket, expenseDate, expenseVat, financeReport, readCampaign, readDeal } from './models'
+import { downloadCsv, inPeriod, lastMonths, LoadRecords, money, monthKey, monthLabel, penceFrom, ProRecord, ratio, reportingPeriods, shortMoney } from './shared'
 
 function useSources(loadRecords: LoadRecords, sources: Array<[string, string]>) {
   const [data, setData] = useState<Record<string, ProRecord[]>>({})
@@ -43,10 +39,6 @@ const Missing = ({ missing }: { missing: string[] }) => missing.length
   ? <p className="pro-hint">Not included (workspace not on your plan or unavailable): {missing.join(', ')}</p>
   : null
 
-type Bucket = { current: number; d30: number; d60: number; d90: number; over: number }
-const emptyBucket = (): Bucket => ({ current: 0, d30: 0, d60: 0, d90: 0, over: 0 })
-const bucketFor = (days: number): keyof Bucket => (days <= 0 ? 'current' : days <= 30 ? 'd30' : days <= 60 ? 'd60' : days <= 90 ? 'd90' : 'over')
-
 function AgedTable({ title, rows, onExport }: { title: string; rows: Array<[string, Bucket]>; onExport: () => void }) {
   const total = rows.reduce((sum, [, bucket]) => { (Object.keys(bucket) as (keyof Bucket)[]).forEach((key) => { sum[key] += bucket[key] }); return sum }, emptyBucket())
   const rowTotal = (bucket: Bucket) => bucket.current + bucket.d30 + bucket.d60 + bucket.d90 + bucket.over
@@ -65,33 +57,15 @@ function AgedTable({ title, rows, onExport }: { title: string; rows: Array<[stri
   )
 }
 
-function aged(records: ProRecord[], kind: 'invoice' | 'bill') {
-  const today = todayIso()
-  const map = new Map<string, Bucket>()
-  for (const record of records) {
-    const doc = readDocument(record, kind)
-    const { balance } = documentTotals(doc)
-    if (balance <= 0 || record.status === 'Paid' || record.status === 'Draft') continue
-    const name = doc.party.name || 'Unknown'
-    const bucket = map.get(name) ?? emptyBucket()
-    bucket[bucketFor(daysBetween(doc.dueDate, today))] += balance
-    map.set(name, bucket)
-  }
-  return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]))
-}
-
 const agedCsv = (name: string, rows: Array<[string, Bucket]>) => downloadCsv(name, [
   ['Name', 'Current', '1-30', '31-60', '61-90', '90+', 'Total'],
   ...rows.map(([party, b]) => [party, ...[b.current, b.d30, b.d60, b.d90, b.over, b.current + b.d30 + b.d60 + b.d90 + b.over].map((p) => (p / 100).toFixed(2))]),
 ])
 
 export function AgedPanel({ records, kind }: { records: ProRecord[]; kind: 'invoice' | 'bill' }) {
-  const rows = useMemo(() => aged(records, kind), [records, kind])
+  const rows = useMemo(() => agedBalances(records, kind), [records, kind])
   return <AgedTable title={kind === 'invoice' ? 'Aged receivables' : 'Aged payables'} rows={rows} onExport={() => agedCsv(kind === 'invoice' ? 'aged-receivables.csv' : 'aged-payables.csv', rows)} />
 }
-
-const expenseDate = (record: ProRecord) => isoDate(record.data?.date) || isoDate(record.dueDate) || isoDate(record.data?.createdAt)
-const expenseVat = (record: ProRecord) => Math.round(numberAt(record.data?.vatPence))
 
 export function FinanceReportsPage({ loadRecords }: { loadRecords: LoadRecords }) {
   const { data, missing, loading } = useSources(loadRecords, [['finance', 'invoices'], ['finance', 'bills'], ['finance', 'expenses']])
@@ -100,37 +74,9 @@ export function FinanceReportsPage({ loadRecords }: { loadRecords: LoadRecords }
   const period = reportingPeriods().find((item) => item.key === periodKey) ?? reportingPeriods()[0]
   const invoices = data['finance/invoices'] ?? []
   const bills = data['finance/bills'] ?? []
-  const expenses = (data['finance/expenses'] ?? []).filter((record) => ['Approved', 'Reimbursed'].includes(record.status))
+  const expenses = approvedExpenses(data['finance/expenses'] ?? [])
 
-  const report = useMemo(() => {
-    const docs = (records: ProRecord[], kind: 'invoice' | 'bill') => records.filter((record) => record.status !== 'Draft').map((record) => ({ record, doc: readDocument(record, kind) }))
-    const sales = docs(invoices, 'invoice')
-    const purchases = docs(bills, 'bill')
-    const sumDocs = (items: typeof sales) => items.reduce((acc, { doc }) => {
-      const totals = documentTotals(doc)
-      if (basis === 'accrual') {
-        if (inPeriod(doc.issueDate, period)) { acc.net += totals.net; acc.vat += totals.vat; acc.count += 1 }
-      } else {
-        const paidInPeriod = doc.payments.filter((payment) => inPeriod(payment.date, period)).reduce((sum, payment) => sum + payment.amountPence, 0)
-        if (paidInPeriod && totals.total) { const share = paidInPeriod / totals.total; acc.net += Math.round(totals.net * share); acc.vat += Math.round(totals.vat * share); acc.count += 1 }
-      }
-      return acc
-    }, { net: 0, vat: 0, count: 0 })
-    const income = sumDocs(sales)
-    const cost = sumDocs(purchases)
-    const periodExpenses = expenses.filter((record) => inPeriod(expenseDate(record), period))
-    const expenseGross = periodExpenses.reduce((sum, record) => sum + penceFrom(record.value), 0)
-    const expenseVatTotal = periodExpenses.reduce((sum, record) => sum + expenseVat(record), 0)
-    const expenseNet = expenseGross - expenseVatTotal
-    const box1 = income.vat
-    const box4 = cost.vat + expenseVatTotal
-    return {
-      income, cost, expenseNet, expenseCount: periodExpenses.length,
-      grossProfit: income.net - cost.net,
-      netProfit: income.net - cost.net - expenseNet,
-      vat: { box1, box2: 0, box3: box1, box4, box5: box1 - box4, box6: Math.round(income.net / 100), box7: Math.round((cost.net + expenseNet) / 100), box8: 0, box9: 0 },
-    }
-  }, [invoices, bills, expenses, basis, period])
+  const report = useMemo(() => financeReport(invoices, bills, expenses, period, basis), [invoices, bills, expenses, basis, period])
 
   const exportTransactions = () => {
     const rows: unknown[][] = [['Date', 'Type', 'Number', 'Party', 'Status', 'Net', 'VAT', 'Gross', 'Paid', 'Balance', 'Due']]

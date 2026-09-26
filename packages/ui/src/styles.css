@@ -15262,3 +15262,12 @@ html[data-accessibility-simplified='true'] .btn {
 .pro-record-workspace { margin-top: 12px; }
 @media (max-width: 720px) { .pro-grid-2, .pro-grid-3, .pro-grid-4 { grid-template-columns: 1fr; } }
 .pro-jump { display: block; margin: 10px 0; padding: 8px 10px; border-radius: 7px; background: var(--retail-accent, #2563eb); color: #fff; font-weight: 700; font-size: 12px; text-align: center; text-decoration: none; }
+
+/* SuperDash: professional reports on the dark shell */
+.sd-shell .sd-pro { margin-top: 24px; display: grid; gap: 10px; }
+.sd-shell .sd-pro h2 { margin: 0; font-size: 16px; color: #e8eef6; }
+.sd-shell .sd-pro-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.sd-shell .sd-pro-links a { color: #7dd3fc; border: 1px solid rgba(125, 211, 252, .35); border-radius: 999px; padding: 5px 12px; font-size: 12px; font-weight: 700; text-decoration: none; }
+.sd-shell .sd-pro-links a:hover { background: rgba(125, 211, 252, .12); }
+.sd-shell .pro-reports > .pro-hint, .sd-shell .pro-toolbar { color: #cbd5e1; }
+.sd-shell .pro-toolbar .pro-hint { color: #94a3b8; }

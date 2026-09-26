@@ -23,6 +23,10 @@ import { getModuleKpis } from '../../../lib/module-kpis'
 import { useActionFeedback } from '../../../lib/use-action-feedback'
 import { useQuantumStore } from '../../../lib/store'
 import { logAction } from '../../../lib/action-logger'
+import { dtoToPro, loadDocumentProfile, proKindFor, proReportFor } from '../../../lib/pro-records'
+import { ProRecordSheet } from '../../../components/pro/ProSheet'
+import { CampaignSummaryCard, FinanceReport, MarketingReport, SalesReport, SalesSummaryCard } from '../../../components/pro/ProReports'
+import { readProfile, type DocumentProfile } from '@foundingos/ui/pro/models'
 import {
   QuantumButton,
   QuantumCard,
@@ -133,6 +137,16 @@ function WorkspaceModuleScreenInner() {
   // rather than migrating every render branch to FlatList.
   const RENDER_PAGE_SIZE = 60
   const [renderLimit, setRenderLimit] = useState(RENDER_PAGE_SIZE)
+  const proKind = workspace && module ? proKindFor(workspace.slug, module.id) : null
+  const reportKind = workspace && module ? proReportFor(workspace.slug, module.id) : null
+  const [sheetRecordId, setSheetRecordId] = useState<string | null>(null)
+  const [profile, setProfile] = useState<DocumentProfile>(() => readProfile(null))
+  const [reportRefresh, setReportRefresh] = useState(0)
+  useEffect(() => {
+    if (workspace && (proKind === 'document' || proKind === 'deal')) void loadDocumentProfile(workspace.slug).then(setProfile)
+  }, [workspace, proKind])
+  const proRecords = useMemo(() => (proKind === 'deal' || proKind === 'campaign' ? records.filter((record) => !record.id.startsWith('temp-')).map(dtoToPro) : []), [proKind, records])
+  const sheetRecord = sheetRecordId ? records.find((record) => record.id === sheetRecordId) ?? null : null
 
   const load = useCallback(
     async (isRefresh = false) => {
@@ -305,8 +319,10 @@ function WorkspaceModuleScreenInner() {
     const busy = busyId === record.id
     const photoUrl = firstImageUrl(record)
     const photoBusy = photoBusyId === record.id
+    const openable = Boolean(proKind) && !record.id.startsWith('temp-')
     return (
-      <QuantumCard key={record.id} accent={workspace!.accent} style={styles.recordCard}>
+      <Pressable key={record.id} disabled={!openable} onPress={() => setSheetRecordId(record.id)} style={({ pressed }) => ({ opacity: pressed && openable ? 0.8 : 1 })}>
+      <QuantumCard accent={workspace!.accent} style={styles.recordCard}>
         <View style={styles.recordHeaderRow}>
           {photoEnabled ? (
             <Pressable
@@ -343,12 +359,18 @@ function WorkspaceModuleScreenInner() {
             </QuantumText>
           ) : null}
         </View>
+        {openable ? (
+          <QuantumText variant="caption" color={workspace!.accent}>
+            {proKind === 'deal' ? 'Open deal · quote · won/lost ›' : proKind === 'campaign' ? 'Open results & ROI ›' : 'Open · lines, VAT, payments ›'}
+          </QuantumText>
+        ) : null}
         {next && kind !== 'kanban' ? (
           <QuantumButton onPress={() => advance(record)} disabled={busy}>
             Move to {next}
           </QuantumButton>
         ) : null}
       </QuantumCard>
+      </Pressable>
     )
   }
 
@@ -437,6 +459,9 @@ function WorkspaceModuleScreenInner() {
 
   function renderBody() {
     if (kind === 'calendar') return renderCalendar()
+    if (reportKind === 'finance') return <FinanceReport accent={workspace!.accent} refreshKey={reportRefresh} />
+    if (reportKind === 'sales') return <SalesReport accent={workspace!.accent} refreshKey={reportRefresh} workspace={workspace!.slug} />
+    if (reportKind === 'marketing') return <MarketingReport accent={workspace!.accent} refreshKey={reportRefresh} />
     if (records.length === 0) {
       const copy = module ? getGroupCopy(module.group, [module]) : null
       const headline = kind === 'inbox' ? 'Nothing to review yet' : 'You\'re all caught up'
@@ -496,7 +521,7 @@ function WorkspaceModuleScreenInner() {
   return (
     <QuantumScreen
       contentStyle={styles.screen}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={workspace.accent} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setReportRefresh((value) => value + 1); void load(true) }} tintColor={workspace.accent} />}
     >
       <QuantumBackButton label={`‹ ${workspace.label}`} fallbackHref={`/workspace/${workspace.slug}`} />
       <QuantumHeader eyebrow={workspace.label} title={module.label} accent={workspace.accent} />
@@ -538,7 +563,23 @@ function WorkspaceModuleScreenInner() {
         </View>
       ) : null}
 
+      {proKind === 'deal' && proRecords.length ? <SalesSummaryCard accent={workspace.accent} records={proRecords} /> : null}
+      {proKind === 'campaign' && proRecords.length ? <CampaignSummaryCard accent={workspace.accent} records={proRecords} /> : null}
+
       {renderBody()}
+      {sheetRecord && proKind ? (
+        <ProRecordSheet
+          accent={workspace.accent}
+          kind={proKind}
+          module={module.id}
+          onClose={() => setSheetRecordId(null)}
+          onSaved={(updated) => setRecords((current) => current.map((item) => (item.id === updated.id ? updated : item)))}
+          profile={profile}
+          record={sheetRecord}
+          statuses={statuses}
+          workspace={workspace.slug}
+        />
+      ) : null}
     </QuantumScreen>
   )
 }

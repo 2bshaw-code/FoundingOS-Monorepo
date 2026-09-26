@@ -6,47 +6,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { DocumentPanel } from './document-panel'
 import { BusinessDocument, DocumentProfile } from './documents'
-import { isoDate, lastMonths, money, monthKey, monthLabel, numberAt, objectAt, penceFrom, poundsInput, ProRecord, ratio, SaveRecord, shortMoney, textAt, todayIso } from './shared'
-
-export const dealStages = ['Lead', 'Qualified', 'Proposal', 'Negotiation', 'Won', 'Lost']
-export const stageProbability: Record<string, number> = { Lead: 10, Qualified: 25, Proposal: 50, Negotiation: 75, Won: 100, Lost: 0 }
-export const dealSources = ['Inbound', 'Referral', 'Outbound', 'Website', 'Social', 'Event', 'Partner', 'Existing customer', 'Other']
-
-export type Deal = {
-  company: string
-  contact: string
-  email: string
-  phone: string
-  amountPence: number
-  probability: number
-  expectedClose: string
-  source: string
-  nextStep: string
-  nextStepDate: string
-  lostReason: string
-  closedAt: string
-}
-
-export function readDeal(record: ProRecord): Deal {
-  const deal = objectAt(record.data?.deal)
-  const amount = numberAt(deal.amountPence, penceFrom(record.value))
-  return {
-    company: textAt(deal.company) || record.secondary,
-    contact: textAt(deal.contact),
-    email: textAt(deal.email) || record.email || '',
-    phone: textAt(deal.phone) || record.phone || '',
-    amountPence: Math.round(amount),
-    probability: numberAt(deal.probability, stageProbability[record.status] ?? 10),
-    expectedClose: isoDate(deal.expectedClose) || isoDate(record.dueDate),
-    source: textAt(deal.source),
-    nextStep: textAt(deal.nextStep),
-    nextStepDate: isoDate(deal.nextStepDate),
-    lostReason: textAt(deal.lostReason),
-    closedAt: isoDate(deal.closedAt),
-  }
-}
-
-const isOpen = (status: string) => status !== 'Won' && status !== 'Lost'
+import { Deal, dealQuoteRecord, dealSources, dealStages, isOpenDeal, readDeal, stageProbability } from './models'
+import { lastMonths, money, monthKey, monthLabel, penceFrom, poundsInput, ProRecord, ratio, SaveRecord, shortMoney, todayIso } from './shared'
 
 export function DealPanel({ record, save, profile, createInvoice }: {
   record: ProRecord
@@ -78,7 +39,7 @@ export function DealPanel({ record, save, profile, createInvoice }: {
     }
   }
   const weighted = Math.round((deal.amountPence * deal.probability) / 100)
-  const stale = deal.nextStepDate && deal.nextStepDate < todayIso() && isOpen(record.status)
+  const stale = deal.nextStepDate && deal.nextStepDate < todayIso() && isOpenDeal(record.status)
 
   return (
     <section className="pro-panel pro-deal">
@@ -88,7 +49,7 @@ export function DealPanel({ record, save, profile, createInvoice }: {
           <span className="pro-badge">{money(deal.amountPence)}</span>
           <span className="pro-badge">Weighted {money(weighted)}</span>
           {stale && <span className="pro-badge is-danger">Next step overdue</span>}
-          {!deal.nextStep && isOpen(record.status) && <span className="pro-badge is-warn">No next step</span>}
+          {!deal.nextStep && isOpenDeal(record.status) && <span className="pro-badge is-warn">No next step</span>}
         </div>
       </header>
       <div className="pro-grid-2">
@@ -117,7 +78,7 @@ export function DealPanel({ record, save, profile, createInvoice }: {
       </div>
       {message && <p className="pro-message" role="status">{message}</p>}
       {showQuote
-        ? <DocumentPanel record={{ ...record, secondary: deal.company, email: deal.email, value: poundsInput(deal.amountPence) }} kind="quote" profile={profile} save={(patch) => save({ ...patch, data: { ...patch.data, deal: { ...deal, amountPence: patch.valuePence ?? deal.amountPence } } })} statuses={dealStages} convertLabel="Convert to invoice" onConvert={(doc) => createInvoice(doc, deal)} />
+        ? <DocumentPanel record={dealQuoteRecord(record, deal)} kind="quote" profile={profile} save={(patch) => save({ ...patch, name: undefined, data: { ...patch.data, secondary: deal.company, deal: { ...deal, amountPence: patch.valuePence ?? deal.amountPence } } })} statuses={dealStages} convertLabel="Convert to invoice" onConvert={(doc) => createInvoice(doc, deal)} />
         : <button type="button" className="pro-link" onClick={() => setShowQuote(true)}>+ Build a quote for this deal</button>}
     </section>
   )
@@ -125,7 +86,7 @@ export function DealPanel({ record, save, profile, createInvoice }: {
 
 export function SalesForecastPanel({ records }: { records: ProRecord[] }) {
   const deals = records.map((record) => ({ record, deal: readDeal(record) }))
-  const open = deals.filter(({ record }) => isOpen(record.status))
+  const open = deals.filter(({ record }) => isOpenDeal(record.status))
   const won = deals.filter(({ record }) => record.status === 'Won')
   const lost = deals.filter(({ record }) => record.status === 'Lost')
   const pipeline = open.reduce((sum, { deal }) => sum + deal.amountPence, 0)
