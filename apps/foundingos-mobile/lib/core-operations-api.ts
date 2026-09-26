@@ -832,3 +832,21 @@ export const askFoundAi = (question: string, workspace?: string) =>
   authedRequest<FoundAiAnswer>('/api/v1/ops/ai/ask', { method: 'POST', body: JSON.stringify({ question, workspace }) })
 export const writeFoundAiPost = (input: { topic: string; type: string; tone: string; platform?: string; previous?: string }) =>
   authedRequest<FoundAiPost>('/api/v1/ops/ai/marketing/post', { method: 'POST', body: JSON.stringify(input) })
+
+export const FOUNDINGOS_SIGNUP_URL = 'https://www.foundingos.com/api/signup'
+
+// Creates a free (Lite) FoundingOS account. Paid plans are upgraded later on the web.
+export async function createFreeAccount(input: { ownerName: string; businessName: string; email: string; password: string }): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const response = await fetch(FOUNDINGOS_SIGNUP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ ...input, plan: 'lite' }),
+    })
+    const data = await response.json().catch(() => null) as { ok?: boolean; message?: string } | null
+    if (response.ok && data?.ok) return { ok: true }
+    return { ok: false, error: data?.message || `Your account could not be created (${response.status}).` }
+  } catch {
+    return { ok: false, error: 'Could not reach FoundingOS. Check your connection and try again.' }
+  }
+}

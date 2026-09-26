@@ -63,7 +63,19 @@ async function createStripeCheckout(params: { plan: Exclude<SelfServePlan, 'lite
   return body.url
 }
 
+// Best-effort per-instance throttle; the endpoint is reachable without the site password so the mobile app can sign people up.
+const attempts = new Map<string, number[]>()
+function throttled(request: Request) {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const now = Date.now()
+  const recent = (attempts.get(ip) || []).filter((at) => now - at < 60 * 60 * 1000)
+  recent.push(now)
+  attempts.set(ip, recent)
+  return recent.length > 10
+}
+
 export async function POST(request: Request) {
+  if (throttled(request)) return NextResponse.json({ ok: false, message: 'Too many sign-up attempts. Please try again later.' }, { status: 429 })
   const body = await request.json().catch(() => null) as Record<string, unknown> | null
   if (!body) return NextResponse.json({ ok: false, message: 'Invalid request.' }, { status: 400 })
   // Honeypot field: real users never see or fill it.

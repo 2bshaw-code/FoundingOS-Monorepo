@@ -3,12 +3,12 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { router, useLocalSearchParams } from 'expo-router'
 import { login as legacyLogin, getToken as getLegacyToken, verifyLegacyToken } from '../lib/api'
-import { login as coreOpsLogin, getSession as getCoreOpsSession, verifySession as verifyCoreOpsSession } from '../lib/core-operations-api'
+import { createFreeAccount, login as coreOpsLogin, getSession as getCoreOpsSession, verifySession as verifyCoreOpsSession } from '../lib/core-operations-api'
 import { login as coreWorkforceLogin, getSession as getCoreWorkforceSession } from '../lib/core-workforce-api'
 import { FOUNDINGOS_ACCENT, FOUNDINGOS_BASE } from '../lib/brands'
 import { normalizeRole } from '../lib/permissions'
@@ -28,7 +28,11 @@ export default function LoginScreen() {
   const scrollRef = useRef<ScrollView>(null)
   const [signInY, setSignInY] = useState(0)
   const goToSignIn = () => scrollRef.current?.scrollTo({ y: Math.max(0, signInY - quantumSpace.xl), animated: true })
-  const createAccount = () => { void Linking.openURL('https://www.foundingos.com/signup') }
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
+  const [ownerName, setOwnerName] = useState('')
+  const [businessName, setBusinessName] = useState('')
+  const createAccount = () => { setError(''); setMode('signup'); setTimeout(goToSignIn, 50) }
+  const showSignIn = () => { setError(''); setMode('signin'); setTimeout(goToSignIn, 50) }
 
   useEffect(() => {
     let cancelled = false
@@ -105,6 +109,35 @@ export default function LoginScreen() {
     router.replace(destination as any)
   }
 
+  async function handleSignUp() {
+    if (!ownerName.trim() || !businessName.trim() || !email.trim()) {
+      setError('Enter your name, business name and email.')
+      return
+    }
+    if (password.length < 12) {
+      setError('Choose a password with at least 12 characters.')
+      return
+    }
+    setError('')
+    setLoading(true)
+    const created = await createFreeAccount({ ownerName: ownerName.trim(), businessName: businessName.trim(), email: email.trim(), password })
+    if (!created.ok) {
+      setLoading(false)
+      setError(created.error)
+      return
+    }
+    const session = await coreOpsLogin(email.trim(), password)
+    setLoading(false)
+    if (!session.ok) {
+      setMode('signin')
+      setError('Your account is ready — sign in to continue.')
+      return
+    }
+    coreWorkforceLogin(email.trim(), password).catch(() => undefined)
+    useQuantumStore.getState().setRole(normalizeRole(session.session.role))
+    router.replace('/(app)/home' as any)
+  }
+
   if (checkingSession) {
     return (
       <View style={styles.center}>
@@ -134,7 +167,7 @@ export default function LoginScreen() {
                 <QuantumSphere size={30} />
                 <QuantumText variant="label">FoundingOS</QuantumText>
               </View>
-              <QuantumText variant="label" color={FOUNDINGOS_ACCENT} onPress={goToSignIn}>Sign in</QuantumText>
+              <QuantumText variant="label" color={FOUNDINGOS_ACCENT} onPress={showSignIn}>Sign in</QuantumText>
             </View>
 
             <View style={styles.hero}>
@@ -146,7 +179,7 @@ export default function LoginScreen() {
               </QuantumText>
               <View style={styles.ctaRow}>
                 <QuantumButton onPress={createAccount} style={styles.cta}>Get started free</QuantumButton>
-                <QuantumButton onPress={goToSignIn} tone="secondary" style={styles.cta}>Sign in</QuantumButton>
+                <QuantumButton onPress={showSignIn} tone="secondary" style={styles.cta}>Sign in</QuantumButton>
               </View>
             </View>
 
@@ -155,30 +188,51 @@ export default function LoginScreen() {
             <AppHomeSections />
 
             <View onLayout={(event) => setSignInY(event.nativeEvent.layout.y)} style={styles.signInHeading}>
-              <QuantumText variant="h2">Sign in</QuantumText>
-              <QuantumText variant="caption" color="#A9B8C8">Use the email and password for your FoundingOS account.</QuantumText>
+              <QuantumText variant="h2">{mode === 'signup' ? 'Create your free account' : 'Sign in'}</QuantumText>
+              <QuantumText variant="caption" color="#A9B8C8">
+                {mode === 'signup'
+                  ? 'Free forever on Lite. No card needed — add Core and workspaces whenever you are ready.'
+                  : 'Use the email and password for your FoundingOS account.'}
+              </QuantumText>
             </View>
             <QuantumCard accent={FOUNDINGOS_ACCENT}>
+              {mode === 'signup' ? (
+                <>
+                  <QuantumFormField label="Your name">
+                    <QuantumTextInput placeholder="Alex Morgan" autoCapitalize="words" textContentType="name" value={ownerName} onChangeText={setOwnerName} />
+                  </QuantumFormField>
+                  <QuantumFormField label="Business name">
+                    <QuantumTextInput placeholder="Morgan & Co" autoCapitalize="words" textContentType="organizationName" value={businessName} onChangeText={setBusinessName} />
+                  </QuantumFormField>
+                </>
+              ) : null}
               <QuantumFormField label="Email">
                 <QuantumTextInput
                   placeholder="you@example.com"
                   autoCapitalize="none"
                   keyboardType="email-address"
+                  textContentType={mode === 'signup' ? 'username' : 'emailAddress'}
                   value={email}
                   onChangeText={setEmail}
                 />
               </QuantumFormField>
-              <QuantumFormField label="Password or access code">
+              <QuantumFormField label={mode === 'signup' ? 'Choose a password (12+ characters)' : 'Password or access code'}>
                 <QuantumPasswordInput placeholder="••••••••" value={password} onChangeText={setPassword} />
               </QuantumFormField>
-              {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
-              <QuantumButton onPress={handleSignIn} disabled={loading}>
-                {loading ? <ActivityIndicator color={FOUNDINGOS_BASE} /> : 'Sign in'}
+              {error ? <QuantumNotice tone={error.startsWith('Your account is ready') ? 'success' : 'danger'}>{error}</QuantumNotice> : null}
+              <QuantumButton onPress={mode === 'signup' ? handleSignUp : handleSignIn} disabled={loading}>
+                {loading ? <ActivityIndicator color={FOUNDINGOS_BASE} /> : mode === 'signup' ? 'Create free account' : 'Sign in'}
               </QuantumButton>
             </QuantumCard>
-            <QuantumText variant="caption" color="#A9B8C8" align="center">
-              New to FoundingOS? <QuantumText variant="caption" color={FOUNDINGOS_ACCENT} onPress={createAccount}>Create your account</QuantumText>
-            </QuantumText>
+            {mode === 'signup' ? (
+              <QuantumText variant="caption" color="#A9B8C8" align="center">
+                Already have an account? <QuantumText variant="caption" color={FOUNDINGOS_ACCENT} onPress={showSignIn}>Sign in</QuantumText>
+              </QuantumText>
+            ) : (
+              <QuantumText variant="caption" color="#A9B8C8" align="center">
+                New to FoundingOS? <QuantumText variant="caption" color={FOUNDINGOS_ACCENT} onPress={createAccount}>Create your free account</QuantumText>
+              </QuantumText>
+            )}
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
