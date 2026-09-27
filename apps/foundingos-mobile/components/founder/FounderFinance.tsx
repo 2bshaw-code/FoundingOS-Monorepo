@@ -4,7 +4,8 @@
 */
 // SuperDash Finance: FoundingOS's own P&L, costs, cash and runway.
 import { useCallback, useEffect, useState } from 'react'
-import { Alert, StyleSheet, View } from 'react-native'
+import { Alert, ScrollView, StyleSheet, View } from 'react-native'
+import { forecastPnl } from '@foundingos/ui/founder-forecast'
 import { addFounderLedgerEntry, deleteFounderLedgerEntry, fetchFounderFinance, type FounderFinance } from '../../lib/core-operations-api'
 import { QuantumButton, QuantumCard, QuantumNotice, QuantumPill, QuantumSectionHeader, QuantumText, QuantumTextInput, quantumColors, quantumSpace } from '../QuantumUI'
 
@@ -36,6 +37,7 @@ export function FounderFinancePanel({ reloadKey }: { reloadKey: number }) {
   }
   const remove = (id: string, name: string) => Alert.alert('Delete entry?', name, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: async () => { try { await deleteFounderLedgerEntry(id); await load() } catch (err: any) { setError(err?.message || 'Could not delete.') } } }])
   const maxBar = Math.max(1, ...(data?.pnl.flatMap((row) => [row.revenue, row.costs]) ?? [1]))
+  const forecast = data ? forecastPnl(data.pnl, data.cashGbp) : null
 
   return (
     <View style={styles.wrap}>
@@ -47,8 +49,9 @@ export function FounderFinancePanel({ reloadKey }: { reloadKey: number }) {
         <Kpi label="Runway" value={data?.runwayMonths == null ? (data && data.monthlyBurnGbp === 0 ? 'Profitable' : '—') : `${data.runwayMonths} mo`} sub={data?.cashGbp == null ? 'add cash balance' : `cash ${gbp(data.cashGbp)}`} alert={data?.runwayMonths != null && data.runwayMonths < 6} />
       </View>
 
-      <QuantumSectionHeader label="Profit & loss · 6 months" />
+      <QuantumSectionHeader label="Profit & loss · 12 months" />
       <QuantumCard>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={styles.pnl}>
           {data?.pnl.map((row) => (
             <View key={row.month} style={styles.pnlCol}>
@@ -61,8 +64,23 @@ export function FounderFinancePanel({ reloadKey }: { reloadKey: number }) {
             </View>
           ))}
         </View>
-        <QuantumText variant="caption" color={quantumColors.neutral300}>Green = revenue, red = costs. {data?.note}</QuantumText>
+        </ScrollView>
+        <QuantumText variant="caption" color={quantumColors.neutral300}>Green = revenue, red = costs. Swipe for earlier months. {data?.note}</QuantumText>
       </QuantumCard>
+
+      {forecast?.years.length ? <>
+        <QuantumSectionHeader label="Forecast · next 2 years" />
+        <QuantumCard>
+          {forecast.years.map((year) => (
+            <View key={year.label} style={styles.forecastRow}>
+              <QuantumText variant="h3">{year.label}</QuantumText>
+              <QuantumText variant="caption">Revenue {gbp(Math.round(year.revenue))} · costs {gbp(Math.round(year.costs))}</QuantumText>
+              <QuantumText variant="caption" color={year.net < 0 ? quantumColors.danger : undefined}>Net {gbp(Math.round(year.net))} · MRR at end {gbp(Math.round(year.closingMrr))}{year.closingCash === null ? '' : ` · cash ${gbp(Math.round(year.closingCash))}`}</QuantumText>
+            </View>
+          ))}
+          <QuantumText variant="caption" color={quantumColors.neutral300}>Projection, not a promise: revenue grows {forecast.revenueGrowthPct}% a month (recent trend, capped at 10%), costs {forecast.costGrowthPct}% a month (capped at 5%).</QuantumText>
+        </QuantumCard>
+      </> : null}
 
       <QuantumSectionHeader label="Add to the books" />
       <QuantumCard>
@@ -120,10 +138,11 @@ const styles = StyleSheet.create({
   kpi: { width: '48%', flexGrow: 1, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.04)', padding: quantumSpace.md, gap: 2 },
   kpiAlert: { borderColor: '#FBBF24', backgroundColor: 'rgba(251,191,36,0.08)' },
   pnl: { flexDirection: 'row', gap: 6, height: 150, alignItems: 'flex-end' },
-  pnlCol: { flex: 1, alignItems: 'center', height: '100%', justifyContent: 'flex-end', gap: 2 },
+  pnlCol: { width: 48, alignItems: 'center', height: '100%', justifyContent: 'flex-end', gap: 2 },
   pnlBars: { flex: 1, flexDirection: 'row', alignItems: 'flex-end', gap: 3, width: '100%', justifyContent: 'center' },
   barIn: { width: 10, backgroundColor: '#26E07F', borderRadius: 3 },
   barOut: { width: 10, backgroundColor: '#FF5470', borderRadius: 3 },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  forecastRow: { gap: 2, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 3 },
 })

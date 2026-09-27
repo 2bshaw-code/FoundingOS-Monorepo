@@ -177,6 +177,14 @@ const AGENT_ACTIONS_KEY = 'foundingos-agent-actions-v1'
 const ACTIVATION_KEY = 'foundingos-intelligence-activation-v1'
 const DEMO_REFERENCE_TIME = '2026-09-18T10:00:00.000Z'
 const storageKey = (workspace: BusinessWorkspaceSlug) => `foundingos-${workspace}-complete-workspace-v2`
+// Example records shown while demo data is on, including any edits made during the demo.
+export function demoWorkspaceRecords(workspace: BusinessWorkspaceSlug, module: string): WorkspaceRecord[] {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(storageKey(workspace)) || 'null') as WorkspaceState | null
+    if (stored?.records?.[module]) return stored.records[module]
+  } catch { /* fall back to the seed */ }
+  return seedWorkspace(workspace).records[module] ?? []
+}
 
 const demoAgentAction = (): AgentAction => ({
   id: 'agent-replenishment-001',

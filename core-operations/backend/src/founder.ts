@@ -207,7 +207,7 @@ export async function founderFinance(founderTenantId?: string | null) {
     return { id: row.id, label: row.name, kind: String(data.kind || 'expense'), category: String(data.category || 'Other'), recurring: data.recurring === true, date: String(data.date || row.createdAt.toISOString().slice(0, 10)), amountGbp: (row.valuePence || 0) / 100, note: String(data.note || '') }
   })
   const now = new Date()
-  const months = Array.from({ length: 6 }, (_, index) => { const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (5 - index), 1)); return monthKey(d) })
+  const months = Array.from({ length: 12 }, (_, index) => { const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (11 - index), 1)); return monthKey(d) })
   const tenants = overview.tenants
   const pnl = months.map((month) => {
     const end = new Date(`${month}-01T00:00:00Z`); end.setUTCMonth(end.getUTCMonth() + 1)

@@ -41,3 +41,18 @@ test('subscriber demo loads even when live figures are unavailable', () => {
   assert.equal(demo.finance.billingLive, false)
   assert.equal(demo.monitoring.apiOk, false)
 })
+
+test('demo finance and marketing cover a year of books and the demo subscribers', async () => {
+  const { founderDemoFinance, founderDemoMarketing } = await import('./founder-superdash-demo')
+  const now = Date.parse('2026-09-26T12:00:00.000Z')
+  const overview = founderDemoOverview(null, now)
+  const finance = founderDemoFinance(overview, now)
+  assert.equal(finance.pnl.length, 12)
+  assert.equal(finance.pnl[11].month, '2026-09')
+  assert.equal(finance.pnl[11].subscriptions, overview.finance.mrrGbp)
+  assert.ok(finance.pnl[0].subscriptions < finance.pnl[11].subscriptions)
+  assert.ok(finance.entries.every((entry) => entry.id.startsWith('demo-')))
+  const marketing = founderDemoMarketing(overview, now)
+  assert.equal(marketing.funnel.customers, overview.subscriptions.customers)
+  assert.ok(marketing.posts.every((post) => post.id.startsWith('demo-post-')))
+})

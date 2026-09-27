@@ -9,6 +9,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { productionRequest } from './workspace-production-client'
 import { MonthCalendar, type CalendarEvent } from './month-calendar'
+import { forecastPnl } from './founder-forecast'
+import { MARKET_FACTS, SCENARIOS, whatsappScenario, type ScenarioInputs, type ScenarioName } from './whatsapp-scenario'
 
 type LedgerEntry = { id: string; label: string; kind: string; category: string; recurring: boolean; date: string; amountGbp: number; note: string }
 type PnlRow = { month: string; subscriptions: number; otherIncome: number; revenue: number; costs: number; net: number }
@@ -31,20 +33,23 @@ type CampaignPlan = { name: string; summary: string; kpis: string[]; posts: Arra
 const gbp = (value: number) => `${value < 0 ? '−' : ''}£${Math.abs(value).toLocaleString('en-GB', { maximumFractionDigits: 2 })}`
 const monthLabel = (month: string) => new Date(`${month}-01T00:00:00Z`).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })
 const errorText = (error: unknown, fallback: string) => (error instanceof Error ? error.message : fallback)
+const DEMO_BLOCKED = 'This is example data. Switch back to live figures to make changes.'
 const localInput = (date: Date) => new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
 
-export function FounderFinancePanel() {
-  const [data, setData] = useState<FounderFinance | null>(null)
+export function FounderFinancePanel({ demoData = null }: { demoData?: FounderFinance | null } = {}) {
+  const [liveData, setData] = useState<FounderFinance | null>(null)
+  const data = demoData ?? liveData
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [form, setForm] = useState({ kind: 'expense', label: '', category: 'Hosting & infrastructure', amountGbp: '', recurring: true, date: new Date().toISOString().slice(0, 10) })
   const load = useCallback(async () => {
     try { setData(await productionRequest<FounderFinance>('/founder/finance')); setError('') } catch (err) { setError(errorText(err, 'Could not load finance')) }
   }, [])
-  useEffect(() => { void load() }, [load])
+  useEffect(() => { if (demoData) setError(''); else void load() }, [demoData, load])
 
   const add = async (event: React.FormEvent) => {
     event.preventDefault()
+    if (demoData) { setError(DEMO_BLOCKED); return }
     setBusy(true); setError('')
     try {
       await productionRequest('/founder/ledger', { method: 'POST', body: JSON.stringify({ ...form, amountGbp: Number(form.amountGbp) }) })
@@ -53,9 +58,12 @@ export function FounderFinancePanel() {
     } catch (err) { setError(errorText(err, 'Could not save')) } finally { setBusy(false) }
   }
   const remove = async (id: string) => {
+    if (demoData) { setError(DEMO_BLOCKED); return }
     try { await productionRequest(`/founder/ledger/${id}`, { method: 'DELETE' }); await load() } catch (err) { setError(errorText(err, 'Could not delete')) }
   }
   const maxBar = Math.max(1, ...(data?.pnl.flatMap((row) => [row.revenue, row.costs]) ?? [1]))
+  const forecast = data ? forecastPnl(data.pnl, data.cashGbp) : null
+  const maxForecast = Math.max(1, ...(forecast?.rows.flatMap((row) => [row.revenue, row.costs]) ?? [1]))
 
   return <div className="sd-module">
     {error ? <p className="sd-error">{error}</p> : null}
@@ -68,8 +76,8 @@ export function FounderFinancePanel() {
     </section>
     <div className="sd-grid">
       <section className="sd-panel sd-wide">
-        <h2>Profit &amp; loss — last 6 months</h2>
-        <div className="sd-pnl">
+        <h2>Profit &amp; loss — last 12 months</h2>
+        <div className="sd-pnl sd-pnl-scroll">
           {data?.pnl.map((row) => <div className="sd-pnl-col" key={row.month}>
             <div className="sd-pnl-bars"><i className="in" style={{ height: `${(row.revenue / maxBar) * 100}%` }} title={`Revenue ${gbp(row.revenue)}`} /><i className="out" style={{ height: `${(row.costs / maxBar) * 100}%` }} title={`Costs ${gbp(row.costs)}`} /></div>
             <b className={row.net < 0 ? 'neg' : ''}>{gbp(row.net)}</b><small>{monthLabel(row.month)}</small>
@@ -80,6 +88,19 @@ export function FounderFinancePanel() {
         </tbody></table>
         <p className="sd-muted">{data?.note}</p>
       </section>
+      {forecast?.rows.length ? <section className="sd-panel sd-wide">
+        <h2>Forecast — next 2 years</h2>
+        <div className="sd-pnl sd-pnl-scroll sd-pnl-forecast">
+          {forecast.rows.map((row) => <div className="sd-pnl-col" key={row.month}>
+            <div className="sd-pnl-bars"><i className="in" style={{ height: `${(row.revenue / maxForecast) * 100}%` }} title={`Revenue ${gbp(row.revenue)}`} /><i className="out" style={{ height: `${(row.costs / maxForecast) * 100}%` }} title={`Costs ${gbp(row.costs)}`} /></div>
+            <b className={row.net < 0 ? 'neg' : ''}>{gbp(row.net)}</b><small>{monthLabel(row.month)}</small>
+          </div>)}
+        </div>
+        <table className="sd-table"><thead><tr><th>Period</th><th>Revenue</th><th>Costs</th><th>Net</th><th>MRR at end</th><th>Cash at end</th></tr></thead><tbody>
+          {forecast.years.map((year) => <tr key={year.label}><td><strong>{year.label}</strong></td><td>{gbp(year.revenue)}</td><td>{gbp(year.costs)}</td><td className={year.net < 0 ? 'neg' : ''}>{gbp(year.net)}</td><td>{gbp(year.closingMrr)}</td><td>{year.closingCash === null ? '—' : gbp(year.closingCash)}</td></tr>)}
+        </tbody></table>
+        <p className="sd-muted">Projection, not a promise. It assumes subscription revenue keeps growing {forecast.revenueGrowthPct}% a month (your recent trend, capped at 10%) and costs grow {forecast.costGrowthPct}% a month (capped at 5%). One-off income is left out.</p>
+      </section> : null}
       <section className="sd-panel">
         <h2>Add to the books</h2>
         <form className="sd-form" onSubmit={add}>
@@ -108,8 +129,9 @@ export function FounderFinancePanel() {
   </div>
 }
 
-export function FounderMarketingPanel() {
-  const [data, setData] = useState<FounderMarketing | null>(null)
+export function FounderMarketingPanel({ demoData = null }: { demoData?: FounderMarketing | null } = {}) {
+  const [liveData, setData] = useState<FounderMarketing | null>(null)
+  const data = demoData ?? liveData
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState('')
@@ -122,16 +144,17 @@ export function FounderMarketingPanel() {
   const load = useCallback(async () => {
     try { setData(await productionRequest<FounderMarketing>('/founder/marketing')); setError('') } catch (err) { setError(errorText(err, 'Could not load marketing')) }
   }, [])
-  useEffect(() => { void load() }, [load])
+  useEffect(() => { if (demoData) setError(''); else void load() }, [demoData, load])
 
-  const run = async (key: string, task: () => Promise<void>) => {
+  const run = async (key: string, task: () => Promise<void>, writes = true) => {
+    if (demoData && writes) { setError(DEMO_BLOCKED); setNotice(''); return }
     setBusy(key); setError(''); setNotice('')
     try { await task() } catch (err) { setError(errorText(err, 'Something went wrong')) } finally { setBusy('') }
   }
   const draft = () => run('draft', async () => {
     const result = await productionRequest<Draft>('/ai/marketing/post', { method: 'POST', body: JSON.stringify({ topic: topic || 'Why small businesses let FoundingOS run their operations', platform: post.channel, type: 'Social post', previous: post.text || undefined }) })
     setPost({ ...post, title: result.headline, text: `${result.body}${result.cta ? `\n\n${result.cta}` : ''}`, hashtags: result.hashtags.map((tag) => (tag.startsWith('#') ? tag : `#${tag}`)).join(' ') })
-  })
+  }, false)
   const save = (status: 'Approved' | 'Draft') => run(status, async () => {
     await productionRequest('/founder/marketing/posts', { method: 'POST', body: JSON.stringify({ ...post, status, dueDate: post.dueDate ? new Date(post.dueDate).toISOString() : null }) })
     setNotice(status === 'Approved' ? 'Scheduled — FoundAI publishes it when it is due.' : 'Saved as a draft.')
@@ -140,7 +163,7 @@ export function FounderMarketingPanel() {
   })
   const planCampaign = () => run('plan', async () => {
     setPlan(await productionRequest<CampaignPlan>('/ai/marketing/campaign', { method: 'POST', body: JSON.stringify({ goal: brief.goal, durationDays: Number(brief.durationDays), channels: brief.channels.split(',').map((item) => item.trim()).filter(Boolean) }) }))
-  })
+  }, false)
   const scheduleCampaign = () => run('schedule', async () => {
     if (!plan) return
     const start = new Date(); start.setHours(10, 0, 0, 0)
@@ -242,6 +265,64 @@ function PostRow({ item, busy, onPublish, onUpdate, onDelete }: { item: Post; bu
       {item.status !== 'Published' && !social ? <button disabled={busy} onClick={() => onUpdate(item.id, { status: 'Published' })} type="button">Mark published</button> : null}
       <button className="ghost" disabled={busy} onClick={() => void navigator.clipboard?.writeText(item.text)} type="button">Copy</button>
       <button className="ghost" disabled={busy} onClick={() => onDelete(item.id)} type="button">Delete</button>
+    </div>
+  </div>
+}
+
+const SCENARIO_FIELDS: Array<[key: keyof ScenarioInputs, label: string, step: string]> = [
+  ['businesses', 'UK small businesses', '1000'],
+  ['whatsappSharePct', '% that sell or talk to customers on WhatsApp', '1'],
+  ['reachPct', '% of those on FoundingOS by month 24', '0.05'],
+  ['paidConversionPct', '% of accounts on a paid plan', '1'],
+  ['arpuGbp', 'Average £ per paying customer / month', '1'],
+  ['arrMultiple', 'ARR multiple for the valuation', '0.5'],
+]
+
+export function FounderScenarioPanel() {
+  const [name, setName] = useState<ScenarioName | 'custom'>('base')
+  const [inputs, setInputs] = useState<ScenarioInputs>(SCENARIOS.base.inputs)
+  const result = whatsappScenario(inputs)
+  const all = (Object.keys(SCENARIOS) as ScenarioName[]).map((key) => ({ key, label: SCENARIOS[key].label, result: whatsappScenario(SCENARIOS[key].inputs) }))
+  const last = result.months[result.months.length - 1]
+  const maxMrr = Math.max(1, ...result.months.map((row) => row.mrrGbp))
+  const pick = (key: ScenarioName) => { setName(key); setInputs(SCENARIOS[key].inputs) }
+  const edit = (key: keyof ScenarioInputs, value: string) => { setName('custom'); setInputs({ ...inputs, [key]: Number(value) }) }
+
+  return <div className="sd-module">
+    <p className="sd-notice">Growth scenario built from public WhatsApp Business and UK market figures plus your pricing. It is a projection with stated assumptions, not traction — present it that way to investors.</p>
+    <section className="sd-kpis">
+      <article><span>WhatsApp-first UK businesses</span><b>{result.whatsappBusinesses.toLocaleString('en-GB')}</b><small>{inputs.whatsappSharePct}% of {inputs.businesses.toLocaleString('en-GB')}</small></article>
+      <article><span>Accounts by month 24</span><b>{result.accountsAt24.toLocaleString('en-GB')}</b><small>{last?.paying.toLocaleString('en-GB') ?? 0} paying</small></article>
+      <article><span>MRR at month 24</span><b>{gbp(last?.mrrGbp ?? 0)}</b><small>ARR {gbp((last?.mrrGbp ?? 0) * 12)}</small></article>
+      <article><span>Illustrative valuation</span><b>{gbp(result.illustrativeValuationGbp)}</b><small>{inputs.arrMultiple}× month-24 ARR</small></article>
+    </section>
+    <div className="sd-grid">
+      <section className="sd-panel sd-wide">
+        <h2>MRR over 24 months · {name === 'custom' ? 'Custom' : SCENARIOS[name].label}</h2>
+        <div className="sd-pnl sd-pnl-scroll">
+          {result.months.map((row) => <div className="sd-pnl-col" key={row.month}>
+            <div className="sd-pnl-bars"><i className="in" style={{ height: `${(row.mrrGbp / maxMrr) * 100}%` }} title={`${row.paying} paying · ${gbp(row.mrrGbp)} MRR`} /></div>
+            <b>{row.mrrGbp >= 1000 ? `£${Math.round(row.mrrGbp / 1000)}k` : gbp(row.mrrGbp)}</b><small>M{row.month}</small>
+          </div>)}
+        </div>
+        <table className="sd-table"><thead><tr><th>Milestone</th><th>Paying customers</th><th>MRR</th><th>ARR</th></tr></thead><tbody>
+          {result.milestones.map((row) => <tr key={row.label}><td><strong>{row.label}</strong></td><td>{row.paying.toLocaleString('en-GB')}</td><td>{gbp(row.mrrGbp)}</td><td>{gbp(row.arrGbp)}</td></tr>)}
+        </tbody></table>
+      </section>
+      <section className="sd-panel">
+        <h2>Assumptions</h2>
+        <div className="sd-seg">{(Object.keys(SCENARIOS) as ScenarioName[]).map((key) => <button className={name === key ? 'on' : ''} key={key} onClick={() => pick(key)} type="button">{SCENARIOS[key].label}</button>)}</div>
+        <div className="sd-form">
+          {SCENARIO_FIELDS.map(([key, label, step]) => <label className="sd-field" key={key}><small>{label}</small><input inputMode="decimal" min="0" onChange={(event) => edit(key, event.target.value)} step={step} type="number" value={inputs[key]} /></label>)}
+        </div>
+        <p className="sd-muted">Accounts ramp on a curve to the month-24 figure. Average revenue sits between Core (£19 per workspace) and Complete (£89).</p>
+      </section>
+      <section className="sd-panel">
+        <h2>Side by side</h2>
+        {all.map((row) => <div className="sd-row" key={row.key}><div><strong>{row.label}</strong><small>{row.result.months[23].paying.toLocaleString('en-GB')} paying · ARR {gbp(row.result.months[23].mrrGbp * 12)}</small></div><b>{gbp(row.result.illustrativeValuationGbp)}</b></div>)}
+        <h2>Sources</h2>
+        <p className="sd-muted">{MARKET_FACTS.ukSmallBusinessesSource}. {MARKET_FACTS.whatsappBusinessSource}. The WhatsApp share, reach, conversion, revenue and multiple are assumptions to justify with your own evidence (pilots, waitlist, conversion data).</p>
+      </section>
     </div>
   </div>
 }

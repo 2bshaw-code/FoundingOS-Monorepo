@@ -11,6 +11,7 @@
     "./pro/ops": "./src/pro/ops-registry.ts",
     "./product-images": "./src/product-images.ts",
     "./widget-order": "./src/widget-order.ts",
+    "./founder-forecast": "./src/founder-forecast.ts",
     "./sample-data": "./src/sample-data.ts",
     "./console": "./src/console.tsx",
     "./module-tabs": "./src/module-tabs.tsx",

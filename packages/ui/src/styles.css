@@ -15594,3 +15594,8 @@ body:has(.cross-sell-ticker) .found-ai-fab { bottom: 64px; }
   flex-basis: 100%;
   opacity: .7;
 }
+.sd-pnl-scroll { overflow-x: auto; padding-bottom: 4px; }
+.sd-pnl-scroll .sd-pnl-col { min-width: 52px; }
+.sd-pnl-forecast .sd-pnl-bars i { opacity: 0.72; }
+.sd-field { display: grid; gap: 4px; }
+.sd-field small { color: #8aa0b8; font-size: 12px; overflow-wrap: anywhere; }

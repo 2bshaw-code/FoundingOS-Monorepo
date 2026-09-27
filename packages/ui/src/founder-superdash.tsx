@@ -6,13 +6,14 @@
 // Founder SuperDash: subscriptions, revenue, upgrade requests, platform health,
 // growth, plus FoundingOS's own Finance (books, P&L, runway) and Marketing (FoundAI posts, campaigns, calendar).
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { FounderFinancePanel, FounderMarketingPanel } from './founder-superdash-modules'
-import { founderDemoOverview } from './founder-superdash-demo'
+import { FounderFinancePanel, FounderMarketingPanel, FounderScenarioPanel } from './founder-superdash-modules'
+import { founderDemoFinance, founderDemoMarketing, founderDemoOverview } from './founder-superdash-demo'
+import { useDemoData } from './pro-coach'
 import { getProductionSession, loginToProduction, logoutProduction, productionRecords, productionRequest } from './workspace-production-client'
 import { FinanceReportsPage, MarketingReportsPage, SalesReportsPage } from './pro/reports'
 import { proRecordFromBackend } from './pro/models'
 import type { LoadRecords } from './pro/shared'
-import { CompleteWorkspaceApplication, type BusinessWorkspaceSlug } from './complete-workspace-application'
+import { CompleteWorkspaceApplication, demoWorkspaceRecords, type BusinessWorkspaceSlug } from './complete-workspace-application'
 
 export type FounderOverview = {
   generatedAt: string
@@ -34,12 +35,13 @@ const ago = (iso: string | null) => {
 }
 // The founder's own tenant workspaces power the professional reports below.
 const loadFounderRecords: LoadRecords = async (workspace, module) => (await productionRecords.list(workspace, module)).map(proRecordFromBackend)
+const loadDemoRecords: LoadRecords = async (workspace, module) => demoWorkspaceRecords(workspace as BusinessWorkspaceSlug, module)
 
 type Tab = 'overview' | 'finance' | 'sales' | 'marketing'
 // Each SuperDash tab hosts FoundingOS's own records. 'workspace/module' entries render the full
 // professional workspace module inline; other keys are SuperDash-only views.
 const sections: Record<Exclude<Tab, 'overview'>, Array<[key: string, label: string]>> = {
-  finance: [['books', 'Books & runway'], ['finance/invoices', 'Invoices'], ['finance/bills', 'Bills'], ['finance/expenses', 'Expenses'], ['finance/banking', 'Banking'], ['finance/reconciliation', 'Reconciliation'], ['finance/budgets', 'Budgets'], ['finance/tax', 'Tax & VAT'], ['reports', 'Reports']],
+  finance: [['books', 'Books & runway'], ['scenario', 'WhatsApp growth scenario'], ['finance/invoices', 'Invoices'], ['finance/bills', 'Bills'], ['finance/expenses', 'Expenses'], ['finance/banking', 'Banking'], ['finance/reconciliation', 'Reconciliation'], ['finance/budgets', 'Budgets'], ['finance/tax', 'Tax & VAT'], ['reports', 'Reports']],
   sales: [['forecast', 'Forecast'], ['retail/sales-pipeline', 'Deals & quotes'], ['subscribers', 'Subscribers'], ['retail/crm', 'Customers'], ['marketing/leads', 'Leads'], ['retail/orders', 'Orders'], ['retail/service', 'Support']],
   marketing: [['posts', 'FoundAI posts'], ['marketing/campaigns', 'Campaigns'], ['marketing/content', 'Content'], ['marketing/calendar', 'Calendar'], ['marketing/audiences', 'Audiences'], ['marketing/journeys', 'Journeys'], ['reports', 'ROI & attribution']],
 }
@@ -67,7 +69,8 @@ export function FounderSuperDash() {
   const [filter, setFilter] = useState('')
   const [tab, setTabState] = useState<Tab>('overview')
   const [sub, setSubState] = useState('')
-  const [demo, setDemo] = useState(false)
+  // Shared with the workspace demo switch so embedded Finance, Sales and Marketing tools show example records too.
+  const [demo, setDemo] = useDemoData()
   useEffect(() => {
     const sync = () => { const [nextTab, nextSub] = readHash(); setTabState(nextTab); setSubState(nextSub) }
     sync()
@@ -125,6 +128,9 @@ export function FounderSuperDash() {
   }
 
   const overview = useMemo(() => demo ? founderDemoOverview(data) : data, [data, demo])
+  const demoFinance = useMemo(() => demo && overview ? founderDemoFinance(overview) : null, [demo, overview])
+  const demoMarketing = useMemo(() => demo && overview ? founderDemoMarketing(overview) : null, [demo, overview])
+  const records = demo ? loadDemoRecords : loadFounderRecords
 
   if (!signedIn) {
     return <main className="sd-shell"><form className="sd-login" onSubmit={signIn}>
@@ -166,8 +172,8 @@ export function FounderSuperDash() {
       <a className="sd-site-link" href="/">← Back to website</a>
     </div>
     <div className={`sd-demo-bar${demo ? ' is-on' : ''}`}>
-      <div><strong>{demo ? 'FoundingOS subscriber preview · EXAMPLE DATA' : 'Preview FoundingOS subscriptions'}</strong><small>{demo ? 'Subscriber figures and businesses are made up. No tenant was created, and no real data was changed. Platform health and workspace tools remain live.' : 'See how your company’s subscription dashboard could look with example subscribers. Your real numbers stay unchanged.'}</small></div>
-      <button onClick={() => { setDemo(!demo); setFilter(''); setError('') }} type="button">{demo ? 'Back to live figures' : 'Load subscriber demo'}</button>
+      <div><strong>{demo ? 'FoundingOS demo · EXAMPLE DATA' : 'Preview FoundingOS with example figures'}</strong><small>{demo ? 'Subscribers, books, forecast, sales and marketing across every tab are made up. Nothing is saved to your account, and platform health stays live.' : 'Fill Business, Finance, Sales and Marketing with example subscribers, a year of books, a 2-year forecast, deals and campaigns. Your real numbers stay unchanged.'}</small></div>
+      <button onClick={() => { setDemo(!demo); setFilter(''); setError('') }} type="button">{demo ? 'Back to live figures' : 'Load demo figures'}</button>
     </div>
     {tab !== 'overview' ? (() => {
       const items = sections[tab]
@@ -175,12 +181,13 @@ export function FounderSuperDash() {
       return <>
         <nav className="sd-subtabs" aria-label={`${title(tab)} sections`}>{items.map(([key, label]) => <button className={key === active ? 'on' : ''} key={key} onClick={() => go(tab, key)} type="button">{label}</button>)}</nav>
         {active.includes('/') ? <EmbeddedModule path={active} /> : null}
-        {tab === 'finance' && active === 'books' ? <FounderFinancePanel /> : null}
-        {tab === 'finance' && active === 'reports' ? <section className="sd-pro"><h2>P&amp;L, VAT &amp; aged debt</h2><FinanceReportsPage loadRecords={loadFounderRecords} /></section> : null}
-        {tab === 'sales' && active === 'forecast' ? <section className="sd-pro"><h2>Sales pipeline &amp; forecast</h2><SalesReportsPage loadRecords={loadFounderRecords} workspace="retail" /></section> : null}
+        {tab === 'finance' && active === 'books' ? <FounderFinancePanel demoData={demoFinance} /> : null}
+        {tab === 'finance' && active === 'scenario' ? <FounderScenarioPanel /> : null}
+        {tab === 'finance' && active === 'reports' ? <section className="sd-pro"><h2>P&amp;L, VAT &amp; aged debt</h2><FinanceReportsPage key={demo ? 'demo' : 'live'} loadRecords={records} /></section> : null}
+        {tab === 'sales' && active === 'forecast' ? <section className="sd-pro"><h2>Sales pipeline &amp; forecast</h2><SalesReportsPage key={demo ? 'demo' : 'live'} loadRecords={records} workspace="retail" /></section> : null}
         {tab === 'sales' && active === 'subscribers' ? <div className="sd-grid">{customersPanel}</div> : null}
-        {tab === 'marketing' && active === 'posts' ? <FounderMarketingPanel /> : null}
-        {tab === 'marketing' && active === 'reports' ? <section className="sd-pro"><h2>Campaign ROI &amp; attribution</h2><MarketingReportsPage loadRecords={loadFounderRecords} workspace="marketing" /></section> : null}
+        {tab === 'marketing' && active === 'posts' ? <FounderMarketingPanel demoData={demoMarketing} /> : null}
+        {tab === 'marketing' && active === 'reports' ? <section className="sd-pro"><h2>Campaign ROI &amp; attribution</h2><MarketingReportsPage key={demo ? 'demo' : 'live'} loadRecords={records} workspace="marketing" /></section> : null}
       </>
     })() : null}
     {tab === 'overview' ? <>

@@ -1,4 +1,5 @@
 import type { FounderOverview } from './founder-superdash'
+import type { FounderFinance, FounderMarketing } from './founder-superdash-modules'
 
 const DAY = 86_400_000
 const plans = [
@@ -100,5 +101,115 @@ export function founderDemoOverview(live: FounderOverview | null, now = Date.now
       ],
     },
     tenants,
+  }
+}
+
+const monthKeys = (now: number, count: number) => Array.from({ length: count }, (_, index) => {
+  const date = new Date(now)
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() - (count - 1 - index), 1)).toISOString().slice(0, 7)
+})
+const money = (value: number) => Math.round(value * 100) / 100
+
+// Twelve months of example FoundingOS books that end at the demo subscribers' current MRR.
+export function founderDemoFinance(overview: FounderOverview, now = Date.now()): FounderFinance {
+  const months = monthKeys(now, 12)
+  const mrr = overview.finance.mrrGbp
+  const recurring: Array<[label: string, category: string, amount: number, startMonth: number]> = [
+    ['Vercel Pro', 'Hosting & infrastructure', 20, 0],
+    ['Postgres database', 'Hosting & infrastructure', 19, 0],
+    ['Anthropic API (FoundAI)', 'AI & APIs', 85, 2],
+    ['Resend email', 'Email & messaging', 20, 3],
+    ['Expo EAS builds', 'App stores & developer', 29, 4],
+    ['Google Workspace', 'Software & tools', 14, 0],
+    ['Accounting software', 'Legal & accounting', 15, 6],
+  ]
+  const oneOffs: Array<[label: string, category: string, amount: number, month: number, kind: 'expense' | 'income']> = [
+    ['Apple Developer Program', 'App stores & developer', 79, 1, 'expense'],
+    ['LinkedIn launch ads', 'Advertising', 150, 8, 'expense'],
+    ['Privacy policy legal review', 'Legal & accounting', 450, 9, 'expense'],
+    ['Onboarding setup fee (example)', 'Other', 250, 7, 'income'],
+    ['Onboarding setup fee (example)', 'Other', 400, 10, 'income'],
+  ]
+  const pnl = months.map((month, index) => {
+    const subscriptions = money(mrr / Math.pow(1.14, 11 - index))
+    const otherIncome = oneOffs.filter(([, , , at, kind]) => kind === 'income' && at === index).reduce((sum, [, , amount]) => sum + amount, 0)
+    const costs = recurring.filter(([, , , start]) => start <= index).reduce((sum, [, , amount]) => sum + amount, 0)
+      + oneOffs.filter(([, , , at, kind]) => kind === 'expense' && at === index).reduce((sum, [, , amount]) => sum + amount, 0)
+    const revenue = money(subscriptions + otherIncome)
+    return { month, subscriptions, otherIncome, revenue, costs, net: money(revenue - costs) }
+  })
+  const recurringCostsGbp = recurring.reduce((sum, [, , amount]) => sum + amount, 0)
+  const cashGbp = 14_500
+  const monthlyBurnGbp = Math.max(0, recurringCostsGbp - mrr)
+  const entries: FounderFinance['entries'] = [
+    ...recurring.map(([label, category, amountGbp, start], index) => ({ id: `demo-cost-${index}`, label, kind: 'expense', category, recurring: true, date: `${months[start]}-01`, amountGbp, note: '' })),
+    ...oneOffs.map(([label, category, amountGbp, at, kind], index) => ({ id: `demo-once-${index}`, label, kind, category: kind === 'income' ? 'Other' : category, recurring: false, date: `${months[at]}-15`, amountGbp, note: '' })),
+    { id: 'demo-cash', label: 'Business bank account (example)', kind: 'cash', category: 'Other', recurring: false, date: new Date(now).toISOString().slice(0, 10), amountGbp: cashGbp, note: '' },
+  ].sort((a, b) => b.date.localeCompare(a.date))
+  const categories = ['Hosting & infrastructure', 'AI & APIs', 'App stores & developer', 'Email & messaging', 'Software & tools', 'Advertising', 'Salaries & contractors', 'Legal & accounting', 'Other']
+  const current = pnl[pnl.length - 1]
+  return {
+    mrrGbp: mrr,
+    arrGbp: overview.finance.arrGbp,
+    arpuGbp: overview.finance.arpuGbp,
+    payingCustomers: overview.subscriptions.paying,
+    billingLive: false,
+    recurringCostsGbp,
+    thisMonth: current,
+    cashGbp,
+    cashAsOf: new Date(now).toISOString().slice(0, 10),
+    monthlyBurnGbp,
+    runwayMonths: monthlyBurnGbp > 0 ? money(cashGbp / monthlyBurnGbp) : null,
+    pnl,
+    byCategory: categories.map((category) => ({ category, monthlyGbp: recurring.filter(([, c]) => c === category).reduce((sum, [, , amount]) => sum + amount, 0) })).filter((row) => row.monthlyGbp > 0),
+    topCustomers: overview.tenants.filter((tenant) => tenant.monthlyValueGbp > 0).sort((a, b) => b.monthlyValueGbp - a.monthlyValueGbp).slice(0, 8).map((tenant) => ({ business: tenant.businessName, plan: tenant.planName, monthlyGbp: tenant.monthlyValueGbp })),
+    entries,
+    categories,
+    note: 'Example FoundingOS books for the preview. Nothing here is your real revenue or spending.',
+  }
+}
+
+export function founderDemoMarketing(overview: FounderOverview, now = Date.now()): FounderMarketing {
+  const s = overview.subscriptions
+  const at = (days: number, hour = 10) => { const date = new Date(now + days * DAY); date.setHours(hour, 0, 0, 0); return date.toISOString() }
+  const signupsByWeek = Array.from({ length: 12 }, (_, index) => ({ weekOf: new Date(now - (11 - index) * 7 * DAY).toISOString().slice(0, 10), signups: Math.round(2 + index * 1.1 + (index % 3)) }))
+  const posts: FounderMarketing['posts'] = [
+    ['Stop juggling five apps to run your shop', 'Published', 'LinkedIn', -9, 'Lite launch'],
+    ['How Harbour Cafe answers WhatsApp orders in seconds', 'Published', 'Instagram', -6, 'Lite launch'],
+    ['Your first month on FoundingOS Lite is free', 'Published', 'Facebook', -3, 'Lite launch'],
+    ['Five signs your small business needs one system', 'Approved', 'LinkedIn', 1, 'Autumn growth'],
+    ['Health clinics: bookings and follow-ups in one place', 'Approved', 'Instagram', 3, 'Autumn growth'],
+    ['Hiring this winter? Meet FoundingOS Talent', 'Approved', 'LinkedIn', 6, 'Autumn growth'],
+    ['Behind the scenes: how FoundAI drafts your replies', 'Draft', 'LinkedIn', 10, ''],
+  ].map(([title, status, channel, days, campaign], index) => ({
+    id: `demo-post-${index}`,
+    title: String(title),
+    status: String(status),
+    channel: String(channel),
+    text: 'Example post for the preview — switch back to live figures to write and schedule real posts.',
+    hashtags: '#SmallBusiness #FoundingOS',
+    dueDate: at(Number(days)),
+    campaign: String(campaign),
+    publishedUrl: null,
+    publishedAt: status === 'Published' ? at(Number(days)) : null,
+    updatedAt: at(Math.min(0, Number(days))),
+  }))
+  return {
+    funnel: {
+      signups30d: s.new30d,
+      signups7d: s.new7d,
+      customers: s.customers,
+      paying: s.paying,
+      conversionPct: s.customers ? Math.round((s.paying / s.customers) * 100) : 0,
+      upgradeRequests90d: 4,
+      active7d: s.active7d,
+      signupsByWeek,
+    },
+    channels: { facebookInstagram: true, linkedin: true },
+    posts,
+    campaigns: [
+      { id: 'demo-campaign-1', name: 'Lite launch', status: 'Completed', summary: 'Three posts introducing the free Lite plan to UK shops and cafes.', updatedAt: at(-3) },
+      { id: 'demo-campaign-2', name: 'Autumn growth', status: 'Active', summary: 'Health, Talent and Retail stories to move Lite users onto Core.', updatedAt: at(0) },
+    ],
   }
 }
