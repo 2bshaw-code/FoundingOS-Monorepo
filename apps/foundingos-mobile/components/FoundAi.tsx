@@ -19,6 +19,8 @@ import {
   writeFoundAiPost,
 } from '../lib/core-operations-api'
 import { QuantumButton, QuantumCard, QuantumPill, QuantumText, quantumColors, quantumRadius, quantumSpace } from './QuantumUI'
+import { SpeakButton, VoiceToggle } from './SpeakButton'
+import { speakIfAuto } from '../lib/speech'
 
 const FOUNDAI = '#24C47A'
 const WORKSPACE_LABEL: Record<string, string> = { retail: 'Retail', logistics: 'Logistics', finance: 'Finance', marketing: 'Marketing', talent: 'Talent', hr: 'HR', health: 'Health', intelligence: 'Intelligence' }
@@ -142,6 +144,9 @@ export function FoundAiWhatsAppCard({ onConnect }: { onConnect: () => void }) {
   )
 }
 
+// Answer plus its suggested next steps, as FoundAI would say them.
+const spokenAnswer = (answer: FoundAiAnswer) => [answer.answer, ...(answer.suggestedActions.length ? ['Suggested next steps.', ...answer.suggestedActions] : [])].join(' ')
+
 export function AskFoundAiCard({ workspace }: { workspace?: string }) {
   const [question, setQuestion] = useState('')
   const [answer, setAnswer] = useState<FoundAiAnswer | null>(null)
@@ -151,11 +156,15 @@ export function AskFoundAiCard({ workspace }: { workspace?: string }) {
     const trimmed = text.trim()
     if (!trimmed) return
     setQuestion(trimmed); setBusy(true); setError(''); setAnswer(null)
-    try { setAnswer(await askFoundAi(trimmed, workspace)) } catch (cause: any) { setError(cause?.message || 'FoundAI could not answer that') } finally { setBusy(false) }
+    try {
+      const result = await askFoundAi(trimmed, workspace)
+      setAnswer(result)
+      speakIfAuto(spokenAnswer(result))
+    } catch (cause: any) { setError(cause?.message || 'FoundAI could not answer that') } finally { setBusy(false) }
   }
   return (
     <QuantumCard accent="#38BDF8">
-      <View style={styles.row}><Badge /><QuantumText variant="overline" color="#38BDF8">Ask FoundAI</QuantumText></View>
+      <View style={styles.row}><Badge /><QuantumText variant="overline" color="#38BDF8" style={{ flex: 1 }}>Ask FoundAI</QuantumText><VoiceToggle /></View>
       <QuantumText variant="caption" color={quantumColors.neutral200}>Answers come from your real customers, orders, invoices, stock and messages.</QuantumText>
       <View style={styles.inputRow}>
         <TextInput
@@ -177,6 +186,7 @@ export function AskFoundAiCard({ workspace }: { workspace?: string }) {
           <QuantumText variant="body">{answer.answer}</QuantumText>
           {answer.suggestedActions.length ? <QuantumText variant="caption" color={FOUNDAI}>{answer.suggestedActions.map((item) => `→ ${item}`).join('\n')}</QuantumText> : null}
           {answer.citations.length ? <QuantumText variant="caption" color={quantumColors.neutral300}>From: {answer.citations.map((item) => item.name || item.reference).slice(0, 4).join(', ')}</QuantumText> : null}
+          <SpeakButton text={spokenAnswer(answer)} />
         </View>
       ) : null}
     </QuantumCard>

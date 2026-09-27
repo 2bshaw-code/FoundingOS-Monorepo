@@ -7,6 +7,8 @@ import { Pressable, StyleSheet, View } from 'react-native'
 import { askFoundAi, type WorkspaceRecordDTO } from '../lib/core-operations-api'
 import { coachQuestion, moduleHealth, playbookFor, workspaceExperts } from '../lib/pro-playbooks'
 import { QuantumButton, QuantumCard, QuantumText, quantumColors, quantumSpace } from './QuantumUI'
+import { SpeakButton } from './SpeakButton'
+import { speakIfAuto } from '../lib/speech'
 
 // "What a professional would do here" plus live checks on this module's records, so someone
 // new to the job gets the same results as someone who has done it for years.
@@ -38,9 +40,12 @@ export function ProCoach({ workspace, moduleId, moduleLabel, statuses, records, 
     setAsking(true)
     try {
       const result = await askFoundAi(coachQuestion(workspace, moduleLabel, standard), workspace)
-      setAnswer(result?.answer || fallback)
+      const text = result?.answer || fallback
+      setAnswer(text)
+      speakIfAuto(text)
     } catch {
       setAnswer(fallback)
+      speakIfAuto(fallback)
     } finally { setAsking(false) }
   }
 
@@ -76,6 +81,7 @@ export function ProCoach({ workspace, moduleId, moduleLabel, statuses, records, 
           ))}
           <QuantumButton disabled={asking} onPress={() => void ask()}>{asking ? 'FoundAI is looking…' : '✦ What should I do today?'}</QuantumButton>
           {answer ? <QuantumText variant="caption">{answer}</QuantumText> : null}
+          {answer ? <SpeakButton text={answer} /> : null}
         </View>
       ) : null}
     </QuantumCard>

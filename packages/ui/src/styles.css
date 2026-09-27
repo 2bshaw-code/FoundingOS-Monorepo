@@ -9856,7 +9856,7 @@ body[data-sidebar-collapsed='true'] .nav-card {
 
 .found-ai-panel-header {
   display: grid;
-  grid-template-columns: 44px 1fr auto;
+  grid-template-columns: 44px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 12px;
 }
@@ -9893,6 +9893,37 @@ body[data-sidebar-collapsed='true'] .nav-card {
   color: var(--text);
   font-size: 18px;
 }
+
+.found-ai-voice {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.found-ai-voice.is-on { border-color: #38bdf8; color: #e0f2fe; background: rgba(56, 189, 248, 0.14); }
+
+.speak-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: 6px;
+  vertical-align: middle;
+  border: 1px solid var(--line, rgba(148, 163, 184, 0.3));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.speak-button.is-on { border-color: #38bdf8; background: rgba(56, 189, 248, 0.18); }
+.found-ai-speak { float: right; margin: -2px -4px 4px 8px; }
 
 .found-ai-chat {
   min-height: 0;

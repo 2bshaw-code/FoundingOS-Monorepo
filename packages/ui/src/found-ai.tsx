@@ -4,7 +4,8 @@
 */
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { SpeakButton, speak, speechSupported, stopSpeaking, useAutoSpeak } from './speech'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { LOCKED_BRAND_COLORS } from '@foundingos/config'
 import type { BrandConsoleConfig } from './console'
@@ -369,6 +370,16 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
+  const [autoSpeak, setAutoSpeak] = useAutoSpeak()
+  const [canSpeak, setCanSpeak] = useState(false)
+  useEffect(() => setCanSpeak(speechSupported()), [])
+  const spokenCount = useRef(0)
+  useEffect(() => {
+    const last = messages[messages.length - 1]
+    if (autoSpeak && open && messages.length > spokenCount.current && last?.role === 'assistant') speak(last.text)
+    spokenCount.current = messages.length
+  }, [messages, autoSpeak, open])
+  useEffect(() => { if (!open) stopSpeaking() }, [open])
   const [agentContext, setAgentContext] = useState<{ title?: string; coordinationSummary?: { scoreExplanation?: string[]; tradeoffs?: string[] }; historicalContext?: { narrative?: string }; predictiveSignals?: { triggerPattern?: string; likelyNext?: string; confidence?: number; highImpactOutcomeRate?: number; evidenceCount?: number; assessedOutcomes?: number; averageAccuracy?: number; reliabilityScore?: number; refined?: boolean; basis?: string[] }; simulationPreview?: { disclaimer?: string; comparison?: { predictedDelta?: string } }; outcomeAssessment?: { accuracy?: number; summary?: string } } | null>(null)
   const [systemIntelligence, setSystemIntelligence] = useState<{
     health?: { totalAssessedOutcomes?: number; averagePredictionAccuracy?: number; refinedPatterns?: number; confidenceImprovement?: number; averageReliability?: number; narrative?: string; recurringDeviation?: { insight?: string } | null }
@@ -504,7 +515,7 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
         setMessages((current) => [...current, { role: 'assistant', text: line }])
         setLoading(false)
         try {
-          if ('speechSynthesis' in window) {
+          if (!autoSpeak && 'speechSynthesis' in window) {
             window.speechSynthesis.cancel()
             const utter = new SpeechSynthesisUtterance(line)
             utter.rate = 0.98
@@ -562,6 +573,7 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
             <strong>FoundAI</strong>
             <span>{brand.name} · {context}</span>
           </div>
+          {canSpeak ? <button type="button" className={`found-ai-voice${autoSpeak ? ' is-on' : ''}`} onClick={() => setAutoSpeak(!autoSpeak)} aria-pressed={autoSpeak} title={autoSpeak ? 'FoundAI reads replies aloud — tap to mute' : 'Turn on to hear FoundAI read replies aloud'}>{autoSpeak ? '🔊 Voice on' : '🔈 Voice off'}</button> : null}
           <button type="button" className="found-ai-close" onClick={() => setOpen(false)} aria-label="Close FoundAI">×</button>
         </header>
 
@@ -569,6 +581,7 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
           {messages.map((message, index) => (
             <div key={`${message.role}-${index}`} className={`found-ai-message ${message.role}`}>
               {message.text}
+              {message.role === 'assistant' ? <SpeakButton className="found-ai-speak" text={message.text} /> : null}
             </div>
           ))}
           {loading && (
