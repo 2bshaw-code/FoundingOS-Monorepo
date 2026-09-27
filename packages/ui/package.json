@@ -12,6 +12,8 @@
     "./product-images": "./src/product-images.ts",
     "./widget-order": "./src/widget-order.ts",
     "./founder-forecast": "./src/founder-forecast.ts",
+    "./founder-superdash-demo": "./src/founder-superdash-demo.ts",
+    "./whatsapp-scenario": "./src/whatsapp-scenario.ts",
     "./sample-data": "./src/sample-data.ts",
     "./console": "./src/console.tsx",
     "./module-tabs": "./src/module-tabs.tsx",

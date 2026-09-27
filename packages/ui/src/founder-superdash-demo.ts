@@ -1,5 +1,4 @@
-import type { FounderOverview } from './founder-superdash'
-import type { FounderFinance, FounderMarketing } from './founder-superdash-modules'
+import type { FounderFinance, FounderMarketing, FounderOverview } from './founder-types'
 
 const DAY = 86_400_000
 const plans = [

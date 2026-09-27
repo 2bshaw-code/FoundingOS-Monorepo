@@ -4,6 +4,7 @@
 */
 import { getStoredValue, setStoredValue, deleteStoredValue } from './platform-storage'
 import { demoCreate, demoList, demoUpdate, isDemoData } from './demo-data'
+import { founderDemoFinance, founderDemoMarketing, founderDemoOverview } from '@foundingos/ui/founder-superdash-demo'
 
 export const CORE_OPS_API_BASE = 'https://core-operations-backend.vercel.app'
 
@@ -896,7 +897,14 @@ export type FounderOverview = {
 
 export const fetchFounderOverview = () => authedRequest<FounderOverview>('/api/v1/ops/founder/overview')
 
-export const founderEnableWorkspaces = (tenantId: string, workspaces: string[]) =>
+// Demo figures: SuperDash shows example subscribers, books and marketing while demo data is on.
+// Live platform health is kept when it can be read; nothing is written to the account.
+const DEMO_READ_ONLY = 'This is example data. Turn demo figures off to make changes.'
+const demoOnly = () => Promise.reject(new Error(DEMO_READ_ONLY))
+const demoOverview = async () => founderDemoOverview(await fetchFounderOverview().catch(() => null))
+export const fetchSuperDashOverview = () => (isDemoData() ? demoOverview() : fetchFounderOverview())
+
+export const founderEnableWorkspaces = (tenantId: string, workspaces: string[]) => isDemoData() ? demoOnly() :
   authedRequest(`/api/v1/ops/founder/tenants/${encodeURIComponent(tenantId)}/workspaces`, { method: 'POST', body: JSON.stringify({ workspaces, enabled: true }) })
 
 export const fetchFounderAccess = () => authedRequest<{ founder: boolean }>('/api/v1/ops/founder/access')
@@ -917,14 +925,14 @@ export type FounderMarketing = {
   posts: FounderPost[]
   campaigns: Array<{ id: string; name: string; status: string; summary: string; updatedAt: string }>
 }
-export const fetchFounderFinance = () => authedRequest<FounderFinance>('/api/v1/ops/founder/finance')
-export const addFounderLedgerEntry = (input: { kind: string; label: string; category?: string; amountGbp: number; recurring: boolean; date: string }) =>
+export const fetchFounderFinance = async () => isDemoData() ? founderDemoFinance(await demoOverview()) : authedRequest<FounderFinance>('/api/v1/ops/founder/finance')
+export const addFounderLedgerEntry = (input: { kind: string; label: string; category?: string; amountGbp: number; recurring: boolean; date: string }) => isDemoData() ? demoOnly() :
   authedRequest('/api/v1/ops/founder/ledger', { method: 'POST', body: JSON.stringify(input) })
-export const deleteFounderLedgerEntry = (id: string) => authedRequest(`/api/v1/ops/founder/ledger/${encodeURIComponent(id)}`, { method: 'DELETE' })
-export const fetchFounderMarketing = () => authedRequest<FounderMarketing>('/api/v1/ops/founder/marketing')
-export const saveFounderPost = (input: { title: string; text: string; hashtags?: string; channel: string; dueDate: string | null; status: 'Approved' | 'Draft'; campaign?: string }) =>
+export const deleteFounderLedgerEntry = (id: string) => isDemoData() ? demoOnly() : authedRequest(`/api/v1/ops/founder/ledger/${encodeURIComponent(id)}`, { method: 'DELETE' })
+export const fetchFounderMarketing = async () => isDemoData() ? founderDemoMarketing(await demoOverview()) : authedRequest<FounderMarketing>('/api/v1/ops/founder/marketing')
+export const saveFounderPost = (input: { title: string; text: string; hashtags?: string; channel: string; dueDate: string | null; status: 'Approved' | 'Draft'; campaign?: string }) => isDemoData() ? demoOnly() :
   authedRequest('/api/v1/ops/founder/marketing/posts', { method: 'POST', body: JSON.stringify(input) })
-export const updateFounderPost = (id: string, input: { status?: string; dueDate?: string | null }) =>
+export const updateFounderPost = (id: string, input: { status?: string; dueDate?: string | null }) => isDemoData() ? demoOnly() :
   authedRequest(`/api/v1/ops/founder/marketing/posts/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(input) })
-export const deleteFounderPost = (id: string) => authedRequest(`/api/v1/ops/founder/marketing/posts/${encodeURIComponent(id)}`, { method: 'DELETE' })
-export const publishSocialNow = (recordId: string) => authedRequest('/api/v1/ops/social/publish', { method: 'POST', body: JSON.stringify({ recordId }) })
+export const deleteFounderPost = (id: string) => isDemoData() ? demoOnly() : authedRequest(`/api/v1/ops/founder/marketing/posts/${encodeURIComponent(id)}`, { method: 'DELETE' })
+export const publishSocialNow = (recordId: string) => isDemoData() ? demoOnly() : authedRequest('/api/v1/ops/social/publish', { method: 'POST', body: JSON.stringify({ recordId }) })

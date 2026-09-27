@@ -8,9 +8,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { RefreshControl, StyleSheet, View } from 'react-native'
 import { FounderFinancePanel } from '../../components/founder/FounderFinance'
 import { FounderMarketingPanel } from '../../components/founder/FounderMarketing'
+import { FounderScenarioPanel } from '../../components/founder/FounderScenario'
+import { isDemoData, setDemoData, subscribeDemoData } from '../../lib/demo-data'
 import { FinanceReport, MarketingReport, SalesReport } from '../../components/pro/ProReports'
 import { router } from 'expo-router'
-import { FounderOverview, fetchFounderOverview, founderEnableWorkspaces } from '../../lib/core-operations-api'
+import { FounderOverview, fetchSuperDashOverview, founderEnableWorkspaces } from '../../lib/core-operations-api'
 import { QuantumButton, QuantumCard, QuantumNotice, QuantumPill, QuantumScreen, QuantumSectionHeader, QuantumText, quantumColors, quantumSpace } from '../../components/QuantumUI'
 
 const gbp = (value: number) => `£${value.toLocaleString('en-GB', { maximumFractionDigits: 2 })}`
@@ -51,16 +53,20 @@ export default function SuperDashScreen() {
   const [busy, setBusy] = useState('')
   const [tab, setTab] = useState<'business' | 'finance' | 'sales' | 'marketing'>('business')
   const [reloadKey, setReloadKey] = useState(0)
+  const [demo, setDemo] = useState(isDemoData())
 
   const load = useCallback(async () => {
     try {
-      setData(await fetchFounderOverview())
+      setData(await fetchSuperDashOverview())
       setError('')
     } catch (err: any) {
+      setData(null)
       setError(err?.status === 403 ? 'SuperDash is only available on the founder account.' : err?.message || 'Could not load SuperDash.')
     }
   }, [])
   useEffect(() => { void load() }, [load])
+  // Shared with the workspace demo switch, so embedded reports and workspace tools show example records too.
+  useEffect(() => subscribeDemoData((on) => { setDemo(on); setReloadKey((key) => key + 1); void load() }), [load])
 
   const enable = async (tenantId: string, workspaces: string[]) => {
     setBusy(tenantId)
@@ -85,7 +91,12 @@ export default function SuperDashScreen() {
       <View style={styles.head}>
         <QuantumText variant="overline" color="#38BDF8">FoundingOS · Founder</QuantumText>
         <QuantumText variant="h1">SuperDash</QuantumText>
-        <QuantumText variant="caption" color={quantumColors.neutral300}>{data ? `Updated ${ago(data.generatedAt)} · pull to refresh` : 'Loading…'}</QuantumText>
+        <QuantumText variant="caption" color={quantumColors.neutral300}>{demo ? 'Example data' : data ? `Updated ${ago(data.generatedAt)} · pull to refresh` : error ? 'Live figures unavailable' : 'Loading…'}</QuantumText>
+      </View>
+      <View style={[styles.demoBar, demo ? styles.demoBarOn : null]}>
+        <QuantumText variant="label">{demo ? 'FoundingOS demo · EXAMPLE DATA' : 'Preview FoundingOS with example figures'}</QuantumText>
+        <QuantumText variant="caption" color={quantumColors.neutral300}>{demo ? 'Subscribers, books, forecast, sales and marketing are made up. Nothing is saved to your account.' : 'Fill every tab with example subscribers, a year of books, a 2-year forecast, deals and campaigns.'}</QuantumText>
+        <QuantumButton tone={demo ? 'secondary' : undefined} onPress={() => setDemoData(!demo)}>{demo ? 'Back to live figures' : 'Load demo figures'}</QuantumButton>
       </View>
       <View style={styles.links}>
         <QuantumPill active={tab === 'business'} onPress={() => setTab('business')}>Business</QuantumPill>
@@ -95,6 +106,7 @@ export default function SuperDashScreen() {
       </View>
       {tab === 'finance' ? <>
         <FounderFinancePanel reloadKey={reloadKey} />
+        <FounderScenarioPanel />
         <QuantumSectionHeader label="Invoices, VAT & aged debt" />
         <View style={styles.proLinks}>
           <QuantumButton tone="secondary" onPress={() => router.push('/workspace/finance/invoices')}>Invoices</QuantumButton>
@@ -227,5 +239,7 @@ const styles = StyleSheet.create({
   bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 90 },
   bar: { flex: 1, backgroundColor: '#38BDF8', borderRadius: 4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: quantumSpace.sm },
+  demoBar: { gap: 6, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(56,189,248,0.3)', backgroundColor: 'rgba(56,189,248,0.06)', padding: quantumSpace.md },
+  demoBarOn: { borderColor: '#FBBF24', backgroundColor: 'rgba(251,191,36,0.08)' },
   chip: { borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.06)', paddingHorizontal: 10, paddingVertical: 4 },
 })

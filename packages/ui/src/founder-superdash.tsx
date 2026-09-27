@@ -15,15 +15,8 @@ import { proRecordFromBackend } from './pro/models'
 import type { LoadRecords } from './pro/shared'
 import { CompleteWorkspaceApplication, demoWorkspaceRecords, type BusinessWorkspaceSlug } from './complete-workspace-application'
 
-export type FounderOverview = {
-  generatedAt: string
-  subscriptions: { customers: number; paying: number; free: number; new7d: number; new30d: number; active7d: number; byPlan: Array<{ plan: string; name: string; customers: number; mrrGbp: number }>; workspaceAdoption: Array<{ workspace: string; customers: number }>; signupsByDay: Array<{ date: string; count: number }> }
-  finance: { mrrGbp: number; arrGbp: number; arpuGbp: number; boltOns: Array<{ workspace: string; customers: number; mrrGbp: number }>; billingLive: boolean; note: string }
-  monitoring: { apiOk: boolean; dbLatencyMs: number; aiConfigured: boolean; emailConfigured: boolean; upgradeEmailsConfigured: boolean; lastAutopilotRunAt: string | null; aiRequests24h: number; autopilotActions24h: number; recordsCreated24h: number; integrationsConnected: number; integrationsFailing: Array<{ business: string; provider: string; status: string }> }
-  upgradeRequests: Array<{ id: string; tenantId: string; business: string; ownerEmail: string; requested: string[]; pending: string[]; note: string; createdAt: string }>
-  ratings?: { count: number; average: number | null; distribution: Array<{ score: number; count: number }>; recent: Array<{ id: string; tenantId: string; business: string; score: number; surface: string; page: string; comment: string; createdAt: string }> }
-  tenants: Array<{ tenantId: string; businessName: string; ownerName: string; ownerEmail: string; plan: string; planName: string; workspaces: string[]; seats: number; monthlyValueGbp: number; status: string; createdAt: string; lastActiveAt: string | null }>
-}
+import type { FounderOverview } from './founder-types'
+export type { FounderOverview } from './founder-types'
 
 const gbp = (value: number) => `£${value.toLocaleString('en-GB', { maximumFractionDigits: 2 })}`
 const ago = (iso: string | null) => {

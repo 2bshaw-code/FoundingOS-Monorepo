@@ -12,21 +12,9 @@ import { MonthCalendar, type CalendarEvent } from './month-calendar'
 import { forecastPnl } from './founder-forecast'
 import { MARKET_FACTS, SCENARIOS, whatsappScenario, type ScenarioInputs, type ScenarioName } from './whatsapp-scenario'
 
-type LedgerEntry = { id: string; label: string; kind: string; category: string; recurring: boolean; date: string; amountGbp: number; note: string }
-type PnlRow = { month: string; subscriptions: number; otherIncome: number; revenue: number; costs: number; net: number }
-export type FounderFinance = {
-  mrrGbp: number; arrGbp: number; arpuGbp: number; payingCustomers: number; billingLive: boolean; recurringCostsGbp: number
-  thisMonth: PnlRow; cashGbp: number | null; cashAsOf: string | null; monthlyBurnGbp: number; runwayMonths: number | null
-  pnl: PnlRow[]; byCategory: Array<{ category: string; monthlyGbp: number }>; topCustomers: Array<{ business: string; plan: string; monthlyGbp: number }>
-  entries: LedgerEntry[]; categories: string[]; note: string
-}
-type Post = { id: string; title: string; status: string; channel: string; text: string; hashtags: string; dueDate: string | null; campaign: string; publishedUrl: string | null; publishedAt: string | null; updatedAt: string }
-export type FounderMarketing = {
-  funnel: { signups30d: number; signups7d: number; customers: number; paying: number; conversionPct: number; upgradeRequests90d: number; active7d: number; signupsByWeek: Array<{ weekOf: string; signups: number }> }
-  channels: { facebookInstagram: boolean; linkedin: boolean }
-  posts: Post[]
-  campaigns: Array<{ id: string; name: string; status: string; summary: string; updatedAt: string }>
-}
+import type { FounderFinance, FounderMarketing } from './founder-types'
+export type { FounderFinance, FounderMarketing } from './founder-types'
+type Post = FounderMarketing['posts'][number]
 type Draft = { headline: string; body: string; hashtags: string[]; cta: string; imageIdea?: string }
 type CampaignPlan = { name: string; summary: string; kpis: string[]; posts: Array<{ day: number; channel: string; type: string; headline: string; body: string; hashtags: string[]; cta: string }> }
 
