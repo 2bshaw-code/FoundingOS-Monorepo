@@ -907,7 +907,7 @@ export const fetchSuperDashOverview = () => (isDemoData() ? demoOverview() : fet
 export const founderEnableWorkspaces = (tenantId: string, workspaces: string[]) => isDemoData() ? demoOnly() :
   authedRequest(`/api/v1/ops/founder/tenants/${encodeURIComponent(tenantId)}/workspaces`, { method: 'POST', body: JSON.stringify({ workspaces, enabled: true }) })
 
-export const fetchFounderAccess = () => authedRequest<{ founder: boolean }>('/api/v1/ops/founder/access')
+export const fetchFounderAccess = () => authedRequest<{ founder: boolean; investor?: boolean }>('/api/v1/ops/founder/access')
 
 // SuperDash Finance / Marketing — FoundingOS's own books and growth marketing.
 export type FounderLedgerEntry = { id: string; label: string; kind: string; category: string; recurring: boolean; date: string; amountGbp: number; note: string }

@@ -10,6 +10,7 @@ import { FounderFinancePanel } from '../../components/founder/FounderFinance'
 import { FounderMarketingPanel } from '../../components/founder/FounderMarketing'
 import { FounderScenarioPanel } from '../../components/founder/FounderScenario'
 import { isDemoData, setDemoData, subscribeDemoData } from '../../lib/demo-data'
+import { useSuperDashAccess } from '../../lib/workspace-access'
 import { FinanceReport, MarketingReport, SalesReport } from '../../components/pro/ProReports'
 import { router } from 'expo-router'
 import { FounderOverview, fetchSuperDashOverview, founderEnableWorkspaces } from '../../lib/core-operations-api'
@@ -54,6 +55,10 @@ export default function SuperDashScreen() {
   const [tab, setTab] = useState<'business' | 'finance' | 'sales' | 'marketing'>('business')
   const [reloadKey, setReloadKey] = useState(0)
   const [demo, setDemo] = useState(isDemoData())
+  const access = useSuperDashAccess()
+  const investor = access === 'investor'
+  // Investors only ever see example figures.
+  useEffect(() => { if (investor && !demo) setDemoData(true) }, [investor, demo])
 
   const load = useCallback(async () => {
     try {
@@ -61,7 +66,7 @@ export default function SuperDashScreen() {
       setError('')
     } catch (err: any) {
       setData(null)
-      setError(err?.status === 403 ? 'SuperDash is only available on the founder account.' : err?.message || 'Could not load SuperDash.')
+      setError(err?.status === 403 ? 'SuperDash is only available to the founder and invited investors.' : err?.message || 'Could not load SuperDash.')
     }
   }, [])
   useEffect(() => { void load() }, [load])
@@ -89,14 +94,19 @@ export default function SuperDashScreen() {
   return (
     <QuantumScreen refreshControl={<RefreshControl refreshing={refreshing} tintColor="#38BDF8" onRefresh={async () => { setRefreshing(true); setReloadKey((key) => key + 1); await load(); setRefreshing(false) }} />}>
       <View style={styles.head}>
-        <QuantumText variant="overline" color="#38BDF8">FoundingOS · Founder</QuantumText>
+        <QuantumText variant="overline" color="#38BDF8">{investor ? 'FoundingOS · Investor preview' : 'FoundingOS · Founder'}</QuantumText>
         <QuantumText variant="h1">SuperDash</QuantumText>
-        <QuantumText variant="caption" color={quantumColors.neutral300}>{demo ? 'Example data' : data ? `Updated ${ago(data.generatedAt)} · pull to refresh` : error ? 'Live figures unavailable' : 'Loading…'}</QuantumText>
+        <QuantumText variant="caption" color={quantumColors.neutral300}>{investor ? 'Example data · read-only' : demo ? 'Example data' : data ? `Updated ${ago(data.generatedAt)} · pull to refresh` : error ? 'Live figures unavailable' : 'Loading…'}</QuantumText>
       </View>
       <View style={[styles.demoBar, demo ? styles.demoBarOn : null]}>
-        <QuantumText variant="label">{demo ? 'FoundingOS demo · EXAMPLE DATA' : 'Preview FoundingOS with example figures'}</QuantumText>
-        <QuantumText variant="caption" color={quantumColors.neutral300}>{demo ? 'Subscribers, books, forecast, sales and marketing are made up. Nothing is saved to your account.' : 'Fill every tab with example subscribers, a year of books, a 2-year forecast, deals and campaigns.'}</QuantumText>
-        <QuantumButton tone={demo ? 'secondary' : undefined} onPress={() => setDemoData(!demo)}>{demo ? 'Back to live figures' : 'Load demo figures'}</QuantumButton>
+        {investor ? <>
+          <QuantumText variant="label">Investor preview · EXAMPLE DATA</QuantumText>
+          <QuantumText variant="caption" color={quantumColors.neutral300}>This is the founder’s SuperDash: every tab, report and tool used to run FoundingOS. Subscribers, books, forecasts, deals and campaigns are example figures, and nothing can be changed.</QuantumText>
+        </> : <>
+          <QuantumText variant="label">{demo ? 'FoundingOS demo · EXAMPLE DATA' : 'Preview FoundingOS with example figures'}</QuantumText>
+          <QuantumText variant="caption" color={quantumColors.neutral300}>{demo ? 'Subscribers, books, forecast, sales and marketing are made up. Nothing is saved to your account.' : 'Fill every tab with example subscribers, a year of books, a 2-year forecast, deals and campaigns.'}</QuantumText>
+          <QuantumButton tone={demo ? 'secondary' : undefined} onPress={() => setDemoData(!demo)}>{demo ? 'Back to live figures' : 'Load demo figures'}</QuantumButton>
+        </>}
       </View>
       <View style={styles.links}>
         <QuantumPill active={tab === 'business'} onPress={() => setTab('business')}>Business</QuantumPill>

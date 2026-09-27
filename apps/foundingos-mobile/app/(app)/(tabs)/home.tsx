@@ -38,7 +38,7 @@ import { useQuantumStore } from '../../../lib/store'
 import { useActionFeedback } from '../../../lib/use-action-feedback'
 import { AskFoundAiCard, FoundAiAutopilotCard, FoundAiWhatsAppCard } from '../../../components/FoundAi'
 import { WorkspaceQuickAccess } from '../../../components/WorkspaceAccess'
-import { signOut, useIsFounder } from '../../../lib/workspace-access'
+import { signOut, useSuperDashAccess } from '../../../lib/workspace-access'
 
 const STATUS_LABEL: Record<ApprovalsQueueStatus, string> = {
   proposed: 'Suggested',
@@ -78,7 +78,8 @@ export default function TodayScreen() {
   const activeWorkspaceSlug = useQuantumStore((state) => state.activeBrandSlug)
   const pendingSyncCount = useQuantumStore((state) => state.pendingSyncCount)
   const isOnline = useQuantumStore((state) => state.isOnline)
-  const isFounder = useIsFounder()
+  const superDash = useSuperDashAccess()
+  const canOpenSuperDash = superDash !== null
 
   const [connected, setConnected] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -348,11 +349,11 @@ export default function TodayScreen() {
 
       {connected && !loading ? (
         <>
-          {isFounder ? (
+          {canOpenSuperDash ? (
             <Pressable onPress={() => router.push('/(app)/superdash' as never)} style={styles.superdash}>
-              <Text style={styles.superdashEyebrow}>FOUNDER</Text>
+              <Text style={styles.superdashEyebrow}>{superDash === 'investor' ? 'INVESTOR PREVIEW' : 'FOUNDER'}</Text>
               <Text style={styles.superdashTitle}>SuperDash →</Text>
-              <Text style={styles.superdashCopy}>Subscriptions, revenue, upgrade requests and platform health</Text>
+              <Text style={styles.superdashCopy}>{superDash === 'investor' ? 'The founder’s full company dashboard, with example figures' : 'Subscriptions, revenue, upgrade requests and platform health'}</Text>
             </Pressable>
           ) : null}
           <View style={styles.arrangeBar}>

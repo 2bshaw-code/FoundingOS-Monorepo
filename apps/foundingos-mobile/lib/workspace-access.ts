@@ -59,16 +59,23 @@ export async function signOut() {
   router.replace('/')
 }
 
-// True only for the FoundingOS founder account (founder_master role or FOUNDER_EMAILS on the backend).
-export function useIsFounder() {
-  const [founder, setFounder] = useState(false)
+// Who may open SuperDash: the founder (live figures), or an investor listed in INVESTOR_EMAILS
+// on the backend (read-only preview with example figures only).
+export type SuperDashAccess = 'founder' | 'investor' | null
+export function useSuperDashAccess(): SuperDashAccess {
+  const [access, setAccess] = useState<SuperDashAccess>(null)
   useEffect(() => {
     getSession().then(async (session) => {
       if (!session) return
-      if (session.role === 'founder_master') { setFounder(true); return }
-      const access = await fetchFounderAccess().catch(() => null)
-      setFounder(Boolean(access?.founder))
+      if (session.role === 'founder_master') { setAccess('founder'); return }
+      const result = await fetchFounderAccess().catch(() => null)
+      setAccess(result?.founder ? 'founder' : result?.investor ? 'investor' : null)
     })
   }, [])
-  return founder
+  return access
+}
+
+// True only for the FoundingOS founder account (founder_master role or FOUNDER_EMAILS on the backend).
+export function useIsFounder() {
+  return useSuperDashAccess() === 'founder'
 }

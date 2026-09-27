@@ -64,6 +64,8 @@ export function FounderSuperDash() {
   const [sub, setSubState] = useState('')
   // Shared with the workspace demo switch so embedded Finance, Sales and Marketing tools show example records too.
   const [demo, setDemo] = useDemoData()
+  // Investors (signed in to the website with an investor password) get the full SuperDash, read-only and with example figures only.
+  const [investor, setInvestor] = useState(false)
   useEffect(() => {
     const sync = () => { const [nextTab, nextSub] = readHash(); setTabState(nextTab); setSubState(nextSub) }
     sync()
@@ -86,8 +88,10 @@ export function FounderSuperDash() {
   useEffect(() => {
     const has = Boolean(getProductionSession())
     setSignedIn(has)
-    if (has) void load()
+    if (has) { void load(); return }
+    void fetch('/api/access/role', { cache: 'no-store' }).then((response) => (response.ok ? response.json() : null)).then((body: { role?: string } | null) => { if (body?.role === 'investor') setInvestor(true) }).catch(() => undefined)
   }, [load])
+  useEffect(() => { if (investor && !demo) setDemo(true) }, [investor, demo, setDemo])
 
   const signIn = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -125,7 +129,7 @@ export function FounderSuperDash() {
   const demoMarketing = useMemo(() => demo && overview ? founderDemoMarketing(overview) : null, [demo, overview])
   const records = demo ? loadDemoRecords : loadFounderRecords
 
-  if (!signedIn) {
+  if (!signedIn && !investor) {
     return <main className="sd-shell"><form className="sd-login" onSubmit={signIn}>
       <p className="sd-eyebrow">Founder only</p><h1>SuperDash</h1>
       <input autoComplete="username" onChange={(event) => setEmail(event.target.value)} placeholder="Founder email" type="email" value={email} />
@@ -155,8 +159,8 @@ export function FounderSuperDash() {
 
   return <main className="sd-shell">
     <header className="sd-top">
-      <div><p className="sd-eyebrow">FoundingOS · Founder</p><h1>SuperDash</h1><small>{demo ? 'Example data' : data ? `Updated ${ago(data.generatedAt)}` : error ? 'Live figures unavailable' : 'Loading…'}</small></div>
-      <nav><span className="sd-plan">Complete · all Pro tools on</span><button onClick={() => void load()} type="button">Refresh</button><button className="ghost" onClick={() => { void logoutProduction().then(() => { setSignedIn(false); setData(null); setDemo(false) }) }} type="button">Sign out</button></nav>
+      <div><p className="sd-eyebrow">{investor ? 'FoundingOS · Investor preview' : 'FoundingOS · Founder'}</p><h1>SuperDash</h1><small>{investor ? 'Example data · read-only' : demo ? 'Example data' : data ? `Updated ${ago(data.generatedAt)}` : error ? 'Live figures unavailable' : 'Loading…'}</small></div>
+      <nav><span className="sd-plan">Complete · all Pro tools on</span>{investor ? <span className="sd-plan">Read-only</span> : <><button onClick={() => void load()} type="button">Refresh</button><button className="ghost" onClick={() => { void logoutProduction().then(() => { setSignedIn(false); setData(null); setDemo(false) }) }} type="button">Sign out</button></>}</nav>
     </header>
     <div className="sd-tab-bar">
       <div className="sd-tabs" role="tablist">
@@ -164,10 +168,12 @@ export function FounderSuperDash() {
       </div>
       <a className="sd-site-link" href="/">← Back to website</a>
     </div>
-    <div className={`sd-demo-bar${demo ? ' is-on' : ''}`}>
+    {investor ? <div className="sd-demo-bar is-on">
+      <div><strong>Investor preview · EXAMPLE DATA</strong><small>This is the founder&apos;s SuperDash: every tab, report and tool the founder uses to run FoundingOS. Subscribers, books, forecasts, deals and campaigns are example figures, and nothing can be changed.</small></div>
+    </div> : <div className={`sd-demo-bar${demo ? ' is-on' : ''}`}>
       <div><strong>{demo ? 'FoundingOS demo · EXAMPLE DATA' : 'Preview FoundingOS with example figures'}</strong><small>{demo ? 'Subscribers, books, forecast, sales and marketing across every tab are made up. Nothing is saved to your account, and platform health stays live.' : 'Fill Business, Finance, Sales and Marketing with example subscribers, a year of books, a 2-year forecast, deals and campaigns. Your real numbers stay unchanged.'}</small></div>
       <button onClick={() => { setDemo(!demo); setFilter(''); setError('') }} type="button">{demo ? 'Back to live figures' : 'Load demo figures'}</button>
-    </div>
+    </div>}
     {tab !== 'overview' ? (() => {
       const items = sections[tab]
       const active = items.some(([key]) => key === sub) ? sub : items[0][0]

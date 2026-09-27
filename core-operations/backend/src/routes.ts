@@ -12,7 +12,7 @@ import { publishSocial, type SocialChannel } from './social.js'
 import { OutboundBlocked } from './outbound.js'
 import { listWhatsAppTemplateStatus, submitWhatsAppTemplates } from './whatsapp-templates.js'
 import { decideAutopilotApproval, getAutopilotPolicy, listAutopilotActivity, listAutopilotApprovals, runAutopilot, runAutopilotForAllTenants, saveAutopilotPolicy } from './autopilot.js'
-import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess, requireFounderAccess, requireSignedIn, isFounderIdentity } from './auth.js'
+import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess, requireFounderAccess, requireSignedIn, isFounderIdentity, isInvestorIdentity } from './auth.js'
 import { founderOverview, founderSetTenantWorkspaces, applyBillingEntitlements, founderFinance, founderAddLedgerEntry, founderDeleteRecord, founderMarketing, founderSavePost, founderUpdatePost, saveProductRating } from './founder.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
@@ -299,7 +299,7 @@ apiRouter.get('/platform/workspaces', requireMerchantAccess, requireTenant, asyn
   } catch (error) { next(error) }
 })
 apiRouter.get('/founder/access', requireSignedIn, (_req, res) => {
-  res.json({ success: true, data: { founder: isFounderIdentity(res.locals.auth) } })
+  res.json({ success: true, data: { founder: isFounderIdentity(res.locals.auth), investor: isInvestorIdentity(res.locals.auth) } })
 })
 apiRouter.get('/founder/overview', requireFounderAccess, async (_req, res, next) => {
   try {

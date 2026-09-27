@@ -34,6 +34,9 @@ export const isReservedFounderEmail = (email: string) => founderEmails().has(ema
 // The platform owner: the founder_master role, or an existing account listed in FOUNDER_EMAILS.
 export const isFounderIdentity = (identity?: { role?: string; email?: string }) =>
   identity?.role === roles.founderMaster || founderEmails().has(String(identity?.email || '').toLowerCase())
+// Investors listed in INVESTOR_EMAILS get the read-only SuperDash preview with example figures; no founder data or routes.
+const investorEmails = () => new Set(String(process.env.INVESTOR_EMAILS || '').split(',').map((email) => email.trim().toLowerCase()).filter(Boolean))
+export const isInvestorIdentity = (identity?: { email?: string }) => investorEmails().has(String(identity?.email || '').toLowerCase())
 const verifyAny = createAccessMiddleware(authService)
 export const requireFounderAccess = (req: Parameters<typeof verifyAny>[0], res: Parameters<typeof verifyAny>[1], next: Parameters<typeof verifyAny>[2]) =>
   verifyAny(req, res, () => (isFounderIdentity(res.locals.auth) ? next() : res.status(403).json({ success: false, message: 'Founder access only' })))

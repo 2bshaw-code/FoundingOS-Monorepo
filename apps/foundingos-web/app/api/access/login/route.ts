@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { recordPreviewVisit } from '../../../../src/preview-visitors'
-import { normalizeAccessEmail, safeReturnPath, signSiteAccess, SITE_ACCESS_COOKIE, SITE_ACCESS_MAX_AGE, verifySitePassword } from '../../../../src/site-access'
+import { normalizeAccessEmail, safeReturnPath, signSiteAccess, SITE_ACCESS_COOKIE, SITE_ACCESS_MAX_AGE, siteAccessRole } from '../../../../src/site-access'
 
 const attempts = new Map<string, { count: number; resetAt: number }>()
 const windowMs = 15 * 60_000
@@ -18,7 +18,8 @@ export async function POST(request: NextRequest) {
   const form = await request.formData()
   const returnTo = safeReturnPath(form.get('returnTo'))
   const email = normalizeAccessEmail(String(form.get('email') ?? ''))
-  if (!email || !verifySitePassword(String(form.get('password') ?? ''))) {
+  const role = email ? siteAccessRole(String(form.get('password') ?? '')) : null
+  if (!email || !role) {
     attempts.set(client, { ...state, count: state.count + 1 })
     const retry = new URL('/access', request.url)
     retry.searchParams.set('returnTo', returnTo)
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
 
   attempts.delete(client)
   const response = NextResponse.redirect(new URL(returnTo, request.url), 303)
-  response.cookies.set(SITE_ACCESS_COOKIE, signSiteAccess(email), {
+  response.cookies.set(SITE_ACCESS_COOKIE, signSiteAccess(email, Date.now(), role), {
     httpOnly: true,
     maxAge: SITE_ACCESS_MAX_AGE,
     sameSite: 'lax',
