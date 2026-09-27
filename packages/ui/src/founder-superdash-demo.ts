@@ -20,7 +20,10 @@ const examples: Array<[name: string, plan: 'lite' | 'starter' | 'growth', worksp
   ['Bright Ideas', 'lite', [], 1, null, 1],
 ]
 
-export function founderDemoOverview(live: FounderOverview, now = Date.now()): FounderOverview {
+// Used when live figures are unavailable (offline preview or backend unreachable).
+const offlineMonitoring: FounderOverview['monitoring'] = { apiOk: false, dbLatencyMs: 0, aiConfigured: false, emailConfigured: false, upgradeEmailsConfigured: false, lastAutopilotRunAt: null, aiRequests24h: 0, autopilotActions24h: 0, recordsCreated24h: 0, integrationsConnected: 0, integrationsFailing: [] }
+
+export function founderDemoOverview(live: FounderOverview | null, now = Date.now()): FounderOverview {
   const today = new Date(now)
   today.setUTCHours(0, 0, 0, 0)
   const tenants: FounderOverview['tenants'] = examples.map(([businessName, plan, workspaces, daysAgo, activeDaysAgo, seats], index) => ({
@@ -48,7 +51,7 @@ export function founderDemoOverview(live: FounderOverview, now = Date.now()): Fo
     return { date, count: tenants.filter((tenant) => tenant.createdAt.slice(0, 10) === date).length }
   })
   return {
-    generatedAt: live.generatedAt,
+    generatedAt: live?.generatedAt ?? new Date(now).toISOString(),
     subscriptions: {
       customers: tenants.length,
       paying: paying.length,
@@ -72,10 +75,10 @@ export function founderDemoOverview(live: FounderOverview, now = Date.now()): Fo
         customers: tenants.filter((tenant) => tenant.plan === 'starter' && tenant.workspaces.includes(workspace)).length,
         mrrGbp: tenants.filter((tenant) => tenant.plan === 'starter' && tenant.workspaces.includes(workspace)).length * price,
       })),
-      billingLive: live.finance.billingLive,
+      billingLive: live?.finance.billingLive ?? false,
       note: 'Illustrative FoundingOS subscriptions only. These amounts are not collected revenue.',
     },
-    monitoring: live.monitoring,
+    monitoring: live?.monitoring ?? offlineMonitoring,
     upgradeRequests: [{
       id: 'demo-upgrade-1',
       tenantId: tenants[8].tenantId,

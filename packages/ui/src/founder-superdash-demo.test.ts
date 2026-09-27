@@ -33,3 +33,11 @@ test('founder demo replaces only subscriber data and keeps live platform health'
   assert.ok(demo.upgradeRequests.every((request) => request.tenantId.startsWith('demo-')))
   assert.equal(live.tenants[0].tenantId, 'real-tenant')
 })
+
+test('subscriber demo loads even when live figures are unavailable', () => {
+  const demo = founderDemoOverview(null, Date.parse('2026-09-26T12:00:00.000Z'))
+  assert.equal(demo.subscriptions.customers, demo.tenants.length)
+  assert.ok(demo.finance.mrrGbp > 0)
+  assert.equal(demo.finance.billingLive, false)
+  assert.equal(demo.monitoring.apiOk, false)
+})

@@ -124,7 +124,7 @@ export function FounderSuperDash() {
     }
   }
 
-  const overview = useMemo(() => demo && data ? founderDemoOverview(data) : data, [data, demo])
+  const overview = useMemo(() => demo ? founderDemoOverview(data) : data, [data, demo])
 
   if (!signedIn) {
     return <main className="sd-shell"><form className="sd-login" onSubmit={signIn}>
@@ -156,7 +156,7 @@ export function FounderSuperDash() {
 
   return <main className="sd-shell">
     <header className="sd-top">
-      <div><p className="sd-eyebrow">FoundingOS · Founder</p><h1>SuperDash</h1><small>{data ? `Updated ${ago(data.generatedAt)}` : 'Loading…'}</small></div>
+      <div><p className="sd-eyebrow">FoundingOS · Founder</p><h1>SuperDash</h1><small>{demo ? 'Example data' : data ? `Updated ${ago(data.generatedAt)}` : error ? 'Live figures unavailable' : 'Loading…'}</small></div>
       <nav><span className="sd-plan">Complete · all Pro tools on</span><button onClick={() => void load()} type="button">Refresh</button><button className="ghost" onClick={() => { void logoutProduction().then(() => { setSignedIn(false); setData(null); setDemo(false) }) }} type="button">Sign out</button></nav>
     </header>
     <div className="sd-tab-bar">
@@ -167,7 +167,7 @@ export function FounderSuperDash() {
     </div>
     <div className={`sd-demo-bar${demo ? ' is-on' : ''}`}>
       <div><strong>{demo ? 'FoundingOS subscriber preview · EXAMPLE DATA' : 'Preview FoundingOS subscriptions'}</strong><small>{demo ? 'Subscriber figures and businesses are made up. No tenant was created, and no real data was changed. Platform health and workspace tools remain live.' : 'See how your company’s subscription dashboard could look with example subscribers. Your real numbers stay unchanged.'}</small></div>
-      <button disabled={!data} onClick={() => { setDemo(!demo); setFilter(''); setError('') }} type="button">{demo ? 'Back to live figures' : 'Load subscriber demo'}</button>
+      <button onClick={() => { setDemo(!demo); setFilter(''); setError('') }} type="button">{demo ? 'Back to live figures' : 'Load subscriber demo'}</button>
     </div>
     {tab !== 'overview' ? (() => {
       const items = sections[tab]
