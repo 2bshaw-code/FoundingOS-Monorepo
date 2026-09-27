@@ -267,8 +267,8 @@ const SCENARIO_FIELDS: Array<[key: keyof ScenarioInputs, label: string, step: st
 ]
 
 export function FounderScenarioPanel() {
-  const [name, setName] = useState<ScenarioName | 'custom'>('base')
-  const [inputs, setInputs] = useState<ScenarioInputs>(SCENARIOS.base.inputs)
+  const [name, setName] = useState<ScenarioName | 'custom'>('breakout')
+  const [inputs, setInputs] = useState<ScenarioInputs>(SCENARIOS.breakout.inputs)
   const result = whatsappScenario(inputs)
   const all = (Object.keys(SCENARIOS) as ScenarioName[]).map((key) => ({ key, label: SCENARIOS[key].label, result: whatsappScenario(SCENARIOS[key].inputs) }))
   const last = result.months[result.months.length - 1]
@@ -303,6 +303,7 @@ export function FounderScenarioPanel() {
         <div className="sd-form">
           {SCENARIO_FIELDS.map(([key, label, step]) => <label className="sd-field" key={key}><small>{label}</small><input inputMode="decimal" min="0" onChange={(event) => edit(key, event.target.value)} step={step} type="number" value={inputs[key]} /></label>)}
         </div>
+        {name !== 'custom' ? <p className="sd-muted">{SCENARIOS[name].summary}</p> : null}
         <p className="sd-muted">Accounts ramp on a curve to the month-24 figure. Average revenue sits between Core (£19 per workspace) and Complete (£89).</p>
       </section>
       <section className="sd-panel">

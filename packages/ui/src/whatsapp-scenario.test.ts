@@ -15,8 +15,8 @@ test('base scenario reaches its month-24 target from sourced UK figures', () => 
 })
 
 test('scenarios are ordered and bad inputs are clamped', () => {
-  const [low, mid, high] = (['conservative', 'base', 'ambitious'] as const).map((name) => whatsappScenario(SCENARIOS[name].inputs).illustrativeValuationGbp)
-  assert.ok(low < mid && mid < high)
+  const [low, mid, high, top] = (['conservative', 'base', 'ambitious', 'breakout'] as const).map((name) => whatsappScenario(SCENARIOS[name].inputs).illustrativeValuationGbp)
+  assert.ok(low < mid && mid < high && high < top)
   const clamped = whatsappScenario({ ...SCENARIOS.base.inputs, reachPct: -5, arpuGbp: Number.NaN })
   assert.equal(clamped.accountsAt24, 0)
   assert.equal(clamped.illustrativeValuationGbp, 0)

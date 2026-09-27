@@ -19,12 +19,13 @@ export type ScenarioInputs = {
   arpuGbp: number
   arrMultiple: number
 }
-export type ScenarioName = 'conservative' | 'base' | 'ambitious'
+export type ScenarioName = 'conservative' | 'base' | 'ambitious' | 'breakout'
 
-export const SCENARIOS: Record<ScenarioName, { label: string; inputs: ScenarioInputs }> = {
-  conservative: { label: 'Conservative', inputs: { businesses: MARKET_FACTS.ukSmallBusinesses, whatsappSharePct: 30, reachPct: 0.1, paidConversionPct: 15, arpuGbp: 35, arrMultiple: 4 } },
-  base: { label: 'Base', inputs: { businesses: MARKET_FACTS.ukSmallBusinesses, whatsappSharePct: 30, reachPct: 0.25, paidConversionPct: 25, arpuGbp: 45, arrMultiple: 6 } },
-  ambitious: { label: 'Ambitious', inputs: { businesses: MARKET_FACTS.ukSmallBusinesses, whatsappSharePct: 30, reachPct: 0.5, paidConversionPct: 35, arpuGbp: 55, arrMultiple: 8 } },
+export const SCENARIOS: Record<ScenarioName, { label: string; summary: string; inputs: ScenarioInputs }> = {
+  conservative: { label: 'Conservative', summary: 'Slow organic growth with little marketing spend.', inputs: { businesses: MARKET_FACTS.ukSmallBusinesses, whatsappSharePct: 30, reachPct: 0.1, paidConversionPct: 15, arpuGbp: 35, arrMultiple: 4 } },
+  base: { label: 'Base', summary: 'Steady marketing and word of mouth.', inputs: { businesses: MARKET_FACTS.ukSmallBusinesses, whatsappSharePct: 30, reachPct: 0.25, paidConversionPct: 25, arpuGbp: 45, arrMultiple: 6 } },
+  ambitious: { label: 'Ambitious', summary: 'Strong marketing and referral loops.', inputs: { businesses: MARKET_FACTS.ukSmallBusinesses, whatsappSharePct: 30, reachPct: 0.5, paidConversionPct: 35, arpuGbp: 55, arrMultiple: 8 } },
+  breakout: { label: 'Breakout', summary: 'Upside case: very effective sales and marketing, and the WhatsApp-native operating system is recognised as unique — 2% of WhatsApp-first UK businesses sign up, most upgrade to several workspaces, and it earns a category-leader multiple.', inputs: { businesses: MARKET_FACTS.ukSmallBusinesses, whatsappSharePct: 30, reachPct: 2, paidConversionPct: 40, arpuGbp: 65, arrMultiple: 10 } },
 }
 
 export type ScenarioMonth = { month: number; accounts: number; paying: number; mrrGbp: number }

@@ -18,8 +18,8 @@ const FIELDS: Array<[key: keyof ScenarioInputs, label: string]> = [
 ]
 
 export function FounderScenarioPanel() {
-  const [name, setName] = useState<ScenarioName | 'custom'>('base')
-  const [inputs, setInputs] = useState<ScenarioInputs>(SCENARIOS.base.inputs)
+  const [name, setName] = useState<ScenarioName | 'custom'>('breakout')
+  const [inputs, setInputs] = useState<ScenarioInputs>(SCENARIOS.breakout.inputs)
   const result = whatsappScenario(inputs)
   const pick = (key: ScenarioName) => { setName(key); setInputs(SCENARIOS[key].inputs) }
   const edit = (key: keyof ScenarioInputs, value: string) => { setName('custom'); setInputs({ ...inputs, [key]: Number(value.replace(',', '.')) }) }
@@ -32,6 +32,7 @@ export function FounderScenarioPanel() {
         <View style={styles.pills}>
           {(Object.keys(SCENARIOS) as ScenarioName[]).map((key) => <QuantumPill active={name === key} key={key} onPress={() => pick(key)}>{SCENARIOS[key].label}</QuantumPill>)}
         </View>
+        {name !== 'custom' ? <QuantumText variant="caption" color={quantumColors.neutral300}>{SCENARIOS[name].summary}</QuantumText> : null}
         <QuantumText variant="caption" color={quantumColors.neutral300}>WhatsApp-first UK businesses</QuantumText>
         <QuantumText variant="h2">{result.whatsappBusinesses.toLocaleString('en-GB')}</QuantumText>
         {result.milestones.map((row) => (

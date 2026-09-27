@@ -7,6 +7,7 @@
 // records held in memory, so people can explore every tool without touching their real account.
 import { moduleSamples } from '@foundingos/ui/sample-data'
 import { findModule } from './workspace-modules'
+import * as SecureStore from 'expo-secure-store'
 
 export type DemoRecord = {
   id: string
@@ -25,12 +26,18 @@ const store = new Map<string, DemoRecord[]>()
 const listeners = new Set<(on: boolean) => void>()
 let enabled = false
 
+const DEMO_KEY = 'foundingos-demo-data'
+
 export const isDemoData = () => enabled
 export function setDemoData(on: boolean) {
+  if (enabled === on) return
   enabled = on
   if (!on) store.clear()
+  void (on ? SecureStore.setItemAsync(DEMO_KEY, 'on') : SecureStore.deleteItemAsync(DEMO_KEY)).catch(() => undefined)
   listeners.forEach((listener) => listener(on))
 }
+// Remember the switch between launches, like the web app does.
+void SecureStore.getItemAsync(DEMO_KEY).then((value) => { if (value === 'on') setDemoData(true) }).catch(() => undefined)
 export function subscribeDemoData(listener: (on: boolean) => void) {
   listeners.add(listener)
   return () => { listeners.delete(listener) }

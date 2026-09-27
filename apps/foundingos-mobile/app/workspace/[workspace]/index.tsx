@@ -3,6 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { WorkspaceGate } from '../../../components/WorkspaceAccess'
+import { DemoDataBar, useDemoFlag } from '../../../components/DemoDataBar'
 import { useMemo, useState } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { router, useLocalSearchParams } from 'expo-router'
@@ -35,6 +36,7 @@ function WorkspaceModulesScreenInner() {
   const { workspace: workspaceSlug } = useLocalSearchParams<{ workspace: string }>()
   const workspace = findWorkspace(String(workspaceSlug || ''))
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
+  const demo = useDemoFlag()
 
   const { primaryGroups, sunkGroups, recommendedNames } = useMemo(() => {
     if (!workspace) return { primaryGroups: [] as ModuleGroup[], sunkGroups: [] as ModuleGroup[], recommendedNames: new Set<string>() }
@@ -67,9 +69,10 @@ function WorkspaceModulesScreenInner() {
         <QuantumText variant="overline" color={quantumColors.neutral300}>What this workspace does</QuantumText>
         <QuantumText variant="body">{workspace.description}</QuantumText>
         <QuantumText variant="caption" color={quantumColors.neutral500}>
-          Every module below reads and writes real, live tenant data — nothing here is a demo or mock.
+          {demo ? 'Demo data is on — every module below shows made-up example records.' : 'Every module below reads and writes your real, live business data.'}
         </QuantumText>
       </View>
+      <DemoDataBar label={workspace.label} />
 
       {primaryGroups.map((group) => (
         <View key={group.name} style={styles.groupBlock}>
