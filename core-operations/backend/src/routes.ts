@@ -12,7 +12,7 @@ import { publishSocial, type SocialChannel } from './social.js'
 import { OutboundBlocked } from './outbound.js'
 import { listWhatsAppTemplateStatus, submitWhatsAppTemplates } from './whatsapp-templates.js'
 import { decideAutopilotApproval, getAutopilotPolicy, listAutopilotActivity, listAutopilotApprovals, runAutopilot, runAutopilotForAllTenants, saveAutopilotPolicy } from './autopilot.js'
-import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess, requireFounderAccess, requireSignedIn, isFounderIdentity, isInvestorIdentity } from './auth.js'
+import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess, requireFounderAccess, requireSignedIn, isFounderIdentity, hasInvestorAccess, verifyInvestorCode, INVESTOR_GRANT_ACTION } from './auth.js'
 import { founderOverview, founderSetTenantWorkspaces, applyBillingEntitlements, founderFinance, founderAddLedgerEntry, founderDeleteRecord, founderMarketing, founderSavePost, founderUpdatePost, saveProductRating } from './founder.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
@@ -298,8 +298,30 @@ apiRouter.get('/platform/workspaces', requireMerchantAccess, requireTenant, asyn
     res.json({ success: true, data: await listTenantWorkspaces(tenantId) })
   } catch (error) { next(error) }
 })
-apiRouter.get('/founder/access', requireSignedIn, (_req, res) => {
-  res.json({ success: true, data: { founder: isFounderIdentity(res.locals.auth), investor: isInvestorIdentity(res.locals.auth) } })
+apiRouter.get('/founder/access', requireSignedIn, async (_req, res, next) => {
+  try {
+    res.json({ success: true, data: { founder: isFounderIdentity(res.locals.auth), investor: await hasInvestorAccess(res.locals.auth) } })
+  } catch (error) { next(error) }
+})
+// Five wrong codes per account per 15 minutes, then a cool-off — the codes are short and shared by hand.
+const investorUnlockAttempts = new Map<string, { count: number; resetAt: number }>()
+apiRouter.post('/founder/investor-unlock', requireSignedIn, async (req, res, next) => {
+  try {
+    const auth = res.locals.auth
+    const now = Date.now()
+    const attempts = investorUnlockAttempts.get(auth.id)
+    if (attempts && attempts.resetAt > now && attempts.count >= 5) return res.status(429).json({ success: false, message: 'Too many attempts. Try again in 15 minutes.' })
+    if (!verifyInvestorCode(req.body?.code)) {
+      const updated = attempts && attempts.resetAt > now ? { count: attempts.count + 1, resetAt: attempts.resetAt } : { count: 1, resetAt: now + 15 * 60_000 }
+      investorUnlockAttempts.set(auth.id, updated)
+      return res.status(403).json({ success: false, message: 'That access code is not recognised.' })
+    }
+    investorUnlockAttempts.delete(auth.id)
+    if (!(await hasInvestorAccess(auth))) {
+      await prisma.workspaceAuditEvent.create({ data: { tenantId: auth.tenantId || 'platform', actorId: auth.id, action: INVESTOR_GRANT_ACTION, metadata: { email: auth.email ?? null, via: 'app' } } })
+    }
+    res.json({ success: true, data: { founder: isFounderIdentity(auth), investor: true } })
+  } catch (error) { next(error) }
 })
 apiRouter.get('/founder/overview', requireFounderAccess, async (_req, res, next) => {
   try {

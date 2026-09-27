@@ -3,6 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import bcrypt from 'bcrypt'
+import { scryptSync, timingSafeEqual } from 'node:crypto'
 import { AuthService, createAccessMiddleware, createAuthRouter, createPasswordResetWebhook, createPrismaAuthRepository, groupTokenContract, roles } from '@foundingos/service-auth'
 import { PrismaClient } from './generated/prisma/index.js'
 import { workspaceSlugs } from './platform.js'
@@ -37,6 +38,26 @@ export const isFounderIdentity = (identity?: { role?: string; email?: string }) 
 // Investors listed in INVESTOR_EMAILS get the read-only SuperDash preview with example figures; no founder data or routes.
 const investorEmails = () => new Set(String(process.env.INVESTOR_EMAILS || '').split(',').map((email) => email.trim().toLowerCase()).filter(Boolean))
 export const isInvestorIdentity = (identity?: { email?: string }) => investorEmails().has(String(identity?.email || '').toLowerCase())
+
+// Investors without a listed email can unlock the same preview in the app with the access code they were
+// given for the website (INVESTOR_ACCESS_HASH: `scrypt$<saltHex>$<hashHex>` entries joined by `;`).
+export const INVESTOR_GRANT_ACTION = 'investor.access_granted'
+export const verifyInvestorCode = (code: unknown) => {
+  const candidate = String(code ?? '').trim()
+  if (!candidate || candidate.length > 200) return false
+  return String(process.env.INVESTOR_ACCESS_HASH || '').split(';').map((entry) => entry.trim().replace(/^investor:/, '')).filter(Boolean).some((entry) => {
+    const [scheme, saltHex, hashHex] = entry.split('$')
+    if (scheme !== 'scrypt' || !saltHex || !hashHex) return false
+    const expected = Buffer.from(hashHex, 'hex')
+    const actual = scryptSync(candidate, Buffer.from(saltHex, 'hex'), expected.length)
+    return expected.length > 0 && timingSafeEqual(actual, expected)
+  })
+}
+export const hasInvestorAccess = async (identity?: { id?: string; email?: string }) => {
+  if (isInvestorIdentity(identity)) return true
+  if (!identity?.id) return false
+  return Boolean(await prisma.workspaceAuditEvent.findFirst({ where: { actorId: identity.id, action: INVESTOR_GRANT_ACTION }, select: { id: true } }))
+}
 const verifyAny = createAccessMiddleware(authService)
 export const requireFounderAccess = (req: Parameters<typeof verifyAny>[0], res: Parameters<typeof verifyAny>[1], next: Parameters<typeof verifyAny>[2]) =>
   verifyAny(req, res, () => (isFounderIdentity(res.locals.auth) ? next() : res.status(403).json({ success: false, message: 'Founder access only' })))

@@ -15630,3 +15630,42 @@ body:has(.cross-sell-ticker) .found-ai-fab { bottom: 64px; }
 .sd-pnl-forecast .sd-pnl-bars i { opacity: 0.72; }
 .sd-field { display: grid; gap: 4px; }
 .sd-field small { color: #8aa0b8; font-size: 12px; overflow-wrap: anywhere; }
+
+/* Suites and their workspaces: one tidy map used on the homepage, /suites and /workspaces. */
+.suite-map { display: grid; gap: 20px; padding: 32px; }
+.suite-map-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 20px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--suite-accent);
+  border-radius: 20px;
+  background: linear-gradient(180deg, var(--surface-strong), var(--surface));
+}
+.suite-map-head { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.suite-map-head .eyebrow { color: var(--suite-accent); margin: 0; }
+.suite-map-head h2 { margin: 0; font-size: 24px; line-height: 1.15; overflow-wrap: anywhere; }
+.suite-map-head p { margin: 0; color: var(--muted); line-height: 1.5; }
+.suite-map-head .text-link { margin-top: auto; padding-top: 6px; }
+.suite-map-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; align-items: stretch; }
+.suite-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--tile-accent);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.suite-tile h3 { margin: 0; font-size: 17px; }
+.suite-tile p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+.suite-tile-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: auto; padding-top: 6px; }
+.suite-tile-actions .btn { min-height: 34px; padding: 6px 14px; font-size: 13px; }
+.suite-tile-actions .text-link { font-size: 13px; white-space: nowrap; }
+@media (max-width: 820px) {
+  .suite-map { padding: 20px 16px; }
+  .suite-map-row { grid-template-columns: 1fr; padding: 18px; }
+}

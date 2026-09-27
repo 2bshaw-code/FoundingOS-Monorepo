@@ -4,7 +4,7 @@
 */
 import { useCallback, useEffect, useState } from 'react'
 import { router } from 'expo-router'
-import { fetchFounderAccess, fetchTenantWorkspaces, getSession, logout as coreOpsLogout } from './core-operations-api'
+import { fetchFounderAccess, unlockInvestorAccess, fetchTenantWorkspaces, getSession, logout as coreOpsLogout } from './core-operations-api'
 import { logout as legacyLogout } from './api'
 import { logout as workforceLogout } from './core-workforce-api'
 import { WORKSPACES, WorkspaceSlug } from './workspace-modules'
@@ -62,8 +62,22 @@ export async function signOut() {
 // Who may open SuperDash: the founder (live figures), or an investor listed in INVESTOR_EMAILS
 // on the backend (read-only preview with example figures only).
 export type SuperDashAccess = 'founder' | 'investor' | null
+// Screens listening for access changes, so unlocking with an investor code shows SuperDash everywhere at once.
+const accessListeners = new Set<() => void>()
+export async function redeemInvestorCode(code: string) {
+  const result = await unlockInvestorAccess(code)
+  accessListeners.forEach((listener) => listener())
+  return result
+}
+
 export function useSuperDashAccess(): SuperDashAccess {
   const [access, setAccess] = useState<SuperDashAccess>(null)
+  const [version, setVersion] = useState(0)
+  useEffect(() => {
+    const listener = () => setVersion((value) => value + 1)
+    accessListeners.add(listener)
+    return () => { accessListeners.delete(listener) }
+  }, [])
   useEffect(() => {
     getSession().then(async (session) => {
       if (!session) return
@@ -71,7 +85,7 @@ export function useSuperDashAccess(): SuperDashAccess {
       const result = await fetchFounderAccess().catch(() => null)
       setAccess(result?.founder ? 'founder' : result?.investor ? 'investor' : null)
     })
-  }, [])
+  }, [version])
   return access
 }
 

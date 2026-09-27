@@ -191,18 +191,50 @@ const workspaceProducts: WorkspaceProduct[] = [
   },
 ]
 
-const workspaceCards = workspaceProducts.map(({ slug, name, summary }) => ({
-  name,
-  href: `/workspaces/${slug}`,
-  summary,
-}))
-
 const operatingLayers = [
   { label: 'Event Feed', value: 'Live', detail: 'Shared event backbone across all suites and workflows.' },
   { label: 'Insights Panel', value: 'Live', detail: 'Predictions, risks, anomalies, and workflow suggestions.' },
   { label: 'Fulfilment-to-Cash', value: 'Live', detail: 'Order → shipment → delivery → invoice → payment tracking.' },
   { label: 'Buyer subset flags', value: 'Configured', detail: 'Role-based access and market-specific feature toggles.' },
 ] as const
+
+const WORKSPACE_ACCENTS: Record<string, string> = { retail: '#159151', logistics: '#FF496E', finance: '#FFB33E', marketing: '#F56FC2', talent: '#FF8A33', hr: '#2EC4B6', health: '#4CC9FF' }
+type MapTile = { slug: string; name: string; summary: string; href: string; tryHref?: string }
+const marketingTile: MapTile = { slug: 'marketing', name: 'Marketing', summary: 'Campaigns, audiences, brand-aware content, publishing and revenue attribution.', href: '/workspaces/marketing', tryHref: '/test-workspaces/marketing' }
+const toTile = (product: WorkspaceProduct): MapTile => ({ slug: product.slug, name: product.name.replace(/ Workspace$/, ''), summary: product.summary, href: `/workspaces/${product.slug}`, tryHref: `/test-workspaces/${product.slug}` })
+const suiteMap: Array<{ suite: SuiteCard; tiles: MapTile[] }> = [
+  { suite: suiteCards[0], tiles: workspaceProducts.filter((product) => product.suite === 'Core Operations').map(toTile).flatMap((tile) => (tile.slug === 'finance' ? [tile, marketingTile] : [tile])) },
+  { suite: suiteCards[1], tiles: workspaceProducts.filter((product) => product.suite === 'Core Workforce').map(toTile) },
+  { suite: suiteCards[2], tiles: [
+    { slug: 'signals', name: 'Signals & anomalies', summary: 'Spots unusual refunds, costs, logins and drops in demand across every workspace.', href: '/intelligence' },
+    { slug: 'forecasts', name: 'Forecasts', summary: 'Cash, sales and stock forecasts built from your live records.', href: '/intelligence' },
+    { slug: 'recommendations', name: 'Recommendations', summary: 'Next best actions FoundAI can prepare for your approval.', href: '/intelligence' },
+  ] },
+]
+
+// Three suites, each with its workspaces as equal-height tiles.
+function SuiteWorkspaceMap() {
+  return <section className="suite-map" aria-label="Suites and workspaces">
+    {suiteMap.map(({ suite, tiles }) => <div className="suite-map-row" id={suite.name.split('.')[1].toLowerCase()} key={suite.name} style={{ ['--suite-accent' as string]: suite.accent }}>
+      <header className="suite-map-head">
+        <p className="eyebrow">Suite</p>
+        <h2>{suite.name}</h2>
+        <p>{suite.summary}</p>
+        <Link className="text-link" href={suite.href}>About this suite →</Link>
+      </header>
+      <div className="suite-map-tiles">
+        {tiles.map((tile) => <article className="suite-tile" id={tile.slug} key={tile.slug} style={{ ['--tile-accent' as string]: WORKSPACE_ACCENTS[tile.slug] ?? suite.accent }}>
+          <h3>{tile.name}</h3>
+          <p>{tile.summary}</p>
+          <div className="suite-tile-actions">
+            {tile.tryHref ? <Link className="btn btn-primary" href={tile.tryHref}>Try it</Link> : null}
+            <Link className="text-link" href={tile.href}>{tile.tryHref ? 'Details' : 'See how it works'} →</Link>
+          </div>
+        </article>)}
+      </div>
+    </div>)}
+  </section>
+}
 
 const packagePlans = [
   { tier: 'lite', signupPlan: 'lite', summary: 'Free for one user. Built for low-data, offline-tolerant capture.' },
@@ -289,36 +321,14 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
   if (page === 'suites') return (
     <>
       <PageIntro eyebrow="Your business operating system" title="Three connected core suites" copy="An operating system is the shared foundation that keeps your teams, workflows, data, and decisions connected. Choose the layer your organisation needs now." />
-      <section className="module-grid">
-        {suiteCards.map((suite) => (
-          <article id={suite.name.split('.')[1].toLowerCase()} key={suite.name} className="card-premium" style={{ borderTop: `3px solid ${suite.accent}` }}>
-            <p className="eyebrow">Suite</p><h2>{suite.name}</h2><p>{suite.summary}</p>
-            <Link className="btn btn-secondary" href={suite.name === 'Core.Intelligence' ? '/intelligence' : '/workspaces'}>Explore capabilities</Link>
-          </article>
-        ))}
-      </section>
+      <SuiteWorkspaceMap />
     </>
   )
 
   if (page === 'workspaces' || page === 'consoles') return (
     <>
       <PageIntro eyebrow="One account · Modular workspaces" title="Every part of the business, inside one FoundingOS" copy="Retail, Logistics, Finance, Marketing, Talent, HR, and Health are connected workspaces—not separate products or operating systems. Your team signs into one account and sees the workspaces their role and plan enable." />
-      <section className="module-grid">
-        {workspaceCards.map((workspace, index) => (
-          <article id={workspace.name.split(' ')[0].toLowerCase()} key={workspace.name} className="card-premium">
-            <p className="eyebrow">{String(index + 1).padStart(2, '0')}</p><h2>{workspace.name}</h2><p>{workspace.summary}</p>
-            <p>Connected to the Event Feed, Insights Panel, shared permissions, and suite-wide navigation.</p>
-            <Link className="btn btn-primary" href={`/test-workspaces/${workspace.name.split(' ')[0].toLowerCase()}`}>Test workspace</Link>
-            <Link className="text-link" href={workspace.href}>View capabilities</Link>
-          </article>
-        ))}
-        <article id="marketing" className="card-premium">
-          <p className="eyebrow">{String(workspaceCards.length + 1).padStart(2, '0')}</p><h2>Marketing Workspace</h2>
-          <p>Campaigns, audiences, brand-aware content, publishing, conversion, and revenue attribution.</p>
-          <Link className="btn btn-primary" href="/test-workspaces/marketing">Test workspace</Link>
-          <Link className="text-link" href="/workspaces/marketing">View capabilities</Link>
-        </article>
-      </section>
+      <SuiteWorkspaceMap />
     </>
   )
 
@@ -563,37 +573,9 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
 
       <MessagingDemo />
 
-      <section className="module-grid">
-        {suiteCards.map((suite) => (
-          <article key={suite.name} className="card-premium" style={{ borderTop: `3px solid ${suite.accent}` }}>
-            <p className="eyebrow">Suite</p>
-            <h2>{suite.name}</h2>
-            <p>{suite.summary}</p>
-            <Link className="btn btn-secondary" href={suite.href}>Explore</Link>
-          </article>
-        ))}
-      </section>
+      <SuiteWorkspaceMap />
 
       <section className="module-grid">
-        {workspaceCards.map((workspace, index) => (
-          <article key={workspace.name} className="card-premium">
-            <p className="eyebrow">{String(index + 1).padStart(2, '0')}</p>
-            <h2>{workspace.name}</h2>
-            <p>{workspace.summary}</p>
-            <Link className="btn btn-primary" href={`/test-workspaces/${workspace.name.split(' ')[0].toLowerCase()}`}>Test workspace</Link>
-            <Link className="text-link" href={workspace.href}>View capabilities</Link>
-          </article>
-        ))}
-      </section>
-
-      <section className="module-grid">
-        <article className="card-premium" style={{ borderTop: '3px solid #EC4899' }}>
-          <p className="eyebrow">Core Operations workspace</p>
-          <h2>Marketing Workspace</h2>
-          <p>Campaigns, audiences, channel content, scheduling, analytics, and revenue attribution connected to live operations.</p>
-          <Link className="btn btn-primary" href="/test-workspaces/marketing">Test workspace</Link>
-          <Link className="text-link" href="/workspaces/marketing">View capabilities</Link>
-        </article>
         {operatingLayers.map((layer) => (
           <article key={layer.label} className="card-premium">
             <p className="eyebrow">{layer.value}</p>
