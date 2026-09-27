@@ -56,14 +56,8 @@ function foundAITheme(brand: FoundAIBrand) {
       return { accent: '#24c47a', glow: 'rgba(36, 196, 122, 0.38)' }
     case 'FoundRetail':
       return { accent: LOCKED_BRAND_COLORS.retail, glow: 'color-mix(in srgb, var(--found-ai-accent) 35%, transparent)' }
-    case 'FoundMeat':
-      return { accent: LOCKED_BRAND_COLORS.meat, glow: 'color-mix(in srgb, var(--found-ai-accent) 35%, transparent)' }
-    case 'FoundThat':
-      return { accent: LOCKED_BRAND_COLORS.foundthat, glow: 'color-mix(in srgb, var(--found-ai-accent) 35%, transparent)' }
     case 'FoundTalent':
       return { accent: LOCKED_BRAND_COLORS.talent, glow: 'color-mix(in srgb, var(--found-ai-accent) 35%, transparent)' }
-    case 'FoundCrypto':
-      return { accent: LOCKED_BRAND_COLORS.crypto, glow: 'color-mix(in srgb, var(--found-ai-accent) 35%, transparent)' }
     default:
       return { accent: brand.accent, glow: 'color-mix(in srgb, var(--found-ai-accent) 35%, transparent)' }
   }
@@ -83,21 +77,18 @@ function suggestedPrompts(brand: FoundAIBrand, context: string) {
   if (brand.name === 'FoundingOS' && context === 'Landing') return ['What is FoundingOS?', 'What can I do here?', 'How do I sign in?', 'Recommend a package for me']
   if (brand.name === 'FoundingOS' && context === 'Sign In') return ['How do I sign in?', 'Is this demo mode?', 'What happens after I sign in?']
   if (brand.name === 'FoundingOS' && context === 'Survey') return ['Why are you asking this?', 'Can I skip this question?', 'What happens to my answer?']
-  if (brand.name === 'FoundingOS' && context === 'Onboarding') return ['Recommend a package for me', 'What is QuantumOS?', 'What is IntelligenceOS?', 'What is SystemOS?']
+  if (brand.name === 'FoundingOS' && context === 'Onboarding') return ['Recommend a package for me', 'How does pricing work?', 'Which workspaces are there?']
   if (brand.name === 'FoundingOS' && context === 'Tester Access') return ['What am I testing?', 'What is the legal acceptance for?', 'What happens after I log in?']
-  if (brand.name === 'FoundingOS' && context === 'SuperDash') return ['What is IntelligenceOS?', 'How many brands are active?', 'What is the current drift/safe-fix status?', 'What is Package Model D?']
+  if (brand.name === 'FoundingOS' && context === 'SuperDash') return ['How is the platform performing?', 'Which customers need attention?', 'How does pricing work?']
   if (brand.name === 'FoundingOS' && context === 'Intelligence') return ['What should we be paying attention to right now?', 'What value has FoundingOS created?', 'How is the system performing overall?', 'What needs my approval?', 'Are any decisions related?']
-  if (brand.name === 'FoundingOS' && context === 'Founder Console') return ['Show me all brands', 'What needs my approval?', 'Summarise system stability', 'What is Package Model D?']
-  if (brand.name === 'FoundingOS' && context === 'Investor Briefing') return ['What is Package Model D?', 'How does the multi-brand system work together?', 'Is this real customer data?']
+  if (brand.name === 'FoundingOS' && context === 'Founder Console') return ['Show me all suites', 'What needs my approval?', 'Summarise system stability', 'How does pricing work?']
+  if (brand.name === 'FoundingOS' && context === 'Investor Briefing') return ['How does pricing work?', 'How do the workspaces work together?', 'Is this real customer data?']
   if (brand.name === 'FoundingOS' && context === 'Guardian') return ['What does Guardian actually check?', 'What counts as an anomaly?', 'Is anything flagged right now?']
-  if (brand.name === 'FoundingOS' && context === 'Switcher Hub') return ['What can I explore from here?', 'What is Free Roam?', 'Are all brands unlocked for me?']
+  if (brand.name === 'FoundingOS' && context === 'Switcher Hub') return ['What can I explore from here?', 'What is Free Roam?', 'Are all workspaces unlocked for me?']
 
   if (brand.name === 'FoundRetail') return ['Add new product', 'Show low stock items', 'Create customer', 'Review suppliers']
-  if (brand.name === 'FoundMeat') return ['Add new batch', 'Check compliance status', 'Review logistics', 'Record QA']
-  if (brand.name === 'FoundThat') return ['Show system alerts', 'Summarise data pipeline health', 'Create a ticket', 'Audit assets']
   if (brand.name === 'FoundTalent') return ['Add new job', 'Find top candidates', 'Schedule interview', 'Review pipeline']
-  if (brand.name === 'FoundCrypto') return ['Show wallet balance', 'Create new trigger', 'Review signals', 'Check risk']
-  if (brand.name === 'FoundFinance') return ['Show open invoices', 'Check cash flow', 'Review reconciliation', 'Explain Package Model D pricing']
+  if (brand.name === 'FoundFinance') return ['Show open invoices', 'Check cash flow', 'Review reconciliation', 'Explain pricing']
   if (brand.name === 'FoundHealth') return ['Show today\u2019s appointments', 'Check patient records status', 'Review compliance', 'Check supply levels']
   return base
 }
@@ -198,23 +189,9 @@ function aiAutoActions(brand: FoundAIBrand): SmartAction[] {
   return actions
 }
 
-// Interpreters for the Full Demo Mode data engines (/api/crypto/poll, /api/scrape/refresh,
-// /api/feeds/update, /api/dashboard/refresh) — pure functions that turn the JSON payload into
+// Interpreters for the Full Demo Mode data engines (/api/feeds/update,
+//, /api/dashboard/refresh) — pure functions that turn the JSON payload into
 // a short, human-readable explanation of what the chart/feed/metric actually shows.
-function interpretCryptoPoll(data: any): string {
-  const assets = Array.isArray(data?.assets) ? data.assets : []
-  if (assets.length === 0) return 'The crypto feed came back empty this cycle — try again after the next 3-minute refresh.'
-  const summary = assets.map((a: any) => `${a.symbol} $${a.priceUsd} (${a.change24hPct >= 0 ? '+' : ''}${a.change24hPct}%)`).join(', ')
-  return `Live demo crypto snapshot: ${summary}. This is read-only demo data, refreshed every ${data.refreshIntervalMinutes ?? 3} minutes — no real trading or wallets involved.`
-}
-
-function interpretScrapeRefresh(data: any): string {
-  const items = Array.isArray(data?.items) ? data.items : []
-  if (items.length === 0) return 'No new scrape items this cycle — nothing to review right now.'
-  const latest = items[0]
-  return `The latest scrape refresh found ${items.length} item(s), most recently "${latest.title}" — ${latest.detail} Refreshes every ${data.refreshIntervalMinutes ?? 15} minutes, all demo data.`
-}
-
 function interpretFeedsUpdate(data: any): string {
   const products = Array.isArray(data?.products) ? data.products : []
   if (products.length === 0) return 'The product feed came back empty this cycle.'
@@ -227,8 +204,6 @@ function interpretDashboardRefresh(data: any): string {
   return `Dashboard snapshot: ${m.activeUsers ?? 0} active users, ${m.ordersToday ?? 0} orders today, $${m.revenueTodayUsd ?? 0} revenue, and ${m.openAlerts ?? 0} open alert(s). Refreshes every ${data.refreshIntervalMinutes ?? 5} minutes, demo data only.`
 }
 
-const CRYPTO_POLL_ACTION: SmartAction = { label: 'Read live crypto snapshot', fetchPath: '/api/crypto/poll', interpret: interpretCryptoPoll }
-const SCRAPE_REFRESH_ACTION: SmartAction = { label: 'Read latest scrape refresh', fetchPath: '/api/scrape/refresh', interpret: interpretScrapeRefresh }
 const FEEDS_UPDATE_ACTION: SmartAction = { label: 'Read latest product feed', fetchPath: '/api/feeds/update', interpret: interpretFeedsUpdate }
 const DASHBOARD_REFRESH_ACTION: SmartAction = { label: 'Read dashboard metrics', fetchPath: '/api/dashboard/refresh', interpret: interpretDashboardRefresh }
 
@@ -237,7 +212,7 @@ function smartActions(brand: FoundAIBrand, context: string): SmartAction[] {
     return [
       { label: 'What is FoundingOS?', answer: 'FoundingOS is one system of record connecting Core.Operations, Core.Workforce, and Core.Intelligence under a single governed command layer.' },
       { label: 'How do I sign in?', answer: 'Tap Sign In on this page — it\u2019s demo mode, so no real account is required.' },
-      { label: 'Recommend a package for me', answer: 'Once you reach onboarding, I can recommend a SystemOS tier and add-ons based on your business profile.' },
+      { label: 'Recommend a package for me', answer: 'Once you reach onboarding, I can recommend a plan and workspaces based on your business profile.' },
     ]
   }
   if (brand.name === 'FoundingOS' && context === 'Sign In') {
@@ -254,10 +229,9 @@ function smartActions(brand: FoundAIBrand, context: string): SmartAction[] {
   }
   if (brand.name === 'FoundingOS' && context === 'Onboarding') {
     return [
-      { label: 'What is QuantumOS?', answer: 'QuantumOS is the cross-suite intelligence add-on — scenario simulations, confidence scoring, and forecasting on top of your SystemOS base.' },
-      { label: 'What is IntelligenceOS?', answer: 'IntelligenceOS adds sharper analytics and automated context so your team spends less time on manual review.' },
-      { label: 'What is SystemOS?', answer: 'SystemOS is the foundation tier — workspace setup, access governance, and core modules every account starts on.' },
-      { label: 'Recommend a package for me', answer: 'Based on your answers so far, I\u2019d suggest starting with the tier that matches your team size, then adding QuantumOS if you need cross-suite visibility.' },
+      { label: 'How does pricing work?', answer: 'Pricing is modular: a free Lite plan, Core from £19 a month per workspace with optional bolt-ons, Complete at £89 a month for every workspace, and Enterprise on request. See the Pricing page for the live catalogue.' },
+      { label: 'Which workspaces are there?', answer: 'Core.Operations covers Retail & Logistics and Health; Core.Workforce covers Talent and HR; Core.Intelligence is a bolt-on that adds FoundAI insight across them.' },
+      { label: 'Recommend a package for me', answer: 'Start with Core and the one or two workspaces you use every day, then move to Complete when you need everything connected.' },
     ]
   }
   if (brand.name === 'FoundingOS' && context === 'Tester Access') {
@@ -268,8 +242,7 @@ function smartActions(brand: FoundAIBrand, context: string): SmartAction[] {
   }
   if (brand.name === 'FoundingOS' && context === 'SuperDash') {
     return [
-      { label: 'What is IntelligenceOS?', answer: 'IntelligenceOS is the sharper-analytics tier of Package Model D, feeding the live BrandMetric rollups you see on this page.' },
-      { label: 'What is Package Model D?', answer: 'Package Model D is the adaptive pricing engine — SystemOS/IntelligenceOS/QuantumOS tiers plus industry and hardware packs — see the commercial panel below for the live catalog.' },
+      { label: 'How does pricing work?', answer: 'Pricing is modular: a free Lite plan, Core from £19 a month per workspace with optional bolt-ons, Complete at £89 a month for every workspace, and Enterprise on request. See the Pricing page for the live catalogue.' },
       DASHBOARD_REFRESH_ACTION,
     ]
   }
@@ -283,27 +256,27 @@ function smartActions(brand: FoundAIBrand, context: string): SmartAction[] {
   }
   if (brand.name === 'FoundingOS' && context === 'Founder Console') {
     return [
-      { label: 'Show me all brands', answer: 'All 3 licensed suites — Core.Operations, Core.Workforce, and Core.Intelligence — are live under All suites and All workspaces below.' },
+      { label: 'Show me all suites', answer: 'All 3 licensed suites — Core.Operations, Core.Workforce, and Core.Intelligence — are live under All suites and All workspaces below.' },
       { label: 'What needs my approval?', answer: 'Anything AVL classifies as high-risk sits in GuardianQueue, unresolved, until you review it — check the SuperDash footer for the current pending count.' },
       { label: 'Summarise system stability', answer: 'Stability is scored from real anomaly and drift counts (see the SuperDash footer\u2019s Testers line) — fewer open anomalies and less unresolved drift means a higher score.' },
     ]
   }
   if (brand.name === 'FoundingOS' && context === 'Investor Briefing') {
     return [
-      { label: 'What is Package Model D?', answer: 'Package Model D is the adaptive pricing model — SystemOS tiers, industry packs, hardware packs, and QuantumOS/IntelligenceOS add-ons — priced per brand and tier.' },
-      { label: 'Is this real customer data?', answer: 'No — every scraper and pipeline here generates synthetic intelligence only. Real data can plug into the same endpoints later without changing the OS.' },
+      { label: 'How does pricing work?', answer: 'Pricing is modular: a free Lite plan, Core from £19 a month per workspace with optional bolt-ons, Complete at £89 a month for every workspace, and Enterprise on request. See the Pricing page for the live catalogue.' },
+      { label: 'Is this real customer data?', answer: 'No — the briefing uses clearly labelled demo data. Live customer workspaces run on the same platform with their own isolated data.' },
     ]
   }
   if (brand.name === 'FoundingOS' && context === 'Guardian') {
     return [
-      { label: 'What does Guardian actually check?', answer: 'Guardian watches each brand\u2019s own engagement and anomaly signals to keep it safely inside its own lane — it never mixes data across brands.' },
+      { label: 'What does Guardian actually check?', answer: 'Guardian watches each workspace\u2019s own activity and anomaly signals and never mixes data between customers.' },
       { label: 'Is anything flagged right now?', answer: 'Check the anomaly count on this page — anything above the normal range gets flagged here first.' },
     ]
   }
   if (brand.name === 'FoundingOS' && context === 'Switcher Hub') {
     return [
       { label: 'What is Free Roam?', answer: 'Free Roam lets you explore every demo and survey without being locked into just your assigned one.' },
-      { label: 'Are all brands unlocked for me?', answer: 'You can see every brand and survey here — some may show an honest lock note if your session isn\u2019t assigned to that one yet.' },
+      { label: 'Are all workspaces unlocked for me?', answer: 'You can see every workspace and survey here — some may show an honest lock note if your session isn\u2019t assigned to that one yet.' },
     ]
   }
 
@@ -313,34 +286,12 @@ function smartActions(brand: FoundAIBrand, context: string): SmartAction[] {
       { label: 'Show low stock items', answer: 'I’ve highlighted the low-stock retail items that need attention before the next replenishment window.' },
       { label: 'Create customer', answer: 'I can prepare a new customer record with the right contact details and store preferences.' },
       { label: 'Review suppliers', answer: 'I’ve reviewed the supplier queue and flagged the highest-priority follow-ups.' },
-      SCRAPE_REFRESH_ACTION,
       FEEDS_UPDATE_ACTION,
       DASHBOARD_REFRESH_ACTION,
     ]
   }
 
-  if (brand.name === 'FoundMeat') {
-    return [
-      { label: 'Add new batch', answer: 'I can create a new batch record with supplier, cut, QA status, and delivery context.' },
-      { label: 'Check compliance status', answer: 'Compliance is within range overall, and I’ve highlighted the batches that need the next QA review.' },
-      { label: 'Review logistics', answer: 'I’ve organised the logistics partners by urgency so dispatch can focus on the tightest route first.' },
-      { label: 'Record QA', answer: 'I can capture the QA result, owner, and next action in one clean update.' },
-      SCRAPE_REFRESH_ACTION,
-      FEEDS_UPDATE_ACTION,
-      DASHBOARD_REFRESH_ACTION,
-    ]
-  }
 
-  if (brand.name === 'FoundThat') {
-    return [
-      { label: 'Show system alerts', answer: 'I’ve pulled the active system alerts and grouped the ones that need immediate attention.' },
-      { label: 'Summarise data pipeline health', answer: 'The data pipeline is mostly healthy, with one job that deserves a closer look before the next run.' },
-      { label: 'Create a ticket', answer: 'I can draft a new support ticket and keep the response path clean and actionable.' },
-      { label: 'Audit assets', answer: 'Asset coverage is stable, but I’ve marked the endpoints that should be revalidated this cycle.' },
-      SCRAPE_REFRESH_ACTION,
-      DASHBOARD_REFRESH_ACTION,
-    ]
-  }
 
   if (brand.name === 'FoundTalent') {
     return [
@@ -351,23 +302,12 @@ function smartActions(brand: FoundAIBrand, context: string): SmartAction[] {
     ]
   }
 
-  if (brand.name === 'FoundCrypto') {
-    return [
-      { label: 'Show wallet balance', answer: 'I’ve summarised the current wallet balance and highlighted the positions that need a closer look.' },
-      { label: 'Create new trigger', answer: 'I can help you build a new trigger with signal, threshold, and execution context.' },
-      { label: 'Review signals', answer: 'I’ve sorted the strongest market signals and flagged the ones that are most actionable.' },
-      { label: 'Check risk', answer: 'The current risk profile is within limits, but one volatile pair should be watched closely.' },
-      CRYPTO_POLL_ACTION,
-      DASHBOARD_REFRESH_ACTION,
-    ]
-  }
 
   if (brand.name === 'FoundLogistics') {
     return [
       { label: 'Show active shipments', answer: 'I’ve pulled the active shipments and flagged the ones closest to their delivery window.' },
       { label: 'Check fleet status', answer: 'The fleet is running within normal capacity, with a couple of vehicles worth checking before their next route.' },
       { label: 'Review routes', answer: 'I’ve reviewed today’s routes and highlighted the ones with the tightest scheduling.' },
-      SCRAPE_REFRESH_ACTION,
       DASHBOARD_REFRESH_ACTION,
     ]
   }
@@ -377,8 +317,7 @@ function smartActions(brand: FoundAIBrand, context: string): SmartAction[] {
       { label: 'Show open invoices', answer: 'I’ve pulled the open invoices and flagged the ones closest to their due date.' },
       { label: 'Check cash flow', answer: 'Cash flow is within range this cycle — I’ve highlighted the accounts worth a closer look.' },
       { label: 'Review reconciliation', answer: 'I’ve reviewed reconciliation status and flagged the entries that still need matching.' },
-      { label: 'Explain Package Model D pricing', answer: 'Package Model D is the adaptive pricing engine behind FoundFinance\u2019s own tiers — SystemOS as the base, with IntelligenceOS and QuantumOS as add-ons.' },
-      SCRAPE_REFRESH_ACTION,
+      { label: 'Explain pricing', answer: 'Pricing is modular: a free Lite plan, Core from £19 a month per workspace with optional bolt-ons, Complete at £89 a month for every workspace, and Enterprise on request. See the Pricing page for the live catalogue.' },
     ]
   }
 
@@ -388,7 +327,6 @@ function smartActions(brand: FoundAIBrand, context: string): SmartAction[] {
       { label: 'Check patient records status', answer: 'Patient records are up to date overall, with a few entries worth a closer review.' },
       { label: 'Review compliance', answer: 'Compliance is within range, and I’ve flagged the items due for their next check.' },
       { label: 'Check supply levels', answer: 'I’ve reviewed supply levels and flagged the items closest to reorder point.' },
-      SCRAPE_REFRESH_ACTION,
     ]
   }
 
@@ -403,23 +341,20 @@ function smartActions(brand: FoundAIBrand, context: string): SmartAction[] {
 type FoundAIBrand = Pick<BrandConsoleConfig, 'name' | 'accent'>
 
 // Real, honest topic answers for free-text questions — a rule-based keyword match, not a
-// live LLM. Only ever states facts that are true elsewhere in this codebase (Package Model
-// D, CRM board sections, Guardian's real scope, SuperDash's real rollup, the one real
+// live LLM. Only ever states facts that are true elsewhere in this codebase (pricing,
+// CRM board sections, Guardian's real scope, SuperDash's real rollup, the one real
 // Marketing Suite module). Falls back to a context-relevant smart action rather than
 // echoing the question back when nothing matches.
 const KNOWLEDGE_BASE: Array<{ match: RegExp; answer: string }> = [
-  { match: /\bcrm\b|contact|\blead\b|\bdeal\b|pipeline/i, answer: 'CRM covers contacts, companies, deals, pipeline, notes, tasks, and activity — one real board per brand, already live under /crm.' },
-  { match: /invoice|cashflow|cash flow|reconcil|payable|receivable|forecast/i, answer: 'Invoicing and cash flow live in the Accounting module (with dedicated tools on FoundFinance) — real records, not a mockup.' },
+  { match: /\bcrm\b|contact|\blead\b|\bdeal\b|pipeline/i, answer: 'CRM covers contacts, companies, deals, pipeline, notes, tasks, and activity — one board per workspace.' },
+  { match: /invoice|cashflow|cash flow|reconcil|payable|receivable|forecast/i, answer: 'Invoicing and cash flow live in the Accounting module (with dedicated tools in the Finance workspace) — real records, not a mockup.' },
   { match: /subscription/i, answer: 'Subscriptions are tracked as part of the Finance/Accounting layer alongside invoices — there\u2019s no separate subscriptions screen yet.' },
-  { match: /package model d|pricing|\btier\b/i, answer: 'Package Model D is the adaptive pricing engine — SystemOS/IntelligenceOS/QuantumOS tiers plus industry and hardware packs — see the SuperDash commercial panel or onboarding for the live catalog.' },
+  { match: /pricing|price|plan|tier|package/i, answer: 'Pricing is modular: a free Lite plan, Core from £19 a month per workspace with optional bolt-ons, Complete at £89 a month for every workspace, and Enterprise on request. See the Pricing page for the live catalogue.' },
   { match: /marketing/i, answer: 'Marketing Suite is one real, active module — campaigns, sends, and analytics all live inside it, not separate tools.' },
-  { match: /automat/i, answer: 'Automations run through Guardian + Autonomous reactions on top of real BrandMetric signals — no manual triggering needed.' },
-  { match: /superdash|super dash/i, answer: 'SuperDash is the cross-brand intelligence layer — analytics, brand switching, tester metrics, stability, and autonomy all roll up there in real time.' },
-  { match: /intelligenceos/i, answer: 'IntelligenceOS is the sharper-analytics tier of Package Model D, feeding the live BrandMetric rollups in SuperDash.' },
-  { match: /quantumos/i, answer: 'QuantumOS is the top Package Model D tier — cross-suite simulations, confidence scoring, and forecasting on top of SystemOS.' },
-  { match: /systemos/i, answer: 'SystemOS is the Package Model D foundation tier — workspace setup, access governance, and core modules every account starts on.' },
-  { match: /guardian/i, answer: 'Guardian watches each brand\u2019s own engagement and anomaly signals to keep it safely inside its own lane, and flags anything unusual for review.' },
-  { match: /\bbrand(s)?\b|multi-brand|ecosystem|\bsuite(s)?\b/i, answer: 'FoundingOS connects all 3 licensed suites — Core.Operations, Core.Workforce, and Core.Intelligence — under one shared governed intelligence layer.' },
+  { match: /automat/i, answer: 'Automations run through Guardian + Autonomous reactions on top of real workspace signals — no manual triggering needed.' },
+  { match: /superdash|super dash/i, answer: 'SuperDash is the founder view — customers, subscriptions, revenue, ratings and platform health roll up there.' },
+  { match: /guardian/i, answer: 'Guardian watches each workspace\u2019s own activity and anomaly signals and flags anything unusual for review.' },
+  { match: /\bbrand(s)?\b|ecosystem|\bsuite(s)?\b|workspaces/i, answer: 'FoundingOS connects all 3 licensed suites — Core.Operations, Core.Workforce, and Core.Intelligence — under one shared governed intelligence layer.' },
 ]
 
 function matchKnowledge(text: string): string | null {

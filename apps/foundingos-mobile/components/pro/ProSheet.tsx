@@ -19,7 +19,7 @@ import type { WorkspaceRecordDTO } from '../../lib/core-operations-api'
 
 function Field({ label, children, flex }: { label: string; children: ReactNode; flex?: boolean }) {
   return (
-    <View style={[styles.field, flex ? { flex: 1 } : null]}>
+    <View style={[styles.field, flex ? styles.pairedField : null]}>
       <QuantumText variant="overline" color={quantumColors.neutral300}>{label}</QuantumText>
       {children}
     </View>
@@ -30,7 +30,7 @@ export function ProRow({ label, value, strong, tone }: { label: string; value: s
   return (
     <View style={styles.row}>
       <QuantumText variant={strong ? 'label' : 'caption'} style={{ flexShrink: 1 }}>{label}</QuantumText>
-      <QuantumText variant={strong ? 'label' : 'caption'} color={tone}>{value}</QuantumText>
+      <QuantumText variant={strong ? 'label' : 'caption'} color={tone} style={{ flexShrink: 1, textAlign: 'right' }}>{value}</QuantumText>
     </View>
   )
 }
@@ -428,7 +428,8 @@ export function ProRecordSheet({ record, workspace, module, kind, profile, statu
 const styles = StyleSheet.create({
   section: { gap: quantumSpace.md },
   field: { gap: 4 },
-  pair: { flexDirection: 'row', alignItems: 'center', gap: quantumSpace.sm },
+  pair: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: quantumSpace.sm },
+  pairedField: { flexGrow: 1, flexBasis: 150, minWidth: 0 },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: quantumSpace.sm, paddingVertical: 3 },
   badges: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.xs },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },

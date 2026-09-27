@@ -17,6 +17,7 @@ const PRICE_ENV = {
   retail: 'STRIPE_PRICE_CORE',
   talent: 'STRIPE_PRICE_TALENT',
   hr: 'STRIPE_PRICE_HR',
+  health: 'STRIPE_PRICE_HEALTH',
   commerce_pro: 'STRIPE_PRICE_COMMERCE_PRO',
   core_intelligence: 'STRIPE_PRICE_INTELLIGENCE',
   extra_seat: 'STRIPE_PRICE_EXTRA_SEAT',

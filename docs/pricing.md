@@ -5,8 +5,8 @@ Every plan uses the same primary FoundingOS web and mobile applications.
 
 ## Model: base workspaces + suite bolt-ons
 
-Core is bought per base workspace: Retail & Logistics, Talent and HR are each
-£19/month and can be taken alone or combined (min. one). Bolt-ons add a suite
+Core is bought per base workspace: Retail & Logistics, Talent, HR and Health are
+each £19/month and can be taken alone or combined (min. one). Bolt-ons add a suite
 and can be added or removed monthly. Complete bundles everything at a discount.
 All prices are GBP per tenant per month. Source of truth:
 `packages/config/src/commercial.ts`.
@@ -14,8 +14,8 @@ All prices are GBP per tenant per month. Source of truth:
 | Plan | Price | Users | Includes |
 | --- | --- | --- | --- |
 | Lite | Free | 1 | Core.Operations basics: sales, orders, customers |
-| Core | from £19 | 3 | £19 per base workspace (Retail & Logistics, Talent, HR) + marketing, Brand Studio, WhatsApp |
-| Complete | £89 | 15 | All three base workspaces + every bolt-on (£117 bought separately) |
+| Core | from £19 | 3 | £19 per base workspace (Retail & Logistics, Talent, HR, Health) + marketing, Brand Studio, WhatsApp |
+| Complete | £89 | 15 | All four base workspaces + every bolt-on (£136 bought separately) |
 | Enterprise | Custom | 50 | Everything, SSO, SLAs, custom integrations, dedicated support |
 
 Internal tier keys are unchanged so gating and stored licences keep working:
@@ -28,6 +28,7 @@ Internal tier keys are unchanged so gating and stored licences keep working:
 | Retail & Logistics | £19 | Core.Operations | `retail`, `logistics` | Pipeline, CRM, orders, inventory, deliveries and drivers |
 | Talent | £19 | Core.Workforce | `talent` | Recruitment: jobs, candidates, interviews, offers, agency clients and placements |
 | HR | £19 | Core.Workforce | `hr` | Employees, contracts, rotas/shifts, timesheets, holiday/sickness, right-to-work, documents, policies, payroll inputs |
+| Health | £19 | Core.Operations | `health` | Patients, appointments, records, referrals, care plans, compliance, supplies and billing |
 
 ## Bolt-ons (Core plan only)
 
@@ -43,8 +44,8 @@ Internal tier keys are unchanged so gating and stored licences keep working:
 | Extra team member | £5/user/month | Core and Complete |
 | Language Pack | £5/month | Lite only; all languages included on paid plans |
 
-Logistics is sold as part of the Retail & Logistics base workspace. Health
-remains parked and is not sold.
+Logistics is sold as part of the Retail & Logistics base workspace. Health is a
+base workspace on the same £19 pricing as Retail, Talent and HR.
 
 ## Usage limits (per month)
 
@@ -97,13 +98,15 @@ on both `founding-os-web` and `core-operations-backend`):
 
 - `STRIPE_SECRET_KEY`
 - `STRIPE_PRICE_COMPLETE` (£89)
-- Base workspaces: `STRIPE_PRICE_CORE` (Retail & Logistics), `STRIPE_PRICE_TALENT`, `STRIPE_PRICE_HR` — all £19
+- Base workspaces: `STRIPE_PRICE_CORE` (Retail & Logistics), `STRIPE_PRICE_TALENT`, `STRIPE_PRICE_HR`, `STRIPE_PRICE_HEALTH` — all £19
 - `STRIPE_PRICE_COMMERCE_PRO` (£25), `STRIPE_PRICE_INTELLIGENCE` (£35)
 - `STRIPE_PRICE_EXTRA_SEAT` (£5, per-unit)
 
 If any price needed for a sign-up is missing, the account is still created but
-no payment is taken. Cancelled or failed subscriptions do not yet disable
-workspaces automatically.
+no payment is taken. Paid workspaces are enabled only for Stripe subscriptions
+in `active` or `trialing` status. Cancelled, deleted, unpaid, incomplete or
+past-due subscriptions return the company to Lite, and older out-of-order Stripe
+events are ignored.
 
 ## Open item
 

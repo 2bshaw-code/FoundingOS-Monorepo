@@ -21,9 +21,9 @@ export type CommercialPlan = {
 
 export type BoltOnKey = 'commerce_pro' | 'core_intelligence'
 
-// Core is bought per base workspace: Retail (with logistics and deliveries), Talent and HR
-// are each £19/month and can be taken alone or combined.
-export type BaseWorkspaceKey = 'retail' | 'talent' | 'hr'
+// Core is bought per base workspace: Retail (with logistics and deliveries), Talent, HR and
+// Health are each £19/month and can be taken alone or combined.
+export type BaseWorkspaceKey = 'retail' | 'talent' | 'hr' | 'health'
 
 export type CommercialBase = {
   key: BaseWorkspaceKey
@@ -65,7 +65,7 @@ export const commercialPlans: Record<PlanTier, CommercialPlan> = {
     monthlyPriceGbp: 19,
     includedSeats: 3,
     includedSuites: ['core_operations'],
-    includedWorkspaces: ['Choose Retail & Logistics, Talent or HR — £19/month each, combine any', 'Marketing and Brand Studio'],
+    includedWorkspaces: ['Choose Retail & Logistics, Talent, HR or Health — £19/month each, combine any', 'Marketing and Brand Studio'],
     includedBoltOns: [],
     access: ['One FoundingOS account', 'FoundingOS web', 'FoundingOS mobile', '3 team members', 'Add workspaces and bolt-ons any time'],
     includedFeatures: ['WhatsApp messaging and delivery notifications', 'Brand Studio and branded documents', 'Automatic sync', 'All supported languages', 'Community support'],
@@ -77,7 +77,7 @@ export const commercialPlans: Record<PlanTier, CommercialPlan> = {
     monthlyPriceGbp: 89,
     includedSeats: 15,
     includedSuites: ['core_operations', 'core_workforce', 'core_intelligence'],
-    includedWorkspaces: ['Retail & Logistics, Talent and HR', 'Commerce Pro', 'Core.Intelligence'],
+    includedWorkspaces: ['Retail & Logistics, Talent, HR and Health', 'Commerce Pro', 'Core.Intelligence'],
     includedBoltOns: ['commerce_pro', 'core_intelligence'],
     access: ['One FoundingOS account', 'FoundingOS web', 'FoundingOS mobile', '15 team members'],
     includedFeatures: ['Every bolt-on included', 'WhatsApp-first messaging automation', 'Channel-ready workflows', 'Advanced reporting', 'Priority support'],
@@ -153,6 +153,15 @@ export const commercialBases: Record<BaseWorkspaceKey, CommercialBase> = {
     description: 'People management for the team you already have.',
     features: ['Employee records and contracts', 'Rotas, shifts and timesheets', 'Holiday and sickness', 'Right-to-work and documents', 'Reviews, policies and payroll inputs'],
   },
+  health: {
+    key: 'health',
+    name: 'Health',
+    monthlyPriceGbp: 19,
+    suite: 'core_operations',
+    workspaces: ['health'],
+    description: 'Run a clinic, care or pharmacy operation: patients, appointments and compliance.',
+    features: ['Patients and records', 'Appointments and reminders', 'Referrals and care plans', 'Compliance and audits', 'Supplies and billing'],
+  },
 }
 
 export const baseKeys = Object.keys(commercialBases) as BaseWorkspaceKey[]
@@ -167,8 +176,8 @@ export function normalizeBases(keys: string[]): BaseWorkspaceKey[] {
 export const planBaseWorkspaces: Record<PlanTier, string[]> = {
   lite: ['retail'],
   starter: ['marketing'],
-  growth: ['retail', 'logistics', 'marketing', 'finance', 'talent', 'hr', 'intelligence'],
-  enterprise: ['retail', 'logistics', 'marketing', 'finance', 'talent', 'hr', 'intelligence'],
+  growth: ['retail', 'logistics', 'marketing', 'finance', 'talent', 'hr', 'health', 'intelligence'],
+  enterprise: ['retail', 'logistics', 'marketing', 'finance', 'talent', 'hr', 'health', 'intelligence'],
 }
 
 export const extraSeat = {

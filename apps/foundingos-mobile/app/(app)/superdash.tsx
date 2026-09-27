@@ -140,6 +140,19 @@ export default function SuperDashScreen() {
         )) : <QuantumText variant="caption" color={quantumColors.neutral300}>No pending requests.</QuantumText>}
       </QuantumCard>
 
+      <QuantumSectionHeader label="Customer ratings · private" />
+      <QuantumCard>
+        {data?.ratings?.count ? <>
+          <QuantumText variant="label">{data.ratings.average} / 5 from {data.ratings.count} rating{data.ratings.count === 1 ? '' : 's'} (90 days)</QuantumText>
+          {data.ratings.recent.slice(0, 5).map((rating) => (
+            <View key={rating.id} style={styles.flex}>
+              <QuantumText variant="caption">{'★'.repeat(rating.score)}{'☆'.repeat(5 - rating.score)} · {rating.business} · {rating.surface} · {ago(rating.createdAt)}</QuantumText>
+              {rating.comment ? <QuantumText variant="caption" color={quantumColors.neutral300}>“{rating.comment}”</QuantumText> : null}
+            </View>
+          ))}
+        </> : <QuantumText variant="caption" color={quantumColors.neutral300}>No customer ratings yet.</QuantumText>}
+      </QuantumCard>
+
       <QuantumSectionHeader label="Platform health" />
       <QuantumCard>
         <Health ok={Boolean(m?.apiOk)} label="API & database" detail={m ? `${m.dbLatencyMs} ms` : '…'} />

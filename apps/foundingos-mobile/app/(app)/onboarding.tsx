@@ -159,7 +159,7 @@ export default function OnboardingScreen() {
           return (
             <View key={step.id} style={styles.stepRow}>
               <View style={[styles.stepDot, { backgroundColor: done ? getSemanticColor('good') : 'transparent', borderColor: getSemanticColor(done ? 'good' : 'watch') }]} />
-              <QuantumText variant="caption">{step.label}{step.id === 'first-action' ? ' (from Work & Approvals)' : ''}</QuantumText>
+              <QuantumText variant="caption" style={{ flex: 1, flexShrink: 1, lineHeight: 20 }}>{step.label}{step.id === 'first-action' ? ' (from Work & Approvals)' : ''}</QuantumText>
             </View>
           )
         })}
@@ -215,6 +215,6 @@ export default function OnboardingScreen() {
 
 const styles = StyleSheet.create({
   title: { fontWeight: '600' },
-  stepRow: { flexDirection: 'row', alignItems: 'center', gap: quantumSpace.sm, marginBottom: quantumSpace.xs },
-  stepDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 2 },
+  stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: quantumSpace.sm, marginBottom: quantumSpace.xs },
+  stepDot: { width: 14, height: 14, flexShrink: 0, borderRadius: 7, borderWidth: 2 },
 })

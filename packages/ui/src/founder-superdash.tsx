@@ -12,7 +12,6 @@ import { getProductionSession, loginToProduction, logoutProduction, productionRe
 import { FinanceReportsPage, MarketingReportsPage, SalesReportsPage } from './pro/reports'
 import { proRecordFromBackend } from './pro/models'
 import type { LoadRecords } from './pro/shared'
-import { defaultExperienceMode, ExperienceToggle } from './pro-coach'
 import { CompleteWorkspaceApplication, type BusinessWorkspaceSlug } from './complete-workspace-application'
 
 export type FounderOverview = {
@@ -21,6 +20,7 @@ export type FounderOverview = {
   finance: { mrrGbp: number; arrGbp: number; arpuGbp: number; boltOns: Array<{ workspace: string; customers: number; mrrGbp: number }>; billingLive: boolean; note: string }
   monitoring: { apiOk: boolean; dbLatencyMs: number; aiConfigured: boolean; emailConfigured: boolean; upgradeEmailsConfigured: boolean; lastAutopilotRunAt: string | null; aiRequests24h: number; autopilotActions24h: number; recordsCreated24h: number; integrationsConnected: number; integrationsFailing: Array<{ business: string; provider: string; status: string }> }
   upgradeRequests: Array<{ id: string; tenantId: string; business: string; ownerEmail: string; requested: string[]; pending: string[]; note: string; createdAt: string }>
+  ratings?: { count: number; average: number | null; distribution: Array<{ score: number; count: number }>; recent: Array<{ id: string; tenantId: string; business: string; score: number; surface: string; page: string; comment: string; createdAt: string }> }
   tenants: Array<{ tenantId: string; businessName: string; ownerName: string; ownerEmail: string; plan: string; planName: string; workspaces: string[]; seats: number; monthlyValueGbp: number; status: string; createdAt: string; lastActiveAt: string | null }>
 }
 
@@ -87,7 +87,6 @@ export function FounderSuperDash() {
     }
   }, [])
 
-  useEffect(() => { defaultExperienceMode('pro') }, [])
   useEffect(() => {
     const has = Boolean(getProductionSession())
     setSignedIn(has)
@@ -158,7 +157,7 @@ export function FounderSuperDash() {
   return <main className="sd-shell">
     <header className="sd-top">
       <div><p className="sd-eyebrow">FoundingOS · Founder</p><h1>SuperDash</h1><small>{data ? `Updated ${ago(data.generatedAt)}` : 'Loading…'}</small></div>
-      <nav><span className="sd-plan">Complete · all Pro tools on</span><ExperienceToggle /><button onClick={() => void load()} type="button">Refresh</button><button className="ghost" onClick={() => { void logoutProduction().then(() => { setSignedIn(false); setData(null); setDemo(false) }) }} type="button">Sign out</button></nav>
+      <nav><span className="sd-plan">Complete · all Pro tools on</span><button onClick={() => void load()} type="button">Refresh</button><button className="ghost" onClick={() => { void logoutProduction().then(() => { setSignedIn(false); setData(null); setDemo(false) }) }} type="button">Sign out</button></nav>
     </header>
     <div className="sd-tab-bar">
       <div className="sd-tabs" role="tablist">
@@ -202,6 +201,16 @@ export function FounderSuperDash() {
           <div><strong>{request.business}</strong><small>{request.ownerEmail} · {ago(request.createdAt)}</small><small>Wants: {request.pending.map(title).join(', ')}{request.note ? ` — “${request.note}”` : ''}</small></div>
           <button disabled={demo || busy === request.tenantId} onClick={() => void enable(request.tenantId, request.pending)} type="button">{demo ? 'Example only' : busy === request.tenantId ? 'Switching on…' : 'Switch on'}</button>
         </div>) : <p className="sd-muted">No pending requests.</p>}
+      </section>
+
+      <section className="sd-panel">
+        <h2>Customer ratings · private</h2>
+        {overview?.ratings?.count ? <>
+          <p className="sd-muted">{overview.ratings.average} / 5 average from {overview.ratings.count} rating{overview.ratings.count === 1 ? '' : 's'} in 90 days · {overview.ratings.distribution.map((row) => `${row.score}★ ${row.count}`).join(' · ')}</p>
+          {overview.ratings.recent.slice(0, 6).map((rating) => <div className="sd-row" key={rating.id}>
+            <div><strong>{'★'.repeat(rating.score)}{'☆'.repeat(5 - rating.score)} · {rating.business}</strong><small>{rating.surface}{rating.page ? ` · ${rating.page}` : ''} · {ago(rating.createdAt)}</small>{rating.comment ? <small>“{rating.comment}”</small> : null}</div>
+          </div>)}
+        </> : <p className="sd-muted">No customer ratings yet. Signed-in customers can send one from “Rate FoundingOS” in any workspace.</p>}
       </section>
 
       <section className="sd-panel">

@@ -243,13 +243,18 @@ async function SiteNav() {
         <Link href="/suites">Suites</Link>
         <Link href="/#how-it-works">How it works</Link>
         <Link href="/workspaces">Workspaces</Link>
-        <Link className="nav-test-workspaces" href="/test-workspaces">Test workspaces</Link>
-        <Link href="/workspaces/marketing">Marketing</Link>
-        <Link href="/intelligence">Intelligence</Link>
         <Link href="/pricing">Pricing</Link>
-        <Link href="/about">About</Link>
-        <Link href="/contact">Contact</Link>
-        <Link href="/signup">Sign up</Link>
+        <details className="site-nav-more">
+          <summary>Explore</summary>
+          <div className="site-nav-more-links">
+            <Link className="nav-test-workspaces" href="/test-workspaces">Test workspaces</Link>
+            <Link href="/workspaces/marketing">Marketing</Link>
+            <Link href="/intelligence">Intelligence</Link>
+            <Link href="/about">About</Link>
+            <Link href="/contact">Contact</Link>
+          </div>
+        </details>
+        <Link className="site-nav-signup" href="/signup">Sign up</Link>
         <AccountNavLinks />
         <GlobalisationControls />
         <ThemeToggle />
@@ -498,7 +503,7 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
 
       <section className="hero hero-ai">
         <div className="hero-copy">
-          <p className="eyebrow"><span className="hero-ai-pill">FoundAI</span> <span className="hero-wa-pill">WhatsApp</span> The AI that runs your business</p>
+          <div className="hero-ai-intro"><p className="eyebrow"><span className="hero-ai-pill">FoundAI</span><span className="hero-wa-pill">WhatsApp</span></p><p className="hero-ai-tagline">The AI that runs your business</p></div>
           <h1>Your business, run by AI. Right inside WhatsApp.</h1>
           <p>
             Message FoundAI like you would a manager. Ask who owes you money, take an order, approve a refund with one word—all from <strong>WhatsApp</strong>.
@@ -620,6 +625,13 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
           <strong>FoundingOS</strong>
           <p>The AI that runs your business—across operations, workforce and intelligence.</p>
         </div>
+        <nav aria-label="Legal" className="site-footer-legal">
+          <a href="/privacy">Privacy</a>
+          <a href="/privacy#cookies">Cookies</a>
+          <a href="/privacy#your-rights">Your data rights</a>
+          <a href="/contact">Contact</a>
+        </nav>
+        <small>© {new Date().getFullYear()} FoundingOS. All rights reserved.</small>
       </footer>
     </main>
     </GlobalisationProvider>

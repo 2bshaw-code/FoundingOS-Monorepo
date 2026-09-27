@@ -72,11 +72,13 @@ export function OpsFormPanel({ schema, record, save }: { schema: OpsSchema; reco
     </header>
     <p className="ops-intro">{schema.intro}</p>
     <div className="pro-grid-2 ops-fields">
-      {schema.fields.map((field) => <label key={field.key} className={wide(field) ? 'ops-wide' : undefined}>
-        <span>{field.label}{field.unit ? ` (${field.unit})` : ''}</span>
-        <FieldInput field={field} value={values[field.key]} onChange={(value) => { setValues((current) => ({ ...current, [field.key]: value })); setDirty(true) }} />
-        {field.hint ? <small>{field.hint}</small> : null}
-      </label>)}
+      {schema.fields.map((field) => {
+        const input = <FieldInput field={field} value={values[field.key]} onChange={(value) => { setValues((current) => ({ ...current, [field.key]: value })); setDirty(true) }} />
+        const caption = `${field.label}${field.unit ? ` (${field.unit})` : ''}`
+        return field.type === 'checklist' || field.type === 'score'
+          ? <fieldset className="ops-field-group ops-wide" key={field.key}><legend>{caption}</legend>{input}{field.hint ? <small>{field.hint}</small> : null}</fieldset>
+          : <label className={wide(field) ? 'ops-wide' : undefined} key={field.key}><span>{caption}</span>{input}{field.hint ? <small>{field.hint}</small> : null}</label>
+      })}
     </div>
     <div className="pro-actions">
       <button type="button" className="is-primary" disabled={busy || !dirty} onClick={() => void persist()}>{busy ? 'Saving…' : dirty ? `Save ${schema.title.toLowerCase()}` : 'Saved'}</button>

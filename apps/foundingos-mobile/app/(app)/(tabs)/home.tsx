@@ -7,7 +7,8 @@
 // next — instead of the old per-workspace command deck that duplicated the
 // Workspaces tab and buried the actual decision queue.
 import { router } from 'expo-router'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { applyWidgetOrder, moveWidget, widgetOrderKey } from '@foundingos/ui/widget-order'
 import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native'
 import {
   QuantumButton,
@@ -32,6 +33,7 @@ import {
 } from '../../../lib/approvals-queue'
 import { PlatformEvent, TenantOnboarding, fetchEventFeed, fetchOnboarding, getSession } from '../../../lib/core-operations-api'
 import { enqueueOutboxAction } from '../../../lib/outbox-sync'
+import { getStoredValue, setStoredValue } from '../../../lib/platform-storage'
 import { useQuantumStore } from '../../../lib/store'
 import { useActionFeedback } from '../../../lib/use-action-feedback'
 import { AskFoundAiCard, FoundAiAutopilotCard, FoundAiWhatsAppCard } from '../../../components/FoundAi'
@@ -68,6 +70,10 @@ function pluralize(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? '' : 's'}`
 }
 
+const HOME_WIDGETS = ['workspaces', 'whatsapp', 'autopilot', 'ask', 'attention', 'activity', 'quick'] as const
+type HomeWidget = typeof HOME_WIDGETS[number]
+const HOME_WIDGET_LABELS: Record<string, string> = { workspaces: 'Your workspaces', whatsapp: 'FoundAI on WhatsApp', autopilot: 'Autopilot', ask: 'Ask FoundAI', attention: 'Needs your attention', activity: 'Recent activity', quick: 'Quick actions' }
+
 export default function TodayScreen() {
   const activeWorkspaceSlug = useQuantumStore((state) => state.activeBrandSlug)
   const pendingSyncCount = useQuantumStore((state) => state.pendingSyncCount)
@@ -83,6 +89,13 @@ export default function TodayScreen() {
   const [busyId, setBusyId] = useState<string | null>(null)
   const { feedback, showSuccess, showOffline, showError } = useActionFeedback()
   const inFlight = useRef<Set<string>>(new Set())
+  const [order, setOrder] = useState<string[]>([...HOME_WIDGETS])
+  const [orderKey, setOrderKey] = useState<string | null>(null)
+  const [arranging, setArranging] = useState(false)
+  const saveOrder = (next: string[]) => {
+    setOrder(next)
+    if (orderKey) void setStoredValue(orderKey, JSON.stringify(next)).catch(() => undefined)
+  }
 
   const loadAll = useCallback(async () => {
     const [session, legacyToken] = await Promise.all([getSession(), getLegacyToken()])
@@ -90,6 +103,9 @@ export default function TodayScreen() {
     // sign-in — treat it as connected too, so this screen doesn't disagree
     // with the login flow and loop back.
     setConnected(Boolean(session) || Boolean(legacyToken))
+    const key = widgetOrderKey('mobile-home', session?.email)
+    setOrderKey(key)
+    getStoredValue(key).then((raw) => setOrder(applyWidgetOrder(HOME_WIDGETS, raw ? JSON.parse(raw) : null))).catch(() => setOrder([...HOME_WIDGETS]))
 
     const [queueResult, eventsResult, onboardingResult] = await Promise.all([
       fetchApprovalsQueue(),
@@ -153,6 +169,127 @@ export default function TodayScreen() {
     }
     return action
   })
+
+  const widgets: Record<HomeWidget, ReactNode> = {
+    workspaces: (
+      <>
+      <QuantumSectionHeader label="Your workspaces" />
+      <WorkspaceQuickAccess />
+      </>
+    ),
+    whatsapp: (
+      <>
+      <FoundAiWhatsAppCard onConnect={() => router.push('/(app)/whatsapp')} />
+      </>
+    ),
+    autopilot: (
+      <>
+      <FoundAiAutopilotCard compact onChanged={loadAll} />
+      </>
+    ),
+    ask: (
+      <>
+      <AskFoundAiCard />
+      </>
+    ),
+    attention: (
+      <>
+      <QuantumSectionHeader label={attentionCount > 0 ? `Needs your attention · ${attentionCount}` : 'Needs your attention'} />
+      <View style={styles.panel}>
+        {setupIncomplete ? (
+          <Pressable onPress={() => router.push('/(app)/onboarding')} style={styles.attentionRow}>
+            <View style={[styles.attentionDot, { backgroundColor: '#FBBF24' }]} />
+            <View style={styles.flex}>
+              <Text style={styles.attentionTitle}>Finish setup to go live</Text>
+              <Text style={styles.attentionCaption}>Complete your business profile and connect WhatsApp. Tap to continue.</Text>
+            </View>
+          </Pressable>
+        ) : null}
+        {needsAttention.length === 0 && !setupIncomplete ? (
+          <View style={styles.allCaughtUp}>
+            <Text style={styles.allCaughtUpTitle}>You're all caught up.</Text>
+            <Text style={styles.emptyText}>
+              Nothing needs a decision right now. Real actions from Core.Operations and Core.Workforce will show
+              up here the moment something needs your call.
+            </Text>
+          </View>
+        ) : (
+          needsAttention.map((item) => {
+            const isBusy = busyId === item.id
+            return (
+              <View key={`${item.source}:${item.id}`} style={styles.attentionCard}>
+                <View style={styles.rowBetween}>
+                  <Text style={styles.attentionTitle}>{item.title}</Text>
+                  <Text style={styles.attentionStatus}>{STATUS_LABEL[item.status]}</Text>
+                </View>
+                <Text style={styles.attentionCaption}>{item.summary}</Text>
+                <View style={styles.actionButtonRow}>
+                  {item.status === 'proposed' ? (
+                    <>
+                      <Pressable disabled={isBusy} style={[styles.actionButton, styles.approveButton]} onPress={() => run(item, 'APPROVE', () => approveQueueItem(item))}>
+                        <Text style={styles.actionButtonText}>{isBusy ? '…' : 'Approve'}</Text>
+                      </Pressable>
+                      <Pressable disabled={isBusy} style={[styles.actionButton, styles.rejectButton]} onPress={() => run(item, 'REJECT', () => rejectQueueItem(item))}>
+                        <Text style={styles.actionButtonText}>{isBusy ? '…' : 'Reject'}</Text>
+                      </Pressable>
+                    </>
+                  ) : null}
+                  {item.status === 'approved' ? (
+                    <Pressable disabled={isBusy} style={[styles.actionButton, styles.approveButton]} onPress={() => run(item, 'EXECUTE', () => executeQueueItem(item))}>
+                      <Text style={styles.actionButtonText}>{isBusy ? '…' : 'Execute'}</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              </View>
+            )
+          })
+        )}
+        {queue.length > needsAttention.length || needsAttention.length > 0 ? (
+          <Pressable onPress={() => router.push('/workflows')}>
+            <Text style={styles.seeAllText}>See all in Approvals →</Text>
+          </Pressable>
+        ) : null}
+      </View>
+      </>
+    ),
+    activity: (
+      <>
+      <QuantumSectionHeader label="Recent activity" />
+      <View style={styles.panel}>
+        {events.length === 0 ? (
+          <Text style={styles.emptyText}>
+            Nothing has happened across your workspaces yet. Once your team starts working, real activity — not
+            sample data — will show up here.
+          </Text>
+        ) : (
+          events.slice(0, 10).map((event) => (
+            <View key={event.id} style={styles.activityRow}>
+              <View style={styles.activityDot} />
+              <View style={styles.flex}>
+                <Text style={styles.activityText}>{event.type}</Text>
+                <Text style={styles.activityTime}>{formatRelativeTime(event.createdAt)} · {event.source}</Text>
+              </View>
+            </View>
+          ))
+        )}
+      </View>
+      </>
+    ),
+    quick: (
+      <>
+      <QuantumSectionHeader label="Quick actions" />
+      <View style={styles.quickGrid}>
+        {quickActions.map((action) => (
+          <QuantumCard key={action.label} accent={action.accent} style={styles.quickCard}>
+            <Text style={[styles.quickLabel, { color: action.accent }]}>{action.label}</Text>
+            <Text style={styles.quickCaption}>{action.caption}</Text>
+            <QuantumButton tone="secondary" onPress={action.onPress}>Open</QuantumButton>
+          </QuantumCard>
+        ))}
+      </View>
+      </>
+    ),
+  }
 
   return (
     <QuantumScreen
@@ -218,98 +355,32 @@ export default function TodayScreen() {
               <Text style={styles.superdashCopy}>Subscriptions, revenue, upgrade requests and platform health</Text>
             </Pressable>
           ) : null}
-          <QuantumSectionHeader label="Your workspaces" />
-          <WorkspaceQuickAccess />
-          <FoundAiWhatsAppCard onConnect={() => router.push('/(app)/whatsapp')} />
-          <FoundAiAutopilotCard compact onChanged={loadAll} />
-          <AskFoundAiCard />
-          <QuantumSectionHeader label={attentionCount > 0 ? `Needs your attention · ${attentionCount}` : 'Needs your attention'} />
-          <View style={styles.panel}>
-            {setupIncomplete ? (
-              <Pressable onPress={() => router.push('/(app)/onboarding')} style={styles.attentionRow}>
-                <View style={[styles.attentionDot, { backgroundColor: '#FBBF24' }]} />
-                <View style={styles.flex}>
-                  <Text style={styles.attentionTitle}>Finish setup to go live</Text>
-                  <Text style={styles.attentionCaption}>Complete your business profile and connect WhatsApp. Tap to continue.</Text>
-                </View>
-              </Pressable>
-            ) : null}
-            {needsAttention.length === 0 && !setupIncomplete ? (
-              <View style={styles.allCaughtUp}>
-                <Text style={styles.allCaughtUpTitle}>You're all caught up.</Text>
-                <Text style={styles.emptyText}>
-                  Nothing needs a decision right now. Real actions from Core.Operations and Core.Workforce will show
-                  up here the moment something needs your call.
-                </Text>
-              </View>
-            ) : (
-              needsAttention.map((item) => {
-                const isBusy = busyId === item.id
-                return (
-                  <View key={`${item.source}:${item.id}`} style={styles.attentionCard}>
-                    <View style={styles.rowBetween}>
-                      <Text style={styles.attentionTitle}>{item.title}</Text>
-                      <Text style={styles.attentionStatus}>{STATUS_LABEL[item.status]}</Text>
-                    </View>
-                    <Text style={styles.attentionCaption}>{item.summary}</Text>
-                    <View style={styles.actionButtonRow}>
-                      {item.status === 'proposed' ? (
-                        <>
-                          <Pressable disabled={isBusy} style={[styles.actionButton, styles.approveButton]} onPress={() => run(item, 'APPROVE', () => approveQueueItem(item))}>
-                            <Text style={styles.actionButtonText}>{isBusy ? '…' : 'Approve'}</Text>
-                          </Pressable>
-                          <Pressable disabled={isBusy} style={[styles.actionButton, styles.rejectButton]} onPress={() => run(item, 'REJECT', () => rejectQueueItem(item))}>
-                            <Text style={styles.actionButtonText}>{isBusy ? '…' : 'Reject'}</Text>
-                          </Pressable>
-                        </>
-                      ) : null}
-                      {item.status === 'approved' ? (
-                        <Pressable disabled={isBusy} style={[styles.actionButton, styles.approveButton]} onPress={() => run(item, 'EXECUTE', () => executeQueueItem(item))}>
-                          <Text style={styles.actionButtonText}>{isBusy ? '…' : 'Execute'}</Text>
-                        </Pressable>
-                      ) : null}
-                    </View>
-                  </View>
-                )
-              })
-            )}
-            {queue.length > needsAttention.length || needsAttention.length > 0 ? (
-              <Pressable onPress={() => router.push('/workflows')}>
-                <Text style={styles.seeAllText}>See all in Approvals →</Text>
+          <View style={styles.arrangeBar}>
+            <Pressable accessibilityRole="button" accessibilityState={{ selected: arranging }} onPress={() => setArranging((value) => !value)} style={styles.arrangeButton}>
+              <Text style={styles.arrangeText}>{arranging ? 'Done arranging' : 'Arrange cards'}</Text>
+            </Pressable>
+            {arranging ? (
+              <Pressable accessibilityRole="button" onPress={() => saveOrder([...HOME_WIDGETS])} style={styles.arrangeButton}>
+                <Text style={styles.arrangeText}>Reset layout</Text>
               </Pressable>
             ) : null}
           </View>
-
-          <QuantumSectionHeader label="Recent activity" />
-          <View style={styles.panel}>
-            {events.length === 0 ? (
-              <Text style={styles.emptyText}>
-                Nothing has happened across your workspaces yet. Once your team starts working, real activity — not
-                sample data — will show up here.
-              </Text>
-            ) : (
-              events.slice(0, 10).map((event) => (
-                <View key={event.id} style={styles.activityRow}>
-                  <View style={styles.activityDot} />
-                  <View style={styles.flex}>
-                    <Text style={styles.activityText}>{event.type}</Text>
-                    <Text style={styles.activityTime}>{formatRelativeTime(event.createdAt)} · {event.source}</Text>
-                  </View>
+          {order.map((id, index) => (
+            <View key={id} style={styles.stack}>
+              {arranging ? (
+                <View style={styles.arrangeRow}>
+                  <Text numberOfLines={1} style={styles.arrangeLabel}>{HOME_WIDGET_LABELS[id]}</Text>
+                  <Pressable accessibilityLabel={`Move ${HOME_WIDGET_LABELS[id]} up`} accessibilityRole="button" disabled={index === 0} hitSlop={6} onPress={() => saveOrder(moveWidget(order, id, -1))} style={[styles.arrangeButton, index === 0 ? styles.arrangeDisabled : null]}>
+                    <Text style={styles.arrangeText}>↑</Text>
+                  </Pressable>
+                  <Pressable accessibilityLabel={`Move ${HOME_WIDGET_LABELS[id]} down`} accessibilityRole="button" disabled={index === order.length - 1} hitSlop={6} onPress={() => saveOrder(moveWidget(order, id, 1))} style={[styles.arrangeButton, index === order.length - 1 ? styles.arrangeDisabled : null]}>
+                    <Text style={styles.arrangeText}>↓</Text>
+                  </Pressable>
                 </View>
-              ))
-            )}
-          </View>
-
-          <QuantumSectionHeader label="Quick actions" />
-          <View style={styles.quickGrid}>
-            {quickActions.map((action) => (
-              <QuantumCard key={action.label} accent={action.accent} style={styles.quickCard}>
-                <Text style={[styles.quickLabel, { color: action.accent }]}>{action.label}</Text>
-                <Text style={styles.quickCaption}>{action.caption}</Text>
-                <QuantumButton tone="secondary" onPress={action.onPress}>Open</QuantumButton>
-              </QuantumCard>
-            ))}
-          </View>
+              ) : null}
+              {widgets[id as HomeWidget]}
+            </View>
+          ))}
         </>
       ) : null}
 
@@ -319,6 +390,12 @@ export default function TodayScreen() {
 }
 
 const styles = StyleSheet.create({
+  arrangeBar: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' },
+  arrangeRow: { alignItems: 'center', borderColor: '#38BDF8', borderRadius: 10, borderStyle: 'dashed', borderWidth: 1, flexDirection: 'row', gap: 8, padding: 8 },
+  arrangeLabel: { color: '#CBD5E1', flex: 1, fontSize: 13, fontWeight: '600' },
+  arrangeButton: { borderColor: '#334155', borderRadius: 8, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 },
+  arrangeText: { color: '#E2E8F0', fontSize: 13, fontWeight: '700' },
+  arrangeDisabled: { opacity: 0.4 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   superdash: { borderRadius: 18, borderWidth: 1, borderColor: '#38BDF8', backgroundColor: 'rgba(56,189,248,0.12)', padding: 16, gap: 2 },
   superdashEyebrow: { color: '#38BDF8', fontSize: 11, fontWeight: '800', letterSpacing: 1.4 },

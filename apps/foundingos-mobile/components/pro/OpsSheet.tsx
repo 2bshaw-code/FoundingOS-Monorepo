@@ -91,7 +91,7 @@ function FieldInput({ field, value, accent, onChange }: { field: OpsField; value
       return (
         <Pressable key={item} onPress={() => onChange(on ? checked.filter((entry) => entry !== item) : [...checked, item])} style={[styles.check, { borderBottomColor: theme.borderColor }]}>
           <View style={[styles.box, { borderColor: on ? accent : theme.borderColor, backgroundColor: on ? accent : 'transparent' }]}>{on ? <QuantumText variant="caption" style={{ color: '#fff' }}>✓</QuantumText> : null}</View>
-          <QuantumText variant="caption" style={{ flex: 1 }}>{item}</QuantumText>
+          <QuantumText variant="caption" style={{ flex: 1, flexShrink: 1, lineHeight: 20 }}>{item}</QuantumText>
         </Pressable>
       )
     })}</View>
@@ -184,8 +184,8 @@ const styles = StyleSheet.create({
   barFill: { height: 6, borderRadius: 3 },
   tableRow: { flexDirection: 'row', gap: quantumSpace.sm, paddingVertical: 4, borderBottomWidth: StyleSheet.hairlineWidth },
   pills: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
-  check: { flexDirection: 'row', alignItems: 'center', gap: quantumSpace.sm, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth },
-  box: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  check: { flexDirection: 'row', alignItems: 'flex-start', gap: quantumSpace.sm, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth },
+  box: { width: 22, height: 22, flexShrink: 0, borderRadius: 6, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   badge: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   sheetHead: { flexDirection: 'row', alignItems: 'center', gap: quantumSpace.md, padding: quantumSpace.lg, paddingTop: quantumSpace.xl, borderBottomWidth: StyleSheet.hairlineWidth },
   sheetBody: { padding: quantumSpace.lg, gap: quantumSpace.lg, paddingBottom: 80 },

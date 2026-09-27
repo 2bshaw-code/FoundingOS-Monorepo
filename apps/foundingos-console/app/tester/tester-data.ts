@@ -17,7 +17,6 @@ export type ModuleId =
   | 'console-navigation'
   | 'superdashboard-demo'
   | 'finance'
-  | 'crypto'
   | 'investor-overview'
   | 'buyer-overview'
   | 'customer-overview'
@@ -25,7 +24,7 @@ export type ModuleId =
   | 'foundingos-overview'
   | 'admin-overview'
 
-export type SurveyId = 'survey-a' | 'survey-b' | 'survey-c' | 'survey-d' | 'survey-e' | 'survey-f' | 'survey-g' | 'survey-h' | 'survey-i' | 'survey-j' | 'survey-k' | 'survey-l' | 'survey-investor' | 'survey-buyer' | 'survey-customer' | 'survey-crm' | 'survey-overview' | 'survey-admin'
+export type SurveyId = 'survey-a' | 'survey-b' | 'survey-c' | 'survey-d' | 'survey-e' | 'survey-f' | 'survey-g' | 'survey-h' | 'survey-i' | 'survey-j' | 'survey-k' | 'survey-investor' | 'survey-buyer' | 'survey-customer' | 'survey-crm' | 'survey-overview' | 'survey-admin'
 
 export type Credential = {
   id: string
@@ -47,7 +46,6 @@ export const CREDENTIALS: Credential[] = [
   { id: 'india', password: 'india-2399', moduleId: 'console-navigation', moduleLabel: 'Console Navigation', surveyId: 'survey-i' },
   { id: 'juliet', password: 'juliet-3410', moduleId: 'superdashboard-demo', moduleLabel: 'SuperDashboard Demo (read-only)', surveyId: 'survey-j' },
   { id: 'finance', password: 'finance-5511', moduleId: 'finance', moduleLabel: 'Finance', surveyId: 'survey-k' },
-  { id: 'crypto', password: 'crypto-6622', moduleId: 'crypto', moduleLabel: 'Crypto', surveyId: 'survey-l' },
 
   // Tester access codes (batch 2) — reuse the existing module/survey pairs above (survey-a
   // through survey-j) rather than inventing new, unpopulated surveys. Each password is an
@@ -84,7 +82,6 @@ export const CREDENTIALS: Credential[] = [
   { id: 'survey-8', password: 'SURVEY-8', moduleId: 'branding', moduleLabel: 'Branding', surveyId: 'survey-h' },
   { id: 'survey-9', password: 'SURVEY-9', moduleId: 'console-navigation', moduleLabel: 'Console Navigation', surveyId: 'survey-i' },
   { id: 'survey-fin', password: 'SURVEY-FIN', moduleId: 'finance', moduleLabel: 'Finance', surveyId: 'survey-k' },
-  { id: 'survey-crypto', password: 'SURVEY-CRYPTO', moduleId: 'crypto', moduleLabel: 'Crypto', surveyId: 'survey-l' },
   { id: 'survey-demo', password: 'SURVEY-DEMO', moduleId: 'superdashboard-demo', moduleLabel: 'SuperDashboard Demo (read-only)', surveyId: 'survey-j' },
 
   // Buyer / Customer access — real, dedicated tiers (own module, own survey), mirroring the
@@ -205,38 +202,30 @@ export type SectionKind = 'module' | 'businessplan' | 'legal' | 'website' | 'con
 export type SurveyQuestion = { id: string; prompt: string; section?: string; sectionKind?: SectionKind; target?: string }
 export type Survey = { id: SurveyId; title: string; moduleLabel: string; questions: SurveyQuestion[] }
 
-// Appended to every module survey (survey-a through survey-l) so each one — not just the
-// dedicated investor survey — also evaluates comprehension of the business plan concepts
-// covered in the demo narration: multi-brand architecture, IntelligenceOS/SystemOS, Guardian,
-// Autonomous intelligence, SuperDash, and adaptive (Package Model D) pricing.
+// Appended to every module survey so each one — not just the dedicated investor survey — also
+// checks comprehension of the core FoundingOS story: one platform, three suites, FoundAI with
+// governed approvals, SuperDash, and modular pricing.
 export const BUSINESS_PLAN_QUESTIONS: SurveyQuestion[] = [
-  { id: 'bp1', prompt: 'Based on the demo, how would you describe the multi-brand FoundingOS ecosystem (26 interconnected apps, each with its own console) in your own words?' },
-  { id: 'bp2', prompt: 'Did the demo make it clear how IntelligenceOS and SystemOS work together, and how Guardian and Autonomous intelligence react to real engagement data?' },
-  { id: 'bp3', prompt: 'How clearly did SuperDash, real-time engagement ingestion, and the adaptive Package Model D pricing come across as one connected system, rather than separate features?' },
+  { id: 'bp1', prompt: 'Based on the demo, how would you describe FoundingOS — one platform with three suites (Core.Operations, Core.Workforce, Core.Intelligence) — in your own words?' },
+  { id: 'bp2', prompt: 'Did the demo make it clear how FoundAI proposes work, a person approves it, and every action is recorded and reversible?' },
+  { id: 'bp3', prompt: 'How clearly did the web app, mobile app, WhatsApp and SuperDash come across as one connected system rather than separate features?' },
 ]
 
-// Real, existing brand websites/consoles/POS-style flows in this codebase — no invented
-// brands. "Marketplace" maps to the real FoundThat app (this ecosystem's actual
-// marketplace-style brand); there is no separate "Marketplace" app. POS/ATS/compliance flows
-// and Intelligence Systems (SuperDash/Guardian/Autonomous/BrandMetric) share ONE combined
-// macro-section (keeping the survey at 6 macro-sections total, per the explicit breakdown) —
-// all four intelligence systems are real systems inside foundingos-console, labelled honestly
-// as such rather than implied to be standalone apps.
-const COMBINED_POS_INTELLIGENCE_SECTION = 'POS/ATS/Compliance + Intelligence Systems'
+// Real FoundingOS surfaces a tester can see today. POS/ATS flows and the founder tools share
+// ONE combined macro-section to keep the survey at 6 macro-sections total.
+const COMBINED_POS_INTELLIGENCE_SECTION = 'POS/ATS + Intelligence & Founder Tools'
 const BRAND_WEBSITE_TARGETS = [
-  'Retail website', 'Meat website', 'Logistics website', 'Talent website', 'Crypto website',
-  'Finance website', 'Health website', 'FoundThat (Marketplace) website', 'FoundingOS website',
-  'WhatsApp OS landing pages',
+  'FoundingOS website', 'Pricing page', 'Suites & workspaces pages', 'WhatsApp (FoundAI) landing page',
 ]
 const CONSOLE_TARGETS = [
-  'Retail console', 'Meat console', 'Logistics console', 'Talent console', 'Crypto console',
-  'Finance console', 'Health console', 'Messaging module', 'Customer Service module',
+  'Retail & Logistics workspace', 'Commerce Pro (finance) workspace', 'Marketing workspace', 'Talent workspace',
+  'HR workspace', 'Health workspace', 'Core.Intelligence workspace', 'Mobile app',
 ]
 const POS_TARGETS = [
-  'Retail POS', 'Meat POS', 'Logistics POS', 'Talent ATS', 'FoundThat seller flow', 'Crypto compliance flow',
+  'Retail POS and orders', 'Deliveries and drivers', 'Talent pipeline (ATS)', 'HR onboarding and rotas',
 ]
 const INTELLIGENCE_TARGETS = [
-  'SuperDash', 'Guardian (system safety layer)', 'Autonomous (auto-optimize/auto-coach)', 'BrandMetric (live brand data)',
+  'SuperDash (founder view)', 'FoundAI assistant', 'Autopilot approvals',
 ]
 
 function slugify(label: string): string {
@@ -253,7 +242,7 @@ function buildWebsiteQuestions(label: string): SurveyQuestion[] {
   // combined question per target keeps every real target covered honestly, at a quarter of
   // the length.
   return [
-    { id: `web-${slug}-1`, prompt: `${label}: Was the message and purpose clear, easy to navigate, and did it feel like part of one connected Quantum WhatsApp OS — including for someone with limited digital literacy?`, section: 'Websites', sectionKind: 'website', target: label },
+    { id: `web-${slug}-1`, prompt: `${label}: Was the message and purpose clear, easy to navigate, and did it feel like part of one connected FoundingOS — including for someone with limited digital literacy?`, section: 'Websites', sectionKind: 'website', target: label },
   ]
 }
 
@@ -354,16 +343,11 @@ export const ACCESSIBILITY_REMINDER_LINES = [
 // than a scripted paragraph, grounded honestly in what each one actually is (POS/ATS/compliance
 // flows are explicitly still conceptual — no live screens exist for them yet).
 export const TARGET_JOKES: Record<string, string> = {
-  'Guardian (system safety layer)': "Guardian gets dramatic here — don't mind it.",
-  'Autonomous (auto-optimize/auto-coach)': 'Autonomous is thinking… it does that.',
-  'BrandMetric (live brand data)': "BrandMetric is basically the OS's heartbeat.",
-  'SuperDash': 'SuperDash loves showing off.',
-  'Retail POS': "Conceptual for now — no live checkout yet.",
-  'Meat POS': 'Conceptual for now — weights and cuts, not SKUs.',
-  'Logistics POS': 'Conceptual for now — parcel in, parcel out.',
-  'Talent ATS': 'Conceptual for now — tracks application to hire.',
-  'FoundThat seller flow': 'Conceptual for now — list it, sell it.',
-  'Crypto compliance flow': 'Conceptual for now — careful, checks-first by design.',
+  'SuperDash (founder view)': 'SuperDash loves showing off.',
+  'FoundAI assistant': 'FoundAI is thinking… it does that.',
+  'Autopilot approvals': 'Nothing runs until a person says yes.',
+  'Retail POS and orders': 'Tap, sell, done.',
+  'Talent pipeline (ATS)': 'Application in, hire out.',
 }
 
 // Shown once, at the very top of the survey (before any question) — the mission framing that
@@ -490,10 +474,10 @@ export const SURVEYS: Record<SurveyId, Survey> = {
     title: 'Survey J — SuperDashboard Demo (read-only)',
     moduleLabel: 'SuperDashboard Demo (read-only)',
     questions: [
-      { id: 'j1', prompt: 'How useful is a single cross-brand view for a founder or operator?' },
+      { id: 'j1', prompt: 'How useful is a single view across every workspace for a founder or operator?' },
       { id: 'j2', prompt: 'Which SuperDashboard module (marketing, accounting, service, messaging, AI, system health) matters most to you?' },
       { id: 'j3', prompt: 'Did the real-time Quantum Sync indicator feel meaningful or just decorative?' },
-      { id: 'j4', prompt: "What's one metric missing from the cross-brand view?" },
+      { id: 'j4', prompt: "What's one metric missing from the combined view?" },
       ...BUSINESS_PLAN_QUESTIONS,
       ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
@@ -510,32 +494,19 @@ export const SURVEYS: Record<SurveyId, Survey> = {
       ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
-  'survey-l': {
-    id: 'survey-l',
-    title: 'Survey L — Crypto',
-    moduleLabel: 'Crypto',
-    questions: [
-      { id: 'l1', prompt: 'Do you trade crypto?' },
-      { id: 'l2', prompt: 'What platforms do you use?' },
-      { id: 'l3', prompt: 'What is your biggest challenge in crypto operations?' },
-      ...BUSINESS_PLAN_QUESTIONS,
-      ...ECOSYSTEM_VALIDATION_QUESTIONS,
-    ],
-  },
   'survey-investor': {
     id: 'survey-investor',
     title: 'Investor Survey — FoundingOS Business Plan',
     moduleLabel: 'Investor Briefing',
     questions: [
-      { id: 'inv1', prompt: 'In your own words, what is the multi-brand SaaS ecosystem FoundingOS operates (the 26 interconnected apps and multi-console structure)?' },
-      { id: 'inv2', prompt: 'How would you describe the difference between the IntelligenceOS and SystemOS layers?' },
-      { id: 'inv3', prompt: 'What did the demo show you about Autonomous intelligence (auto-optimize / auto-coach) reacting to high or low engagement?' },
-      { id: 'inv4', prompt: "What is Guardian's role in enforcing category-level isolation and brand consistency across the ecosystem?" },
-      { id: 'inv5', prompt: 'How useful is SuperDash as a single, unified cross-brand intelligence view for an investor or operator?' },
-      { id: 'inv6', prompt: 'How would you describe the adaptive pricing model (Package Model D — SystemOS tiers, industry packs, hardware packs, QuantumOS/IntelligenceOS add-ons)?' },
-      { id: 'inv7', prompt: 'In your own words, how does real user behaviour on each brand website feed data back into the OS (scrapers, anomaly detection, brand signals)?' },
-      { id: 'inv8', prompt: 'Did the real-time engagement ingestion and Quantum visuals feel credible as evidence of a live, working system?' },
-      { id: 'inv9', prompt: 'What is the single strongest signal from this briefing that FoundingOS is a real, differentiated platform rather than a collection of separate brand sites?' },
+      { id: 'inv1', prompt: 'In your own words, what does FoundingOS do, and who is it for?' },
+      { id: 'inv2', prompt: 'How convincing is the consolidation pitch — one system of record replacing several separate tools — for founder-run businesses?' },
+      { id: 'inv3', prompt: 'How differentiated is FoundAI (working in the app and on WhatsApp, with human approval before anything runs) compared with other small-business tools you know?' },
+      { id: 'inv4', prompt: 'How clear is the modular pricing (free Lite, Core from £19 per workspace, bolt-ons, £89 Complete, Enterprise) and does it support land-and-expand?' },
+      { id: 'inv5', prompt: 'How useful is SuperDash — subscriptions, revenue, upgrade requests, platform health and customer ratings in one founder view — as evidence the business can be run and measured?' },
+      { id: 'inv6', prompt: 'What evidence (customers, revenue, retention, usage) would you need to see before putting a valuation on FoundingOS?' },
+      { id: 'inv7', prompt: 'What is the biggest risk you see — product, market, execution or team?' },
+      { id: 'inv8', prompt: 'What is the single strongest signal from this briefing that FoundingOS is a real, working platform?' },
       ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
   },
@@ -582,9 +553,9 @@ export const SURVEYS: Record<SurveyId, Survey> = {
     moduleLabel: 'Complete FoundingOS Tour',
     questions: [
       { id: 'ov1', prompt: 'After the full tour, could you explain FoundingOS to someone else in one or two sentences?' },
-      { id: 'ov2', prompt: 'Which single piece (SuperDash, Guardian, Autonomous, Package Model D, or FoundAI) felt least clear, and why?' },
-      { id: 'ov3', prompt: 'Now that you\u2019ve seen the whole ecosystem, which brand or module do you want to explore first, and why?' },
-      { id: 'ov4', prompt: 'Did the tour feel like one connected system, or 8 separate products bundled together?' },
+      { id: 'ov2', prompt: 'Which single piece (the workspaces, FoundAI, Autopilot approvals, WhatsApp, SuperDash, or pricing) felt least clear, and why?' },
+      { id: 'ov3', prompt: 'Now that you\u2019ve seen the whole platform, which workspace do you want to explore first, and why?' },
+      { id: 'ov4', prompt: 'Did the tour feel like one connected system, or separate products bundled together?' },
       ...BUSINESS_PLAN_QUESTIONS,
       ...ECOSYSTEM_VALIDATION_QUESTIONS,
     ],
@@ -595,7 +566,7 @@ export const SURVEYS: Record<SurveyId, Survey> = {
     moduleLabel: 'Admin & Founder Operations Tour',
     questions: [
       { id: 'adm1', prompt: 'Is anything in the Guardian Queue or AVL footer status unclear about what action it needs from you?' },
-      { id: 'adm2', prompt: 'Was assigning a real Package Model D subscription to a brand straightforward?' },
+      { id: 'adm2', prompt: 'Was changing a customer\u2019s plan or workspaces straightforward?' },
       { id: 'adm3', prompt: 'What admin task do you do most often that still feels like too many clicks?' },
       { id: 'adm4', prompt: 'What is one admin-only tool you wish existed that doesn\u2019t yet?' },
       ...BUSINESS_PLAN_QUESTIONS,
@@ -604,18 +575,14 @@ export const SURVEYS: Record<SurveyId, Survey> = {
   },
 }
 
-// Shown once, as a short bullet list (not a paragraph) in its own "Business plan, in short"
-// card — the substantive context every survey needs, since BUSINESS_PLAN_QUESTIONS asks every
-// tester/buyer/customer/investor about Guardian, Autonomous, SuperDash, and Package Model D
-// pricing, regardless of their assigned module. Grounded in what the ecosystem actually does
-// today, not invented claims. Each fact is its own short line — no paragraph, no long text
-// block, consistent with the narrator's micro-line-only rule.
+// Shown once, as a short bullet list in its own "Business plan, in short" card. Grounded in
+// what the product actually does today — no traction figures (those come from the founder).
 export const BUSINESS_PLAN_FACTS = [
-  'Eight-plus brands, each with its own website and console.',
-  'Guardian keeps every brand in its own lane.',
-  'Autonomous auto-optimizes or auto-coaches modules on its own.',
-  'SuperDash brings every brand into one live view.',
-  'Pricing (Package Model D) adapts on top of it.',
+  'One platform for founder-run businesses: web app, iOS and Android app, and WhatsApp.',
+  'Three suites: Core.Operations, Core.Workforce and Core.Intelligence.',
+  'FoundAI proposes the routine work; a person approves; every action is audited and reversible.',
+  'Modular pricing: free Lite, Core from £19 per workspace, £89 Complete, Enterprise on request.',
+  'SuperDash gives the founder live subscriptions, revenue, upgrades and platform health.',
 ]
 // Joined form, used only for narrator audio (spoken, never rendered as visible paragraph text).
 export const BUSINESS_PLAN_NARRATION = BUSINESS_PLAN_FACTS.join(' ')
@@ -627,11 +594,10 @@ const MODULE_NARRATION_DETAIL: Partial<Record<ModuleId, string>> = {
   'messaging': 'Conversations, notifications, and outreach across every channel a brand uses, so nothing falls outside the intelligence layer.',
   'ai-automation': "FoundAI — AI-powered workflows and suggestions tailored to this console, turning raw signals into recommended actions.",
   'finance': 'A real, working view of cash flow and financial operations — one of the core inputs the OS uses to score brand health.',
-  'crypto': 'Brand-specific crypto operations and market exposure as their own real, live data stream inside the ecosystem.',
   'superdashboard-demo': 'SuperDash itself: every module — marketing, accounting, service, messaging, AI, and system health — rolled up into one live view.',
   'buyer-overview': "The buyer's-eye view — the real brand website a customer lands on, browses, and buys from.",
   'customer-overview': 'Customer Service from the other side of the counter — the real support experience a customer gets.',
-  'crm-overview': 'Contacts, companies, deals, pipeline, notes, tasks, and activity — one real relationship board per brand, feeding the same live BrandMetric signals every other module does.',
+  'crm-overview': 'Contacts, companies, deals, pipeline, notes, tasks, and activity — one relationship board per workspace, feeding the same signals every other module does.',
 }
 
 // Real action names surfaced inside each module's own workbench UI (see app/brand-config.ts) —
@@ -655,7 +621,6 @@ const MODULE_DEEP_DIVE: Partial<Record<ModuleId, string>> = {
   'messaging': "Every channel a brand uses — WhatsApp, SMS, email — flows through the same inbox here, so nothing gets missed. Templates you save are reusable across every future conversation, and assigning a conversation to a teammate is tracked in real time.",
   'ai-automation': "This is FoundAI's own home module — the same assistant you see in the bottom-right corner on every page, but with its full workflow and automation surface expanded here. Every suggestion it makes is grounded in this brand's own real signals, not a generic script.",
   'finance': "Cash flow, revenue, and financial operations all live here as one of the core real inputs the OS uses to score brand health. A sustained dip in cash flow is exactly the kind of signal that would trigger an Autonomous auto-coach moment.",
-  'crypto': "Market exposure and wallet-level signals are tracked here as their own real, live data stream — kept safely in Guardian's own lane, distinct from every other brand's financial data.",
   'superdashboard-demo': "This is the same real, read-only view an admin or investor actually sees: every brand, every module, rolled into one live dashboard. Nothing here is brand-specific — it's the whole ecosystem's health in one place.",
   'buyer-overview': "You're seeing the real, live brand website exactly as a genuine customer would — the same product pages, the same cart, the same checkout flow. Nothing here is a mockup built just for this demo.",
   'customer-overview': "This is Customer Service from the other side of the counter — what it actually feels like to ask for help as a real customer, rather than the agent's own queue view you'd see in the Customer Service module.",
@@ -675,7 +640,7 @@ const MESSAGE_DRIVEN_MODULE_IDS = new Set<ModuleId>(['messaging', 'customer-serv
 
 // The AI narrator's personality: warm, human, reactive — a short (3–10 word) spoken reaction
 // for every beat, never a long scripted paragraph. The practical substance (what the module
-// does, why it exists, its features, real-time behaviour, cross-brand integration, the AI
+// does, why it exists, its features, real-time behaviour, connected workspaces, the AI
 // guidance moment, the animated message flow, and a short summary) lives in "detail" and
 // renders as the card's own body copy; "text" is only the narrator's own short reaction to
 // that beat, read aloud by the same voice everywhere. "detail" is real body copy (read on
@@ -710,9 +675,9 @@ export function buildNarratorSteps(moduleLabel: string, moduleDetail: string, mo
       detail: `Every action in ${moduleLabel} updates its numbers live — nothing here is a static screenshot. ${deepDive}`,
     },
     {
-      step: '5 · Cross-brand integration',
+      step: '5 · Connected workspaces',
       text: "Here's the clever part.",
-      detail: `That same activity becomes a BrandMetric signal the instant it happens — Guardian keeps it safely in ${moduleLabel}'s own brand lane (never leaking into another brand's data), Autonomous watches it for spikes or dips worth reacting to, and SuperDash rolls the whole thing up into one live, cross-brand view.`,
+      detail: `That same activity lands on the shared FoundingOS record the instant it happens — kept inside your own company's data, visible to the other workspaces that need it, watched by FoundAI for anything worth acting on, and rolled up for the founder in SuperDash.`,
     },
     {
       step: '6 · AI guidance',
@@ -754,9 +719,9 @@ const MARKETING_SUITE_NARRATOR_STEPS: NarratorStep[] = [
   { step: '3 · Templates tab', text: "Here's your reusable message library.", detail: 'Click the Templates tab. Every approved template here is ready to plug into a campaign or an automation without rewriting it from scratch — the Approved/Draft status keeps anything unfinished from accidentally going out.' },
   { step: '4 · Segments tab', text: 'Now let\u2019s target the right people.', detail: 'Click the Segments tab. Each segment is a real audience definition — criteria plus a contact count — the same kind of targeting a real campaign would use to decide exactly who receives it.' },
   { step: '5 · Analytics tab', text: 'And here\u2019s how it all performed.', detail: 'Click the Analytics tab for open rate, click-through rate, revenue attributed, and unsubscribe rate. These are illustrative benchmark figures — real revenue always lives in the real monetary fields (Accounting/Finance), never invented here.' },
-  { step: '6 · Cross-brand integration', text: 'Guardian and Autonomous are both watching.', detail: "Guardian keeps this brand's marketing data safely in its own lane — a spike in FoundRetail's numbers never leaks into FoundMeat's, even though both run the exact same module. Autonomous watches for a real surge or dip worth reacting to, and SuperDash rolls the whole thing up into one live, cross-brand view." },
+  { step: '6 · Connected workspaces', text: 'Guardian and Autonomous are both watching.', detail: "Guardian keeps each customer's marketing data safely in its own workspace — one business's numbers never leak into another's, even though both run the exact same module. Autonomous watches for a real surge or dip worth reacting to, and the owner sees it all in one connected view." },
   { step: '7 · AI guidance', text: "FoundAI's got thoughts on this too.", detail: 'Open FoundAI (bottom-right) while you\u2019re on any of these tabs — it already knows it\u2019s watching Marketing Suite on this brand, and can suggest a next step or explain what a number means.' },
-  { step: '8 · Summary + next steps', text: "Nice — you're ready to explore more.", detail: "That's Marketing Suite: four real tabs, each with its own real, editable data. Like every module, its usage rolls into the same Package Model D pricing tiers (SystemOS/IntelligenceOS/QuantumOS) the whole OS runs on. Your survey's up next, then Free Roam." },
+  { step: '8 · Summary + next steps', text: "Nice — you're ready to explore more.", detail: "That's Marketing Suite: four real tabs, each with its own real, editable data. Like every module, it is included in the same modular plans — Core, Complete and Enterprise — the whole platform runs on. Your survey's up next, then Free Roam." },
 ]
 MODULE_NARRATOR_STEPS['marketing-suite'] = MARKETING_SUITE_NARRATOR_STEPS
 
@@ -774,7 +739,7 @@ const ACCOUNTING_NARRATOR_STEPS: NarratorStep[] = [
   { step: '6 · Tax Summary tab', text: 'Never miss a filing date.', detail: 'Click Tax Summary. Every VAT and Corporation Tax period lives here, with what\u2019s due and when — Filed, Due soon, or Overdue, all in plain language.' },
   { step: '7 · Cashflow tab', text: 'See the money moving, month by month.', detail: 'Click Cashflow. Money in, money out, and what\u2019s left at the end of each month — including a simple next-month forecast, no spreadsheet required.' },
   { step: '8 · Integrations tab', text: 'Connect the tools you already use.', detail: 'Click Integrations. Bank feed, payroll, payment processor, receipt scanning — see what\u2019s connected and what isn\u2019t, and connect more with one click.' },
-  { step: '9 · Cross-brand integration', text: 'This feeds the bigger picture too.', detail: "A real invoice's outstanding balance is exactly the kind of signal Autonomous watches for, and Guardian keeps this brand's financial data completely separate from every other brand's, even though they all run the same Accounting module." },
+  { step: '9 · Connected workspaces', text: 'This feeds the bigger picture too.', detail: "A real invoice's outstanding balance is exactly the kind of signal Autonomous watches for, and Guardian keeps this brand's financial data completely separate from every other brand's, even though they all run the same Accounting module." },
   { step: '10 · AI guidance', text: "FoundAI's ready to help here too.", detail: 'Open FoundAI (bottom-right) on any Accounting tab — it knows which brand\u2019s books it\u2019s looking at and can explain a real invoice status or reconciliation match.' },
   { step: '11 · Summary + next action', text: "That's Accounting — nice work.", detail: 'Real invoices, real database persistence, and six more real workspaces around it — expenses, reports, reconciliation, tax, cashflow, and integrations. Your survey\u2019s up next, then Free Roam.' },
 ]
@@ -789,7 +754,7 @@ const MESSAGING_NARRATOR_STEPS: NarratorStep[] = [
   { step: '3 · Templates tab', text: 'Now the reusable messages.', detail: 'Click the Templates tab. Every approved template — order confirmation, delivery update, support follow-up — is ready to send instantly, on whichever channel it\u2019s built for.' },
   { step: '4 · Automations tab', text: 'And here\u2019s where it runs itself.', detail: 'Click the Automations tab. Each row pairs a real trigger (like "no reply after 24h") with a real action (like "send a follow-up template") — Active or Paused, exactly like a real automation platform.' },
   { step: '5 · Analytics tab', text: 'Here\u2019s how it\u2019s performing.', detail: 'Click the Analytics tab for messages sent, response rate, and average response time — illustrative figures for now, since there\u2019s no real delivery engine wired up yet.' },
-  { step: '6 · Cross-brand integration', text: 'Every message becomes a signal too.', detail: "Response rate and volume feed the same BrandMetric signal every other module contributes to — Guardian keeps this brand's conversations in their own lane, and Autonomous watches for a real spike or drop in engagement." },
+  { step: '6 · Connected workspaces', text: 'Every message becomes a signal too.', detail: "Response rate and volume feed the same workspace signal every other module contributes to — Guardian keeps this brand's conversations in their own lane, and Autonomous watches for a real spike or drop in engagement." },
   { step: '7 · AI guidance', text: "FoundAI's watching the inbox too.", detail: 'Open FoundAI (bottom-right) on any Messaging tab — it can draft a reply, suggest a template, or explain an automation\u2019s trigger.' },
   { step: '8 · Summary + next action', text: "That's Messaging — you've seen it all.", detail: 'Inbox, templates, automations, and analytics — every channel, one real workspace. Your survey\u2019s up next, then Free Roam.' },
 ]
@@ -803,7 +768,7 @@ const CUSTOMER_SERVICE_NARRATOR_STEPS: NarratorStep[] = [
   { step: '3 · Live Chat tab', text: 'Here\u2019s what a real-time conversation feels like.', detail: 'Click the Live Chat tab for a live preview of a support conversation, cycling through real messaging-channel styling — the same preview used in the Messaging module, shown here in its support context.' },
   { step: '4 · Knowledge Base tab', text: 'And here\u2019s how tickets get prevented in the first place.', detail: 'Click the Knowledge Base tab. Every published article deflects a ticket before it\u2019s ever raised — the view count next to each one shows real self-serve demand.' },
   { step: '5 · SLA tab', text: 'Here\u2019s how the team is actually performing.', detail: 'Click the SLA tab for average first-response time, resolution time, satisfaction score, and SLA breaches — the real accountability numbers a support lead checks every morning.' },
-  { step: '6 · Cross-brand integration', text: 'Every reply becomes a signal too.', detail: "A sustained spike in unhappy tickets is exactly the kind of pattern Autonomous watches for, and Guardian keeps this brand's support data in its own lane, safely apart from every other brand's." },
+  { step: '6 · Connected workspaces', text: 'Every reply becomes a signal too.', detail: "A sustained spike in unhappy tickets is exactly the kind of pattern Autonomous watches for, and Guardian keeps this brand's support data in its own lane, safely apart from every other brand's." },
   { step: '7 · AI guidance', text: "FoundAI can help you answer faster.", detail: 'Open FoundAI (bottom-right) on any Customer Service tab — it can draft a reply, suggest a knowledge base article, or summarize a ticket\u2019s history.' },
   { step: '8 · Summary + next action', text: "That's Customer Service — well done.", detail: 'Tickets, live chat, a knowledge base, and real SLA tracking, all in one place. Your survey\u2019s up next, then Free Roam.' },
 ]
@@ -819,7 +784,7 @@ const AI_AUTOMATION_NARRATOR_STEPS: NarratorStep[] = [
   { step: '3 · Triggers tab', text: 'Here\u2019s what actually sets things off.', detail: 'Click the Triggers tab. Every trigger is a real condition — like "order value > £100" — paired with the action it sets in motion, independent of which workflow uses it.' },
   { step: '4 · Run Logs tab', text: 'And here\u2019s the receipts.', detail: 'Click the Run Logs tab for a full history of past automation runs — timestamp, workflow, success or failure, and how long it took. Real auditability, not a black box.' },
   { step: '5 · Templates tab', text: 'Don\u2019t want to start from scratch?', detail: 'Click the Templates tab for pre-built automations — low stock reorder, abandoned cart recovery, overdue invoice reminder — ready to adopt in one click.' },
-  { step: '6 · Cross-brand integration', text: 'This is IntelligenceOS in action.', detail: 'Every workflow run is grounded in this brand\u2019s own real signals, kept safely in Guardian\u2019s own lane — Autonomous is really just this module\u2019s reflexes, watching for the moment a real automation should fire.' },
+  { step: '6 · Connected workspaces', text: 'This is IntelligenceOS in action.', detail: 'Every workflow run is grounded in this brand\u2019s own real signals, kept safely in Guardian\u2019s own lane — Autonomous is really just this module\u2019s reflexes, watching for the moment a real automation should fire.' },
   { step: '7 · AI guidance', text: "This IS the AI guidance module.", detail: 'FoundAI here isn\u2019t a bolt-on — it\u2019s the same assistant everywhere else in the OS, just with its full workflow-building surface expanded on the Workflows tab.' },
   { step: '8 · Summary + next action', text: "That's AI Automation — you've seen the whole engine.", detail: 'Workflows, triggers, run history, and ready-made templates, all backed by the real FoundAI assistant. Your survey\u2019s up next, then Free Roam.' },
 ]
@@ -834,7 +799,7 @@ const SALES_NARRATOR_STEPS: NarratorStep[] = [
   { step: '3 · Quotes tab', text: 'Here\u2019s how a deal gets priced.', detail: 'Click the Quotes tab. Every quote is a real record — number, customer, amount, and status (Draft/Sent/Accepted/Rejected) — the paperwork behind every pipeline deal.' },
   { step: '4 · Activities tab', text: 'And here\u2019s the actual legwork.', detail: 'Click the Activities tab. Every call, email, and meeting is logged against a real contact, with a real outcome — the history a sales rep actually keeps.' },
   { step: '5 · Analytics tab', text: 'Here\u2019s how the team is tracking.', detail: 'Click the Analytics tab for pipeline value, win rate, average deal size, and quota progress. Real deal values with real numeric fields live separately in CRM Deals — this is the illustrative sales-team view on top.' },
-  { step: '6 · Cross-brand integration', text: 'Every deal becomes a signal too.', detail: "A deal moving to Won is exactly the kind of real activity Autonomous watches for, and Guardian keeps this brand's pipeline completely separate from every other brand's, even though they all run the same Sales module." },
+  { step: '6 · Connected workspaces', text: 'Every deal becomes a signal too.', detail: "A deal moving to Won is exactly the kind of real activity Autonomous watches for, and Guardian keeps this brand's pipeline completely separate from every other brand's, even though they all run the same Sales module." },
   { step: '7 · AI guidance', text: "FoundAI can help close deals faster too.", detail: 'Open FoundAI (bottom-right) on any Sales tab — it can draft a follow-up, summarize a deal\u2019s activity history, or suggest what to try next on a stalled negotiation.' },
   { step: '8 · Summary + next action', text: "That's Sales — the newest real module in the OS.", detail: 'Pipeline, quotes, activities, and analytics, all real and interactive. Your survey\u2019s up next, then Free Roam.' },
 ]
@@ -843,33 +808,32 @@ MODULE_NARRATOR_STEPS['sales'] = SALES_NARRATOR_STEPS
 // The Complete FoundingOS Tour — a dedicated master walkthrough covering the whole
 // ecosystem (not one module), for testers who want the full picture before diving into any
 // single brand/module. Same short reactive-narrator voice; every fact here is a real system
-// already covered elsewhere in this file (brand count, SuperDash, Guardian, Autonomous,
-// Package Model D, FoundAI, CRM) — nothing invented for this tour.
+// describes what the product does today (workspaces, FoundAI, WhatsApp, pricing, SuperDash).
 const FOUNDINGOS_OVERVIEW_NARRATOR_STEPS: NarratorStep[] = [
-  { step: '1 · Overview', text: "Let's zoom all the way out.", detail: 'FoundingOS is one operating system running 8 real brands — Retail, Meat, Logistics, Talent, Crypto, Finance, Health, and FoundThat — each with its own console, plus a shared intelligence layer on top.' },
-  { step: '2 · Why it exists', text: 'Here\u2019s the problem it solves.', detail: 'Every brand used to run in its own silo. FoundingOS gives every brand the same real modules (Marketing, Accounting, Messaging, Customer Service, CRM, AI Automation) while rolling every signal up into one shared view.' },
-  { step: '3 · Every brand, one console pattern', text: 'Same shape, every time.', detail: 'Each of the 8 brand consoles is a real, separately deployed app — but every one shares the same modules, the same CRM board, and the same FoundAI assistant, so once you know one console, you know them all.' },
-  { step: '4 · SuperDash', text: 'This is where it all rolls up.', detail: 'SuperDash pulls every brand\u2019s real engagement, scraper health, and pipeline data into one live, cross-brand view — the same view an admin or investor actually sees.' },
-  { step: '5 · Guardian + Autonomous', text: 'The safety net and the reflexes.', detail: 'Guardian keeps every brand\u2019s data in its own lane and flags anomalies; Autonomous reacts to real signals (auto-optimize or auto-coach) without a human needing to click anything.' },
-  { step: '6 · Package Model D', text: 'And here\u2019s how it\u2019s priced.', detail: 'SystemOS, IntelligenceOS, and QuantumOS tiers, plus an industry pack per brand — the same real pricing catalog every module\u2019s summary step points back to.' },
-  { step: '7 · FoundAI, your guide throughout', text: 'I\u2019m with you on every page.', detail: 'The same FoundAI assistant (bottom-right, on every real page) already knows which brand and module you\u2019re looking at, and can answer real questions about any of this.' },
-  { step: '8 · Summary + next action', text: "That's the whole picture — now go explore a brand.", detail: 'Head back to the Switcher Hub and pick any brand demo, the CRM demo, or SuperDash read-only — you now know how every piece fits together.' },
+  { step: '1 · Overview', text: "Let's zoom all the way out.", detail: 'FoundingOS is the operating system for founder-run businesses — one core platform, three suites (Core.Operations, Core.Workforce, Core.Intelligence), that replaces a stack of disconnected tools with a single system of record for customers, people, and decisions.' },
+  { step: '2 · Why it exists', text: 'Here\u2019s the problem it solves.', detail: 'Founder-run businesses juggle separate tools for sales, stock, invoicing, hiring and staff. FoundingOS puts them in one place, on one shared record, so nothing is typed twice.' },
+  { step: '3 · Workspaces', text: 'Same shape, every time.', detail: 'Retail & Logistics, Commerce Pro, Marketing, Talent, HR, Health and Core.Intelligence all share the same layout, the same customer and product records, and the same FoundAI assistant — learn one, you know them all.' },
+  { step: '4 · FoundAI and Autopilot', text: 'The work gets done for you — safely.', detail: 'FoundAI answers questions about your business and Autopilot proposes routine actions. Nothing runs until a person approves it, every step is audited, and FoundingOS never moves money on its own.' },
+  { step: '5 · WhatsApp and mobile', text: 'It goes where you go.', detail: 'The iOS and Android app reads and writes the same data as the web app, and FoundAI works on WhatsApp so owners can run the business from a chat.' },
+  { step: '6 · Pricing', text: 'And here\u2019s how it\u2019s priced.', detail: 'Free Lite; Core from £19 per base workspace with bolt-ons; Complete at £89 for everything; Enterprise on request. Stripe billing switches workspaces on and off automatically.' },
+  { step: '7 · SuperDash', text: 'This is where it all rolls up.', detail: 'The founder-only SuperDash shows subscriptions, estimated revenue, upgrade requests, platform health and private customer ratings in one live view.' },
+  { step: '8 · Summary + next action', text: "That's the whole picture — now go explore.", detail: 'Head back to the Switcher Hub and pick any workspace demo, or SuperDash read-only — you now know how every piece fits together.' },
 ]
 MODULE_NARRATOR_STEPS['foundingos-overview'] = FOUNDINGOS_OVERVIEW_NARRATOR_STEPS
 
 // Admin & Founder Operations Tour — admin-only, covers everything an admin actually operates
 // day-to-day (not the tester-facing tour above). Every system named here is real and already
-// shipped: Founder Console, SuperDash's real subscriptions/scraping sections, AVL, Guardian
-// Queue, Package Model D admin actions, and the tester program's own admin tools.
+// shipped: Founder Console, SuperDash's subscriptions section, AVL, Guardian
+// Queue, plan and billing admin, and the tester program's own admin tools.
 const ADMIN_OPERATIONS_NARRATOR_STEPS: NarratorStep[] = [
-  { step: '1 · Overview', text: "Welcome to the operator's seat.", detail: 'As admin, you have full, unrestricted access to every demo, every survey, every brand console, and every admin-only tool in the ecosystem — nothing here is locked for you.' },
-  { step: '2 · Founder Console', text: "This is your control centre.", detail: 'All brands, workflows, WhatsApp automation, analytics, AI onboarding, customers, orders, products, employees, permissions, and settings — all 12 sections now link to a real destination, no "coming soon" placeholders.' },
-  { step: '3 · SuperDash — the intelligence layer', text: 'Everything rolls up here.', detail: 'Cross-brand analytics, brand switching, the real Package Model D subscriptions section (live MRR/ARR + real FX conversion), and the Scraping Dashboard (real scrape history, diffing, and the customer pipeline builder).' },
-  { step: '4 · AVL — Autonomous Verification Layer', text: "It's watching the whole system for you.", detail: 'Runs every 5 minutes: scans all 26 apps for reachability, detects drift against the last known-good snapshot, auto-applies safe fixes (like re-triggering a stale scrape), and reports lastRun/driftCount/safeFixCount/pendingGuardian in the SuperDash footer.' },
+  { step: '1 · Overview', text: "Welcome to the operator's seat.", detail: 'As admin, you have full, unrestricted access to every demo, every survey, every workspace, and every admin-only tool on the platform — nothing here is locked for you.' },
+  { step: '2 · Founder Console', text: "This is your control centre.", detail: 'All workspaces, workflows, WhatsApp automation, analytics, AI onboarding, customers, orders, products, employees, permissions, and settings — all 12 sections now link to a real destination, no "coming soon" placeholders.' },
+  { step: '3 · SuperDash — the founder view', text: 'Everything rolls up here.', detail: 'Customers, subscriptions and MRR, workspace usage, product ratings and platform health for FoundingOS itself, with every Pro tool unlocked.' },
+  { step: '4 · AVL — Autonomous Verification Layer', text: "It's watching the whole system for you.", detail: 'Runs every 5 minutes: scans all 26 apps for reachability, detects drift against the last known-good snapshot, auto-applies safe fixes (like retrying a stale sync), and reports lastRun/driftCount/safeFixCount/pendingGuardian in the SuperDash footer.' },
   { step: '5 · Guardian Queue', text: 'High-risk items wait for you here.', detail: 'Anything AVL classifies as needing a human call sits unresolved until you review it — the pendingGuardian count in the SuperDash footer tells you exactly how many are waiting right now.' },
-  { step: '6 · Package Model D — real admin actions', text: "You control real subscriptions here.", detail: 'From SuperDash you can assign any of the 8 real brands a real base tier + industry pack; it snapshots the real catalog price into a persisted MRR/ARR record — informational only, no payment processor, but genuinely real and stored.' },
+  { step: '6 · Plans and billing', text: 'You can see every subscription here.', detail: 'Plans (Lite, Core, Complete, Enterprise), workspaces and bolt-ons come from one commercial catalogue; Stripe webhooks keep each customer\u2019s entitlements in sync.' },
   { step: '7 · Tester program admin tools', text: "This is how you run the tester program.", detail: 'At /tester/admin you can review every tester\u2019s real survey answers and reassign their module — separate from your own Super Founder Admin access, which lets you open any demo or survey directly from the Switcher Hub.' },
-  { step: '8 · Summary + next action', text: "That's the full operator's view — go run it.", detail: 'You now know every admin-only tool in the ecosystem. Head to SuperDash or the Founder Console to put it to use, or read the full Admin & Founder Operations Manual for the written version.' },
+  { step: '8 · Summary + next action', text: "That's the full operator's view — go run it.", detail: 'You now know every admin-only tool on the platform. Head to SuperDash or the Founder Console to put it to use, or read the full Admin & Founder Operations Manual for the written version.' },
 ]
 MODULE_NARRATOR_STEPS['admin-overview'] = ADMIN_OPERATIONS_NARRATOR_STEPS
 
@@ -879,16 +843,22 @@ export const MODULE_NARRATION: Partial<Record<ModuleId, string>> = Object.fromEn
   Object.entries(MODULE_NARRATOR_STEPS).map(([id, steps]) => [id, (steps as NarratorStep[]).map((s) => s.text).join(' ')]),
 ) as Partial<Record<ModuleId, string>>
 
-export const INVESTOR_NARRATOR_STEPS = buildNarratorSteps(
-  'Investor Briefing',
-  'The live, cross-brand engagement data behind FoundingOS — the same numbers SuperDash uses, read-only, exactly as an investor should see them.',
-)
+export const INVESTOR_NARRATOR_STEPS: NarratorStep[] = [
+  { step: '1 · Positioning', text: 'Here\u2019s what FoundingOS is.', detail: 'FoundingOS is the operating system for founder-run businesses — one core platform, three suites (Core.Operations, Core.Workforce, Core.Intelligence), that replaces a stack of disconnected tools with a single system of record for customers, people, and decisions.' },
+  { step: '2 · The problem', text: 'Here\u2019s the problem it solves.', detail: 'Owner-operators pay for and switch between separate tools for selling, stock, invoicing, marketing, hiring and staff. Data is typed twice and nobody sees the whole business.' },
+  { step: '3 · The product today', text: 'This is what\u2019s built.', detail: 'A working web app and iOS/Android app on one tenant-isolated PostgreSQL backbone: Retail & Logistics (pipeline, CRM, orders, POS, inventory with product photos, deliveries), Commerce Pro (quotes, invoices, aged debt), Marketing, Talent (ATS), HR (onboarding, rotas, timesheets), Health (patients, appointments, compliance) and Core.Intelligence (signals, forecasts, reports).' },
+  { step: '4 · FoundAI and WhatsApp', text: 'Here\u2019s the differentiator.', detail: 'FoundAI answers questions about the business and Autopilot proposes routine actions — in the app and on WhatsApp. A person approves before anything runs, every action is audited and reversible, and FoundingOS never moves money autonomously.' },
+  { step: '5 · Business model', text: 'And here\u2019s how it makes money.', detail: 'Subscription SaaS priced per workspace: free Lite, Core from £19 per base workspace, bolt-ons (+£25 Commerce Pro, +£35 Core.Intelligence), £89 Complete, Enterprise on request, plus £5 per extra user. Stripe billing switches workspaces on and off automatically.' },
+  { step: '6 · Operating the company', text: 'The founder sees everything here.', detail: 'SuperDash shows subscriptions, estimated MRR/ARR, upgrade requests, platform health, a finance ledger, marketing posts and private customer ratings — the numbers a buyer or investor will ask for.' },
+  { step: '7 · Trust and security', text: 'Built to be trusted.', detail: 'Tenant-isolated data, role-based access, encrypted integration credentials, signed Stripe webhooks with out-of-order protection, an append-only audit trail, and a published privacy and cookie notice.' },
+  { step: '8 · What a valuation needs', text: 'Now the evidence.', detail: 'The product is built; value now depends on traction. Live customers, revenue, retention and usage come from SuperDash and Stripe and are shared on request — see the evidence checklist below.' },
+]
 export const INVESTOR_NARRATION = INVESTOR_NARRATOR_STEPS.map((s) => s.text).join(' ')
 
 // Shown once, at the very first moment a real tester/investor/buyer/customer session enters
 // the OS (the top of their first demo/briefing page) — before DEMO_INTRO's more instructional
 // copy. The narrator's own personal greeting, distinct from the business-y walkthrough intro.
-export const OPENING_NARRATOR_LINE = "Welcome to the Quantum WhatsApp OS. Let's jump in — it's simple and fun."
+export const OPENING_NARRATOR_LINE = "Welcome to FoundingOS. Let's jump in — it's simple and fun."
 
 // Shown alongside OPENING_NARRATOR_LINE, only on a genuine first visit (status ===
 // 'registered') — a plain, honest orientation card. The login-details line is worded
@@ -897,7 +867,7 @@ export const OPENING_NARRATOR_LINE = "Welcome to the Quantum WhatsApp OS. Let's 
 export const TESTER_INSTRUCTION_CARD = {
   title: 'Welcome Tester',
   lines: [
-    'Thanks for helping test the Quantum WhatsApp OS.',
+    'Thanks for helping test FoundingOS.',
     'Your login details may differ depending on your assigned role.',
     "Once you're inside, you don't need to log out to see other modules.",
     "Use the 'Explore Another Part of the OS' panel to jump between demos and surveys.",
@@ -916,7 +886,7 @@ export const TESTER_INSTRUCTION_CARD = {
 // having finished at least one full survey", using tester.status === 'complete' as the real,
 // already-existing milestone rather than an exact (unavailable) visit count.
 export const WELCOME_BACK_NARRATOR_LINE =
-  "Welcome back — the Quantum WhatsApp OS remembers you. Let's pick up right where you left off."
+  "Welcome back — FoundingOS remembers you. Let's pick up right where you left off."
 
 // Shown instead of WELCOME_BACK_NARRATOR_LINE once a session has completed at least one full
 // survey run and returns to the demo/briefing page again (tester.status === 'complete') — a
@@ -943,7 +913,7 @@ export const FREE_ROAM_ENTERED_LINE = "Alright, explorer — the OS is yours now
 // Shown alongside the Free Roam box as the closing/farewell note — the honest placement for
 // "end of Free Roam or extended exploration," for the same reason as FREE_ROAM_ENTERED_LINE.
 export const EMOTIONAL_CLOSING_LINE =
-  "That's the full Quantum WhatsApp OS — alive, evolving, and built for real people everywhere. Thanks for exploring. Whenever you're ready, I'll be here to guide you through whatever comes next."
+  "That's the full FoundingOS — alive, evolving, and built for real people everywhere. Thanks for exploring. Whenever you're ready, I'll be here to guide you through whatever comes next."
 
 // Once-in-a-lifetime signature moment: shown only in the transient client-side "just
 // submitted" completion state (SurveyEngine), gated on hasCompletedSurveyBefore === false —
@@ -951,7 +921,7 @@ export const EMOTIONAL_CLOSING_LINE =
 // once, ever" trigger (unlike a page-revisit-based check) because that client state only ever
 // exists as a direct result of the completing action itself, never on a later page load.
 export const SIGNATURE_MOMENT_LINE =
-  "You've just helped shape the Quantum WhatsApp OS. Most people never get to see a system being born — but you did. Thanks for being part of the beginning."
+  "You've just helped shape FoundingOS. Most people never get to see a system being born — but you did. Thanks for being part of the beginning."
 
 // Free Roam "first step" moment — shown alongside SIGNATURE_MOMENT_LINE, in the same
 // hasCompletedSurveyBefore === false gate, since that is genuinely the first time this session
@@ -980,16 +950,44 @@ export const FREE_ROAM_INVITE_LINES = [
 
 export const FREE_ROAM_TIPS = [
   "Check out SuperDash — it's the brain of the whole OS.",
-  "Guardian gets dramatic, but it's worth a look.",
-  "Autonomous reacts to real engagement in real time — go see it.",
-  "BrandMetric shows you the heartbeat of every brand.",
+  "Open any workspace — every button is real.",
+  "Ask FoundAI a question about the business.",
+  "Try an Autopilot approval — nothing runs until you say yes.",
 ]
 
-// Short, reactive line shown once above the brand-cards row (FoundingOS, FoundRetail,
-// FoundMeat, FoundTalent, FoundCrypto, FoundThat, FoundFinance, FoundHealth,
-// FoundLogistics) on demo/survey/investor/dashboard screens — introduces the real brands
-// without altering the row/cards themselves.
-export const BRAND_ROW_NARRATOR_LINE = 'Eight real brands, one OS.'
+// Short line shown once above the suite row on demo/survey/investor/dashboard screens.
+export const BRAND_ROW_NARRATOR_LINE = 'One platform, three suites.'
+
+// Replaces the old per-brand card row on demo/survey/investor/dashboard screens.
+export const SUITE_ROW = [
+  { name: 'FoundingOS', href: 'https://www.foundingos.com', accent: '#38BDF8' },
+  { name: 'Core.Operations', href: 'https://www.foundingos.com/suites', accent: '#22C55E' },
+  { name: 'Core.Workforce', href: 'https://www.foundingos.com/suites', accent: '#A855F7' },
+  { name: 'Core.Intelligence', href: 'https://www.foundingos.com/suites', accent: '#F59E0B' },
+] as const
+
+// What the investor demo phase shows instead of the old per-brand engagement table.
+export const PLATFORM_CAPABILITIES = [
+  { title: 'Core.Operations', detail: 'Retail & Logistics: pipeline, CRM, quotes, orders, POS, returns, inventory with shared product photos, deliveries and drivers. Commerce Pro: invoices, aged debt, purchasing and cashflow. Marketing: campaigns and social publishing. Health: patients, appointments, referrals and compliance.' },
+  { title: 'Core.Workforce', detail: 'Talent: jobs, candidates, interviews, offers and placements. HR: employees, contracts, onboarding checklists, rotas, timesheets, holiday and right-to-work.' },
+  { title: 'Core.Intelligence', detail: 'Signals, forecasts, anomalies, reports and FoundAI recommendations built on first-party data only.' },
+  { title: 'FoundAI and Autopilot', detail: 'Claude-powered answers and proposed actions, in the app and on WhatsApp. Propose → approve → execute, with an audit trail and reversal.' },
+  { title: 'Web and mobile', detail: 'One Next.js web app and one Expo iOS/Android app reading and writing the same tenant data, with Pro tools, demo data and per-user card layouts.' },
+  { title: 'SuperDash', detail: 'Founder-only view of subscriptions, estimated MRR/ARR, upgrade requests, platform health, finance ledger, marketing and private customer ratings.' },
+  { title: 'Billing', detail: 'Stripe Checkout and signed webhooks. Paid workspaces switch on only for active or trialling subscriptions; cancelled or failed ones fall back to free Lite.' },
+  { title: 'Security and privacy', detail: 'Tenant isolation, role-based access, encrypted credentials, audit log, data export, and a published privacy and cookie notice. No third-party scraping or advertising trackers.' },
+] as const
+
+// Honest valuation checklist: these are supplied by the founder, never invented in the demo.
+export const INVESTOR_EVIDENCE_REQUIRED = [
+  'Paying customers and MRR/ARR (SuperDash + Stripe)',
+  'Monthly customer retention and churn',
+  'Activation: companies using FoundingOS weekly',
+  'Upgrade rate from Lite to paid plans',
+  'Customer ratings and case studies',
+  'Customer acquisition cost and payback',
+  'Team, runway and 12-month plan',
+] as const
 
 // "Free Roam" for a tester/investor/buyer/customer session means real, read-only revisiting of
 // whatever real page their module already unlocks — there is no separate /free-roam route.
@@ -997,7 +995,6 @@ export const BRAND_ROW_NARRATOR_LINE = 'Eight real brands, one OS.'
 export function getFreeRoamHref(moduleId: string): string {
   if (moduleId === 'superdashboard-demo') return '/superdashboard?readOnly=1'
   if (moduleId === 'finance') return '/finance'
-  if (moduleId === 'crypto') return '/crypto'
   if (moduleId === 'marketing-suite') return '/modules/marketing'
   if (moduleId === 'accounting') return '/modules/accounting'
   if (moduleId === 'customer-service' || moduleId === 'customer-overview') return '/modules/customer-service'
@@ -1020,7 +1017,7 @@ export function getFreeRoamHref(moduleId: string): string {
 // demo or survey.
 export const SWITCHER_PANEL_TITLE = 'Explore Another Part of the OS'
 export const SWITCHER_PANEL_NARRATOR_LINE =
-  "Welcome to FoundingOS — I'm your AI guide. Here's everything you can explore: every brand demo, every survey, and Free Roam. Pick whatever you'd like to try first."
+  "Welcome to FoundingOS — I'm your AI guide. Here's everything you can explore: every workspace demo, every survey, and Free Roam. Pick whatever you'd like to try first."
 
 // Shown directly above the Free Roam box on the survey-completion screen — the "unlocked a
 // new level" framing for reaching Free Roam.
@@ -1046,7 +1043,7 @@ export function buildSwitcherOptions(category: CredentialCategory): SwitcherOpti
     { code: 'U2', label: 'Admin & Founder Operations Manual', href: '/founder/manual', available: isAdmin, note: 'Admin-only.' },
     { code: 'G1', label: 'Guardian Demo', href: '/system/guardian', available: true },
     { code: 'A1', label: 'Autonomous Demo', href: '/superdashboard?readOnly=1', available: true },
-    { code: 'B1', label: 'BrandMetric Demo', href: '/superdashboard?readOnly=1', available: true },
+    { code: 'B1', label: 'Founder Metrics Demo', href: '/superdashboard?readOnly=1', available: true },
     { code: 'S1', label: 'Tester Survey', href: '/tester/survey?moduleId=marketing-suite', available: true },
     { code: 'S2', label: 'Buyer Survey', href: '/tester/survey?moduleId=buyer-overview', available: true },
     { code: 'S3', label: 'Customer Survey', href: '/tester/survey?moduleId=customer-overview', available: true },

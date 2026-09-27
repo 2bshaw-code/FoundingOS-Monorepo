@@ -7,7 +7,7 @@ import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../../session'
 import { getTester, upsertTester, getOrCreateAdminTester } from '../../store.server'
-import { MODULE_NARRATOR_STEPS, buildNarratorSteps, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_FACTS, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, categorizeCredential, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, adminTesterId, exploreTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type ModuleId } from '../../tester-data'
+import { SUITE_ROW, MODULE_NARRATOR_STEPS, buildNarratorSteps, NARRATION_PLAYER_SCRIPT, BUSINESS_PLAN_FACTS, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, DEMO_INTRO, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, getFreeRoamHref, categorizeCredential, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, adminTesterId, exploreTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type ModuleId } from '../../tester-data'
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands } from '@foundingos/config'
 import { getQuantumBrandUpliftForDemo } from '@foundingos/config/quantum-brand-uplift'
 import { QuantumSphereLogo } from '@foundingos/ui'
@@ -87,7 +87,6 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
   // real demo content for those — never a "coming later" placeholder.
   const directModuleHref =
     moduleId === 'finance' ? '/finance'
-    : moduleId === 'crypto' ? '/crypto'
     : moduleId === 'marketing-suite' ? '/modules/marketing'
     : moduleId === 'accounting' ? '/modules/accounting'
     : moduleId === 'customer-service' ? '/modules/customer-service'
@@ -308,10 +307,10 @@ export default async function TesterDemoPage({ params }: { params: Promise<{ mod
         <p>{BRAND_ROW_NARRATOR_LINE}</p>
       </div>
       <div className="quantum-brand-row">
-        {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat', 'finance', 'health', 'logistics'] as const).map((slug) => (
-          <a key={slug} href={brands[slug].webUrl} className={`quantum-brand-card brand-${slug}`}>
+        {SUITE_ROW.map((suite) => (
+          <a key={suite.name} href={suite.href} className="quantum-brand-card" style={{ ['--brand-glow' as string]: suite.accent }}>
             <span className="quantum-brand-card-dot" />
-            {brands[slug].name}
+            {suite.name}
           </a>
         ))}
       </div>

@@ -15,7 +15,7 @@ import { moduleSamples } from './sample-data'
 export { moduleSamples }
 
 export type WorkspaceLayout = 'till' | 'queue' | 'ledger' | 'stock' | 'feed'
-export type LayoutRecord = { id: string; name: string; secondary: string; value: string; status: string; owner: string; updated: string; dueDate?: string; quantity?: number; reorderPoint?: number }
+export type LayoutRecord = { id: string; name: string; secondary: string; value: string; status: string; owner: string; updated: string; dueDate?: string; quantity?: number; reorderPoint?: number; imageUrl?: string }
 
 const layouts: Record<string, WorkspaceLayout> = {
   'retail/point-of-sale': 'till',
@@ -138,7 +138,7 @@ function QueueView({ moduleId, fields, records, statuses, selectedId, onSelect, 
         const step = nextStep(moduleId, record.status, statuses)
         const late = isOverdue(record, statuses)
         return <article className={`mw-queue-row${selectedId === record.id ? ' selected' : ''}${late ? ' late' : ''}`} key={record.id} onClick={() => onSelect(record.id)}>
-          <div className="mw-queue-main"><strong>{record.name}</strong><span>{record.secondary}</span></div>
+          <div className="mw-queue-main">{record.imageUrl ? <img alt="" className="mw-product-photo" src={record.imageUrl} /> : null}<strong>{record.name}</strong><span>{record.secondary}</span></div>
           <div className="mw-queue-meta"><small>{fields.value}</small><b>{record.value}</b></div>
           <div className="mw-queue-meta"><small>{fields.owner}</small><span className="mw-avatar-line"><i>{initials(record.owner)}</i>{record.owner}</span></div>
           <div className="mw-queue-meta"><small>{record.dueDate ? 'Due' : 'Updated'}</small><span className={late ? 'mw-late' : ''}>{record.dueDate ? dueLabel(record.dueDate) : record.updated}</span></div>
@@ -168,7 +168,7 @@ function LedgerView({ moduleId, fields, records, statuses, selectedId, onSelect,
           const step = nextStep(moduleId, record.status, statuses)
           const late = isOverdue(record, statuses)
           return <tr className={selectedId === record.id ? 'selected' : ''} key={record.id} onClick={() => onSelect(record.id)}>
-            <td><strong>{record.name}</strong></td>
+            <td>{record.imageUrl ? <img alt="" className="mw-product-photo" src={record.imageUrl} /> : null}<strong>{record.name}</strong></td>
             <td className="muted">{record.secondary}</td>
             <td className={late ? 'mw-late' : ''}>{record.status === statuses.at(-1) ? plainDate(record.dueDate) : dueLabel(record.dueDate)}</td>
             <td className="num"><strong>{record.value}</strong></td>
@@ -274,7 +274,7 @@ function TillView({ records, catalogue, onSell, busy, statuses, selectedId, onSe
       <header className="mw-card-head"><strong>Products</strong><small>Tap to add to the basket</small></header>
       <div className="mw-tiles">
         {items.map((product) => <button className="mw-tile" key={product.id} onClick={() => { add(product.id, 1); setDone('') }} type="button">
-          <i>{initials(product.name)}</i><strong>{product.name}</strong><span>{product.value}</span>{basket[product.id] ? <b>{basket[product.id]}</b> : null}
+          {product.imageUrl ? <img alt="" className="mw-product-photo" src={product.imageUrl} /> : <i>{initials(product.name)}</i>}<strong>{product.name}</strong><span>{product.value}</span>{basket[product.id] ? <b>{basket[product.id]}</b> : null}
         </button>)}
         {items.length === 0 ? <p className="mw-empty">Add products with prices in Products to sell them here.</p> : null}
       </div>

@@ -4,7 +4,7 @@
 */
 import { router } from 'expo-router'
 import { useEffect, useMemo, useState } from 'react'
-import { Pressable, View, StyleSheet } from 'react-native'
+import { Linking, Pressable, View, StyleSheet } from 'react-native'
 import { FOUNDINGOS_ACCENT } from '../../../lib/brands'
 import { getSession } from '../../../lib/core-operations-api'
 import { SUITE_LINKS } from '../../../lib/nav-directory'
@@ -13,6 +13,7 @@ import { useQuantumStore } from '../../../lib/store'
 import { logAction } from '../../../lib/action-logger'
 import { signOut, useIsFounder, useWorkspaceAccess, WORKSPACE_OFFERS } from '../../../lib/workspace-access'
 import type { WorkspaceSlug } from '../../../lib/workspace-modules'
+import { ProductRatingCard } from '../../../components/ProductRatingCard'
 import { QuantumButton, QuantumCard, QuantumHeader, QuantumNotice, QuantumScreen, QuantumSectionHeader, QuantumText, quantumSpace } from '../../../components/QuantumUI'
 
 // Every destination in the app — the suites, their dedicated dashboards, and the
@@ -108,8 +109,18 @@ export default function WorkspaceDirectoryScreen() {
       ) : null}
 
       {isFounder ? <QuantumButton onPress={() => router.push('/(app)/superdash' as never)}>Open SuperDash</QuantumButton> : null}
+      <ProductRatingCard />
       <QuantumButton tone="ghost" onPress={() => router.push('/(app)/upgrade' as never)}>Manage your plan</QuantumButton>
       <QuantumButton tone="danger" onPress={() => { void signOut() }}>Sign out</QuantumButton>
+      <View style={styles.legal}>
+        <Pressable accessibilityRole="link" onPress={() => { Linking.openURL('https://www.foundingos.com/privacy').catch(() => undefined) }}>
+          <QuantumText variant="caption" style={styles.legalLink}>Privacy &amp; cookies</QuantumText>
+        </Pressable>
+        <Pressable accessibilityRole="link" onPress={() => { Linking.openURL('https://www.foundingos.com/privacy#your-rights').catch(() => undefined) }}>
+          <QuantumText variant="caption" style={styles.legalLink}>Your data rights</QuantumText>
+        </Pressable>
+      </View>
+      <QuantumText align="center" variant="caption">© {new Date().getFullYear()} FoundingOS. All rights reserved.</QuantumText>
     </QuantumScreen>
   )
 }
@@ -119,4 +130,6 @@ const styles = StyleSheet.create({
   suiteCard: { minWidth: 170, flexGrow: 1 },
   workspaceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
   workspaceCard: { minWidth: 150, flexGrow: 1 },
+  legal: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.md, justifyContent: 'center' },
+  legalLink: { textDecorationLine: 'underline' },
 })

@@ -12,7 +12,7 @@ function apiRoot() {
   return /\/api\/v1$/.test(configured) ? configured : `${configured}/api/v1`
 }
 
-async function syncEntitlements(body: { tenantId: string; plan?: string; workspaces: string[]; active: boolean }) {
+async function syncEntitlements(body: { tenantId: string; plan?: string; workspaces: string[]; active: boolean; eventCreated: number; subscriptionStatus?: string }) {
   const root = apiRoot()
   const token = process.env.PLATFORM_BOOTSTRAP_TOKEN?.trim()
   if (!root || !token) return false
@@ -36,6 +36,8 @@ export async function POST(request: Request) {
         plan: subscription.metadata?.plan,
         workspaces: (subscription.metadata?.workspaces || '').split(',').filter(Boolean),
         active: event.type !== 'customer.subscription.deleted' && ['active', 'trialing'].includes(String(subscription.status)),
+        eventCreated: event.created,
+        subscriptionStatus: subscription.status,
       })
       // A non-2xx makes Stripe retry, so entitlements never silently drift from billing.
       if (!synced) return NextResponse.json({ message: 'Entitlement sync failed' }, { status: 502 })

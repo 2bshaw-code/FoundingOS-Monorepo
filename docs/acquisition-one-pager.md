@@ -47,27 +47,61 @@ One brand, one console shell, one shared auth/config/db backbone, one
 Postgres database with suite-prefixed tables and tenant-scoped rows. Full
 diagram: [architecture.md](./architecture.md).
 
+## What the product does today
+
+- **Web app and iOS/Android app** on one tenant-isolated PostgreSQL backbone — the
+  same records on every device.
+- **Core.Operations** — Retail & Logistics (pipeline, CRM, quotes, orders, POS,
+  returns, inventory with shared product photos, deliveries and drivers), Commerce Pro
+  (invoices, aged debt, purchasing, cashflow) and Marketing (campaigns, social
+  publishing).
+- **Core.Workforce** — Talent (jobs, candidates, interviews, offers, placements) and HR
+  (onboarding, rotas, timesheets, holiday, right-to-work).
+- **Core.Intelligence** — signals, forecasts, anomalies and reports on first-party data.
+- **FoundAI and Autopilot** — AI answers and proposed actions in the app and on
+  WhatsApp, with human approval, an audit trail and reversal. No autonomous money
+  movement.
+- **SuperDash** — founder view of subscriptions, estimated MRR/ARR, upgrade requests,
+  platform health, finance ledger, marketing and private customer ratings.
+- **Billing** — Stripe Checkout and signed webhooks; paid workspaces switch on only for
+  active or trialling subscriptions and fall back to free Lite otherwise.
+- **Privacy** — published privacy and cookie notice; only necessary and preference
+  storage; no advertising trackers or third-party scraping.
+
+- **Health** — patients, appointments, records, referrals, care plans and compliance
+  for clinics, care providers and pharmacies (£19 base workspace).
+
 ## Commercial model
 
-Suites are licensed independently or bundled (15% off for 2, 25% off for
-all 3 — "FoundingOS Complete"). See [pricing.md](./pricing.md) and
-[feature-flags.md](./feature-flags.md) for how licensing maps to product
-access.
+Subscription SaaS priced per workspace: free **Lite**; **Core** from £19 per base
+workspace (Retail & Logistics, Talent, HR, Health) with bolt-ons (+£25 Commerce Pro, +£35
+Core.Intelligence); **Complete** £89 for everything; **Enterprise** custom; £5 per extra
+user. See [pricing.md](./pricing.md) and [feature-flags.md](./feature-flags.md).
 
-## Current state vs. target state
+## Consolidation status
 
-| Area | Current | Target |
+| Area | Before | Now |
 | --- | --- | --- |
-| Brands | 9 active brand trees in repo | 1 brand, 3 suites |
-| Databases/schemas | Per-brand schemas | 1 schema, prefixed tables |
-| Consoles | Per-brand console + starter console (18+ apps) | 1 console shell, 3 modules |
-| Pricing pages | Per-brand | 1 pricing page, 3 suites, 2 bundles |
+| Brands | 9 brand products | 1 brand (FoundingOS), 3 suites |
+| Customer apps | Per-brand sites and consoles | 1 web app, 1 mobile app, 1 founder SuperDash |
+| Pricing | Per-brand | 1 pricing page, modular workspaces |
+| Data | Per-brand schemas | 1 shared, tenant-scoped backend for web and mobile |
 
-This pass (see [restructure-summary.md](./restructure-summary.md)) locked
-positioning, defined the shared backbone/schema/architecture, documented
-deprecations and the API/integration review, and wired the suite/feature-
-flag registry in code. Physical directory removal and full schema
-migration are the next execution phase.
+Remaining clean-up (legacy console directories and table renames) is tracked in
+[restructure-summary.md](./restructure-summary.md) and
+[migration-map.md](./migration-map.md).
+
+## Traction and valuation evidence
+
+The product is built; valuation depends on traction the founder supplies from SuperDash
+and Stripe. This document does not state or estimate these figures.
+
+- Paying customers and MRR/ARR
+- Monthly retention and churn
+- Weekly active companies and Lite-to-paid upgrade rate
+- Customer ratings and case studies
+- Acquisition cost and payback
+- Team, runway and 12-month plan
 
 ## Why this matters for a buyer
 

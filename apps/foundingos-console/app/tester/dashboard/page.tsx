@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../session'
 import { getTester } from '../store.server'
-import { categorizeCredential, getFreeRoamHref, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, NARRATION_PLAYER_SCRIPT, BRAND_ROW_NARRATOR_LINE } from '../tester-data'
+import { SUITE_ROW, categorizeCredential, getFreeRoamHref, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, NARRATION_PLAYER_SCRIPT, BRAND_ROW_NARRATOR_LINE } from '../tester-data'
 import { buildQuantumDemoCtaLabel } from '@foundingos/config/quantum-defined-engine'
 import { GLOBAL_ACCESSIBILITY_SCRIPT, brands } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
@@ -163,10 +163,10 @@ export default async function TesterDashboardPage() {
         <p>{BRAND_ROW_NARRATOR_LINE}</p>
       </div>
       <div className="quantum-brand-row">
-        {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat', 'finance', 'health', 'logistics'] as const).map((slug) => (
-          <a key={slug} href={brands[slug].webUrl} className="quantum-brand-card" style={{ ['--brand-glow' as string]: brands[slug].accent }}>
+        {SUITE_ROW.map((suite) => (
+          <a key={suite.name} href={suite.href} className="quantum-brand-card" style={{ ['--brand-glow' as string]: suite.accent }}>
             <span className="quantum-brand-card-dot" />
-            {brands[slug].name}
+            {suite.name}
           </a>
         ))}
       </div>

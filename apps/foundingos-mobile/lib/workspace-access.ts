@@ -18,7 +18,7 @@ export const WORKSPACE_OFFERS: Record<WorkspaceSlug, { offer: string; price: str
   hr: { offer: 'HR workspace', price: '£19/mo', pitch: 'Employees, contracts, rotas, timesheets, holiday, sickness and payroll inputs. Same price as Retail — combine with Talent any time.' },
   intelligence: { offer: 'Core.Intelligence bolt-on', price: '+£35/mo', pitch: 'Signals, forecasts, anomalies and AI recommendations.' },
   logistics: { offer: 'Included with Retail & Logistics', price: '£19/mo', pitch: 'Dispatch, routes, drivers, fleet and live tracking.' },
-  health: { offer: 'Health add-on', price: 'Ask us', pitch: 'Appointments, patients, care plans and compliance.' },
+  health: { offer: 'Health workspace', price: '£19/mo', pitch: 'Patients, appointments, care plans and compliance. Same price as Retail — combine with any workspace.' },
 }
 
 let cached: Set<WorkspaceSlug> | null = null

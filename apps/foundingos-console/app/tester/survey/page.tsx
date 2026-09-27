@@ -6,7 +6,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../session'
 import { getTester, getOrCreateAdminTester } from '../store.server'
-import { SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, DEMO_COMPLETE_CELEBRATION_LINE, SURVEY_COMPLETE_NARRATOR_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, SURVEY_MISSION_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, SIGNATURE_MOMENT_LINE, FREE_ROAM_FIRST_STEP_LINE, SECTION_NARRATOR_LINES, PACING_REASSURANCE_LINES, ACCESSIBILITY_REMINDER_LINES, TARGET_JOKES, MICRO_BREAK_LINES, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, NARRATION_PLAYER_SCRIPT, getFreeRoamHref, BRAND_ROW_NARRATOR_LINE, adminTesterId, exploreTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type CredentialCategory, type SurveyId } from '../tester-data'
+import { SUITE_ROW, SURVEYS, categorizeCredential, SURVEY_INTRO, NARRATOR_SURVEY_LINE, DEMO_COMPLETE_CELEBRATION_LINE, SURVEY_COMPLETE_NARRATOR_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, SURVEY_MISSION_NARRATOR_LINE, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, SIGNATURE_MOMENT_LINE, FREE_ROAM_FIRST_STEP_LINE, SECTION_NARRATOR_LINES, PACING_REASSURANCE_LINES, ACCESSIBILITY_REMINDER_LINES, TARGET_JOKES, MICRO_BREAK_LINES, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, NARRATION_PLAYER_SCRIPT, getFreeRoamHref, BRAND_ROW_NARRATOR_LINE, adminTesterId, exploreTesterId, findModuleOption, SUPER_FOUNDER_ADMIN_EMAIL, type CredentialCategory, type SurveyId } from '../tester-data'
 import { brands } from '@foundingos/config'
 import { getQuantumBrandUpliftForDemo } from '@foundingos/config/quantum-brand-uplift'
 import { QuantumSphereLogo } from '@foundingos/ui'
@@ -15,18 +15,18 @@ import { SurveyEngine } from './SurveyEngine'
 
 // Real, working "preview while you answer" links for the ecosystem-validation section
 // (every module survey's tail end — see SURVEYS in tester-data.ts) — a question about
-// "Retail console" or "Meat website" now links straight to that real, live page, so a
+// "Retail console" or "Talent website" now links straight to that real, live page, so a
 // tester never has to answer from memory or go hunting for the right tab themselves.
 // Deliberately conservative: a target only gets a link when it maps cleanly to a real,
 // resolvable brand + page; ambiguous ones (e.g. "WhatsApp OS landing pages") are simply
 // left without one rather than guessing.
 const TARGET_BRAND_SLUGS: Record<string, keyof typeof brands> = {
-  retail: 'retail', meat: 'meat', logistics: 'logistics', talent: 'talent', crypto: 'crypto',
-  finance: 'finance', health: 'health', foundthat: 'foundthat', foundingos: 'foundingos',
+  retail: 'retail', logistics: 'logistics', talent: 'talent',
+  finance: 'finance', health: 'health', foundingos: 'foundingos',
 }
 function resolveTargetPreviewUrl(target: string): string | null {
   const lower = target.toLowerCase()
-  const brandKey = Object.keys(TARGET_BRAND_SLUGS).find((key) => lower.startsWith(key) || lower.includes(`(${key})`) || (key === 'foundthat' && lower.includes('marketplace')))
+  const brandKey = Object.keys(TARGET_BRAND_SLUGS).find((key) => lower.startsWith(key) || lower.includes(`(${key})`))
   if (!brandKey) {
     if (lower.includes('superdash') || lower.includes('guardian') || lower.includes('autonomous') || lower.includes('brandmetric')) {
       return `${brands.foundingos.consoleUrl}/superdashboard?readOnly=1`
@@ -212,10 +212,10 @@ export default async function TesterSurveyPage({ searchParams }: { searchParams:
         <p>{BRAND_ROW_NARRATOR_LINE}</p>
       </div>
       <div className="quantum-brand-row">
-        {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat', 'finance', 'health', 'logistics'] as const).map((slug) => (
-          <a key={slug} href={brands[slug].webUrl} className={`quantum-brand-card brand-${slug}`}>
+        {SUITE_ROW.map((suite) => (
+          <a key={suite.name} href={suite.href} className="quantum-brand-card" style={{ ['--brand-glow' as string]: suite.accent }}>
             <span className="quantum-brand-card-dot" />
-            {brands[slug].name}
+            {suite.name}
           </a>
         ))}
       </div>

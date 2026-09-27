@@ -6,7 +6,7 @@ import { WorkspaceGate } from '../../../components/WorkspaceAccess'
 import { ProCoach } from '../../../components/ProCoach'
 import { MonthCalendar, dayKey } from '../../../components/MonthCalendar'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import { useLocalSearchParams } from 'expo-router'
 import { QuantumBackButton } from '../../../components/QuantumBackButton'
@@ -29,6 +29,7 @@ import { dtoToPro, loadDocumentProfile, proKindFor, proReportFor } from '../../.
 import { ProRecordSheet } from '../../../components/pro/ProSheet'
 import { OpsInsightsCard, OpsSheet } from '../../../components/pro/OpsSheet'
 import { opsSchemaFor } from '@foundingos/ui/pro/ops'
+import { linkedProductImage, productImageUrl } from '@foundingos/ui/product-images'
 import { CampaignSummaryCard, FinanceReport, MarketingReport, SalesReport, SalesSummaryCard } from '../../../components/pro/ProReports'
 import { readProfile, type DocumentProfile } from '@foundingos/ui/pro/models'
 import {
@@ -117,12 +118,14 @@ function firstImageUrl(record: WorkspaceRecordDTO): string | null {
 // PATCH /platform/records/:id) — no per-module backend or UI work required.
 function WorkspaceModuleScreenInner() {
   const theme = useActiveQuantumTheme()
+  const { width: screenWidth } = useWindowDimensions()
   const { workspace: workspaceSlug, module: moduleId } = useLocalSearchParams<{ workspace: string; module: string }>()
   const workspace = findWorkspace(String(workspaceSlug || ''))
   const module = findModule(String(workspaceSlug || ''), String(moduleId || ''))
   const statuses = module?.statuses
 
   const [records, setRecords] = useState<WorkspaceRecordDTO[]>([])
+  const [productCatalogue, setProductCatalogue] = useState<WorkspaceRecordDTO[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [loadError, setLoadError] = useState('')
@@ -170,13 +173,18 @@ function WorkspaceModuleScreenInner() {
         // the new module's header while the request is in flight.
         setLoading(true)
         setRecords([])
+        setProductCatalogue([])
       }
       setLoadError('')
       try {
         const sources = CALENDAR_SOURCES[module.id] ?? [module.id]
-        const data = (await Promise.all(sources.map((source) => fetchWorkspaceRecords(workspace.slug, source)))).flat()
+        const [data, products] = await Promise.all([
+          Promise.all(sources.map((source) => fetchWorkspaceRecords(workspace.slug, source))).then((pages) => pages.flat()),
+          workspace.slug === 'retail' && module.id !== 'products' ? fetchWorkspaceRecords('retail', 'products') : Promise.resolve([]),
+        ])
         if (latestRequestKey.current !== requestKey) return
         setRecords(data)
+        setProductCatalogue(module.id === 'products' ? data : products)
       } catch (err) {
         if (latestRequestKey.current !== requestKey) return
         setLoadError(err instanceof CoreOpsApiError ? err.message : 'Could not load this module. Pull to refresh to try again.')
@@ -305,6 +313,7 @@ function WorkspaceModuleScreenInner() {
     try {
       const { record: updated } = await uploadWorkspaceRecordImage(record.id, asset.uri, asset.mimeType || 'image/jpeg')
       setRecords((current) => current.map((item) => (item.id === record.id ? updated : item)))
+      if (module?.id === 'products') setProductCatalogue((current) => current.map((item) => item.id === record.id ? updated : item))
     } catch (err) {
       showError(err, () => addPhoto(record, source))
     } finally {
@@ -325,7 +334,12 @@ function WorkspaceModuleScreenInner() {
   function renderRecordCard(record: WorkspaceRecordDTO) {
     const next = nextStatus(record.status)
     const busy = busyId === record.id
-    const photoUrl = firstImageUrl(record)
+    const sharedPhoto = module!.id === 'products'
+      ? productImageUrl({ id: record.reference, backendId: record.id, reference: record.reference, data: record.data })
+      : workspace!.slug === 'retail'
+        ? linkedProductImage({ id: record.reference, backendId: record.id, reference: record.reference, data: record.data }, productCatalogue.map((item) => ({ id: item.reference, backendId: item.id, reference: item.reference, data: item.data })))
+        : null
+    const photoUrl = sharedPhoto ?? firstImageUrl(record)
     const photoBusy = photoBusyId === record.id
     const openable = Boolean(proKind || opsSchema) && !record.id.startsWith('temp-')
     return (
@@ -354,19 +368,19 @@ function WorkspaceModuleScreenInner() {
                 </QuantumText>
               )}
             </Pressable>
-          ) : null}
-          <View style={{ flex: 1 }}>
+          ) : photoUrl ? <Image source={{ uri: photoUrl }} style={styles.thumbnailImage} /> : null}
+          <View style={styles.recordTitle}>
             <QuantumText variant="h3">{record.name}</QuantumText>
             <QuantumText variant="caption" color={theme.subtextColor}>
               {record.status} · {record.reference}
             </QuantumText>
           </View>
-          {record.valuePence !== null ? (
-            <QuantumText variant="h3" color={workspace!.accent}>
-              {formatValue(record.valuePence)}
-            </QuantumText>
-          ) : null}
         </View>
+        {record.valuePence !== null ? (
+          <QuantumText variant="h3" color={workspace!.accent}>
+            {formatValue(record.valuePence)}
+          </QuantumText>
+        ) : null}
         {openable ? (
           <QuantumText variant="caption" color={workspace!.accent}>
             {opsSchema ? `Open ${opsSchema.title.toLowerCase()} tools ›` : proKind === 'deal' ? 'Open deal · quote · won/lost ›' : proKind === 'campaign' ? 'Open results & ROI ›' : 'Open · lines, VAT, payments ›'}
@@ -498,7 +512,7 @@ function WorkspaceModuleScreenInner() {
           {statuses.map((status) => {
             const columnRecords = records.filter((record) => record.status === status)
             return (
-              <View key={status} style={styles.kanbanColumn}>
+              <View key={status} style={[styles.kanbanColumn, { width: Math.min(screenWidth - 2 * quantumSpace.lg, 320) }]}>
                 <QuantumText variant="overline" color={workspace!.accent}>
                   {status} ({columnRecords.length})
                 </QuantumText>
@@ -574,7 +588,7 @@ function WorkspaceModuleScreenInner() {
       ) : null}
 
       <View style={[styles.demoBar, demo ? styles.demoBarOn : null]}>
-        <View style={{ flex: 1, gap: 2 }}>
+        <View style={styles.demoCopy}>
           <QuantumText variant="label" color={demo ? quantumColors.warning : undefined}>{demo ? 'Demo data on' : 'See it in action'}</QuantumText>
           <QuantumText variant="caption" color={quantumColors.neutral300}>{demo ? 'Made-up example records. Changes stay on this phone and never touch your real account.' : `Fill ${module?.label ?? 'this module'} with realistic example records to explore every tool.`}</QuantumText>
         </View>
@@ -614,12 +628,12 @@ function WorkspaceModuleScreenInner() {
 
 const styles = StyleSheet.create({
   screen: { gap: quantumSpace.lg },
-  kpiRow: { flexDirection: 'row', gap: quantumSpace.sm },
-  kpiCard: { flex: 1 },
+  kpiRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
+  kpiCard: { flexGrow: 1, flexBasis: 120, minWidth: 0 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
   kanbanScroll: { gap: quantumSpace.md, paddingBottom: quantumSpace.sm },
-  kanbanColumn: { width: 220, gap: quantumSpace.sm },
+  kanbanColumn: { gap: quantumSpace.sm },
   thumbnail: {
     width: 56,
     height: 56,
@@ -632,11 +646,13 @@ const styles = StyleSheet.create({
   thumbnailImage: { width: '100%', height: '100%' },
   list: { gap: quantumSpace.md },
   emptyState: { gap: quantumSpace.sm },
-  demoBar: { flexDirection: 'row', alignItems: 'center', gap: quantumSpace.sm, padding: quantumSpace.sm, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(148,163,184,0.45)' },
+  demoBar: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: quantumSpace.sm, padding: quantumSpace.sm, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(148,163,184,0.45)' },
+  demoCopy: { flexGrow: 1, flexBasis: 160, minWidth: 0, gap: 2 },
   demoBarOn: { borderStyle: 'solid', borderColor: quantumColors.warning, backgroundColor: 'rgba(245,158,11,0.08)' },
   emptyExampleBox: { gap: 2, paddingVertical: quantumSpace.xs },
   recordCard: { gap: quantumSpace.sm },
   recordHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', gap: quantumSpace.md },
+  recordTitle: { flex: 1, minWidth: 0 },
 })
 
 export default function WorkspaceModuleScreen() {

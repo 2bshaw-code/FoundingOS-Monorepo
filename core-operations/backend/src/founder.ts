@@ -6,13 +6,15 @@
 // subscriptions and revenue, upgrade requests, platform health, and growth.
 import { prisma } from './auth.js'
 import { createWorkspaceRecord, workspaceSlugs } from './platform.js'
+import { isStaleBillingEvent } from './billing-events.js'
+import { normalizeProductRating, summarizeProductRatings } from './product-feedback.js'
 
 const PLAN_PRICE: Record<string, number> = { lite: 0, starter: 19, growth: 89, enterprise: 0 }
 const PLAN_NAME: Record<string, string> = { lite: 'Lite', starter: 'Core', growth: 'Complete', enterprise: 'Enterprise' }
-// Core is priced per base workspace (Retail & Logistics, Talent, HR at £19 each) plus bolt-ons
+// Core is priced per base workspace (Retail & Logistics, Talent, HR, Health at £19 each) plus bolt-ons
 // (mirrors packages/config/src/commercial.ts).
-const BASE_PRICE: Record<string, number> = { retail: 19, talent: 19, hr: 19 }
-const BOLT_ON_PRICE: Record<string, number> = { finance: 25, talent: 19, hr: 19, intelligence: 35 }
+const BASE_PRICE: Record<string, number> = { retail: 19, talent: 19, hr: 19, health: 19 }
+const BOLT_ON_PRICE: Record<string, number> = { finance: 25, talent: 19, hr: 19, health: 19, intelligence: 35 }
 const CORE_EXTRAS: Record<string, number> = { finance: 25, intelligence: 35 }
 const DAY = 24 * 60 * 60 * 1000
 
@@ -23,13 +25,14 @@ const monthlyValue = (plan: string, enabled: string[]) => plan === 'starter'
 export async function founderOverview(founderTenantId?: string | null) {
   const now = Date.now()
   const dbStart = Date.now()
-  const [workspaces, onboardings, owners, recentAudit, integrations, upgradeRequests] = await Promise.all([
+  const [workspaces, onboardings, owners, recentAudit, integrations, upgradeRequests, ratingRows] = await Promise.all([
     prisma.tenantWorkspace.findMany({ select: { tenantId: true, workspace: true, enabled: true, plan: true } }),
     prisma.tenantOnboarding.findMany({ select: { tenantId: true, businessName: true, ownerName: true, industry: true, goLiveStatus: true, createdAt: true } }),
     prisma.authUser.findMany({ where: { tenantId: { not: null } }, select: { tenantId: true, email: true, role: true, active: true, createdAt: true } }),
     prisma.workspaceAuditEvent.findMany({ where: { createdAt: { gte: new Date(now - 30 * DAY) } }, select: { tenantId: true, action: true, createdAt: true } }),
     prisma.integrationCredential.findMany({ select: { tenantId: true, provider: true, status: true } }),
     prisma.workspaceAuditEvent.findMany({ where: { action: 'plan.upgrade_requested' }, orderBy: { createdAt: 'desc' }, take: 25, select: { id: true, tenantId: true, metadata: true, createdAt: true } }),
+    prisma.workspaceAuditEvent.findMany({ where: { action: 'product.rated', createdAt: { gte: new Date(now - 90 * DAY) } }, orderBy: { createdAt: 'desc' }, take: 500, select: { id: true, tenantId: true, metadata: true, createdAt: true } }),
   ])
   const dbLatencyMs = Date.now() - dbStart
 
@@ -127,6 +130,7 @@ export async function founderOverview(founderTenantId?: string | null) {
       const pending = (metadata.workspaces || []).filter((workspace) => !tenant?.workspaces.includes(workspace))
       return { id: row.id, tenantId: row.tenantId, business: tenant?.businessName || row.tenantId, ownerEmail: tenant?.ownerEmail || '', requested: metadata.workspaces || [], pending, note: metadata.note || '', createdAt: row.createdAt.toISOString() }
     }),
+    ratings: summarizeProductRatings(ratingRows.filter((row) => row.tenantId !== founderTenantId && !internal.has(row.tenantId)), tenantNames),
     tenants: tenants.slice(0, 100),
   }
 }
@@ -159,6 +163,12 @@ export async function applyBillingEntitlements(input: Record<string, unknown>) {
   if (!tenantId) throw Object.assign(new Error('tenantId required'), { status: 400 })
   const existing = await prisma.tenantWorkspace.findMany({ where: { tenantId } })
   if (!existing.length) throw Object.assign(new Error('Company not found.'), { status: 404 })
+  const eventCreated = typeof input.eventCreated === 'number' && Number.isFinite(input.eventCreated) ? input.eventCreated : undefined
+  const latest = await prisma.workspaceAuditEvent.findFirst({ where: { tenantId, action: 'plan.billing_synced' }, orderBy: { createdAt: 'desc' }, select: { metadata: true } })
+  const latestEventCreated = latest?.metadata && typeof latest.metadata === 'object' && !Array.isArray(latest.metadata) ? (latest.metadata as Record<string, unknown>).eventCreated : undefined
+  if (isStaleBillingEvent(eventCreated, latestEventCreated)) {
+    return { tenantId, skipped: true, reason: 'stale_event', workspaces: existing.filter((workspace) => workspace.enabled).map((workspace) => workspace.workspace) }
+  }
   const active = input.active === true
   const plan = active && typeof input.plan === 'string' && PLAN_NAME[input.plan] ? input.plan : 'lite'
   const paid = (Array.isArray(input.workspaces) ? input.workspaces : []).map(String).filter((workspace) => (workspaceSlugs as readonly string[]).includes(workspace))
@@ -169,7 +179,7 @@ export async function applyBillingEntitlements(input: Record<string, unknown>) {
       create: { tenantId, workspace, enabled: enabled.has(workspace), plan, modules: [] },
       update: { enabled: enabled.has(workspace), plan },
     })),
-    prisma.workspaceAuditEvent.create({ data: { tenantId, actorId: 'billing', action: 'plan.billing_synced', metadata: { plan, active, workspaces: [...enabled] } } }),
+    prisma.workspaceAuditEvent.create({ data: { tenantId, actorId: 'billing', action: 'plan.billing_synced', metadata: { plan, active, workspaces: [...enabled], ...(eventCreated === undefined ? {} : { eventCreated }), ...(typeof input.subscriptionStatus === 'string' ? { subscriptionStatus: input.subscriptionStatus.slice(0, 40) } : {}) } } }),
   ])
   return { tenantId, plan, workspaces: [...enabled] }
 }
@@ -330,4 +340,13 @@ export async function founderUpdatePost(founderTenantId: string | null | undefin
   if ('dueDate' in input) { const due = input.dueDate ? new Date(String(input.dueDate)) : null; data.dueDate = due && !Number.isNaN(due.getTime()) ? due.toISOString() : null }
   const status = ['Draft', 'Approved', 'Published'].includes(String(input.status)) ? String(input.status) : existing.status
   return prisma.workspaceRecord.update({ where: { id }, data: { status, data: data as object, version: { increment: 1 } } })
+}
+
+// Private 1–5 star product rating from a signed-in customer; only the founder sees these.
+export async function saveProductRating(tenantId: string, userId: string, input: Record<string, unknown>, requestId?: string) {
+  const rating = normalizeProductRating(input)
+  const recent = await prisma.workspaceAuditEvent.count({ where: { tenantId, actorId: userId, action: 'product.rated', createdAt: { gte: new Date(Date.now() - DAY) } } })
+  if (recent >= 5) throw Object.assign(new Error('Thanks — you have already sent several ratings today.'), { status: 429 })
+  const event = await prisma.workspaceAuditEvent.create({ data: { tenantId, actorId: userId, action: 'product.rated', requestId, metadata: rating } })
+  return { id: event.id, ...rating, createdAt: event.createdAt.toISOString() }
 }

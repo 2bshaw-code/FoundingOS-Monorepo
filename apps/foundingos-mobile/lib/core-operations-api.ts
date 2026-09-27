@@ -877,6 +877,12 @@ export const requestWorkspaceUpgrade = (workspaces: string[], note?: string) =>
     body: JSON.stringify({ workspaces, note }),
   })
 
+export const sendProductRating = (input: { score: number; comment?: string; surface: 'ios' | 'android' | 'mobile'; page?: string }) =>
+  authedRequest<{ id: string; score: number }>('/api/v1/ops/platform/feedback/rating', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+
 // ── Founder SuperDash (founder account only) ────────────────────────────────
 export type FounderOverview = {
   generatedAt: string
@@ -884,6 +890,7 @@ export type FounderOverview = {
   finance: { mrrGbp: number; arrGbp: number; arpuGbp: number; boltOns: Array<{ workspace: string; customers: number; mrrGbp: number }>; billingLive: boolean; note: string }
   monitoring: { apiOk: boolean; dbLatencyMs: number; aiConfigured: boolean; emailConfigured: boolean; upgradeEmailsConfigured: boolean; lastAutopilotRunAt: string | null; aiRequests24h: number; autopilotActions24h: number; recordsCreated24h: number; integrationsConnected: number; integrationsFailing: Array<{ business: string; provider: string; status: string }> }
   upgradeRequests: Array<{ id: string; tenantId: string; business: string; ownerEmail: string; requested: string[]; pending: string[]; note: string; createdAt: string }>
+  ratings?: { count: number; average: number | null; distribution: Array<{ score: number; count: number }>; recent: Array<{ id: string; tenantId: string; business: string; score: number; surface: string; page: string; comment: string; createdAt: string }> }
   tenants: Array<{ tenantId: string; businessName: string; ownerName: string; ownerEmail: string; plan: string; planName: string; workspaces: string[]; seats: number; monthlyValueGbp: number; status: string; createdAt: string; lastActiveAt: string | null }>
 }
 

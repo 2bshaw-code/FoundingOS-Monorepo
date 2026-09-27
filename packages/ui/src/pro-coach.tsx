@@ -4,11 +4,16 @@
 */
 'use client'
 
-import { useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { coachQuestion, moduleHealth, playbookFor, workspaceExperts, type ExperienceMode, type HealthCheck, type HealthRecord } from '@foundingos/config/pro-playbooks'
 
 const MODE_KEY = 'foundingos-experience-mode'
 const MODE_EVENT = 'foundingos-experience-mode'
+const ExperienceOverride = createContext<ExperienceMode | null>(null)
+
+export function ProExperience({ children }: { children: ReactNode }) {
+  return <ExperienceOverride.Provider value="pro">{children}</ExperienceOverride.Provider>
+}
 
 export function readExperienceMode(): ExperienceMode {
   try { return window.localStorage.getItem(MODE_KEY) === 'pro' ? 'pro' : 'guided' } catch { return 'guided' }
@@ -35,18 +40,10 @@ export function useDemoData(): [boolean, (on: boolean) => void] {
   return [on, set]
 }
 
-// Applies a surface's preferred mode unless the person has already chosen one (SuperDash defaults to Pro).
-export function defaultExperienceMode(mode: ExperienceMode) {
-  try {
-    if (window.localStorage.getItem(MODE_KEY)) return
-    window.localStorage.setItem(MODE_KEY, mode)
-    window.dispatchEvent(new Event(MODE_EVENT))
-  } catch { /* private mode */ }
-}
-
 // Guided (default) coaches people who are new to the job; Pro strips the coaching back for
 // people who already know it and adds keyboard shortcuts and a denser layout.
 export function useExperienceMode(): [ExperienceMode, (mode: ExperienceMode) => void] {
+  const override = useContext(ExperienceOverride)
   const [mode, setModeState] = useState<ExperienceMode>('guided')
   useEffect(() => {
     setModeState(readExperienceMode())
@@ -60,7 +57,7 @@ export function useExperienceMode(): [ExperienceMode, (mode: ExperienceMode) => 
     setModeState(next)
     window.dispatchEvent(new Event(MODE_EVENT))
   }
-  return [mode, setMode]
+  return [override ?? mode, setMode]
 }
 
 export function ExperienceToggle() {

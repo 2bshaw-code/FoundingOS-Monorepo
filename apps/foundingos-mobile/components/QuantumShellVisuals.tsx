@@ -93,7 +93,7 @@ export function QuantumShellHeaderTitle({ title, brandName, accent }: { title: s
         {title}
       </QuantumText>
       <QuantumText variant="caption" color={quantumColors.neutral200} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} ellipsizeMode="tail">
-        {brandName} · AI ecosystem · multi-brand SaaS operating layer
+        {brandName} · run your business in one place
       </QuantumText>
     </View>
   )
@@ -117,7 +117,7 @@ export function QuantumShellFooter({ brandName, accent, shellTheme }: { brandNam
             FoundingOS mission control
           </QuantumText>
           <QuantumText variant="caption" color={quantumColors.neutral200}>
-            {brandName} runs inside the AAL, Superdash, Package Model D, and full multi-brand SaaS ecosystem.
+            {brandName} is part of FoundingOS — Operations, Workforce and Intelligence in one place.
           </QuantumText>
         </View>
       </QuantumDepthSurface>

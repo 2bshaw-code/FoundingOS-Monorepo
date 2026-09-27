@@ -6,20 +6,20 @@ import { NextResponse } from 'next/server'
 
 // FoundAI free-mode Q&A: local, deterministic keyword matching only — no external AI APIs,
 // no secrets, no network calls. Self-contained in this file.
+const PRICING = 'Pricing is modular: a free Lite plan, Core from £19 a month per workspace with optional bolt-ons, Complete at £89 a month for every workspace, and Enterprise on request. See the Pricing page.'
+
 const KNOWLEDGE: { keywords: string[]; answer: string }[] = [
-  { keywords: ['founderos', 'foundingos', 'what is'], answer: 'FounderOS is one ecosystem connecting every brand console — retail, meat, talent, crypto, finance, health, and logistics — under a single command layer.' },
-  { keywords: ['sign in', 'login', 'log in'], answer: 'Tap Sign In from the landing page — this is demo mode, so no real account or password is required.' },
-  { keywords: ['survey'], answer: 'The survey is a quick, optional set of questions that helps tailor your FounderOS experience. You can skip any question.' },
-  { keywords: ['onboarding'], answer: 'Onboarding walks you through choosing a SystemOS tier, and optionally QuantumOS or IntelligenceOS add-ons, based on your answers.' },
-  { keywords: ['package', 'tier', 'pricing', 'plan'], answer: 'I can recommend a package tier once I know your team size and which brand consoles you need — try the onboarding flow for a tailored recommendation.' },
-  { keywords: ['quantumos'], answer: 'QuantumOS is the cross-console intelligence add-on: scenario simulations, confidence scoring, and forecasting on top of your SystemOS base.' },
-  { keywords: ['intelligenceos'], answer: 'IntelligenceOS adds sharper analytics and automated context so your team spends less time on manual review.' },
-  { keywords: ['systemos'], answer: 'SystemOS is the foundation tier — workspace setup, access governance, and the core modules every account starts on.' },
-  { keywords: ['billing', 'stripe', 'payment'], answer: 'Billing uses Stripe checkout, but stays dormant in demo mode until real keys are configured — nothing is charged here.' },
-  { keywords: ['demo'], answer: 'You’re in demo mode: no real database, no real payments, no persistent data — everything here is safe to explore.' },
+  { keywords: ['founderos', 'foundingos', 'what is'], answer: 'FoundingOS runs your business from one place: Core.Operations (Retail & Logistics, Health), Core.Workforce (Talent, HR) and Core.Intelligence, with FoundAI and WhatsApp built in.' },
+  { keywords: ['sign in', 'login', 'log in'], answer: 'Tap Sign In at the top of the page and use the email and password for your workspace.' },
+  { keywords: ['survey'], answer: 'The survey is a short, optional set of questions that helps tailor FoundingOS to your business. You can skip any question.' },
+  { keywords: ['onboarding'], answer: 'Onboarding helps you pick a plan and the workspaces your business needs.' },
+  { keywords: ['package', 'tier', 'pricing', 'plan', 'price', 'cost'], answer: PRICING },
+  { keywords: ['whatsapp'], answer: 'Connect WhatsApp Business to handle orders, bookings and customer questions alongside your workspaces.' },
+  { keywords: ['billing', 'stripe', 'payment'], answer: 'Subscriptions are billed securely through Stripe. You can change or cancel your plan from your workspace settings.' },
+  { keywords: ['privacy', 'gdpr', 'cookie', 'data'], answer: 'See the Privacy & cookies page for what we collect, why, and how to exercise your data rights.' },
 ]
 
-const FALLBACK = 'I can help with sign-in, surveys, onboarding, package recommendations, and the FounderOS modules — try asking about one of those.'
+const FALLBACK = 'I can help with sign-in, pricing, workspaces, WhatsApp and privacy — try asking about one of those.'
 
 function answerFor(question: string): string {
   const normalized = question.toLowerCase()

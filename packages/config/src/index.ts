@@ -61,8 +61,8 @@ const RAW_BRANDS: Record<BrandSlug, BrandDefinition> = {
     default: true,
     legalName: 'FoundingOS',
     marketingName: 'FoundingOS',
-    tagline: 'One ecosystem. Every brand connected.',
-    description: 'The core command layer for the multi-brand SaaS ecosystem — govern every brand website, console, and subscription from one place.',
+    tagline: 'Run your whole business in one place.',
+    description: 'One platform for Core.Operations, Core.Workforce and Core.Intelligence — every workspace, team and subscription managed from one place.',
     accent: LOCKED_BRAND_COLORS.foundingos,
     brandColors: { primary: FOUNDINGOS_BASE, accent: LOCKED_BRAND_COLORS.foundingos },
     theme: {
@@ -80,7 +80,7 @@ const RAW_BRANDS: Record<BrandSlug, BrandDefinition> = {
     typography: { heading: 'Inter', body: 'Inter' },
     socialHandle: 'foundingos',
     modules: ['Brand Registry', 'Subscriptions', 'Activity', 'Access Control', 'Quantum', 'CRM', 'Billing', 'Deliveries', 'Advanced Marketing Suite'],
-    summary: 'The core command layer for the multi-brand SaaS ecosystem.',
+    summary: 'One platform for operations, workforce and intelligence.',
   },
   retail: {
     slug: 'retail',

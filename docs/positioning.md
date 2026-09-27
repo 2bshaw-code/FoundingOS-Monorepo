@@ -27,10 +27,11 @@
 - A single multi-tenant platform (**FoundingOS Core**) with three product
   suites, sold modularly or bundled:
   - **Core.Operations** — customers, orders, inventory, billing, delivery,
-    messaging-first commerce workflows (successor to FoundRetail,
-    FoundFinance, FoundHealth, and FoundLogistics).
-  - **Core.Workforce** — applicants, recruiters, jobs, workforce intelligence
-    (successor to FoundTalent).
+    messaging-first commerce workflows. Sold workspaces: Retail & Logistics
+    and Health (successor to FoundRetail, FoundFinance, FoundHealth, and
+    FoundLogistics).
+  - **Core.Workforce** — applicants, recruiters, jobs, workforce intelligence.
+    Sold workspaces: Talent and HR (successor to FoundTalent).
   - **Core.Intelligence** — founder/owner analytics, KPIs, funnels, reporting,
     and decision support built on first-party operational data (successor to
     FoundThat, rebuilt without third-party scraping).

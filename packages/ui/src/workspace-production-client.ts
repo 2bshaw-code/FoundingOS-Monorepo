@@ -304,6 +304,7 @@ export const productionRecords = {
   list: (workspace: string, module: string) => productionRequest<ProductionWorkspaceRecord[]>(`/platform/workspaces/${workspace}/${module}/records`),
   create: (workspace: string, module: string, input: Record<string, unknown>, idempotencyKey = crypto.randomUUID()) => productionRequest<ProductionWorkspaceRecord>(`/platform/workspaces/${workspace}/${module}/records`, { method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, body: JSON.stringify(input) }),
   update: (id: string, input: Record<string, unknown>) => productionRequest<ProductionWorkspaceRecord>(`/platform/records/${id}`, { method: 'PATCH', body: JSON.stringify(input) }),
+  uploadImage: (id: string, file: File) => productionRequest<{ record: ProductionWorkspaceRecord; url: string }>(`/platform/records/${id}/images`, { method: 'POST', headers: { 'Content-Type': file.type }, body: file }),
 }
 
 export const productionAgentActions = {

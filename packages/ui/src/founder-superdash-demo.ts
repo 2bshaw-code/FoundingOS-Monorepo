@@ -42,7 +42,7 @@ export function founderDemoOverview(live: FounderOverview, now = Date.now()): Fo
   const paying = tenants.filter((tenant) => tenant.monthlyValueGbp > 0)
   const mrrGbp = tenants.reduce((sum, tenant) => sum + tenant.monthlyValueGbp, 0)
   const workspaces = ['retail', 'logistics', 'finance', 'marketing', 'talent', 'hr', 'health', 'intelligence']
-  const boltOnPrices: Record<string, number> = { finance: 25, talent: 19, hr: 19, intelligence: 35 }
+  const boltOnPrices: Record<string, number> = { finance: 25, talent: 19, hr: 19, health: 19, intelligence: 35 }
   const signupsByDay = Array.from({ length: 14 }, (_, index) => {
     const date = new Date(today.getTime() - (13 - index) * DAY).toISOString().slice(0, 10)
     return { date, count: tenants.filter((tenant) => tenant.createdAt.slice(0, 10) === date).length }
@@ -86,6 +86,16 @@ export function founderDemoOverview(live: FounderOverview, now = Date.now()): Fo
       note: 'Example request — actions are disabled in preview.',
       createdAt: new Date(now - DAY).toISOString(),
     }],
+    ratings: {
+      count: 3,
+      average: 4.3,
+      distribution: [{ score: 5, count: 2 }, { score: 4, count: 0 }, { score: 3, count: 1 }, { score: 2, count: 0 }, { score: 1, count: 0 }],
+      recent: [
+        { id: 'demo-rating-1', tenantId: tenants[0].tenantId, business: tenants[0].businessName, score: 5, surface: 'web', page: 'retail/orders', comment: 'Example rating — preview data only.', createdAt: new Date(now - 2 * DAY).toISOString() },
+        { id: 'demo-rating-2', tenantId: tenants[1].tenantId, business: tenants[1].businessName, score: 5, surface: 'ios', page: 'talent/pipeline', comment: '', createdAt: new Date(now - 4 * DAY).toISOString() },
+        { id: 'demo-rating-3', tenantId: tenants[2].tenantId, business: tenants[2].businessName, score: 3, surface: 'web', page: 'hr/onboarding', comment: 'Example: would like more report exports.', createdAt: new Date(now - 6 * DAY).toISOString() },
+      ],
+    },
     tenants,
   }
 }

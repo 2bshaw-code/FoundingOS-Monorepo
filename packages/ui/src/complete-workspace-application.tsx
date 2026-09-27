@@ -5,9 +5,10 @@ import { getModuleProfile, type ModuleKpi } from './module-profiles'
 import { AutopilotPanel, AutopilotStrip, useAutopilot, type AutopilotController } from './autopilot'
 import { getWorkspaceLayout, ModuleAiBar, moduleSamples, ModuleWorkspaceView, nextStep, type AiPlan, type LayoutRecord, type LiveAnswer } from './module-workspaces'
 import { useRouter } from 'next/navigation'
-import { Fragment, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react'
 import { CrossSellTicker } from './cross-sell-banner'
-import { ExperienceToggle, ProCoach, useDemoData, useExperienceMode } from './pro-coach'
+import { ProductRatingButton } from './product-rating'
+import { ExperienceToggle, ProCoach, ProExperience, useDemoData, useExperienceMode } from './pro-coach'
 import { CampaignPlanner, type CampaignBrief, type CampaignPlan } from './marketing-studio'
 import { DocumentPanel, DocumentSettingsPanel, useDocumentProfile } from './pro/document-panel'
 import { type BusinessDocument, type DocumentProfile } from './pro/documents'
@@ -18,6 +19,8 @@ import { documentKindFor, invoiceFromQuote, invoiceTargetFor } from './pro/model
 import { type LoadRecords, type ProPatch, type ProRecord } from './pro/shared'
 import { opsSchemaFor } from './pro/ops-registry'
 import { OpsFormPanel, OpsInsightsPanel } from './pro/ops-panel'
+import { linkedProductImage, productImageUrl } from './product-images'
+import { applyWidgetOrder, moveWidget, widgetOrderKey } from './widget-order'
 import { bootstrapProduction, getProductionSession, loginToProduction, logoutProduction, productionAgentActions, productionApiConfigured, productionModeEnabled, productionPlatform, productionRecords, productionRequest, type AgentAction, type AgentIntelligenceSummary, type ControlSettings, type ProductionInvitation, type ProductionSession, type ProductionWorkspaceRecord } from './workspace-production-client'
 
 const workspaceRoot = productionModeEnabled ? '/app' : '/test-workspaces'
@@ -459,6 +462,9 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
       setLoading(true)
       setError('')
       const requests: Promise<void>[] = []
+      if (workspace === 'retail' && activeModule !== 'products') {
+        requests.push(productionRecords.list('retail', 'products').then((records) => setState((current) => ({ ...current, records: { ...current.records, products: records.map(fromProductionRecord) } }))))
+      }
       if (!['overview', 'reports', 'forecasting', 'attribution', 'settings', 'integrations', 'security', 'automations'].includes(activeModule)) {
         // Calendar modules also pull the records they display (e.g. Marketing's Calendar shows content + campaigns).
         for (const source of [...new Set([activeModule, ...(CALENDAR_SOURCES[activeModule] ?? [])])]) {
@@ -534,6 +540,17 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
   // updates local session state directly rather than branching on production mode.
   const attachRecord = (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => {
     update((current) => ({ ...current, records: { ...current.records, [module]: current.records[module].map((item) => item.id === record.id ? { ...item, attachment, attachmentName: attachment ? attachmentName : undefined, updated: 'Now' } : item) } }), `${module}: ${record.name} ${attachment ? `attachment updated (${attachmentName})` : 'attachment removed'}`)
+  }
+  const uploadProductPhoto = async (record: WorkspaceRecord, file: File) => {
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic'].includes(file.type)) throw new Error('Use a JPEG, PNG, WEBP or HEIC product image.')
+    if (file.size > 15 * 1024 * 1024) throw new Error('Product images must be smaller than 15 MB.')
+    if (production) {
+      if (!record.backendId) throw new Error('Save the product before uploading its photo.')
+      const { record: saved } = await productionRecords.uploadImage(record.backendId, file)
+      update((current) => ({ ...current, records: { ...current.records, products: (current.records.products ?? []).map((item) => item.backendId === saved.id ? fromProductionRecord(saved) : item) } }), `${record.name} product photo uploaded`)
+    } else {
+      attachRecord('products', record, await readFileAsDataUrl(file), file.name)
+    }
   }
   // Records a fresh stock count for an inventory record: updates the on-hand quantity, flips the
   // stage between Low stock and its previous stage against the reorder point, and appends the
@@ -611,7 +628,7 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
     window.localStorage.removeItem(storageKey(workspace))
     setState(seedWorkspace(workspace))
   }
-  return { state, events, update, reset, loading, error, production, demo, setDemo, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords }
+  return { state, events, update, reset, loading, error, production, demo, setDemo, createRecord, advanceRecord, attachRecord, uploadProductPhoto, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords }
 }
 
 function appendDemoRecord(workspace: BusinessWorkspaceSlug, module: string, record: WorkspaceRecord) {
@@ -803,7 +820,11 @@ function Metric({ label, value, change }: { label: string; value: string; change
   return <article className="retail-app-metric"><span>{label}</span><strong>{value}</strong><small>{change}</small></article>
 }
 
-function Overview({ workspace, config, state, events, production, agentActions }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; state: WorkspaceState; events: WorkspaceEvent[]; production: boolean; agentActions: AgentAction[] }) {
+const OVERVIEW_WIDGETS = ['trend', 'attention', 'coverage', 'events'] as const
+type OverviewWidget = typeof OVERVIEW_WIDGETS[number]
+const OVERVIEW_WIDGET_LABELS: Record<string, string> = { trend: 'Seven-day trend', attention: 'Needs attention', coverage: 'Workspace coverage', events: 'Cross-workspace events' }
+
+function Overview({ workspace, config, state, events, production, agentActions, userKey }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; state: WorkspaceState; events: WorkspaceEvent[]; production: boolean; agentActions: AgentAction[]; userKey: string | null }) {
   const operational = config.modules.filter((item) => !['overview', 'settings', 'integrations', 'security', 'team'].includes(item.id)).slice(0, 5)
   // In production, a founder's real activity is what should build trust — fabricated
   // placeholder events would contradict "nothing here is a demo". Only the interactive
@@ -817,17 +838,32 @@ function Overview({ workspace, config, state, events, production, agentActions }
   // governed-action queue, not a separate mock list, so the number a founder
   // sees here matches what they'd see on their phone.
   const pendingActions = agentActions.filter((action) => action.status === 'proposed' || action.status === 'approved')
+  const orderKey = widgetOrderKey(`web-${workspace}`, userKey)
+  const [order, setOrder] = useState<string[]>([...OVERVIEW_WIDGETS])
+  const [arranging, setArranging] = useState(false)
+  useEffect(() => {
+    try { setOrder(applyWidgetOrder(OVERVIEW_WIDGETS, JSON.parse(window.localStorage.getItem(orderKey) || 'null'))) } catch { setOrder([...OVERVIEW_WIDGETS]) }
+  }, [orderKey])
+  const saveOrder = (next: string[]) => {
+    setOrder(next)
+    try { window.localStorage.setItem(orderKey, JSON.stringify(next)) } catch { /* storage unavailable: keep order for this visit */ }
+  }
+  const panels: Record<OverviewWidget, ReactNode> = {
+    trend: <article className="retail-app-panel retail-app-chart-panel"><div className="retail-app-panel-heading"><div><p>Performance</p><h2>Seven-day operating trend</h2></div><span>{production ? 'Illustrative — connect reporting for a live trend' : 'Live simulation'}</span></div><svg viewBox="0 0 620 220" role="img" aria-label={`${config.label} seven-day trend`}><defs><linearGradient id={`${workspace}-trend`} x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor={config.accent} stopOpacity=".38" /><stop offset="1" stopColor={config.accent} stopOpacity="0" /></linearGradient></defs>{[35, 80, 125, 170].map((y) => <line key={y} stroke="#dfe5ed" x1="30" x2="600" y1={y} y2={y} />)}<path d="M30 175 L120 150 L210 159 L300 112 L390 126 L480 73 L600 39 L600 205 L30 205 Z" fill={`url(#${workspace}-trend)`} /><polyline fill="none" points="30,175 120,150 210,159 300,112 390,126 480,73 600,39" stroke={config.accent} strokeLinecap="round" strokeLinejoin="round" strokeWidth="5" /></svg></article>,
+    attention: <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Priority queue</p><h2>Needs attention{production ? ` · ${pendingActions.length}` : ''}</h2></div></div>{production && pendingActions.length === 0 ? <p className="complete-workspace-empty-note">You're all caught up. Nothing needs a decision right now — real actions will appear here the moment something does.</p> : <div className="retail-app-priorities">{operational.map((item, index) => <Link href={`${workspaceRoot}/${workspace}/${item.id}`} key={item.id}><i data-tone={index < 2 ? 'risk' : 'watch'} /><div><strong>{state.records[item.id]?.[0]?.name}</strong><span>{item.label} · {state.records[item.id]?.[0]?.status}</span></div><b>→</b></Link>)}</div>}</article>,
+    coverage: <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Connected system</p><h2>Workspace coverage</h2></div></div><div className="complete-workspace-coverage">{config.modules.slice(1, 9).map((item) => <Link href={`${workspaceRoot}/${workspace}/${item.id}`} key={item.id}><strong>{state.records[item.id]?.length ?? 0}</strong><span>{item.label}</span></Link>)}</div></article>,
+    events: <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Shared backbone</p><h2>Latest cross-workspace events</h2></div><Link href={`${workspaceRoot}/intelligence/event-feed`}>View feed</Link></div>{activityItems.length ? <ul className="retail-app-activity">{activityItems.slice(0, 5).map((event) => <li key={event.id}><i /><span><strong>{configs[event.workspace].label}</strong> · {event.text}</span><span>{event.time}</span></li>)}</ul> : <p className="complete-workspace-empty-note">Nothing has happened across your workspaces yet. Once your team starts working, real activity — not sample data — will show up here.</p>}</article>,
+  }
   return <>
     <WorkspaceHeading eyebrow={`${config.label} command centre`} title={`Good morning, Bobby`} copy={config.description} />
     {production ? <p className="complete-workspace-trust-strip">FoundingOS shows you what needs attention today. Nothing here is simulated.</p> : null}
     <section className="retail-app-metrics">{config.metrics.map((metric) => <Metric key={metric.label} {...metric} />)}</section>
-    <section className="retail-app-dashboard-grid">
-      <article className="retail-app-panel retail-app-chart-panel"><div className="retail-app-panel-heading"><div><p>Performance</p><h2>Seven-day operating trend</h2></div><span>{production ? 'Illustrative — connect reporting for a live trend' : 'Live simulation'}</span></div><svg viewBox="0 0 620 220" role="img" aria-label={`${config.label} seven-day trend`}><defs><linearGradient id={`${workspace}-trend`} x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor={config.accent} stopOpacity=".38" /><stop offset="1" stopColor={config.accent} stopOpacity="0" /></linearGradient></defs>{[35, 80, 125, 170].map((y) => <line key={y} stroke="#dfe5ed" x1="30" x2="600" y1={y} y2={y} />)}<path d="M30 175 L120 150 L210 159 L300 112 L390 126 L480 73 L600 39 L600 205 L30 205 Z" fill={`url(#${workspace}-trend)`} /><polyline fill="none" points="30,175 120,150 210,159 300,112 390,126 480,73 600,39" stroke={config.accent} strokeLinecap="round" strokeLinejoin="round" strokeWidth="5" /></svg></article>
-      <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Priority queue</p><h2>Needs attention{production ? ` · ${pendingActions.length}` : ''}</h2></div></div>{production && pendingActions.length === 0 ? <p className="complete-workspace-empty-note">You're all caught up. Nothing needs a decision right now — real actions will appear here the moment something does.</p> : <div className="retail-app-priorities">{operational.map((item, index) => <Link href={`${workspaceRoot}/${workspace}/${item.id}`} key={item.id}><i data-tone={index < 2 ? 'risk' : 'watch'} /><div><strong>{state.records[item.id]?.[0]?.name}</strong><span>{item.label} · {state.records[item.id]?.[0]?.status}</span></div><b>→</b></Link>)}</div>}</article>
-    </section>
-    <section className="retail-app-dashboard-grid lower">
-      <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Connected system</p><h2>Workspace coverage</h2></div></div><div className="complete-workspace-coverage">{config.modules.slice(1, 9).map((item) => <Link href={`${workspaceRoot}/${workspace}/${item.id}`} key={item.id}><strong>{state.records[item.id]?.length ?? 0}</strong><span>{item.label}</span></Link>)}</div></article>
-      <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Shared backbone</p><h2>Latest cross-workspace events</h2></div><Link href={`${workspaceRoot}/intelligence/event-feed`}>View feed</Link></div>{activityItems.length ? <ul className="retail-app-activity">{activityItems.slice(0, 5).map((event) => <li key={event.id}><i /><span><strong>{configs[event.workspace].label}</strong> · {event.text}</span><span>{event.time}</span></li>)}</ul> : <p className="complete-workspace-empty-note">Nothing has happened across your workspaces yet. Once your team starts working, real activity — not sample data — will show up here.</p>}</article>
+    <div className="workspace-arrange-bar"><button aria-pressed={arranging} onClick={() => setArranging((value) => !value)} type="button">{arranging ? 'Done arranging' : 'Arrange cards'}</button>{arranging ? <button onClick={() => saveOrder([...OVERVIEW_WIDGETS])} type="button">Reset layout</button> : null}</div>
+    <section className={`retail-app-dashboard-grid is-arrangeable${arranging ? ' is-arranging' : ''}`}>
+      {order.map((id, index) => <div className="workspace-widget" key={id}>
+        {arranging ? <div className="workspace-widget-controls" role="group" aria-label={`Move ${OVERVIEW_WIDGET_LABELS[id]}`}><span>{OVERVIEW_WIDGET_LABELS[id]}</span><button aria-label={`Move ${OVERVIEW_WIDGET_LABELS[id]} up`} disabled={index === 0} onClick={() => saveOrder(moveWidget(order, id, -1))} type="button">↑</button><button aria-label={`Move ${OVERVIEW_WIDGET_LABELS[id]} down`} disabled={index === order.length - 1} onClick={() => saveOrder(moveWidget(order, id, 1))} type="button">↓</button></div> : null}
+        {panels[id as OverviewWidget]}
+      </div>)}
     </section>
   </>
 }
@@ -1835,7 +1871,7 @@ function ProductGridView({ records, selectedId, onSelect, checked, onToggle }: {
         return <div className="retail-app-check-wrap" key={record.id}>
           <input aria-label={`Select ${record.name}`} checked={checked.includes(record.id)} className="retail-app-check" onChange={() => onToggle(record.id)} type="checkbox" />
           <button className={`retail-app-product-card${selectedId === record.id ? ' selected' : ''}`} onClick={() => onSelect(record.id)} type="button">
-            {record.attachment ? <img alt="" className="retail-app-product-photo" src={record.attachment} /> : <div className="retail-app-product-photo placeholder">{initials(record.name)}</div>}
+            {productImageUrl(record) ? <img alt="" className="retail-app-product-photo" src={productImageUrl(record)!} /> : <div className="retail-app-product-photo placeholder">{initials(record.name)}</div>}
             <div className="retail-app-product-info">
               <strong>{record.name}</strong>
               <span className="retail-app-product-category">{record.secondary}</span>
@@ -2165,7 +2201,7 @@ async function convertToInvoice(create: (workspace: BusinessWorkspaceSlug, modul
   return `Draft invoice ${input.reference} created in ${configs[targetWorkspace].label}`
 }
 
-function RecordsPage({ autopilot, workspace, config, item, state, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords }: { autopilot?: AutopilotController; workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string, kind?: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate' | 'email' | 'phone'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void>; saveRecordData: (module: string, record: WorkspaceRecord, patch: ProPatch) => Promise<void>; createLinkedRecord: (workspace: BusinessWorkspaceSlug, module: string, input: { reference: string; name: string; status: string; valuePence: number; data: Record<string, unknown> }) => Promise<void>; loadRecords: LoadRecords }) {
+function RecordsPage({ autopilot, workspace, config, item, state, createRecord, advanceRecord, attachRecord, uploadProductPhoto, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords }: { autopilot?: AutopilotController; workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; uploadProductPhoto: (record: WorkspaceRecord, file: File) => Promise<void>; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string, kind?: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate' | 'email' | 'phone'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void>; saveRecordData: (module: string, record: WorkspaceRecord, patch: ProPatch) => Promise<void>; createLinkedRecord: (workspace: BusinessWorkspaceSlug, module: string, input: { reference: string; name: string; status: string; valuePence: number; data: Record<string, unknown> }) => Promise<void>; loadRecords: LoadRecords }) {
   const records = state.records[item.id] ?? []
   const documentKind = documentKindFor(workspace, item.id)
   const proDocuments = useProDocuments(workspace, documentKind || item.id === 'sales-pipeline' ? workspace : '', loadRecords)
@@ -2173,6 +2209,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
   const [sourceOpen, setSourceOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState(records[0]?.id)
+  const editorRef = useRef<HTMLDivElement>(null)
   const [creating, setCreating] = useState(false)
   const [createDay, setCreateDay] = useState('')
   const [saving, setSaving] = useState(false)
@@ -2539,7 +2576,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
           })}
           {visible.length === 0 ? <p className="retail-app-board-empty">No records match your search</p> : null}
         </div>
-      </div> : layout && boardView === 'workspace' ? <ModuleWorkspaceView busy={saving} catalogue={catalogue} fields={fields} layout={layout} moduleId={item.id} noun={noun} onCount={countStock} onMove={moveTo} onNote={noteOn} onSelect={selectRecord} onSell={sell} records={visible} selectedId={selected?.id} statuses={statuses} /> : boardView === 'list' ? <div className="retail-app-table-card">
+      </div> : layout && boardView === 'workspace' ? <ModuleWorkspaceView busy={saving} catalogue={catalogue.map((product) => ({ ...product, imageUrl: productImageUrl(product) ?? undefined }))} fields={fields} layout={layout} moduleId={item.id} noun={noun} onCount={countStock} onMove={moveTo} onNote={noteOn} onSelect={selectRecord} onSell={sell} records={visible.map((record) => ({ ...record, imageUrl: workspace === 'retail' ? linkedProductImage(record, catalogue) ?? undefined : undefined }))} selectedId={selected?.id} statuses={statuses} /> : boardView === 'list' ? <div className="retail-app-table-card">
         <div className="retail-app-panel-heading"><div><p>{item.group}</p><h2>{visible.length} records across {statuses.length} stages</h2></div></div>
         <div className="retail-app-table-scroll"><table className="retail-app-list-table">
           <thead><tr><th /><th>{fields.name}</th><th>{fields.secondary}</th><th>Stage</th><th>{fields.value}</th><th>{fields.owner}</th><th>Follow-up</th><th>Updated</th><th /></tr></thead>
@@ -2606,7 +2643,8 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
         </div>
       </div>}
       {selected && origin ? <aside className="retail-app-detail"><p>Selected record</p><h2>{selected.name}</h2><strong>{selected.id}</strong>
-        {isContentStudio ? <ContentPreviewCard body={selected.secondary.includes(' \u00b7 ') ? selected.secondary.slice(selected.secondary.indexOf(' \u00b7 ') + 3) : selected.secondary} cta={selected.value} hashtags={[]} headline={selected.name} image={selected.attachment} type={selected.secondary.split(' \u00b7 ')[0] ?? 'Social post'} /> : <AttachmentBox attachment={selected.attachment} attachmentName={selected.attachmentName ?? ''} onRemove={() => attachRecord(item.id, selected, undefined, '')} onUpload={(file) => void readFileAsDataUrl(file).then((dataUrl) => attachRecord(item.id, selected, dataUrl, file.name))} />}
+        {isProducts ? <div className="retail-app-attachment-box"><p className="retail-app-attachment-label">Shared product photo</p>{productImageUrl(selected) ? <img alt={selected.name} className="retail-app-attachment-image" src={productImageUrl(selected)!} /> : null}<label className="retail-app-attachment-upload"><input accept="image/jpeg,image/png,image/webp,image/heic" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) void runStep(() => uploadProductPhoto(selected, file)) }} type="file" /><span>Upload product photo</span></label></div> : null}
+        {isContentStudio ? <ContentPreviewCard body={selected.secondary.includes(' \u00b7 ') ? selected.secondary.slice(selected.secondary.indexOf(' \u00b7 ') + 3) : selected.secondary} cta={selected.value} hashtags={[]} headline={selected.name} image={selected.attachment} type={selected.secondary.split(' \u00b7 ')[0] ?? 'Social post'} /> : <AttachmentBox attachment={selected.attachment} attachmentName={selected.attachmentName ?? ''} onRemove={() => attachRecord(item.id, selected, undefined, '')} onUpload={(file) => void readFileAsDataUrl(file).then((dataUrl) => attachRecord(item.id, selected, dataUrl, file.name)).catch((cause) => setError(cause instanceof Error ? cause.message : 'Could not read attachment'))} />}
         {isInventory ? <StockTakePanel count={stockCount} onCountChange={setStockCount} onRecord={recordStock} record={selected} /> : null}
         {isOnboarding ? <OnboardingChecklistPanel record={selected} /> : null}
         {isCRM ? <CRMContactPanel onLog={(note) => logNote(item.id, selected, note)} record={selected} records={records} statuses={statuses} /> : null}
@@ -2615,8 +2653,8 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
         {isBOM ? <BOMComponentsPanel record={selected} /> : null}
         {isCandidates ? <CandidateProfilePanel record={selected} statuses={statuses} /> : null}
         {isPatients ? <PatientSnapshotPanel record={selected} /> : null}
-        {opsSchema ? <a className="pro-jump" href="#pro-editor">Open {opsSchema.title.toLowerCase()} tools ↓</a> : null}
-        {isCampaigns || documentKind || isSalesPipeline ? <a className="pro-jump" href="#pro-editor">{isCampaigns ? 'Open campaign results & tracking' : isSalesPipeline ? 'Open deal & quote builder' : `Open full ${documentKind === 'bill' ? 'bill' : documentKind === 'quote' ? 'quote' : 'invoice'} editor`} ↓</a> : null}
+        {opsSchema ? <button className="pro-jump" onClick={() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} type="button">Open {opsSchema.title.toLowerCase()} tools ↓</button> : null}
+        {isCampaigns || documentKind || isSalesPipeline ? <button className="pro-jump" onClick={() => editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} type="button">{isCampaigns ? 'Open campaign results & tracking' : isSalesPipeline ? 'Open deal & quote builder' : `Open full ${documentKind === 'bill' ? 'bill' : documentKind === 'quote' ? 'quote' : 'invoice'} editor`} ↓</button> : null}
         {isContentStudio ? <PublishPanel live={liveAi} onPublished={() => advanceRecord(item.id, selected, 'Published')} record={selected} /> : null}
         {editing ? <div className="retail-app-edit-form">
           <label>Name<input onChange={(event) => setEditDraft((current) => ({ ...current, name: event.target.value }))} value={editDraft.name} /></label>
@@ -2638,7 +2676,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
         {sourceOpen ? <p className="retail-app-source-detail">{origin.detail}</p> : null}
         {!isDirectory ? <div className="retail-app-stage">{statuses.map((status) => <span className={status === selected.status ? 'active' : ''} key={status}>{status}</span>)}</div> : null}{error ? <div className="complete-workspace-error" role="alert"><span>{error}</span>{retry ? <button type="button" className="complete-workspace-error__retry" onClick={retry}>Retry</button> : null}</div> : null}{productionModeEnabled && item.id === 'payments' && selected.status !== 'Paid' ? <button className="retail-app-primary" disabled={saving || !selected.backendId} onClick={() => void collectPayment()} type="button">Collect with Stripe</button> : !isDirectory && selected.status !== statuses.at(-1) ? <button className="retail-app-primary" disabled={saving} onClick={() => void advance()} type="button">Move to {statuses[Math.min(statuses.indexOf(selected.status) + 1, statuses.length - 1)]}</button> : null}<button className="retail-app-secondary" disabled={saving} onClick={() => void publishHandoff(item.id, selected, handoffTarget).catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Handoff could not be published'))} type="button">Handoff to {configs[handoffTarget].label}</button></aside> : null}
     </section>}
-    {selected && (isCampaigns || documentKind || isSalesPipeline || opsSchema) ? <div className="pro-record-workspace" id="pro-editor">
+    {selected && (isCampaigns || documentKind || isSalesPipeline || opsSchema) ? <div className="pro-record-workspace" id="pro-editor" ref={editorRef}>
       {opsSchema ? <OpsFormPanel key={selected.id} record={selected} save={(patch) => saveRecordData(item.id, selected, patch)} schema={opsSchema} /> : null}
       {isCampaigns ? <CampaignProPanel key={selected.id} record={selected} save={(patch) => saveRecordData(item.id, selected, patch)} /> : null}
       {documentKind ? <DocumentPanel key={selected.id} kind={documentKind} profile={proDocuments.profile} record={selected} save={(patch) => saveRecordData(item.id, selected, patch)} statuses={statuses}
@@ -3055,7 +3093,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview', 
     setSession(getProductionSession())
     setHydrated(true)
   }, [])
-  const { state, events, update, reset, loading, error, production, demo, setDemo, createRecord, advanceRecord, attachRecord, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords } = useWorkspaceState(workspace, current.id, session)
+  const { state, events, update, reset, loading, error, production, demo, setDemo, createRecord, advanceRecord, attachRecord, uploadProductPhoto, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords } = useWorkspaceState(workspace, current.id, session)
   const autopilot = useAutopilot({
     workspace,
     production,
@@ -3116,7 +3154,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview', 
   if (current.id === 'overview' && workspace === 'intelligence') content = <SuperDashboardOverview activateIntelligence={agent.activate} agentActions={agent.actions} intelligence={agent.intelligence} agentBusy={agent.busy} agentError={agent.error} agentRetry={agent.retry} decideAgentAction={agent.decide} events={events} executeAgentAction={agent.execute} proposeAgentAction={agent.propose} reverseAgentAction={agent.reverse} />
   else if (current.id === 'outcomes' && workspace === 'intelligence') content = <OutcomesPage intelligence={agent.intelligence} production={production} />
   else if (current.id === 'strategic-overview' && workspace === 'intelligence') content = <><WorkspaceHeading eyebrow="Buyer-ready platform summary" title="Strategic overview" copy="A concise view of the platform’s defensibility, measured evidence, governance boundaries, and WhatsApp-native advantage." /><StrategicOverview intelligence={agent.intelligence} /></>
-  else if (current.id === 'overview') content = <Overview agentActions={agent.actions} config={config} events={events} production={production} state={state} workspace={workspace} />
+  else if (current.id === 'overview') content = <Overview agentActions={agent.actions} config={config} userKey={session?.user.email ?? null} events={events} production={production} state={state} workspace={workspace} />
   else if (current.id === 'automations') content = <AutomationsPage config={config} state={state} update={update} />
   else if (current.id === 'integrations') content = <IntegrationsPage production={production} state={state} update={update} />
   else if (current.id === 'security') content = <SecurityPage workspace={workspace} />
@@ -3127,15 +3165,15 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview', 
   else if (['reports', 'forecasting', 'attribution'].includes(current.id)) content = <ReportsPage config={config} />
   else if (current.id === 'event-feed') content = <EventFeedPage events={events} />
   else if (current.id === 'settings') content = <SettingsPage config={config} production={production} state={state} update={update} />
-  else content = <RecordsPage key={`${workspace}/${current.id}`} autopilot={autopilot} adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} saveRecordData={saveRecordData} createLinkedRecord={createLinkedRecord} loadRecords={loadRecords} />
+  else content = <RecordsPage key={`${workspace}/${current.id}`} autopilot={autopilot} adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} uploadProductPhoto={uploadProductPhoto} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} saveRecordData={saveRecordData} createLinkedRecord={createLinkedRecord} loadRecords={loadRecords} />
   if (current.id === 'overview') content = <><AutopilotPanel controller={autopilot} label={config.label} workspace={workspace} />{content}</>
   const demoBar = productionModeEnabled && productionApiConfigured ? <div className={`demo-data-bar${demo ? ' is-on' : ''}`}>{demo
     ? <><strong>Demo data on</strong><span>Made-up example records so you can see what a busy {config.label} workspace looks like. Changes stay in this browser — nothing touches your real account.</span><button onClick={() => { reset(); setDemo(false) }} type="button">Back to my data</button></>
     : <><strong>See it in action</strong><span>Fill {config.label} with realistic example records to explore every tool.</span><button onClick={() => setDemo(true)} type="button">Load demo data</button></>}</div> : null
-  if (embedded) return <div className={`retail-product-shell complete-workspace-shell sd-embedded experience-${experienceMode}`} style={{ ['--retail-accent' as string]: config.accent }}><section className="retail-product-main"><div className="retail-product-content">{loading || error ? <div className="retail-product-notice"><span>{loading ? '…' : '!'}</span>{loading ? 'Loading…' : error}</div> : null}{demoBar}{content}</div></section></div>
+  if (embedded) return <ProExperience><div className="retail-product-shell complete-workspace-shell sd-embedded experience-pro" style={{ ['--retail-accent' as string]: config.accent }}><section className="retail-product-main"><div className="retail-product-content">{loading || error ? <div className="retail-product-notice"><span>{loading ? '…' : '!'}</span>{loading ? 'Loading…' : error}</div> : null}{demoBar}{content}</div></section></div></ProExperience>
   return <main className={`retail-product-shell complete-workspace-shell experience-${experienceMode}`} style={{ ['--retail-accent' as string]: config.accent }}>
     <aside className="retail-product-sidebar"><Link className="retail-product-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{config.suite}</small></div></Link><div className="retail-product-store"><span>{config.label.slice(0, 2).toUpperCase()}</span><div><strong>{state.settings.businessName}</strong><small>{config.label} Workspace</small></div><b>⌄</b></div><nav aria-label={`${config.label} workspace navigation`}>{groups.map((group) => { const expanded = group === activeGroup || !collapsedGroups.includes(group); const sunk = group === 'Administration'; return <div className={sunk ? 'retail-product-nav-group-sunk' : undefined} key={group}><button aria-expanded={expanded} className="retail-product-nav-group" onClick={() => toggleGroup(group)} type="button"><p>{group}</p><i className={expanded ? 'retail-product-nav-chevron open' : 'retail-product-nav-chevron'}>›</i></button>{expanded ? config.modules.filter((item) => item.group === group).map((item) => <Link className={item.id === current.id ? 'active' : ''} href={`${workspaceRoot}/${workspace}${item.id === 'overview' ? '' : `/${item.id}`}`} key={item.id}><i>{item.id === 'overview' ? '⌂' : '◇'}</i><span>{item.label}</span>{state.records[item.id]?.length ? <em>{state.records[item.id].length}</em> : null}{overdueCount(state.records[item.id]) ? <b aria-label={`${overdueCount(state.records[item.id])} follow-ups due`} className="retail-product-nav-dot" title={`${overdueCount(state.records[item.id])} follow-up${overdueCount(state.records[item.id]) === 1 ? '' : 's'} due`} /> : null}</Link>) : null}</div> })}</nav><Link className="retail-product-switcher" href={workspaceRoot}><span>Switch workspace</span><b>↗</b></Link></aside>
-    <section className="retail-product-main"><header className="retail-product-topbar"><form onSubmit={(event) => { event.preventDefault(); setPaletteOpen(true) }}><span>⌕</span><input aria-label="Global workspace search" onFocus={(event) => { event.target.blur(); setPaletteOpen(true) }} placeholder={`Search ${config.label}, or ask FoundAI… (⌘K)`} readOnly /></form><div><ExperienceToggle /><span className="complete-workspace-live">● {production ? 'PRODUCTION' : 'SIMULATION'} LIVE</span>{production ? <button className="complete-workspace-signout" onClick={() => void logoutProduction().then(() => setSession(null))} type="button">Sign out</button> : null}<form action="/api/access/logout" method="post"><button className="complete-workspace-signout" type="submit">Log out</button></form><span className="retail-product-user">{session?.user.email.slice(0, 2).toUpperCase() || 'BS'}</span></div></header><div className="retail-product-content">{demoBar}<div className="retail-product-notice"><span>{loading ? '…' : error ? '!' : '✓'}</span>{loading ? 'Loading tenant data…' : error ? error : production ? 'Tenant data is secured in PostgreSQL and every action is audited' : 'Interactive simulation · actions persist in this browser'}</div>{content}</div><CrossSellTicker production={production} workspace={workspace} /><footer className="retail-product-footer"><span>{config.label} Workspace · {production ? 'tenant-isolated production data' : 'browser-persistent shared simulation'}</span>{!production ? <button onClick={reset} type="button">Reset {config.label} data</button> : null}</footer></section>
+    <section className="retail-product-main"><header className="retail-product-topbar"><form onSubmit={(event) => { event.preventDefault(); setPaletteOpen(true) }}><span>⌕</span><input aria-label="Global workspace search" onFocus={(event) => { event.target.blur(); setPaletteOpen(true) }} placeholder={`Search ${config.label}, or ask FoundAI… (⌘K)`} readOnly /></form><div><ExperienceToggle /><span className="complete-workspace-live">● {production ? 'PRODUCTION' : 'SIMULATION'} LIVE</span>{production ? <button className="complete-workspace-signout" onClick={() => void logoutProduction().then(() => setSession(null))} type="button">Sign out</button> : null}<form action="/api/access/logout" method="post"><button className="complete-workspace-signout" type="submit">Log out</button></form><span className="retail-product-user">{session?.user.email.slice(0, 2).toUpperCase() || 'BS'}</span></div></header><div className="retail-product-content">{demoBar}<div className="retail-product-notice"><span>{loading ? '…' : error ? '!' : '✓'}</span>{loading ? 'Loading tenant data…' : error ? error : production ? 'Tenant data is secured in PostgreSQL and every action is audited' : 'Interactive simulation · actions persist in this browser'}</div>{content}</div><CrossSellTicker production={production} workspace={workspace} /><footer className="retail-product-footer"><span>{config.label} Workspace · {production ? 'tenant-isolated production data' : 'browser-persistent shared simulation'}</span><span className="retail-product-footer-actions"><a href="/privacy">Privacy &amp; cookies</a><span>© {new Date().getFullYear()} FoundingOS</span><ProductRatingButton page={`${workspace}/${section}`} production={production} />{!production ? <button onClick={reset} type="button">Reset {config.label} data</button> : null}</span></footer></section>
     <CommandPalette onClose={() => setPaletteOpen(false)} open={paletteOpen} state={state} workspace={workspace} />
   </main>
 }

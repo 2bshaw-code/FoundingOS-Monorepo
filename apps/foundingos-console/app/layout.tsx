@@ -32,7 +32,7 @@ export const viewport: Viewport = {
 }
 
 const HUB_BRAND_TINT_COOKIE = 'fo_hub_brand_tint'
-const TINTABLE_BRANDS = ['retail', 'crypto', 'meat', 'talent', 'foundthat', 'finance', 'health', 'logistics'] as const
+const TINTABLE_BRANDS = ['retail', 'talent', 'finance', 'health', 'logistics'] as const
 
 // Real fix for a genuine branding mismatch: arriving at this shared hub from a brand console
 // (e.g. all-green FoundRetail, via its "Demos & Surveys" link) previously always showed

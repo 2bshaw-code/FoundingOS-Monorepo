@@ -7,20 +7,19 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { SESSION_COOKIE, ADMIN_COOKIE, verifyToken } from '../tester/session'
 import { getTester, upsertTester, getOrCreateAdminTester } from '../tester/store.server'
-import { categorizeCredential, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, DEMO_INTRO, BUSINESS_PLAN_FACTS, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SURVEY_COMPLETE_NARRATOR_LINE, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, adminTesterId, SUPER_FOUNDER_ADMIN_EMAIL, type CredentialCategory } from '../tester/tester-data'
-import { GLOBAL_ACCESSIBILITY_SCRIPT, brands as brandRegistry } from '@foundingos/config'
+import { categorizeCredential, INVESTOR_NARRATOR_STEPS, NARRATION_PLAYER_SCRIPT, OPENING_NARRATOR_LINE, TESTER_INSTRUCTION_CARD, WELCOME_BACK_NARRATOR_LINE, WELCOME_BACK_SOFT_LINE, DEMO_END_BELONGING_LINE, FREE_ROAM_ENTERED_LINE, FREE_ROAM_UNLOCK_LINE, EMOTIONAL_CLOSING_LINE, SURVEY_COMPLETE_CELEBRATION_LINE, DEMO_INTRO, BUSINESS_PLAN_FACTS, FREE_ROAM_INVITE_LINES, FREE_ROAM_TIPS, SURVEY_COMPLETE_NARRATOR_LINE, SWITCHER_PANEL_TITLE, SWITCHER_PANEL_NARRATOR_LINE, buildSwitcherOptions, SWITCHER_CODE_SCRIPT, BRAND_ROW_NARRATOR_LINE, PLATFORM_CAPABILITIES, INVESTOR_EVIDENCE_REQUIRED, adminTesterId, SUPER_FOUNDER_ADMIN_EMAIL, type CredentialCategory, SUITE_ROW } from '../tester/tester-data'
+import { GLOBAL_ACCESSIBILITY_SCRIPT } from '@foundingos/config'
 import { QuantumSphereLogo } from '@foundingos/ui'
-import { readBrandMetrics } from '../superdashboard/brand-metric-store.server'
 import { DemoWizard } from '../tester/demo/DemoWizard'
 
 const ADMIN_INVESTOR_MODULE_ID = 'investor-overview'
 
-// Real, read-only Investor briefing — reuses the same live BrandMetric data that powers
-// SuperDashboard, gated to sessions whose credential category is genuinely 'investor'
+// Real, read-only Investor briefing — what FoundingOS is and does today, plus the evidence
+// checklist a valuation needs. Gated to sessions whose credential category is genuinely 'investor'
 // (INV-ALPHA / INV-OMEGA), or the real Super Founder Admin (see tester-data.ts's
 // adminTesterId doc comment — never the separate passcode-only /tester/admin reviewer).
 // Investors get a dedicated two-phase sequence — briefing (the business-plan narration),
-// then demo (the live cross-brand data) — before the survey unlocks, matching the explicit
+// then demo (the platform capabilities) — before the survey unlocks, matching the explicit
 // "briefing → demo → survey" investor flow (one step more than the plain tester sequence).
 // Admin gets the exact same two-phase flow, with its own real progress under its own email.
 export default async function InvestorPage() {
@@ -76,8 +75,6 @@ export default async function InvestorPage() {
   const hasCompletedSurvey = tester.runs.length > 0
   const switcherOptions = buildSwitcherOptions(category)
 
-  const brands = isBriefingPhase ? [] : await readBrandMetrics()
-  const totalEngagement = brands.reduce((sum, brand) => sum + brand.totalEngagement, 0)
 
   return (
     <section className="stack">
@@ -88,7 +85,7 @@ export default async function InvestorPage() {
       <header className="module-header">
         <p>FoundingOS Investor {isBriefingPhase ? 'Briefing' : 'Demo'}</p>
         <h1>Welcome, {tester.email}</h1>
-        <span>Read-only cross-brand engagement overview — live data, no admin actions.</span>
+        <span>Read-only FoundingOS platform briefing — what it is, what it does today, and the evidence behind it.</span>
       </header>
 
       {isBriefingPhase ? (
@@ -108,7 +105,7 @@ export default async function InvestorPage() {
           <div className="module-card-grid" style={{ marginTop: 16 }}>
             <article className="module-card fo-card quantum-frame">
               <div className="module-card-top"><span>→</span><strong>Ready for the live demo?</strong></div>
-              <p>Once you've reviewed the briefing above, continue to the live cross-brand data demo.</p>
+              <p>Once you've reviewed the briefing above, continue to the platform walkthrough.</p>
               <p><small>{DEMO_END_BELONGING_LINE}</small></p>
               <form action={continueToDemo}>
                 <button type="submit" className="btn btn-primary quantum-btn">Continue to demo</button>
@@ -164,42 +161,29 @@ export default async function InvestorPage() {
             <article className="module-card fo-card quantum-frame">
               <div className="module-card-top"><span>🔊</span><strong>Your narrator</strong></div>
               <div className="quantum-narrator-panel">
-                <p>You're inside the OS now — this is the live data behind everything I just told you about. Nothing's staged, nothing's illustrative. Take a look.</p>
+                <p>This is what FoundingOS does today. Every capability below is live in the web and mobile apps — traction figures are shared by the founder, never staged here.</p>
               </div>
-            </article>
-          </div>
-          <div className="kpi-grid">
-            <article className="dashboard-card fo-card good">
-              <span>◈</span>
-              <strong>{brands.length}</strong>
-              <small>Brands reporting live data</small>
-            </article>
-            <article className="dashboard-card fo-card good">
-              <span>Σ</span>
-              <strong data-locale-number={totalEngagement}>{totalEngagement}</strong>
-              <small>Total engagement (all brands) — shown in your local number format</small>
             </article>
           </div>
 
           <div className="console-grid">
             <article className="panel wide fo-card quantum-frame">
-              <h2>Brand engagement — live, unfiltered SuperDash data</h2>
-              <table className="superdashboard-brand-table">
-                <thead>
-                  <tr><th>Brand</th><th>Total engagement</th><th>Anomaly score</th><th>Last updated</th></tr>
-                </thead>
-                <tbody>
-                  {brands.map((brand) => (
-                    <tr key={brand.brandName}>
-                      <td>{brand.brandName}</td>
-                      <td data-locale-number={brand.totalEngagement}>{brand.totalEngagement}</td>
-                      <td data-locale-number={brand.anomalyScore}>{brand.anomalyScore.toFixed(2)}</td>
-                      <td>{brand.lastUpdated.toLocaleString('en-GB', { timeZone: 'UTC' })}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <p><small>This table is the same live BrandMetric data referenced in the briefing narration — real engagement and anomaly scores, not illustrative numbers. Numbers reformat to your local number format automatically.</small></p>
+              <h2>What FoundingOS does today</h2>
+              <div className="module-card-grid">
+                {PLATFORM_CAPABILITIES.map((item) => (
+                  <article className="module-card fo-card" key={item.title}>
+                    <div className="module-card-top"><span>◈</span><strong>{item.title}</strong></div>
+                    <p><small>{item.detail}</small></p>
+                  </article>
+                ))}
+              </div>
+            </article>
+            <article className="panel wide fo-card quantum-frame">
+              <h2>Traction and valuation evidence</h2>
+              <p><small>A valuation depends on these figures. They come from SuperDash and Stripe and are provided by the founder on request — this briefing does not invent or estimate them.</small></p>
+              <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 6 }}>
+                {INVESTOR_EVIDENCE_REQUIRED.map((item) => <li key={item}><small>{item}</small></li>)}
+              </ul>
             </article>
           </div>
 
@@ -214,7 +198,7 @@ export default async function InvestorPage() {
                 <p><small>{FREE_ROAM_TIPS.join(' ')}</small></p>
               </div>
               <Link href="/superdashboard?readOnly=1" className="quantum-freeroam-box">
-                <strong data-simple-label="Explore Now">Jump Into Free Roam — Explore the Quantum WhatsApp OS</strong>
+                <strong data-simple-label="Explore Now">Jump Into Free Roam — Explore FoundingOS</strong>
                 <small>{FREE_ROAM_ENTERED_LINE} Read-only exploration of SuperDash — nothing you click can break anything.</small>
               </Link>
               <div className="quantum-narrator-panel">
@@ -252,7 +236,7 @@ export default async function InvestorPage() {
             <div className="module-card-grid">
               <article className="module-card fo-card quantum-frame">
                 <div className="module-card-top"><span>→</span><strong>Ready for the investor survey?</strong></div>
-                <p>Once you've reviewed the live data above, continue to the investor survey.</p>
+                <p>Once you've reviewed the platform above, continue to the investor survey.</p>
                 <p><small>{DEMO_END_BELONGING_LINE}</small></p>
                 <form action={continueToSurvey}>
                   <button type="submit" className="btn btn-primary quantum-btn">Continue to survey</button>
@@ -266,10 +250,10 @@ export default async function InvestorPage() {
         <p>{BRAND_ROW_NARRATOR_LINE}</p>
       </div>
       <div className="quantum-brand-row">
-        {(['foundingos', 'retail', 'meat', 'talent', 'crypto', 'foundthat', 'finance', 'health', 'logistics'] as const).map((slug) => (
-          <a key={slug} href={brandRegistry[slug].webUrl} className="quantum-brand-card" style={{ ['--brand-glow' as string]: brandRegistry[slug].accent }}>
+        {SUITE_ROW.map((suite) => (
+          <a key={suite.name} href={suite.href} className="quantum-brand-card" style={{ ['--brand-glow' as string]: suite.accent }}>
             <span className="quantum-brand-card-dot" />
-            {brandRegistry[slug].name}
+            {suite.name}
           </a>
         ))}
       </div>
