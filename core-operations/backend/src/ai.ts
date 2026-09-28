@@ -127,8 +127,61 @@ async function buildPipelineAiContext(tenantId: string): Promise<PipelineAiConte
   return { awaitingReply, avgResponseMinutes, messagesLast24h, messagesPrior24h }
 }
 
-function parseModelResponse(value: unknown): Omit<FoundAiResponse, 'model' | 'usedConversation' | 'conversationMessageCount'> {
-  if (!value || typeof value !== 'object') throw new Error('FoundAI returned an invalid response.')
+// FoundingOS's own company numbers, for the founder asking about the business itself
+// ("what is my MRR", "what am I spending", "how long is my runway"). These are computed
+// roll-ups rather than workspace records, so without this FoundAI can only see customer
+// records and honestly answers "I cannot find MRR".
+async function buildFounderAiContext(tenantId: string) {
+  const { founderOverview, founderFinance } = await import('./founder.js')
+  const [overview, finance] = await Promise.all([
+    founderOverview(tenantId).catch(() => null),
+    founderFinance(tenantId).catch(() => null),
+  ])
+  if (!overview && !finance) return null
+  return {
+    subscriptions: overview ? {
+      customers: overview.subscriptions.customers,
+      paying: overview.subscriptions.paying,
+      free: overview.subscriptions.free,
+      newLast7Days: overview.subscriptions.new7d,
+      newLast30Days: overview.subscriptions.new30d,
+      activeLast7Days: overview.subscriptions.active7d,
+      byPlan: overview.subscriptions.byPlan,
+      workspaceAdoption: overview.subscriptions.workspaceAdoption,
+    } : null,
+    revenue: finance ? {
+      mrrGbp: finance.mrrGbp,
+      arrGbp: finance.arrGbp,
+      arpuGbp: finance.arpuGbp,
+      payingCustomers: finance.payingCustomers,
+      billingLive: finance.billingLive,
+      note: finance.note,
+    } : null,
+    costs: finance ? {
+      recurringMonthlyGbp: finance.recurringCostsGbp,
+      monthlyBurnGbp: finance.monthlyBurnGbp,
+      cashGbp: finance.cashGbp,
+      runwayMonths: finance.runwayMonths,
+      byCategory: finance.byCategory,
+      knownCategories: finance.categories,
+      entries: finance.entries.slice(0, 40),
+      thisMonth: finance.thisMonth,
+    } : null,
+    platformHealth: overview ? {
+      apiOk: overview.monitoring.apiOk,
+      dbLatencyMs: overview.monitoring.dbLatencyMs,
+      aiConfigured: overview.monitoring.aiConfigured,
+      emailConfigured: overview.monitoring.emailConfigured,
+      aiRequests24h: overview.monitoring.aiRequests24h,
+      autopilotActions24h: overview.monitoring.autopilotActions24h,
+      integrationsConnected: overview.monitoring.integrationsConnected,
+      integrationsFailing: overview.monitoring.integrationsFailing,
+    } : null,
+    pendingUpgradeRequests: overview?.upgradeRequests.filter((request) => request.pending.length).length ?? 0,
+  }
+}
+
+function parseModelResponse(value: unknown): Omit<FoundAiResponse, 'model' | 'usedConversation' | 'conversationMessageCount'> {  if (!value || typeof value !== 'object') throw new Error('FoundAI returned an invalid response.')
   const candidate = value as Record<string, unknown>
   const answer = String(candidate.answer || '').trim()
   if (!answer) throw new Error('FoundAI returned an empty answer.')
@@ -170,6 +223,9 @@ export async function askFoundAi(input: {
   workspace?: unknown
   module?: unknown
   customerId?: unknown
+  // 'founder' adds FoundingOS's own company roll-ups (revenue, costs, runway, platform
+  // health) so SuperDash can ask about the business itself, not just customer records.
+  scope?: unknown
   requestId?: string
 }): Promise<FoundAiResponse> {
   const { apiKey, model } = requireAiConfiguration()
@@ -180,7 +236,8 @@ export async function askFoundAi(input: {
   const workspace = String(input.workspace || '').trim()
   const module = String(input.module || '').trim()
   const customerId = String(input.customerId || '').trim()
-  const [records, conversation, pipelineContext] = await Promise.all([
+  const founderScope = String(input.scope || '').trim().toLowerCase() === 'founder'
+  const [records, conversation, pipelineContext, founderContext] = await Promise.all([
     prisma.workspaceRecord.findMany({
       where: {
         tenantId: input.tenantId,
@@ -210,6 +267,7 @@ export async function askFoundAi(input: {
     // the names needed for grounding, so a question like "who needs a reply today?" can be
     // answered honestly instead of only working when a single conversation panel is open.
     customerId ? Promise.resolve(null) : buildPipelineAiContext(input.tenantId),
+    founderScope ? buildFounderAiContext(input.tenantId) : Promise.resolve(null),
   ])
   const context = records.map((record) => ({
     workspace: record.workspace,
@@ -243,6 +301,12 @@ export async function askFoundAi(input: {
     pipelineContext
       ? 'A "pipelineContext" object is also supplied with real, tenant-wide messaging-operations data: "awaitingReply" (customers whose most recent message is unanswered, most recent first), "avgResponseMinutes" (real recent average reply time, or null if there is not enough recent data — never treat null as zero), and "messagesLast24h"/"messagesPrior24h" (recent message volume). Use this only to answer general/team-level questions (e.g. "who needs a reply", "how is our response time", "are we busier than usual") — do not invent details beyond what is supplied, and do not extrapolate exact percentages from messagesLast24h/messagesPrior24h beyond a simple busier/quieter/same comparison.'
       : '',
+    founderContext
+      ? 'A "businessContext" object is also supplied. This is FoundingOS\'s OWN company data (the founder is asking about their own business, not a customer): "subscriptions" (customer counts, sign-ups, plan mix, workspace adoption), "revenue" (mrrGbp, arrGbp, arpuGbp, payingCustomers, billingLive — when billingLive is false these are estimates from each company\'s plan, so say so rather than presenting them as collected cash), "costs" (recurringMonthlyGbp, monthlyBurnGbp, cashGbp, runwayMonths, byCategory, knownCategories, and the individual ledger "entries"), "platformHealth" and "pendingUpgradeRequests". Use it to answer founder questions such as "what is my MRR", "what am I spending", "how long is my runway", "what is my biggest cost" and "how is the platform doing". Treat null cashGbp or runwayMonths as unknown, never as zero. Amounts in businessContext are already in pounds, not pence. Citations must still only reference supplied records, so return an empty citations array when you answered purely from businessContext.'
+      : '',
+    founderContext
+      ? 'If the founder asks to add, record or track a cost, income or cash balance, do not claim to have saved it. Instead return a suggestedAction phrased as a concrete ledger entry using one of the supplied knownCategories, for example "Add cost: Vercel Pro, £20/month, Hosting & infrastructure", so they can confirm it in one tap. If they ask what they are missing, compare their entries against knownCategories and name the categories with nothing recorded yet.'
+      : '',
   ].filter(Boolean).join(' ')
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -259,6 +323,7 @@ export async function askFoundAi(input: {
           records: context,
           ...(conversationContext.length > 0 ? { conversation: conversationContext } : {}),
           ...(pipelineContext ? { pipelineContext } : {}),
+          ...(founderContext ? { businessContext: founderContext } : {}),
         }),
       }],
     }),

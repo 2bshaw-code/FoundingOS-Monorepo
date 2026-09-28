@@ -4,6 +4,13 @@
     "slug": "foundingos-mobile",
     "scheme": "foundingos",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/a39ee1f5-5e2a-4e64-b462-b08f79ef63d5",
+      "fallbackToCacheTimeout": 0
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "splash": {

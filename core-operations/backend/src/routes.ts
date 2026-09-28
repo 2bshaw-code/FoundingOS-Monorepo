@@ -109,7 +109,9 @@ apiRouter.post('/autopilot/approvals/:id/decision', requireOwnerAccess, requireT
 })
 apiRouter.post('/ai/ask', requireMerchantAccess, requireTenant, async (req, res, next) => {
   try {
-    const tenantId = readTenant(req, res)
+    // A founder signed in to SuperDash has no x-tenant-id header to give, so fall back to
+    // their own tenant rather than refusing the question outright.
+    const tenantId = readTenant(req, res) || res.locals.auth?.tenantId
     if (!tenantId) return res.status(400).json({ success: false, message: 'Tenant context required' })
     res.json({
       success: true,
@@ -120,6 +122,7 @@ apiRouter.post('/ai/ask', requireMerchantAccess, requireTenant, async (req, res,
         workspace: req.body?.workspace,
         module: req.body?.module,
         customerId: req.body?.customerId,
+        scope: req.body?.scope,
         requestId: res.locals.requestId,
       }),
     })

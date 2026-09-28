@@ -9,13 +9,15 @@
       "distribution": "internal",
       "ios": {
         "resourceClass": "m-medium"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
       "ios": {
         "resourceClass": "m-medium"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "autoIncrement": true,
@@ -24,55 +26,64 @@
       },
       "env": {
         "BRAND": "foundingos"
-      }
+      },
+      "channel": "production"
     },
     "foundretail": {
       "extends": "production",
       "env": {
         "BRAND": "retail"
-      }
+      },
+      "channel": "foundretail"
     },
     "foundmeat": {
       "extends": "production",
       "env": {
         "BRAND": "meat"
-      }
+      },
+      "channel": "foundmeat"
     },
     "foundtalent": {
       "extends": "production",
       "env": {
         "BRAND": "talent"
-      }
+      },
+      "channel": "foundtalent"
     },
     "foundthat": {
       "extends": "production",
       "env": {
         "BRAND": "foundthat"
-      }
+      },
+      "channel": "foundthat"
     },
     "foundcrypto": {
       "extends": "production",
       "env": {
         "BRAND": "crypto"
-      }
+      },
+      "channel": "foundcrypto"
     },
     "foundfinance": {
       "extends": "production",
       "env": {
         "BRAND": "finance"
-      }
+      },
+      "channel": "foundfinance"
     },
     "foundhealth": {
       "extends": "production",
       "env": {
         "BRAND": "health"
-      }
+      },
+      "channel": "foundhealth"
     },
     "foundlogistics": {
       "extends": "production",
       "env": {
         "BRAND": "logistics"
-      }
+      },
+      "channel": "foundlogistics"
     }
   },
   "submit": {

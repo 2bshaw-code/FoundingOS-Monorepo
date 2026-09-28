@@ -10,6 +10,7 @@ import { FounderFinancePanel, FounderMarketingPanel, FounderScenarioPanel } from
 import { founderDemoFinance, founderDemoMarketing, founderDemoOverview } from './founder-superdash-demo'
 import { useDemoData } from './pro-coach'
 import { adoptPreviewSession, getProductionSession, loginToProduction, logoutProduction, productionRecords, productionRequest } from './workspace-production-client'
+import { FounderAiPanel } from './founder-ai-panel'
 import { FinanceReportsPage, MarketingReportsPage, SalesReportsPage } from './pro/reports'
 import { proRecordFromBackend } from './pro/models'
 import type { LoadRecords } from './pro/shared'
@@ -225,6 +226,8 @@ export function FounderSuperDash() {
       <article><span>Active this week</span><b>{s?.active7d ?? 0}</b><small>companies using FoundingOS</small></article>
       <article className={pending.length ? 'is-alert' : ''}><span>Upgrade requests</span><b>{pending.length}</b><small>waiting for you</small></article>
     </section>
+
+    {investor ? null : <FounderAiPanel demo={demo} onSaved={() => void load()} />}
 
     <div className="sd-grid">
       <section className="sd-panel">

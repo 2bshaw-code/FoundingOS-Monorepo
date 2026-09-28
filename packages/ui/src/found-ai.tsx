@@ -25,7 +25,7 @@ function routeLabel(pathname: string) {
   // foundingos-console-only routes (FounderOS admin/tester/investor surfaces) — safe to
   // special-case here without affecting brand-console behavior, since none of these paths
   // exist in any brand console.
-  if (pathname.startsWith('/superdashboard')) return 'SuperDash'
+  if (pathname.startsWith('/superdashboard') || pathname.startsWith('/superdash')) return 'SuperDash'
   if (pathname.startsWith('/founder')) return 'Founder Console'
   if (pathname === '/investor') return 'Investor Briefing'
   if (pathname === '/system/guardian') return 'Guardian'
