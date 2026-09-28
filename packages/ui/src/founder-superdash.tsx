@@ -97,8 +97,9 @@ export function FounderSuperDash() {
         return
       }
       const role = await fetch('/api/access/role', { cache: 'no-store' }).then((response) => (response.ok ? response.json() : null)).catch(() => null) as { role?: string } | null
-      if (cancelled || role?.role !== 'investor') return
-      setInvestor(true)
+      if (cancelled || (role?.role !== 'investor' && role?.role !== 'partner')) return
+      // Partners get full founder access; investors get the view-only SuperDash.
+      if (role.role === 'investor') setInvestor(true)
       // The access code already proved who they are, so swap it for a session instead of asking them to sign in again.
       const session = await adoptPreviewSession().catch(() => null)
       if (cancelled || !session) return
@@ -120,7 +121,7 @@ export function FounderSuperDash() {
       const access = await productionRequest<{ founder?: boolean; investor?: boolean }>('/founder/access').catch(() => null)
       if (access && !access.founder && !access.investor) {
         await logoutProduction()
-        throw new Error('This account does not have SuperDash access. Use an investor/partner code.')
+        throw new Error('This account does not have SuperDash access. Use a partner code.')
       }
       if (access && !access.founder && access.investor) setInvestor(true)
       setSignedIn(true)

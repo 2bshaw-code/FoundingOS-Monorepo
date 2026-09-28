@@ -39,27 +39,35 @@ export const isFounderIdentity = (identity?: { role?: string; email?: string }) 
 const investorEmails = () => new Set(String(process.env.INVESTOR_EMAILS || '').split(',').map((email) => email.trim().toLowerCase()).filter(Boolean))
 export const isInvestorIdentity = (identity?: { email?: string }) => investorEmails().has(String(identity?.email || '').toLowerCase())
 
-// Investors without a listed email can unlock the same preview in the app with the access code they were
-// given for the website (INVESTOR_ACCESS_HASH: `scrypt$<saltHex>$<hashHex>` entries joined by `;`).
+// Access codes are held as `role:scrypt$<saltHex>$<hashHex>` entries joined by `;`.
+// INVESTOR_ACCESS_HASH entries prefixed `partner:` give full founder access (trusted partners);
+// `investor:` (or unprefixed) entries give the view-only SuperDash. TESTER_ACCESS_HASH entries
+// sign people in to an ordinary workspace.
 export const INVESTOR_GRANT_ACTION = 'investor.access_granted'
-export const verifyInvestorCode = (code: unknown) => verifyCodeAgainst(process.env.INVESTOR_ACCESS_HASH, code)
-const verifyCodeAgainst = (configured: string | undefined, code: unknown) => {
+export const PARTNER_GRANT_ACTION = 'partner.access_granted'
+export type AccessCodeRole = 'partner' | 'investor' | 'tester'
+const matchingCodeRoles = (configured: string | undefined, code: unknown) => {
   const candidate = String(code ?? '').trim()
-  if (!candidate || candidate.length > 200) return false
-  return String(configured || '').split(';').map((entry) => entry.trim().replace(/^[a-z]+:(?=scrypt\$)/, '')).filter(Boolean).some((entry) => {
-    const [scheme, saltHex, hashHex] = entry.split('$')
-    if (scheme !== 'scrypt' || !saltHex || !hashHex) return false
+  if (!candidate || candidate.length > 200) return []
+  // Every entry is checked (no short-circuit) so timing does not reveal which one matched.
+  return String(configured || '').split(';').map((entry) => entry.trim()).filter(Boolean).flatMap((entry) => {
+    const prefixed = /^([a-z]+):(scrypt\$.*)$/.exec(entry)
+    const [prefix, hash] = prefixed ? [prefixed[1], prefixed[2]] : ['investor', entry]
+    const [scheme, saltHex, hashHex] = hash.split('$')
+    if (scheme !== 'scrypt' || !saltHex || !hashHex) return []
     const expected = Buffer.from(hashHex, 'hex')
     const actual = scryptSync(candidate, Buffer.from(saltHex, 'hex'), expected.length)
-    return expected.length > 0 && timingSafeEqual(actual, expected)
+    return expected.length > 0 && timingSafeEqual(actual, expected) ? [prefix] : []
   })
 }
-// Tester invitation codes (TESTER_ACCESS_HASH, same format) sign people in to an ordinary workspace — no SuperDash.
-export const verifyTesterCode = (code: unknown) => verifyCodeAgainst(process.env.TESTER_ACCESS_HASH, code)
-export const accessCodeRole = (code: unknown): 'investor' | 'tester' | null => {
-  const investor = verifyInvestorCode(code)
-  const tester = verifyTesterCode(code)
-  return investor ? 'investor' : tester ? 'tester' : null
+export const accessCodeRole = (code: unknown): AccessCodeRole | null => {
+  const matches = matchingCodeRoles(process.env.INVESTOR_ACCESS_HASH, code)
+  const tester = matchingCodeRoles(process.env.TESTER_ACCESS_HASH, code).length > 0
+  return matches.includes('partner') ? 'partner' : matches.length ? 'investor' : tester ? 'tester' : null
+}
+export const verifyInvestorCode = (code: unknown) => {
+  const role = accessCodeRole(code)
+  return role === 'partner' || role === 'investor'
 }
 export const hasInvestorAccess = async (identity?: { id?: string; email?: string }) => {
   if (isInvestorIdentity(identity)) return true

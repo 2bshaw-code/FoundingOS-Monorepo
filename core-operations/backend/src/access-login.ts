@@ -4,15 +4,34 @@
 */
 import { randomBytes } from 'node:crypto'
 import type { NextFunction, Request, Response } from 'express'
-import { accessCodeRole, authService, hasInvestorAccess, INVESTOR_GRANT_ACTION, isReservedFounderEmail, prisma } from './auth.js'
+import { roles } from '@foundingos/service-auth'
+import { accessCodeRole, authService, hasInvestorAccess, INVESTOR_GRANT_ACTION, isReservedFounderEmail, PARTNER_GRANT_ACTION, prisma, type AccessCodeRole } from './auth.js'
 import { PREVIEW_BUSINESS_NAME, TESTER_BUSINESS_NAME } from './founder.js'
 import { bootstrapTenant } from './platform.js'
 
 const httpError = (message: string, status: number) => Object.assign(new Error(message), { status })
 
-// Signs in someone holding an admin/investor or tester code, creating their account the first
-// time. Investors are also granted the view-only founder SuperDash.
-export async function accessCodeSession(input: { email: string; role: 'investor' | 'tester'; via: string; deviceFingerprint: string; ipAddress?: string }) {
+// The founder's own business, which trusted partners join so they share the same SuperDash,
+// books and workspaces.
+async function founderTenantId() {
+  const emails = String(process.env.FOUNDER_EMAILS || '').split(',').map((email) => email.trim().toLowerCase()).filter(Boolean)
+  if (!emails.length) return null
+  const founder = await prisma.authUser.findFirst({ where: { email: { in: emails }, tenantId: { not: null } }, orderBy: { createdAt: 'asc' }, select: { tenantId: true } })
+  return founder?.tenantId ?? null
+}
+
+// Trusted partners get exactly what the founder has: the founder role inside the founder's business.
+export async function grantPartnerAccess(userId: string, via: string) {
+  const tenantId = await founderTenantId()
+  const user = await prisma.authUser.update({ where: { id: userId }, data: { role: roles.founderMaster, ...(tenantId ? { tenantId } : {}) } })
+  const granted = await prisma.workspaceAuditEvent.findFirst({ where: { actorId: userId, action: PARTNER_GRANT_ACTION }, select: { id: true } })
+  if (!granted) await prisma.workspaceAuditEvent.create({ data: { tenantId: user.tenantId || 'platform', actorId: userId, action: PARTNER_GRANT_ACTION, metadata: { email: user.email, via } } })
+  return user
+}
+
+// Signs in someone holding a partner, investor (view-only) or tester code, creating their
+// account the first time.
+export async function accessCodeSession(input: { email: string; role: AccessCodeRole; via: string; deviceFingerprint: string; ipAddress?: string }) {
   const { email, role } = input
   if (isReservedFounderEmail(email)) throw httpError('Sign in with your founder password.', 403)
   if (!input.deviceFingerprint) throw httpError('Device fingerprint is required', 400)
@@ -22,6 +41,7 @@ export async function accessCodeSession(input: { email: string; role: 'investor'
     user = await prisma.authUser.findUnique({ where: { email } })
   }
   if (!user?.active) throw httpError('This account is not active.', 403)
+  if (role === 'partner') await grantPartnerAccess(user.id, input.via)
   if (role === 'investor' && !(await hasInvestorAccess({ id: user.id, email }))) {
     await prisma.workspaceAuditEvent.create({ data: { tenantId: user.tenantId || 'platform', actorId: user.id, action: INVESTOR_GRANT_ACTION, metadata: { email, via: input.via } } })
   }

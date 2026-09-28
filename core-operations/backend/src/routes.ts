@@ -13,7 +13,7 @@ import { OutboundBlocked } from './outbound.js'
 import { listWhatsAppTemplateStatus, submitWhatsAppTemplates } from './whatsapp-templates.js'
 import { decideAutopilotApproval, getAutopilotPolicy, listAutopilotActivity, listAutopilotApprovals, runAutopilot, runAutopilotForAllTenants, saveAutopilotPolicy } from './autopilot.js'
 import { accessCodeRole, prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess, requireFounderAccess, requireSignedIn, requireFounderOrInvestorRead, isFounderIdentity, isReservedFounderEmail, hasInvestorAccess, verifyInvestorCode, INVESTOR_GRANT_ACTION, authService } from './auth.js'
-import { accessCodeSession } from './access-login.js'
+import { accessCodeSession, grantPartnerAccess } from './access-login.js'
 import { founderOverview, founderSetTenantWorkspaces, applyBillingEntitlements, founderFinance, founderAddLedgerEntry, founderDeleteRecord, founderMarketing, founderSavePost, founderUpdatePost, saveProductRating } from './founder.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
@@ -318,7 +318,8 @@ apiRouter.post('/access/code-login', async (req, res, next) => {
     if (!trusted && attempts && attempts.resetAt > now && attempts.count >= 8) return res.status(429).json({ success: false, message: 'Too many attempts. Try again in 15 minutes.' })
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ success: false, message: 'Enter a valid email address.' })
     // The website has already checked the code itself; it passes the role it verified.
-    const role = trusted ? (req.body?.role === 'tester' ? 'tester' : 'investor') : accessCodeRole(req.body?.code)
+    const requested = String(req.body?.role || '')
+    const role = trusted ? (requested === 'tester' || requested === 'partner' ? requested : 'investor') : accessCodeRole(req.body?.code)
     if (!role) {
       codeLoginAttempts.set(key, attempts && attempts.resetAt > now ? { count: attempts.count + 1, resetAt: attempts.resetAt } : { count: 1, resetAt: now + 15 * 60_000 })
       return res.status(401).json({ success: false, message: 'Invalid email or password' })
@@ -342,6 +343,10 @@ apiRouter.post('/founder/investor-unlock', requireSignedIn, async (req, res, nex
       return res.status(403).json({ success: false, message: 'That access code is not recognised.' })
     }
     investorUnlockAttempts.delete(auth.id)
+    if (accessCodeRole(req.body?.code) === 'partner' && !isReservedFounderEmail(String(auth.email || ''))) {
+      await grantPartnerAccess(auth.id, 'app')
+      return res.json({ success: true, data: { founder: true, investor: true, reSignIn: true } })
+    }
     if (!(await hasInvestorAccess(auth))) {
       await prisma.workspaceAuditEvent.create({ data: { tenantId: auth.tenantId || 'platform', actorId: auth.id, action: INVESTOR_GRANT_ACTION, metadata: { email: auth.email ?? null, via: 'app' } } })
     }

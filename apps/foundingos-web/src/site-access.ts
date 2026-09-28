@@ -16,8 +16,9 @@ export function normalizeAccessEmail(candidate: string) {
   return email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null
 }
 
-export type SiteAccessRole = 'investor' | 'tester' | 'guest'
-const ROLES: SiteAccessRole[] = ['investor', 'tester', 'guest']
+// partner = trusted, full founder access; investor = view-only SuperDash.
+export type SiteAccessRole = 'partner' | 'investor' | 'tester' | 'guest'
+const ROLES: SiteAccessRole[] = ['partner', 'investor', 'tester', 'guest']
 const asRole = (value: unknown): SiteAccessRole => (ROLES.includes(value as SiteAccessRole) ? value as SiteAccessRole : 'guest')
 
 export function signSiteAccess(email: string, now = Date.now(), role: SiteAccessRole = 'guest') {
@@ -72,6 +73,10 @@ export function siteAccessRole(candidate: string): SiteAccessRole | null {
   // Check every entry (rather than short-circuiting) so response time does not
   // reveal which slot, if any, matched.
   let matched: SiteAccessRole | null = null
+  // Trusted partner codes (SITE_PARTNER_ACCESS_HASH, plain scrypt entries) win over any other match.
+  for (const entry of String(process.env.SITE_PARTNER_ACCESS_HASH || '').split(';').map((value) => value.trim().replace(/^partner:/, '')).filter(Boolean)) {
+    if (verifyAgainstHash(candidate, entry)) matched = 'partner'
+  }
   for (const entry of entries) {
     const [prefix, rest] = entry.startsWith('scrypt$') ? ['guest', entry] : [entry.slice(0, entry.indexOf(':')), entry.slice(entry.indexOf(':') + 1)]
     if (verifyAgainstHash(candidate, rest) && !matched) matched = asRole(prefix)

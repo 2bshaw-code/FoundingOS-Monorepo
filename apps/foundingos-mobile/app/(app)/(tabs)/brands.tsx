@@ -127,7 +127,7 @@ export default function WorkspaceDirectoryScreen() {
   )
 }
 
-// Investors without a listed email unlock the read-only SuperDash preview with their website access code.
+// Partners (full founder access) and investors (view-only SuperDash) unlock with the access code they were given.
 function InvestorUnlockCard() {
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
@@ -137,8 +137,8 @@ function InvestorUnlockCard() {
     setBusy(true)
     setMessage(null)
     try {
-      await redeemInvestorCode(code.trim())
-      setMessage({ tone: 'success', text: 'Investor preview unlocked — SuperDash is now available.' })
+      const result = await redeemInvestorCode(code.trim())
+      setMessage({ tone: 'success', text: result?.founder ? 'Partner access unlocked — you now have full founder access, including SuperDash.' : 'Investor preview unlocked — SuperDash is now available.' })
       setCode('')
     } catch (error) {
       setMessage({ tone: 'warning', text: error instanceof Error ? error.message : 'That access code is not recognised.' })
@@ -148,9 +148,9 @@ function InvestorUnlockCard() {
   }
   return (
     <QuantumCard accent={FOUNDINGOS_ACCENT}>
-      <QuantumText variant="overline" color={FOUNDINGOS_ACCENT}>Investors</QuantumText>
-      <QuantumText variant="h3">Unlock the SuperDash preview</QuantumText>
-      <QuantumText variant="caption">Enter the access code you were given for foundingos.com to see the full company dashboard with example figures.</QuantumText>
+      <QuantumText variant="overline" color={FOUNDINGOS_ACCENT}>Partners & investors</QuantumText>
+      <QuantumText variant="h3">Unlock SuperDash</QuantumText>
+      <QuantumText variant="caption">Enter the access code you were given for foundingos.com. Partner codes give full founder access; investor codes give a view-only company dashboard.</QuantumText>
       <QuantumPasswordInput value={code} onChangeText={setCode} placeholder="Access code" autoCapitalize="none" autoCorrect={false} onSubmitEditing={() => { void submit() }} />
       {message ? <QuantumNotice tone={message.tone}>{message.text}</QuantumNotice> : null}
       <QuantumButton disabled={busy || !code.trim()} onPress={() => { void submit() }}>{busy ? 'Checking…' : 'Unlock'}</QuantumButton>

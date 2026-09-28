@@ -918,8 +918,12 @@ export const founderEnableWorkspaces = (tenantId: string, workspaces: string[]) 
   authedRequest(`/api/v1/ops/founder/tenants/${encodeURIComponent(tenantId)}/workspaces`, { method: 'POST', body: JSON.stringify({ workspaces, enabled: true }) })
 
 export const fetchFounderAccess = () => authedRequest<{ founder: boolean; investor?: boolean }>('/api/v1/ops/founder/access')
-export const unlockInvestorAccess = (code: string) =>
-  authedRequest<{ founder: boolean; investor: boolean }>('/api/v1/ops/founder/investor-unlock', { method: 'POST', body: JSON.stringify({ code }) })
+export async function unlockInvestorAccess(code: string) {
+  const result = await authedRequest<{ founder: boolean; investor: boolean; reSignIn?: boolean }>('/api/v1/ops/founder/investor-unlock', { method: 'POST', body: JSON.stringify({ code }) })
+  // A partner code upgrades the account to full founder access; refresh so the session carries it.
+  if (result.reSignIn) await refreshSession()
+  return result
+}
 
 // SuperDash Finance / Marketing — FoundingOS's own books and growth marketing.
 export type FounderLedgerEntry = { id: string; label: string; kind: string; category: string; recurring: boolean; date: string; amountGbp: number; note: string }

@@ -64,3 +64,14 @@ test('preview passwords can carry an investor or tester role', () => {
   assert.equal(readSiteAccess(signSiteAccess('inv@example.com', Date.now(), 'investor'))?.role, 'investor')
   assert.equal(readSiteAccess(signSiteAccess('someone@example.com'))?.role, 'guest')
 })
+
+test('partner codes take priority and carry full-access role', () => {
+  const hash = (password: string) => { const salt = randomBytes(16); return `scrypt$${salt.toString('hex')}$${scryptSync(password, salt, 32).toString('hex')}` }
+  process.env.SITE_ACCESS_PASSWORD_HASH = [`investor:${hash('shared-pw')}`, `investor:${hash('inv-pw')}`].join(';')
+  process.env.SITE_PARTNER_ACCESS_HASH = hash('shared-pw')
+  assert.equal(siteAccessRole('shared-pw'), 'partner')
+  assert.equal(siteAccessRole('inv-pw'), 'investor')
+  process.env.SITE_ACCESS_SECRET = 'a-secure-cookie-signing-secret-with-32-characters'
+  assert.equal(readSiteAccess(signSiteAccess('p@example.com', Date.now(), 'partner'))?.role, 'partner')
+  delete process.env.SITE_PARTNER_ACCESS_HASH
+})
