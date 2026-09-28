@@ -65,7 +65,7 @@ export const commercialPlans: Record<PlanTier, CommercialPlan> = {
     monthlyPriceGbp: 19,
     includedSeats: 3,
     includedSuites: ['core_operations'],
-    includedWorkspaces: ['Choose Retail & Logistics, Talent, HR or Health — £19/month each, combine any', 'Marketing and Brand Studio'],
+    includedWorkspaces: ['Choose Retail & Logistics, Talent, HR or Health at £19/month each, combine any', 'Marketing and Brand Studio'],
     includedBoltOns: [],
     access: ['One FoundingOS account', 'FoundingOS web', 'FoundingOS mobile', '3 team members', 'Add workspaces and bolt-ons any time'],
     includedFeatures: ['WhatsApp messaging and delivery notifications', 'Brand Studio and branded documents', 'Automatic sync', 'All supported languages', 'Community support'],

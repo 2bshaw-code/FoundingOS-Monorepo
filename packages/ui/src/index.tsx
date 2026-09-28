@@ -129,7 +129,7 @@ const workspaceProducts: WorkspaceProduct[] = [
     suite: 'Core Workforce',
     audience: 'For in-house hiring teams and recruitment agencies',
     summary: 'Recruitment: jobs, job boards, candidates, interviews, offers, references, agency clients and placements.',
-    outcome: 'Fill roles faster with one pipeline from advert to signed offer—and hand hires straight to HR.',
+    outcome: 'Fill roles faster with one pipeline from advert to signed offer, and hand hires straight to HR.',
     modules: ['Jobs', 'Job boards', 'Candidates', 'Pipelines', 'Interviews', 'Scorecards', 'Offers', 'References', 'Talent pool', 'Agency clients', 'Placements'],
     metrics: [
       { label: 'Open roles', value: '24', change: '9 priority' },
@@ -327,7 +327,7 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
 
   if (page === 'workspaces' || page === 'consoles') return (
     <>
-      <PageIntro eyebrow="One account · Modular workspaces" title="Every part of the business, inside one FoundingOS" copy="Retail, Logistics, Finance, Marketing, Talent, HR, and Health are connected workspaces—not separate products or operating systems. Your team signs into one account and sees the workspaces their role and plan enable." />
+      <PageIntro eyebrow="One account · Modular workspaces" title="Every part of the business, inside one FoundingOS" copy="Retail, Logistics, Finance, Marketing, Talent, HR, and Health are connected workspaces, not separate products or operating systems. Your team signs into one account and sees the workspaces their role and plan enable." />
       <SuiteWorkspaceMap />
     </>
   )
@@ -416,7 +416,7 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
   if (page === 'pricing') return (
     <>
       <BackButton />
-      <PageIntro eyebrow="Simple, modular pricing" title="Start free. Add only what you need." copy="Pick the workspaces you run — Retail & Logistics, Talent or HR — at £19/month each. Add Commerce Pro or Core.Intelligence as you grow, or take everything with Complete. No sales call needed." />
+      <PageIntro eyebrow="Simple, modular pricing" title="Start free. Add only what you need." copy="Pick the workspaces you run at £19/month each: Retail &amp; Logistics, Talent or HR. Add Commerce Pro or Core.Intelligence as you grow, or take everything with Complete. No sales call needed." />
       <section className="module-grid">
         {packagePlans.map((plan) => {
           const details = commercialPlans[plan.tier]
@@ -437,7 +437,7 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
         })}
       </section>
 
-      <PageIntro eyebrow="Core workspaces" title="£19/month each. Take one, or combine them." copy="Retail & Logistics, Talent and HR are priced the same. Start with the one you need and add the others whenever you like — Complete includes them all." />
+      <PageIntro eyebrow="Core workspaces" title="£19/month each. Take one, or combine them." copy="Retail &amp; Logistics, Talent and HR are priced the same. Start with the one you need and add the others whenever you like. Complete includes them all." />
       <section className="module-grid">
         {baseKeys.map((key) => {
           const base = commercialBases[key]
@@ -485,7 +485,7 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
     <>
       <PageIntro eyebrow="About FoundingOS" title="One operating system for emerging-market businesses" copy="FoundingOS is a business operating system: it unifies commerce, logistics, finance, workforce, and health operations without forcing teams into disconnected point tools." />
       <section className="module-grid">
-        <article><h2>Shared by design</h2><p>Identity, permissions, telemetry, events, and intelligence are common infrastructure—not duplicated integrations.</p></article>
+        <article><h2>Shared by design</h2><p>Identity, permissions, telemetry, events, and intelligence are common infrastructure, not duplicated integrations.</p></article>
         <article><h2>Built for real workflows</h2><p>WhatsApp, mobile money, intermittent connectivity, and cross-team handoffs are part of the operating model.</p></article>
         <article><h2>Clear architecture</h2><p>Core.Operations, Core.Workforce, and Core.Intelligence remain the stable product architecture.</p></article>
       </section>
@@ -514,17 +514,18 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
       <section className="hero hero-ai">
         <div className="hero-copy">
           <div className="hero-ai-intro"><p className="eyebrow"><span className="hero-ai-pill">FoundAI</span><span className="hero-wa-pill">WhatsApp</span></p><p className="hero-ai-tagline">The AI that runs your business</p></div>
-          <h1>Your business, run by AI. Right inside WhatsApp.</h1>
+          <h1>Run your whole business from WhatsApp.</h1>
           <p>
-            Message FoundAI like you would a manager. Ask who owes you money, take an order, or approve a refund with one
-            word — all from <strong>WhatsApp</strong>.
+            <strong>FoundAI</strong> is your assistant. You send it a message, the same way you message your staff.
           </p>
           <p>
-            Behind the chat, <strong>FoundAI</strong> gets on with your invoices, stock, deliveries, customer messages,
-            campaigns and social posts. It does the routine work itself and{' '}
-            <strong>only asks you when a decision needs a human</strong>.
+            Ask who owes you money. Take an order. Approve a refund. You just type it in WhatsApp, in your own language.
           </p>
-          <p className="hero-ai-suites-label">One assistant, across every part of the business:</p>
+          <p>
+            FoundAI then does the work for you. It sends the invoice, chases the payment, orders the stock, books the
+            delivery and writes your posts. <strong>It always asks you first before it spends money.</strong>
+          </p>
+          <p className="hero-ai-suites-label">One assistant for every part of your business:</p>
           <ul className="hero-ai-suites">
             <li>Retail</li>
             <li>Logistics</li>
@@ -540,10 +541,10 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
             <Link className="btn btn-secondary" href="/test-workspaces/retail">Try the live demo</Link>
           </div>
           <ul className="hero-ai-points">
-            <li><b>Lives in WhatsApp</b> Ask questions, take orders and get approval requests in the chat you already open all day.</li>
-            <li><b>Does the work</b> Sends invoices, chases payments, reorders stock, rebooks deliveries, writes and publishes posts.</li>
-            <li><b>Asks for approval</b> Refunds, big spends, job offers and anything regulated wait for your YES on WhatsApp.</li>
-            <li><b>You set the rules</b> Auto, Ask me or Off for each kind of work, plus your own spend limit.</li>
+            <li><b>No new app to learn</b> It works in WhatsApp, the app you already use every day.</li>
+            <li><b>Works on low data</b> It uses very little data, and keeps working when the network is slow.</li>
+            <li><b>It does the work</b> Invoices, payments, stock, deliveries, customer messages and posts.</li>
+            <li><b>You stay in charge</b> Set each job to Do it, Ask me, or Off. Set your own spending limit.</li>
           </ul>
         </div>
 
@@ -556,7 +557,7 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
         <div className="messaging-first-copy">
           <p className="eyebrow">WhatsApp is the front door</p>
           <h2>Run the whole business from one WhatsApp chat.</h2>
-          <p>Text FoundAI in plain words and it answers from your real invoices, orders, stock and customers. When it needs a decision it messages you—reply YES or NO and it gets on with it. Your team logs orders, deliveries and invoices the same way, and every message lands in the same records the web and app use.</p>
+          <p>Text FoundAI in plain words and it answers from your real invoices, orders, stock and customers. When it needs a decision it messages you. Reply YES or NO and it carries on. Your team logs orders, deliveries and invoices the same way, and every message lands in the same records the web and app use.</p>
           <div className="channel-pills" aria-label="Messaging channel direction">
             <span className="channel-live">WhatsApp · first</span>
             <span>Telegram · planned</span>
@@ -579,7 +580,7 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
           <article>
             <span>Your team, by text</span>
             <strong>Orders, deliveries, invoices</strong>
-            <p>Staff numbers get role-based commands—drivers mark deliveries, finance raises invoices—on the official Meta WhatsApp Business API.</p>
+            <p>Staff numbers get role-based commands on the official Meta WhatsApp Business API. Drivers mark deliveries. Finance raises invoices.</p>
           </article>
         </div>
       </section>
@@ -618,7 +619,7 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
       <footer className="site-footer">
         <div>
           <strong>FoundingOS</strong>
-          <p>The AI that runs your business—across operations, workforce and intelligence.</p>
+          <p>The AI that runs your business, across operations, workforce and intelligence.</p>
         </div>
         <nav aria-label="Legal" className="site-footer-legal">
           <a href="/privacy">Privacy</a>

@@ -16,11 +16,11 @@ const reels: Reel[] = [
     greeting: 'Good morning. I\'ve got this.', since: 'Your café, running itself since 08:00', approvedText: 'You approved · refund issued · customer told',
     scenes: [
       { time: '08:02', area: 'Finance', text: 'Sent invoice INV-1042 to Hart & Co', detail: '£1,240 · due 14 Oct · emailed' },
-      { time: '08:04', area: 'Retail', text: 'Oat milk running low — reordered 24', detail: 'Supplier emailed · £86, inside your £250 limit' },
-      { time: '08:07', area: 'Logistics', text: 'Missed delivery — customer rebooked', detail: 'WhatsApp sent · new slot tomorrow 10–12' },
+      { time: '08:04', area: 'Retail', text: 'Oat milk running low. Reordered 24', detail: 'Supplier emailed · £86, inside your £250 limit' },
+      { time: '08:07', area: 'Logistics', text: 'Missed delivery. Customer rebooked', detail: 'WhatsApp sent · new slot tomorrow 10–12' },
       { time: '08:11', area: 'Marketing', text: 'Wrote 5 posts for the autumn menu', detail: 'Instagram · Facebook · scheduled Mon–Fri', tone: 'write' },
       { time: '08:15', area: 'Finance', text: 'Chased 2 overdue invoices', detail: 'Friendly reminders · £3,180 outstanding' },
-      { time: '08:19', area: 'Retail', text: 'Refund of £420 for order #8812', detail: 'Over your £250 limit — needs you', tone: 'ask' },
+      { time: '08:19', area: 'Retail', text: 'Refund of £420 for order #8812', detail: 'Over your £250 limit. Needs you', tone: 'ask' },
     ],
   },
   {
@@ -31,7 +31,7 @@ const reels: Reel[] = [
       { time: '12:10', area: 'Retail', text: 'Replied to 9 WhatsApp questions', detail: 'Sizes, stock and opening hours' },
       { time: '12:14', area: 'Talent', text: 'Screened 23 applicants for Saturday staff', detail: 'Shortlisted 3 · interviews offered Thursday' },
       { time: '12:18', area: 'Finance', text: 'Matched 41 card payments to sales', detail: 'Bank reconciled · £2,960 today' },
-      { time: '12:21', area: 'Talent', text: 'Job offer to Priya — £11.80/hr', detail: 'Hiring decisions need you', tone: 'ask' },
+      { time: '12:21', area: 'Talent', text: 'Job offer to Priya for £11.80/hr', detail: 'Hiring decisions need you', tone: 'ask' },
     ],
   },
   {
@@ -40,9 +40,9 @@ const reels: Reel[] = [
       { time: '18:02', area: 'Logistics', text: '47 of 48 drops completed', detail: 'Proof of delivery captured · 1 retry tomorrow' },
       { time: '18:05', area: 'Logistics', text: 'Planned tomorrow\'s 6 routes', detail: 'Saves 38 miles vs today' },
       { time: '18:09', area: 'Finance', text: 'Invoiced 12 customers for today', detail: '£6,480 · paid by card link' },
-      { time: '18:12', area: 'Intelligence', text: 'Fuel spend up 14% this week', detail: 'Flagged van 3 — tyre pressure check booked' },
+      { time: '18:12', area: 'Intelligence', text: 'Fuel spend up 14% this week', detail: 'Flagged van 3. Tyre pressure check booked' },
       { time: '18:16', area: 'Marketing', text: 'Drafted a review request to 40 customers', detail: 'Sends tomorrow 9am', tone: 'write' },
-      { time: '18:20', area: 'Finance', text: 'New tyres order — £1,150', detail: 'Over your £500 purchase limit — needs you', tone: 'ask' },
+      { time: '18:20', area: 'Finance', text: 'New tyres order for £1,150', detail: 'Over your £500 purchase limit. Needs you', tone: 'ask' },
     ],
   },
   {
@@ -53,7 +53,7 @@ const reels: Reel[] = [
       { time: '07:41', area: 'Finance', text: 'Submitted 6 insurance claims', detail: '£1,870 · tracking payment' },
       { time: '07:45', area: 'Retail', text: 'Gloves and gauze reordered', detail: 'Below minimum stock · £64' },
       { time: '07:49', area: 'Marketing', text: 'Wrote a flu-jab reminder post', detail: 'Facebook · Instagram · Friday', tone: 'write' },
-      { time: '07:53', area: 'Talent', text: 'Locum cover for Dr Shah — £420', detail: 'Staffing costs need you', tone: 'ask' },
+      { time: '07:53', area: 'Talent', text: 'Locum cover for Dr Shah for £420', detail: 'Staffing costs need you', tone: 'ask' },
     ],
   },
 ]
@@ -99,6 +99,6 @@ export function FoundAiMovie() {
         </li>
       })}
     </ol>
-    <div className={`fai-movie-foot ${step >= scenes.length + 1 ? 'is-shown' : ''}`}><b>{scenes.length} jobs handled.</b> 1 needed you — and it took one tap.</div>
+    <div className={`fai-movie-foot ${step >= scenes.length + 1 ? 'is-shown' : ''}`}><b>{scenes.length} jobs handled.</b> 1 needed you, and it took one tap.</div>
   </div>
 }

@@ -38,7 +38,7 @@ const scenarios: DemoScenario[] = [
     role: 'Owner',
     intent: 'Approve FoundAI request',
     workspace: 'Finance',
-    action: 'FoundAI had asked: "Send payment reminder INV-1042 to Harbour Cafe (£620.00) — reply YES or NO". The owner replied YES, so the reminder was sent and logged.',
+    action: 'FoundAI had asked: "Send payment reminder INV-1042 to Harbour Cafe (£620.00). Reply YES or NO". The owner replied YES, so the reminder was sent and logged.',
     record: 'INV-1042 · Reminder sent · Approved on WhatsApp',
     event: 'autopilot.approved and autopilot.action.executed published',
     reply: 'Done ✅ Send payment reminder: INV-1042 Harbour Cafe (£620.00)\n\nThat\'s everything for now.',
@@ -54,7 +54,7 @@ const scenarios: DemoScenario[] = [
     action: 'Customer matched and order created with two items and a requested delivery date.',
     record: 'Order #1048 · John · 2 items · Awaiting fulfilment',
     event: 'order.created published to the Shared Event Feed',
-    reply: 'Done — Order #1048 was created for John. 2x Blue T-shirts are due for delivery tomorrow.',
+    reply: 'Done. Order #1048 was created for John. 2x Blue T-shirts are due for delivery tomorrow.',
   },
   {
     id: 'delivery',
@@ -67,7 +67,7 @@ const scenarios: DemoScenario[] = [
     action: 'Order ownership and driver permission checked, then delivery status changed to delivered.',
     record: 'Delivery ORDER-1048 · Delivered · 14:32',
     event: 'delivery.completed published; Finance follow-up suggested',
-    reply: 'Confirmed — ORDER-1048 is marked delivered. Finance has been notified to review invoicing.',
+    reply: 'Confirmed. ORDER-1048 is marked delivered. Finance has been notified to review invoicing.',
   },
   {
     id: 'invoice',
