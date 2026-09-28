@@ -211,12 +211,26 @@ async function buildFounderAiContext(tenantId: string) {
   }
 }
 
+// Anthropic's web search encourages inline <cite index="..."> markup around searched facts.
+// We surface the pages separately as webSources, so that markup is noise that would show up
+// as raw tags in the answer. Strip it while keeping the sentence it wrapped.
+export function stripCitationMarkup(text: string): string {
+  return text
+    // Closing tags first: an open-tag pattern would otherwise match the "cite>" inside
+    // "</cite>" and leave a stray "</" behind.
+    .replace(/<\s*\/\s*cite\s*>[)\]]?/gi, '')
+    .replace(/[([]?<?\s*cite\b[^<>]*>/gi, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/ ([,.;:!?])/g, '$1')
+    .trim()
+}
+
 type ParsedAnswer = Omit<FoundAiResponse, 'model' | 'usedConversation' | 'conversationMessageCount' | 'webSources' | 'researchEnabled'>
 
 function parseModelResponse(value: unknown): ParsedAnswer {
   if (!value || typeof value !== 'object') throw new Error('FoundAI returned an invalid response.')
   const candidate = value as Record<string, unknown>
-  const answer = String(candidate.answer || '').trim()
+  const answer = stripCitationMarkup(String(candidate.answer || ''))
   if (!answer) throw new Error('FoundAI returned an empty answer.')
   const citations = Array.isArray(candidate.citations)
     ? candidate.citations
@@ -231,7 +245,7 @@ function parseModelResponse(value: unknown): ParsedAnswer {
         .filter((item) => item.workspace && item.module && item.reference && item.name)
     : []
   const suggestedActions = Array.isArray(candidate.suggestedActions)
-    ? candidate.suggestedActions.map(String).map((item) => item.trim()).filter(Boolean).slice(0, 4)
+    ? candidate.suggestedActions.map(String).map(stripCitationMarkup).filter(Boolean).slice(0, 4)
     : []
   const quotedMessages = Array.isArray(candidate.quotedMessages)
     ? candidate.quotedMessages.map(String).map((item) => item.trim()).filter(Boolean).slice(0, 5)

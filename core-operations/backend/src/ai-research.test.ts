@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { canResearch, collectWebSources, lastTextBlock, webSearchTool } from './ai-research.js'
-import { readHistory } from './ai.js'
+import { readHistory, stripCitationMarkup } from './ai.js'
 
 test('live research is limited to the top plans and the founder', () => {
   assert.equal(canResearch('growth', false), true)
@@ -91,4 +91,18 @@ test('history is capped so a long chat cannot balloon the request', () => {
 test('an over-long history message is truncated rather than sent whole', () => {
   const history = readHistory([{ role: 'user', content: 'x'.repeat(5_000) }])
   assert.equal(history[0].content.length, 2_000)
+})
+
+test('inline citation markup is stripped without losing the sentence', () => {
+  const messy = 'Comparables range from (cite index="9-1">£10–30 per user monthly</cite> to (cite index="9-2">£30–75 per user</cite>.'
+  const clean = stripCitationMarkup(messy)
+  assert.equal(clean, 'Comparables range from £10–30 per user monthly to £30–75 per user.')
+})
+
+test('both cite markup forms are stripped, and plain text is untouched', () => {
+  const expected = 'Prices rose by 4% last month.'
+  // Claude emits the paren form after a web search, and the plain tag form otherwise.
+  assert.equal(stripCitationMarkup('Prices rose (cite index="1-2">by 4%</cite> last month.'), expected)
+  assert.equal(stripCitationMarkup('Prices rose <cite index="1-2">by 4%</cite> last month.'), expected)
+  assert.equal(stripCitationMarkup('Your MRR is \u00a30.'), 'Your MRR is \u00a30.')
 })

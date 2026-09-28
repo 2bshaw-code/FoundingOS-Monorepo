@@ -368,7 +368,7 @@ const intentFor = (text: string, actions: AiAction[]): AiAction => {
   return byKind('summary') ?? { label: text, kind: 'summary' }
 }
 
-export type LiveAnswer = { answer: string; suggestedActions: string[]; citations: Array<{ reference: string; name: string }>; model: string }
+export type LiveAnswer = { answer: string; suggestedActions: string[]; citations: Array<{ reference: string; name: string }>; webSources?: Array<{ title: string; url: string }>; model: string }
 
 export function ModuleAiBar({ moduleId, moduleLabel, noun, records, statuses, kpis, onApply, askLive }: { moduleId: string; moduleLabel: string; noun: string; records: LayoutRecord[]; statuses: string[]; kpis: ModuleKpi[]; onApply: (plan: AiPlan) => Promise<void>; askLive?: (question: string) => Promise<LiveAnswer> }) {
   const actions = useMemo(() => moduleAiActions(moduleId), [moduleId])
@@ -436,6 +436,17 @@ export function ModuleAiBar({ moduleId, moduleLabel, noun, records, statuses, kp
       <p className="mw-ai-answer">{live.answer}</p>
       {live.suggestedActions.length ? <><small className="mw-ai-label">Suggested next steps</small><ul>{live.suggestedActions.map((action) => <li key={action}>{action}</li>)}</ul></> : null}
       {live.citations.length ? <p className="mw-ai-sources">Based on: {live.citations.map((citation) => citation.name || citation.reference).join(', ')}</p> : null}
+      {live.webSources?.length ? (
+        <p className="mw-ai-sources">
+          Looked up:{' '}
+          {live.webSources.map((source, index) => (
+            <span key={source.url}>
+              {index > 0 ? ', ' : ''}
+              <a href={source.url} rel="noreferrer noopener" target="_blank">{source.title}</a>
+            </span>
+          ))}
+        </p>
+      ) : null}
     </div> : null}
     {liveError ? <p className="mw-ai-error">Live FoundAI is unavailable ({liveError}). Showing a quick answer from this module instead.</p> : null}
     {applied ? <p className="mw-ai-applied">{applied}</p> : null}

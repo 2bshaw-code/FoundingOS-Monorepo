@@ -44,6 +44,30 @@ Internal tier keys are unchanged so gating and stored licences keep working:
 | Extra team member | £5/user/month | Core and Complete |
 | Language Pack | £5/month | Lite only; all languages included on paid plans |
 
+## FoundAI live market intelligence
+
+FoundAI answers from the tenant's own records on every plan. On **Complete** and
+**Enterprise** it can also research the live web to answer questions about market
+trends, national and local prices, supplier and commodity costs, competitor
+pricing and activity, and regulation.
+
+| Capability | Lite | Core | Complete | Enterprise |
+| --- | --- | --- | --- | --- |
+| Answers from your own records | Yes | Yes | Yes | Yes |
+| Conversation memory (follow-up questions) | Yes | Yes | Yes | Yes |
+| Live market, price and competitor research | No | No | Yes | Yes |
+
+Searches are located to the tenant's `countryCode` from onboarding, so prices and
+trends are answered for the market the business actually trades in. Every page
+FoundAI reads is returned as a source and shown as a link next to the answer,
+kept separate from record citations so outside claims are never presented as the
+business's own data. On Lite and Core, FoundAI says that live research is a
+Complete/Enterprise capability rather than answering without it.
+
+Each search is billed by the model provider, so the gate is enforced server-side
+in `core-operations/backend/src/ai-research.ts` (`canResearch`) using the
+tenant's highest workspace plan. SuperDash (founder scope) always has it.
+
 Logistics is sold as part of the Retail & Logistics base workspace. Health is a
 base workspace on the same £19 pricing as Retail, Talent and HR.
 
