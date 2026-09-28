@@ -125,3 +125,10 @@ test('truncated JSON is rejected rather than shown as gibberish', () => {
   assert.equal(salvageAnswer('{"answer":"Prices are ris'), null)
   assert.equal(salvageAnswer('   '), null)
 })
+
+test('markdown emphasis is removed because answers render as plain text', () => {
+  assert.equal(stripCitationMarkup('Act on **measurable ROI** first.'), 'Act on measurable ROI first.')
+  assert.equal(stripCitationMarkup('This is *important* today.'), 'This is important today.')
+  // Real multiplication and footnote-style asterisks must survive untouched.
+  assert.equal(stripCitationMarkup('Cost is 3 * 4 = 12.'), 'Cost is 3 * 4 = 12.')
+})

@@ -220,6 +220,9 @@ export function stripCitationMarkup(text: string): string {
     // "</cite>" and leave a stray "</" behind.
     .replace(/<\s*\/\s*cite\s*>[)\]]?/gi, '')
     .replace(/[([]?<?\s*cite\b[^<>]*>/gi, '')
+    // Answers are rendered as plain text, so markdown emphasis would show as stray asterisks.
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/(^|\s)\*([^*\n]+)\*(?=\s|[,.;:!?]|$)/g, '$1$2')
     .replace(/[ \t]{2,}/g, ' ')
     .replace(/ ([,.;:!?])/g, '$1')
     .trim()
