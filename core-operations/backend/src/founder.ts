@@ -24,6 +24,7 @@ const monthlyValue = (plan: string, enabled: string[]) => plan === 'starter'
 
 // Business name given to the accounts admins/investors get when they sign in with an access code.
 export const PREVIEW_BUSINESS_NAME = 'FoundingOS preview'
+export const TESTER_BUSINESS_NAME = 'FoundingOS tester'
 
 export async function founderOverview(founderTenantId?: string | null) {
   const now = Date.now()
@@ -40,10 +41,10 @@ export async function founderOverview(founderTenantId?: string | null) {
   const dbLatencyMs = Date.now() - dbStart
 
   // Internal @foundingos.com accounts (QA, staff) are not customers.
-  // Admin/investor preview accounts are not customers either.
+  // Admin/investor and tester accounts are not customers either.
   const internal = new Set([
     ...owners.filter((user) => user.email.toLowerCase().endsWith('@foundingos.com')).map((user) => user.tenantId),
-    ...onboardings.filter((row) => row.businessName === PREVIEW_BUSINESS_NAME).map((row) => row.tenantId),
+    ...onboardings.filter((row) => row.businessName === PREVIEW_BUSINESS_NAME || row.businessName === TESTER_BUSINESS_NAME).map((row) => row.tenantId),
   ])
   const tenantIds = [...new Set([...workspaces.map((row) => row.tenantId), ...onboardings.map((row) => row.tenantId)])].filter((id) => id !== founderTenantId && !internal.has(id))
   const onboardingBy = new Map(onboardings.map((row) => [row.tenantId, row]))

@@ -117,6 +117,12 @@ export function FounderSuperDash() {
     setError('')
     try {
       await loginToProduction(email.trim(), password)
+      const access = await productionRequest<{ founder?: boolean; investor?: boolean }>('/founder/access').catch(() => null)
+      if (access && !access.founder && !access.investor) {
+        await logoutProduction()
+        throw new Error('This account does not have SuperDash access. Use an investor/partner code.')
+      }
+      if (access && !access.founder && access.investor) setInvestor(true)
       setSignedIn(true)
       await load()
     } catch (err) {
@@ -149,9 +155,9 @@ export function FounderSuperDash() {
 
   if (!signedIn && !investor) {
     return <main className="sd-shell"><form className="sd-login" onSubmit={signIn}>
-      <p className="sd-eyebrow">Founder only</p><h1>SuperDash</h1>
-      <input autoComplete="username" onChange={(event) => setEmail(event.target.value)} placeholder="Founder email" type="email" value={email} />
-      <input autoComplete="current-password" onChange={(event) => setPassword(event.target.value)} placeholder="Password" type="password" value={password} />
+      <p className="sd-eyebrow">Founder &amp; partners</p><h1>SuperDash</h1>
+      <input autoComplete="username" onChange={(event) => setEmail(event.target.value)} placeholder="Email" type="email" value={email} />
+      <input autoComplete="current-password" onChange={(event) => setPassword(event.target.value)} placeholder="Password or partner code" type="password" value={password} />
       {error ? <p className="sd-error">{error}</p> : null}
       <button disabled={busy === 'login'} type="submit">{busy === 'login' ? 'Signing in…' : 'Sign in'}</button>
       <a className="sd-site-link" href="/">← Back to website</a>

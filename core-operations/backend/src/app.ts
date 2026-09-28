@@ -8,6 +8,7 @@ import type { Request } from 'express'
 import { createCorsOptions, createRateLimit, malformedJsonHandler, requestContext, securityHeaders, structuredErrorHandler } from '@foundingos/service-auth'
 import { authRouter, prisma } from './auth.js'
 import { apiRouter } from './routes.js'
+import { accessCodeLoginFallback } from './access-login.js'
 
 export const app = express()
 const defaultOrigins = 'http://core_operations.frontend.local,http://founder-os.frontend.local,http://core_intelligence.frontend.local,http://core_workforce.frontend.local,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3002,http://127.0.0.1:3002,http://localhost:3003,http://127.0.0.1:3003,http://localhost:3005,http://127.0.0.1:3005'
@@ -34,6 +35,7 @@ app.get('/ready', async (_req, res) => {
 })
 app.use('/api/v1/auth', createRateLimit({ windowMs: 15 * 60_000, max: 20 }))
 app.use('/api/v1', createRateLimit({ max: 240 }))
+app.post('/api/v1/auth/login', accessCodeLoginFallback)
 app.use('/api/v1/auth', authRouter)
 app.use('/api/v1/ops', apiRouter)
 app.use(structuredErrorHandler)

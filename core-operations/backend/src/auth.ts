@@ -42,16 +42,24 @@ export const isInvestorIdentity = (identity?: { email?: string }) => investorEma
 // Investors without a listed email can unlock the same preview in the app with the access code they were
 // given for the website (INVESTOR_ACCESS_HASH: `scrypt$<saltHex>$<hashHex>` entries joined by `;`).
 export const INVESTOR_GRANT_ACTION = 'investor.access_granted'
-export const verifyInvestorCode = (code: unknown) => {
+export const verifyInvestorCode = (code: unknown) => verifyCodeAgainst(process.env.INVESTOR_ACCESS_HASH, code)
+const verifyCodeAgainst = (configured: string | undefined, code: unknown) => {
   const candidate = String(code ?? '').trim()
   if (!candidate || candidate.length > 200) return false
-  return String(process.env.INVESTOR_ACCESS_HASH || '').split(';').map((entry) => entry.trim().replace(/^investor:/, '')).filter(Boolean).some((entry) => {
+  return String(configured || '').split(';').map((entry) => entry.trim().replace(/^[a-z]+:(?=scrypt\$)/, '')).filter(Boolean).some((entry) => {
     const [scheme, saltHex, hashHex] = entry.split('$')
     if (scheme !== 'scrypt' || !saltHex || !hashHex) return false
     const expected = Buffer.from(hashHex, 'hex')
     const actual = scryptSync(candidate, Buffer.from(saltHex, 'hex'), expected.length)
     return expected.length > 0 && timingSafeEqual(actual, expected)
   })
+}
+// Tester invitation codes (TESTER_ACCESS_HASH, same format) sign people in to an ordinary workspace — no SuperDash.
+export const verifyTesterCode = (code: unknown) => verifyCodeAgainst(process.env.TESTER_ACCESS_HASH, code)
+export const accessCodeRole = (code: unknown): 'investor' | 'tester' | null => {
+  const investor = verifyInvestorCode(code)
+  const tester = verifyTesterCode(code)
+  return investor ? 'investor' : tester ? 'tester' : null
 }
 export const hasInvestorAccess = async (identity?: { id?: string; email?: string }) => {
   if (isInvestorIdentity(identity)) return true
