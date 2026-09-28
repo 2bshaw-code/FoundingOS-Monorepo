@@ -846,7 +846,16 @@ export type AutopilotState = {
   approvals: AutopilotApproval[]
   activity: AutopilotActivity[]
 }
-export type FoundAiAnswer = { answer: string; suggestedActions: string[]; citations: Array<{ reference: string; name: string }>; model: string }
+export type FoundAiAnswer = {
+  answer: string
+  suggestedActions: string[]
+  citations: Array<{ reference: string; name: string }>
+  // Pages FoundAI read on the live web, on plans that include market research.
+  webSources?: Array<{ title: string; url: string }>
+  researchEnabled?: boolean
+  model: string
+}
+export type FoundAiTurn = { role: 'user' | 'assistant'; content: string }
 export type FoundAiPost = { headline: string; body: string; hashtags: string[]; cta: string; type: string; imageIdea?: string }
 
 export const fetchAutopilot = () => authedRequest<AutopilotState>('/api/v1/ops/autopilot')
@@ -854,8 +863,8 @@ export const runAutopilotNow = () =>
   authedRequest<{ enabled: boolean; executed: AutopilotDecision[]; queued: AutopilotDecision[] }>('/api/v1/ops/autopilot/run', { method: 'POST', body: '{}' })
 export const decideAutopilotApproval = (id: string, approve: boolean) =>
   authedRequest<{ id: string; status: string }>(`/api/v1/ops/autopilot/approvals/${id}/decision`, { method: 'POST', body: JSON.stringify({ approve }) })
-export const askFoundAi = (question: string, workspace?: string) =>
-  authedRequest<FoundAiAnswer>('/api/v1/ops/ai/ask', { method: 'POST', body: JSON.stringify({ question, workspace }) })
+export const askFoundAi = (question: string, workspace?: string, history?: FoundAiTurn[]) =>
+  authedRequest<FoundAiAnswer>('/api/v1/ops/ai/ask', { method: 'POST', body: JSON.stringify({ question, workspace, history }) })
 export const writeFoundAiPost = (input: { topic: string; type: string; tone: string; platform?: string; previous?: string }) =>
   authedRequest<FoundAiPost>('/api/v1/ops/ai/marketing/post', { method: 'POST', body: JSON.stringify(input) })
 

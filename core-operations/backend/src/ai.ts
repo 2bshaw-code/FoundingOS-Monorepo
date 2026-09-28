@@ -416,7 +416,9 @@ export async function askFoundAi(input: {
         temperature: 0.2,
         system,
         messages,
-        ...(withResearch ? { tools: [webSearchTool(research.profile, 4)] } : {}),
+        // SuperDash is a desktop browser and can wait; the mobile app's platform HTTP
+        // timeout is 60s, so workspace questions get a tighter search budget to stay inside it.
+        ...(withResearch ? { tools: [webSearchTool(research.profile, founderScope ? 4 : 2)] } : {}),
       }),
       // Searching the live web takes far longer than answering from records alone.
       signal: AbortSignal.timeout(withResearch ? 110_000 : 25_000),

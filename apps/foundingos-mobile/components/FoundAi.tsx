@@ -114,7 +114,7 @@ export function FoundAiAutopilotCard({ compact = false, onChanged }: { compact?:
   )
 }
 
-const SUGGESTIONS = ['What needs my attention today?', 'Who owes me money?', 'What stock is running low?', 'How did sales do this week?']
+const SUGGESTIONS = ['What needs my attention today?', 'Who owes me money?', 'What stock is running low?', 'How did sales do this week?', 'What are prices doing in my market?']
 
 // WhatsApp is the main way owners talk to FoundAI; show whether it is live and what to do.
 export function FoundAiWhatsAppCard({ onConnect }: { onConnect: () => void }) {
@@ -147,30 +147,74 @@ export function FoundAiWhatsAppCard({ onConnect }: { onConnect: () => void }) {
 // Answer plus its suggested next steps, as FoundAI would say them.
 const spokenAnswer = (answer: FoundAiAnswer) => [answer.answer, ...(answer.suggestedActions.length ? ['Suggested next steps.', ...answer.suggestedActions] : [])].join(' ')
 
+type AskTurn = { id: string; question: string; answer: FoundAiAnswer | null; error?: string }
+
+// Only completed exchanges are worth carrying forward; a failed turn would just teach the
+// model that it once errored.
+export function askHistory(thread: AskTurn[]) {
+  return thread.flatMap((turn) =>
+    turn.answer
+      ? [{ role: 'user' as const, content: turn.question }, { role: 'assistant' as const, content: turn.answer.answer }]
+      : [],
+  )
+}
+
 export function AskFoundAiCard({ workspace }: { workspace?: string }) {
   const [question, setQuestion] = useState('')
-  const [answer, setAnswer] = useState<FoundAiAnswer | null>(null)
+  const [thread, setThread] = useState<AskTurn[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const ask = async (text: string) => {
     const trimmed = text.trim()
-    if (!trimmed) return
-    setQuestion(trimmed); setBusy(true); setError(''); setAnswer(null)
+    if (!trimmed || busy) return
+    const history = askHistory(thread)
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    setQuestion(''); setBusy(true); setError('')
+    setThread((current) => [...current, { id, question: trimmed, answer: null }])
     try {
-      const result = await askFoundAi(trimmed, workspace)
-      setAnswer(result)
+      const result = await askFoundAi(trimmed, workspace, history)
+      setThread((current) => current.map((turn) => (turn.id === id ? { ...turn, answer: result } : turn)))
       speakIfAuto(spokenAnswer(result))
-    } catch (cause: any) { setError(cause?.message || 'FoundAI could not answer that') } finally { setBusy(false) }
+    } catch (cause: any) {
+      const message = cause?.message || 'FoundAI could not answer that'
+      setError(message)
+      setThread((current) => current.map((turn) => (turn.id === id ? { ...turn, error: message } : turn)))
+    } finally { setBusy(false) }
   }
   return (
     <QuantumCard accent="#38BDF8">
-      <View style={styles.row}><Badge /><QuantumText variant="overline" color="#38BDF8" style={{ flex: 1 }}>Ask FoundAI</QuantumText><VoiceToggle /></View>
-      <QuantumText variant="caption" color={quantumColors.neutral200}>Answers come from your real customers, orders, invoices, stock and messages.</QuantumText>
+      <View style={styles.row}>
+        <Badge />
+        <QuantumText variant="overline" color="#38BDF8" style={{ flex: 1 }}>Ask FoundAI</QuantumText>
+        {thread.length ? (
+          <Pressable onPress={() => { setThread([]); setError('') }}>
+            <QuantumText variant="caption" color={quantumColors.neutral300}>Clear</QuantumText>
+          </Pressable>
+        ) : null}
+        <VoiceToggle />
+      </View>
+      <QuantumText variant="caption" color={quantumColors.neutral200}>Answers come from your real customers, orders, invoices, stock and messages. Ask follow-up questions like a conversation.</QuantumText>
+
+      {thread.map((turn) => (
+        <View key={turn.id} style={styles.answer}>
+          <QuantumText variant="label" color="#7DD3FC">{turn.question}</QuantumText>
+          {turn.error ? <QuantumText variant="caption" color={quantumColors.warning}>{turn.error}</QuantumText> : null}
+          {!turn.answer && !turn.error ? <ActivityIndicator color="#38BDF8" /> : null}
+          {turn.answer ? <>
+            <QuantumText variant="body">{turn.answer.answer}</QuantumText>
+            {turn.answer.suggestedActions.length ? <QuantumText variant="caption" color={FOUNDAI}>{turn.answer.suggestedActions.map((item) => `→ ${item}`).join('\n')}</QuantumText> : null}
+            {turn.answer.webSources?.length ? <QuantumText variant="caption" color={quantumColors.neutral300}>Looked up: {turn.answer.webSources.map((item) => item.title).slice(0, 4).join(', ')}</QuantumText> : null}
+            {turn.answer.citations.length ? <QuantumText variant="caption" color={quantumColors.neutral300}>From: {turn.answer.citations.map((item) => item.name || item.reference).slice(0, 4).join(', ')}</QuantumText> : null}
+            <SpeakButton text={spokenAnswer(turn.answer)} />
+          </> : null}
+        </View>
+      ))}
+
       <View style={styles.inputRow}>
         <TextInput
           onChangeText={setQuestion}
           onSubmitEditing={() => ask(question)}
-          placeholder="Ask anything about your business…"
+          placeholder={thread.length ? 'Ask a follow-up…' : 'Ask anything about your business…'}
           placeholderTextColor={quantumColors.neutral300}
           returnKeyType="send"
           style={styles.input}
@@ -178,17 +222,8 @@ export function AskFoundAiCard({ workspace }: { workspace?: string }) {
         />
         <Pressable disabled={busy} onPress={() => ask(question)} style={styles.send}><QuantumText variant="label" style={{ color: '#04111F' }}>{busy ? '…' : 'Ask'}</QuantumText></Pressable>
       </View>
-      {!answer && !busy ? <View style={styles.pills}>{SUGGESTIONS.map((item) => <QuantumPill key={item} onPress={() => ask(item)}>{item}</QuantumPill>)}</View> : null}
-      {busy ? <ActivityIndicator color="#38BDF8" style={{ marginTop: quantumSpace.md }} /> : null}
-      {error ? <QuantumText variant="caption" color={quantumColors.warning}>{error}</QuantumText> : null}
-      {answer ? (
-        <View style={styles.answer}>
-          <QuantumText variant="body">{answer.answer}</QuantumText>
-          {answer.suggestedActions.length ? <QuantumText variant="caption" color={FOUNDAI}>{answer.suggestedActions.map((item) => `→ ${item}`).join('\n')}</QuantumText> : null}
-          {answer.citations.length ? <QuantumText variant="caption" color={quantumColors.neutral300}>From: {answer.citations.map((item) => item.name || item.reference).slice(0, 4).join(', ')}</QuantumText> : null}
-          <SpeakButton text={spokenAnswer(answer)} />
-        </View>
-      ) : null}
+      {!thread.length && !busy ? <View style={styles.pills}>{SUGGESTIONS.map((item) => <QuantumPill key={item} onPress={() => ask(item)}>{item}</QuantumPill>)}</View> : null}
+      {error && !thread.some((turn) => turn.error) ? <QuantumText variant="caption" color={quantumColors.warning}>{error}</QuantumText> : null}
     </QuantumCard>
   )
 }
