@@ -4,7 +4,7 @@
 */
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { parseCostSuggestion } from './founder-ai-panel'
+import { collectLedgerActions, parseCostSuggestion } from './founder-ai-panel'
 
 const CATEGORIES = ['Hosting & infrastructure', 'AI & APIs', 'Software & tools', 'Advertising', 'Other']
 
@@ -42,4 +42,26 @@ test('ignores ordinary suggestions so they never become ledger entries', () => {
 test('matches categories case-insensitively', () => {
   const parsed = parseCostSuggestion('Add cost: Claude, £35/month, ai & apis', CATEGORIES)
   assert.equal(parsed?.category, 'AI & APIs')
+})
+
+test('pulls an inline ledger line out of the answer text', () => {
+  const result = collectLedgerActions({
+    answer: 'Your costs are £0 so far.\n- Add cost: Vercel Pro, £20/month, Hosting & infrastructure\nAdd that and I can work out your runway.',
+    suggestedActions: [],
+  })
+  assert.deepEqual(result.actions, ['Add cost: Vercel Pro, £20/month, Hosting & infrastructure'])
+  assert.ok(!result.text.includes('Add cost:'))
+  assert.ok(result.text.includes('Your costs are £0 so far.'))
+})
+
+test('does not duplicate a line returned in both places', () => {
+  const line = 'Add cost: Vercel Pro, £20/month, Hosting & infrastructure'
+  const result = collectLedgerActions({ answer: `Here you go.\n${line}`, suggestedActions: [line] })
+  assert.deepEqual(result.actions, [line])
+})
+
+test('keeps the answer text when there is nothing to extract', () => {
+  const result = collectLedgerActions({ answer: 'Your MRR is £0.', suggestedActions: ['Review your pricing page'] })
+  assert.equal(result.text, 'Your MRR is £0.')
+  assert.deepEqual(result.actions, ['Review your pricing page'])
 })

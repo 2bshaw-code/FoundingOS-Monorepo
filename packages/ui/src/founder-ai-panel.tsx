@@ -49,6 +49,30 @@ export function parseCostSuggestion(text: string, categories: string[]) {
   return { kind, label, category, amountGbp: amount, recurring }
 }
 
+const LEDGER_LINE = /^add\s+(cost|expense|income)\s*:/i
+
+// The model is told to put ledger entries in suggestedActions, but it sometimes writes them
+// inline in the answer instead. Pull those out so the save button still appears, and so the
+// same line is not shown twice.
+export function collectLedgerActions(answer: { answer: string; suggestedActions: string[] }) {
+  const inline: string[] = []
+  const prose: string[] = []
+  for (const line of answer.answer.split('\n')) {
+    const stripped = line.replace(/^[\s>*+-]*(?:\d+[.)])?\s*/, '').trim()
+    if (LEDGER_LINE.test(stripped)) inline.push(stripped)
+    else prose.push(line)
+  }
+  const seen = new Set<string>()
+  const actions: string[] = []
+  for (const item of [...answer.suggestedActions, ...inline].map((entry) => entry.trim())) {
+    const key = item.toLowerCase()
+    if (!item || seen.has(key)) continue
+    seen.add(key)
+    actions.push(item)
+  }
+  return { actions, text: prose.join('\n').trim() || answer.answer.trim() }
+}
+
 export function FounderAiPanel({ demo = false, onSaved }: { demo?: boolean; onSaved?: () => void }) {
   const [question, setQuestion] = useState('')
   const [answer, setAnswer] = useState<Answer | null>(null)
@@ -137,14 +161,16 @@ export function FounderAiPanel({ demo = false, onSaved }: { demo?: boolean; onSa
 
       {busy ? <p className="sd-muted">Reading your live figures…</p> : null}
 
-      {answer ? (
+      {answer ? (() => {
+        const { actions, text } = collectLedgerActions(answer)
+        return (
         <div className="sd-ai-answer">
           <p className="sd-ai-question">{asked}</p>
-          <p>{answer.answer}</p>
-          {answer.suggestedActions.length ? (
+          <p>{text}</p>
+          {actions.length ? (
             <div className="sd-ai-actions">
               <h3>Suggested next steps</h3>
-              {answer.suggestedActions.map((action) => {
+              {actions.map((action) => {
                 const cost = parseCostSuggestion(action, categories.length ? categories : ['Other'])
                 return (
                   <div className="sd-ai-action" key={action}>
@@ -165,7 +191,8 @@ export function FounderAiPanel({ demo = false, onSaved }: { demo?: boolean; onSa
             </p>
           ) : null}
         </div>
-      ) : null}
+        )
+      })() : null}
     </section>
   )
 }
