@@ -1,7 +1,12 @@
 import { prisma } from './auth.js'
+import { canResearch, collectWebSources, lastTextBlock, loadResearchProfile, researchSystemPrompt, webSearchTool, type WebSource } from './ai-research.js'
 
 const MAX_QUESTION_LENGTH = 2_000
 const MAX_RECORDS = 30
+// How much of the back-and-forth to carry forward. Enough for a real conversation, small
+// enough that a long session cannot quietly grow into a huge (and expensive) request.
+const MAX_HISTORY_TURNS = 12
+const MAX_HISTORY_CHARS = 2_000
 
 type AiCitation = {
   workspace: string
@@ -27,6 +32,31 @@ export type FoundAiResponse = {
   // How many of that customer's messages were actually supplied to the model — lets the
   // console show an honest "Based on N messages" caption instead of a vague claim.
   conversationMessageCount: number
+  // Pages FoundAI actually read on the live web to answer. Empty when it did not search.
+  webSources: WebSource[]
+  // True when this plan includes live market research at all — lets the UI explain that an
+  // outside-world question needs an upgrade, rather than silently answering without it.
+  researchEnabled: boolean
+}
+
+// Prior turns of the same conversation, so FoundAI can be talked to rather than queried.
+export type AiHistoryTurn = { role: 'user' | 'assistant'; content: string }
+
+export function readHistory(value: unknown): AiHistoryTurn[] {
+  if (!Array.isArray(value)) return []
+  const turns: AiHistoryTurn[] = []
+  for (const item of value) {
+    const entry = item as { role?: unknown; content?: unknown }
+    const role = entry?.role === 'assistant' ? 'assistant' : entry?.role === 'user' ? 'user' : null
+    const content = String(entry?.content ?? '').trim().slice(0, MAX_HISTORY_CHARS)
+    if (!role || !content) continue
+    turns.push({ role, content })
+  }
+  // Keep the most recent exchanges, and never lead with an assistant turn — the Messages API
+  // requires the conversation to start with the user.
+  const recent = turns.slice(-MAX_HISTORY_TURNS)
+  while (recent.length && recent[0].role === 'assistant') recent.shift()
+  return recent
 }
 
 function requireAiConfiguration() {
@@ -181,7 +211,10 @@ async function buildFounderAiContext(tenantId: string) {
   }
 }
 
-function parseModelResponse(value: unknown): Omit<FoundAiResponse, 'model' | 'usedConversation' | 'conversationMessageCount'> {  if (!value || typeof value !== 'object') throw new Error('FoundAI returned an invalid response.')
+type ParsedAnswer = Omit<FoundAiResponse, 'model' | 'usedConversation' | 'conversationMessageCount' | 'webSources' | 'researchEnabled'>
+
+function parseModelResponse(value: unknown): ParsedAnswer {
+  if (!value || typeof value !== 'object') throw new Error('FoundAI returned an invalid response.')
   const candidate = value as Record<string, unknown>
   const answer = String(candidate.answer || '').trim()
   if (!answer) throw new Error('FoundAI returned an empty answer.')
@@ -226,6 +259,9 @@ export async function askFoundAi(input: {
   // 'founder' adds FoundingOS's own company roll-ups (revenue, costs, runway, platform
   // health) so SuperDash can ask about the business itself, not just customer records.
   scope?: unknown
+  // Prior turns of this chat, so people can talk to FoundAI and follow up ("and last year?")
+  // instead of restating the whole question each time.
+  history?: unknown
   requestId?: string
 }): Promise<FoundAiResponse> {
   const { apiKey, model } = requireAiConfiguration()
@@ -237,7 +273,8 @@ export async function askFoundAi(input: {
   const module = String(input.module || '').trim()
   const customerId = String(input.customerId || '').trim()
   const founderScope = String(input.scope || '').trim().toLowerCase() === 'founder'
-  const [records, conversation, pipelineContext, founderContext] = await Promise.all([
+  const history = readHistory(input.history)
+  const [records, conversation, pipelineContext, founderContext, research] = await Promise.all([
     prisma.workspaceRecord.findMany({
       where: {
         tenantId: input.tenantId,
@@ -268,7 +305,9 @@ export async function askFoundAi(input: {
     // answered honestly instead of only working when a single conversation panel is open.
     customerId ? Promise.resolve(null) : buildPipelineAiContext(input.tenantId),
     founderScope ? buildFounderAiContext(input.tenantId) : Promise.resolve(null),
+    loadResearchProfile(input.tenantId).catch(() => ({ plan: 'lite', profile: null })),
   ])
+  const researchEnabled = canResearch(research.plan, founderScope)
   const context = records.map((record) => ({
     workspace: record.workspace,
     module: record.module,
@@ -288,8 +327,16 @@ export async function askFoundAi(input: {
   const awaitingReply = conversationContext.length > 0 && conversationContext[conversationContext.length - 1].direction === 'inbound'
   const system = [
     'You are FoundAI, a governed business-operations assistant.',
-    'Answer only from the supplied tenant records. Never invent data, outcomes, or integrations.',
+    researchEnabled
+      ? 'Answer from the supplied tenant records and, where the question needs current outside facts, from the web_search tool. Never invent data, outcomes, or integrations.'
+      : 'Answer only from the supplied tenant records. Never invent data, outcomes, or integrations.',
+    !researchEnabled
+      ? 'If the question needs live outside information such as market prices, trends or competitor activity, say plainly that live market research is part of the Complete and Enterprise plans and answer as far as the records allow.'
+      : '',
     'Do not claim to perform an external action. Suggest actions for user review instead.',
+    history.length > 0
+      ? 'This is an ongoing conversation. Earlier turns are included, so resolve follow-ups like "and last month?" or "why?" against what was already discussed, and do not repeat context the person already has.'
+      : '',
     'Return strict JSON with answer, citations, and suggestedActions.',
     'Each citation must exactly match a supplied record workspace, module, reference, and name.',
     conversationContext.length > 0
@@ -307,36 +354,64 @@ export async function askFoundAi(input: {
     founderContext
       ? 'If the founder mentions a cost, income or cash figure they want recorded, do not claim to have saved it. You MUST add one entry to the JSON "suggestedActions" array for each figure, written exactly as "Add cost: <label>, £<amount>/month, <category>" (or "Add income: ..." for money coming in), where <category> is copied verbatim from the supplied knownCategories. Use "/month" only for recurring amounts and "one-off" otherwise. Write nothing else on that line — no leading bullet, number or explanation — because the line is parsed to pre-fill a one-tap save button. Do not describe the suggestion as being "below"; just answer, and let the suggestedActions array carry the entry. If they ask what they are missing, compare their entries against knownCategories and name the categories with nothing recorded yet.'
       : '',
+    researchEnabled ? researchSystemPrompt(research.profile) : '',
   ].filter(Boolean).join(' ')
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: anthropicHeaders(apiKey),
-    body: JSON.stringify({
-      model,
-      max_tokens: 900,
-      temperature: 0.2,
-      system,
-      messages: [{
-        role: 'user',
-        content: JSON.stringify({
-          question,
-          records: context,
-          ...(conversationContext.length > 0 ? { conversation: conversationContext } : {}),
-          ...(pipelineContext ? { pipelineContext } : {}),
-          ...(founderContext ? { businessContext: founderContext } : {}),
-        }),
-      }],
-    }),
-    signal: AbortSignal.timeout(25_000),
+
+  const userContent = JSON.stringify({
+    question,
+    records: context,
+    ...(conversationContext.length > 0 ? { conversation: conversationContext } : {}),
+    ...(pipelineContext ? { pipelineContext } : {}),
+    ...(founderContext ? { businessContext: founderContext } : {}),
+    ...(researchEnabled ? { today: new Date().toISOString().slice(0, 10) } : {}),
   })
-  if (!response.ok) {
-    const payload = await response.json().catch(() => null) as { error?: { message?: string } } | null
-    throw Object.assign(new Error(payload?.error?.message || `FoundAI provider returned HTTP ${response.status}.`), { status: 502 })
+  // Earlier turns are sent as plain text; only the current question carries the record
+  // payload, so a long chat does not resend the whole business every time.
+  const messages: Array<{ role: 'user' | 'assistant'; content: unknown }> = [
+    ...history.map((turn) => ({ role: turn.role, content: turn.content })),
+    { role: 'user' as const, content: userContent },
+  ]
+
+  const callModel = async (withResearch: boolean) => {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: anthropicHeaders(apiKey),
+      body: JSON.stringify({
+        model,
+        max_tokens: withResearch ? 2_000 : 900,
+        temperature: 0.2,
+        system,
+        messages,
+        ...(withResearch ? { tools: [webSearchTool(research.profile, 5)] } : {}),
+      }),
+      // Searching the live web takes far longer than answering from records alone.
+      signal: AbortSignal.timeout(withResearch ? 110_000 : 25_000),
+    })
+    const body = await response.json().catch(() => null) as
+      | { content?: Array<{ type?: string; text?: string; content?: unknown }>; error?: { message?: string } }
+      | null
+    return { ok: response.ok, status: response.status, body }
   }
-  const payload = await response.json() as { content?: Array<{ type?: string; text?: string }> }
-  const text = payload.content?.find((item) => item.type === 'text')?.text
+
+  let attempt = await callModel(researchEnabled)
+  // If the account cannot use the web search tool, answer from records rather than failing
+  // the whole question — the capability is an enhancement, not a dependency.
+  const toolRejected = researchEnabled && !attempt.ok && attempt.status === 400 && /tool/i.test(attempt.body?.error?.message || '')
+  let researched = researchEnabled
+  if (toolRejected) {
+    console.error('[ai] web search unavailable, answering from records only:', attempt.body?.error?.message)
+    researched = false
+    attempt = await callModel(false)
+  }
+  if (!attempt.ok) {
+    throw Object.assign(new Error(attempt.body?.error?.message || `FoundAI provider returned HTTP ${attempt.status}.`), { status: 502 })
+  }
+  const webSources = researched ? collectWebSources(attempt.body?.content) : []
+  // With search in play the model narrates between tool calls, so the answer JSON is in the
+  // final text block rather than the first.
+  const text = lastTextBlock(attempt.body?.content)
   if (!text) throw Object.assign(new Error('FoundAI provider returned no text response.'), { status: 502 })
-  let parsed: Omit<FoundAiResponse, 'model' | 'usedConversation' | 'conversationMessageCount'>
+  let parsed: ParsedAnswer
   try {
     parsed = parseModelResponse(parseJsonResponse(text))
   } catch {
@@ -352,13 +427,15 @@ export async function askFoundAi(input: {
       workspace: workspace || null,
       module: module || null,
       requestId: input.requestId,
-      metadata: { model, recordCount: context.length, citationCount: citations.length, conversationMessageCount: conversationContext.length },
+      metadata: { model, recordCount: context.length, citationCount: citations.length, conversationMessageCount: conversationContext.length, historyTurns: history.length, researched, webSourceCount: webSources.length },
     },
   })
   return {
     ...parsed,
     citations,
     model,
+    webSources,
+    researchEnabled,
     usedConversation: conversationContext.length > 0,
     conversationMessageCount: conversationContext.length,
     // Never show quotes as if grounded in a real conversation when none was supplied — a

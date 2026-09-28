@@ -123,6 +123,7 @@ apiRouter.post('/ai/ask', requireMerchantAccess, requireTenant, async (req, res,
         module: req.body?.module,
         customerId: req.body?.customerId,
         scope: req.body?.scope,
+        history: req.body?.history,
         requestId: res.locals.requestId,
       }),
     })
