@@ -26,6 +26,17 @@ const ago = (iso: string | null) => {
 }
 const title = (slug: string) => slug.charAt(0).toUpperCase() + slug.slice(1)
 
+// Mirrors the web SuperDash section list exactly (packages/ui/src/founder-superdash.tsx)
+// so the app shows every tab, report and tool the founder sees on the web.
+// 'workspace/module' keys open the full professional module screen; other keys
+// render a SuperDash-only panel inline.
+type SuperTab = 'business' | 'finance' | 'sales' | 'marketing'
+const SECTIONS: Record<Exclude<SuperTab, 'business'>, Array<[key: string, label: string]>> = {
+  finance: [['books', 'Books & runway'], ['scenario', 'WhatsApp growth scenario'], ['finance/invoices', 'Invoices'], ['finance/bills', 'Bills'], ['finance/expenses', 'Expenses'], ['finance/banking', 'Banking'], ['finance/reconciliation', 'Reconciliation'], ['finance/budgets', 'Budgets'], ['finance/tax', 'Tax & VAT'], ['reports', 'Reports']],
+  sales: [['forecast', 'Forecast'], ['retail/sales-pipeline', 'Deals & quotes'], ['subscribers', 'Subscribers'], ['retail/crm', 'Customers'], ['marketing/leads', 'Leads'], ['retail/orders', 'Orders'], ['retail/service', 'Support']],
+  marketing: [['posts', 'FoundAI posts'], ['marketing/campaigns', 'Campaigns'], ['marketing/content', 'Content'], ['marketing/calendar', 'Calendar'], ['marketing/audiences', 'Audiences'], ['marketing/journeys', 'Journeys'], ['reports', 'ROI & attribution']],
+}
+
 function Kpi({ label, value, sub, alert }: { label: string; value: string; sub: string; alert?: boolean }) {
   return (
     <View style={[styles.kpi, alert ? styles.kpiAlert : null]}>
@@ -52,7 +63,8 @@ export default function SuperDashScreen() {
   const [error, setError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
   const [busy, setBusy] = useState('')
-  const [tab, setTab] = useState<'business' | 'finance' | 'sales' | 'marketing'>('business')
+  const [tab, setTab] = useState<SuperTab>('business')
+  const [sub, setSub] = useState('')
   const [reloadKey, setReloadKey] = useState(0)
   const [demo, setDemo] = useState(isDemoData())
   const access = useSuperDashAccess()
@@ -91,6 +103,28 @@ export default function SuperDashScreen() {
   const m = data?.monitoring
   const pending = data?.upgradeRequests.filter((request) => request.pending.length) ?? []
   const maxSignups = Math.max(1, ...(s?.signupsByDay.map((day) => day.count) ?? [1]))
+  const items = tab === 'business' ? [] : SECTIONS[tab]
+  const active = items.some(([key]) => key === sub) ? sub : items[0]?.[0] ?? ''
+  const openSection = (key: string) => {
+    if (key.includes('/')) router.push(`/workspace/${key}`)
+    else setSub(key)
+  }
+  const goTab = (next: SuperTab) => { setTab(next); setSub('') }
+
+  const subscribersPanel = <>
+    <QuantumSectionHeader label={`FoundingOS subscribers · ${data?.tenants.length ?? 0}${demo ? ' · EXAMPLE DATA' : ''}`} />
+    {data?.tenants.length ? data.tenants.map((tenant) => (
+      <QuantumCard key={tenant.tenantId}>
+        <View style={styles.tableRow}>
+          <QuantumText variant="label" style={styles.flex}>{tenant.businessName}</QuantumText>
+          <QuantumText variant="label" color="#38BDF8">{gbp(tenant.monthlyValueGbp)}/mo</QuantumText>
+        </View>
+        <QuantumText variant="caption" color={quantumColors.neutral300}>{tenant.ownerEmail} · {tenant.planName} · {tenant.seats} seat{tenant.seats === 1 ? '' : 's'}</QuantumText>
+        <QuantumText variant="caption">{tenant.workspaces.map(title).join(', ') || 'No workspaces'}</QuantumText>
+        <QuantumText variant="caption" color={quantumColors.neutral300}>Joined {ago(tenant.createdAt)} · active {ago(tenant.lastActiveAt)}</QuantumText>
+      </QuantumCard>
+    )) : <QuantumCard><QuantumText variant="caption" color={quantumColors.neutral300}>No customers yet.</QuantumText></QuantumCard>}
+  </>
 
   return (
     <QuantumScreen refreshControl={<RefreshControl refreshing={refreshing} tintColor="#38BDF8" onRefresh={async () => { setRefreshing(true); setReloadKey((key) => key + 1); await load(); setRefreshing(false) }} />}>
@@ -111,34 +145,31 @@ export default function SuperDashScreen() {
         </>}
       </View>
       <View style={styles.links}>
-        <QuantumPill active={tab === 'business'} onPress={() => setTab('business')}>Business</QuantumPill>
-        <QuantumPill active={tab === 'finance'} onPress={() => setTab('finance')}>Finance</QuantumPill>
-        <QuantumPill active={tab === 'sales'} onPress={() => setTab('sales')}>Sales</QuantumPill>
-        <QuantumPill active={tab === 'marketing'} onPress={() => setTab('marketing')}>Marketing</QuantumPill>
+        <QuantumPill active={tab === 'business'} onPress={() => goTab('business')}>Business</QuantumPill>
+        <QuantumPill active={tab === 'finance'} onPress={() => goTab('finance')}>Finance</QuantumPill>
+        <QuantumPill active={tab === 'sales'} onPress={() => goTab('sales')}>Sales</QuantumPill>
+        <QuantumPill active={tab === 'marketing'} onPress={() => goTab('marketing')}>Marketing</QuantumPill>
       </View>
-      {tab === 'finance' ? <>
-        <FounderFinancePanel reloadKey={reloadKey} />
-        <FounderScenarioPanel />
-        <QuantumSectionHeader label="Invoices, VAT & aged debt" />
-        <View style={styles.proLinks}>
-          <QuantumButton tone="secondary" onPress={() => router.push('/workspace/finance/invoices')}>Invoices</QuantumButton>
-          <QuantumButton tone="secondary" onPress={() => router.push('/workspace/finance/bills')}>Bills</QuantumButton>
+      {tab !== 'business' ? <>
+        <View style={styles.subLinks}>
+          {items.map(([key, label]) => <QuantumPill active={key === active} key={key} onPress={() => openSection(key)}>{label}</QuantumPill>)}
         </View>
-        <FinanceReport accent={PRO_ACCENT} refreshKey={reloadKey} />
-      </> : null}
-      {tab === 'sales' ? <>
-        <View style={styles.proLinks}>
-          <QuantumButton tone="secondary" onPress={() => router.push('/workspace/retail/sales-pipeline')}>Deals & quotes</QuantumButton>
-        </View>
-        <SalesReport accent={PRO_ACCENT} refreshKey={reloadKey} workspace="retail" />
-      </> : null}
-      {tab === 'marketing' ? <>
-        <FounderMarketingPanel reloadKey={reloadKey} />
-        <QuantumSectionHeader label="Campaign ROI & attribution" />
-        <View style={styles.proLinks}>
-          <QuantumButton tone="secondary" onPress={() => router.push('/workspace/marketing/campaigns')}>Campaigns</QuantumButton>
-        </View>
-        <MarketingReport accent={PRO_ACCENT} refreshKey={reloadKey} />
+        {tab === 'finance' && active === 'books' ? <FounderFinancePanel reloadKey={reloadKey} /> : null}
+        {tab === 'finance' && active === 'scenario' ? <FounderScenarioPanel /> : null}
+        {tab === 'finance' && active === 'reports' ? <>
+          <QuantumSectionHeader label="P&L, VAT & aged debt" />
+          <FinanceReport accent={PRO_ACCENT} refreshKey={reloadKey} />
+        </> : null}
+        {tab === 'sales' && active === 'forecast' ? <>
+          <QuantumSectionHeader label="Sales pipeline & forecast" />
+          <SalesReport accent={PRO_ACCENT} refreshKey={reloadKey} workspace="retail" />
+        </> : null}
+        {tab === 'sales' && active === 'subscribers' ? subscribersPanel : null}
+        {tab === 'marketing' && active === 'posts' ? <FounderMarketingPanel reloadKey={reloadKey} /> : null}
+        {tab === 'marketing' && active === 'reports' ? <>
+          <QuantumSectionHeader label="Campaign ROI & attribution" />
+          <MarketingReport accent={PRO_ACCENT} refreshKey={reloadKey} />
+        </> : null}
       </> : null}
       {tab === 'business' ? <>
       {error ? <QuantumNotice tone="danger">{error}</QuantumNotice> : null}
@@ -245,7 +276,7 @@ const styles = StyleSheet.create({
   requestRow: { flexDirection: 'row', alignItems: 'center', gap: quantumSpace.sm, paddingVertical: 6 },
   healthRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
   healthDot: { width: 9, height: 9, borderRadius: 5 },
-  proLinks: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
+  subLinks: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.xs, paddingBottom: 2 },
   tableRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 3 },
   amount: { minWidth: 64, textAlign: 'right' },
   bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 90 },

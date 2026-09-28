@@ -516,11 +516,24 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
           <div className="hero-ai-intro"><p className="eyebrow"><span className="hero-ai-pill">FoundAI</span><span className="hero-wa-pill">WhatsApp</span></p><p className="hero-ai-tagline">The AI that runs your business</p></div>
           <h1>Your business, run by AI. Right inside WhatsApp.</h1>
           <p>
-            Message FoundAI like you would a manager. Ask who owes you money, take an order, approve a refund with one word—all from <strong>WhatsApp</strong>.
-            Behind the chat, FoundingOS puts <strong>FoundAI</strong> to work on your invoices, stock, deliveries, customer messages,
-            campaigns and social posts—across Retail, Logistics, Finance, Marketing, Talent, HR and Health.
-            It does the routine work itself and <strong>only asks you when a decision needs a human</strong>.
+            Message FoundAI like you would a manager. Ask who owes you money, take an order, or approve a refund with one
+            word — all from <strong>WhatsApp</strong>.
           </p>
+          <p>
+            Behind the chat, <strong>FoundAI</strong> gets on with your invoices, stock, deliveries, customer messages,
+            campaigns and social posts. It does the routine work itself and{' '}
+            <strong>only asks you when a decision needs a human</strong>.
+          </p>
+          <p className="hero-ai-suites-label">One assistant, across every part of the business:</p>
+          <ul className="hero-ai-suites">
+            <li>Retail</li>
+            <li>Logistics</li>
+            <li>Finance</li>
+            <li>Marketing</li>
+            <li>Talent</li>
+            <li>HR</li>
+            <li>Health</li>
+          </ul>
           <div className="hero-actions">
             <Link className="btn btn-primary" href="/signup">Put FoundAI to work</Link>
             <Link className="btn btn-secondary" href="/#whatsapp">See it on WhatsApp</Link>
