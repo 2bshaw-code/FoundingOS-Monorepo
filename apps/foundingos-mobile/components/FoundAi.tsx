@@ -21,6 +21,8 @@ import {
 import { QuantumButton, QuantumCard, QuantumPill, QuantumText, quantumColors, quantumRadius, quantumSpace } from './QuantumUI'
 import { SpeakButton, VoiceToggle } from './SpeakButton'
 import { speakIfAuto } from '../lib/speech'
+import { AskTurn as AskThreadTurn, packThread, threadStorageKey, unpackThread } from '../lib/ai-thread'
+import { deleteStoredValue, getStoredValue, setStoredValue } from '../lib/platform-storage'
 
 const FOUNDAI = '#24C47A'
 const WORKSPACE_LABEL: Record<string, string> = { retail: 'Retail', logistics: 'Logistics', finance: 'Finance', marketing: 'Marketing', talent: 'Talent', hr: 'HR', health: 'Health', intelligence: 'Intelligence' }
@@ -147,7 +149,7 @@ export function FoundAiWhatsAppCard({ onConnect }: { onConnect: () => void }) {
 // Answer plus its suggested next steps, as FoundAI would say them.
 const spokenAnswer = (answer: FoundAiAnswer) => [answer.answer, ...(answer.suggestedActions.length ? ['Suggested next steps.', ...answer.suggestedActions] : [])].join(' ')
 
-type AskTurn = { id: string; question: string; answer: FoundAiAnswer | null; error?: string }
+type AskTurn = AskThreadTurn
 
 // Only completed exchanges are worth carrying forward; a failed turn would just teach the
 // model that it once errored.
@@ -164,6 +166,27 @@ export function AskFoundAiCard({ workspace }: { workspace?: string }) {
   const [thread, setThread] = useState<AskTurn[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [hydrated, setHydrated] = useState(false)
+  const storageKey = threadStorageKey(workspace)
+
+  // Restore first, and only start saving afterwards, so the empty opening state can never
+  // overwrite a conversation that was still on disk.
+  useEffect(() => {
+    let live = true
+    setHydrated(false)
+    getStoredValue(storageKey)
+      .then((raw) => { if (live) setThread(unpackThread(raw)) })
+      .catch(() => undefined)
+      .finally(() => { if (live) setHydrated(true) })
+    return () => { live = false }
+  }, [storageKey])
+
+  useEffect(() => {
+    if (!hydrated) return
+    const answered = thread.some((turn) => turn.answer)
+    void (answered ? setStoredValue(storageKey, packThread(thread)) : deleteStoredValue(storageKey)).catch(() => undefined)
+  }, [hydrated, storageKey, thread])
+
   const ask = async (text: string) => {
     const trimmed = text.trim()
     if (!trimmed || busy) return
