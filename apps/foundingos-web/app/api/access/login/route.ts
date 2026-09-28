@@ -33,6 +33,10 @@ export async function POST(request: NextRequest) {
     referrer: request.headers.get('referer'),
     userAgent: request.headers.get('user-agent'),
     clientAddress: client,
+  }).catch((error) => {
+    // Visit logging is analytics, not authentication. A database outage must
+    // never lock verified visitors out of the site.
+    console.error('[access] could not record preview visit', error)
   })
 
   attempts.delete(client)
