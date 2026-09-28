@@ -2247,6 +2247,12 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
     setViewName('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedViewsKey])
+  // FoundAI quick actions link straight to a module with "#new" to open its create form.
+  useEffect(() => {
+    if (window.location.hash !== '#new') return
+    setCreating(true)
+    window.history.replaceState(null, '', window.location.pathname + window.location.search)
+  }, [item.id])
   const saveCurrentView = () => {
     const name = viewName.trim()
     if (!name) return

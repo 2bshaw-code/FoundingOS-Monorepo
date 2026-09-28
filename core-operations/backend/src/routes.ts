@@ -5,15 +5,15 @@
 import { Router, raw, type RequestHandler } from 'express'
 import { createBobRouter } from '@foundingos/bob'
 import { createModuleAccessMiddleware } from '@foundingos/service-auth'
-import { timingSafeEqual } from 'node:crypto'
+import { randomBytes, timingSafeEqual } from 'node:crypto'
 import { askFoundAi, isAiConfigured } from './ai.js'
 import { draftMarketingPost, planMarketingCampaign } from './marketing-ai.js'
 import { publishSocial, type SocialChannel } from './social.js'
 import { OutboundBlocked } from './outbound.js'
 import { listWhatsAppTemplateStatus, submitWhatsAppTemplates } from './whatsapp-templates.js'
 import { decideAutopilotApproval, getAutopilotPolicy, listAutopilotActivity, listAutopilotApprovals, runAutopilot, runAutopilotForAllTenants, saveAutopilotPolicy } from './autopilot.js'
-import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess, requireFounderAccess, requireSignedIn, isFounderIdentity, hasInvestorAccess, verifyInvestorCode, INVESTOR_GRANT_ACTION } from './auth.js'
-import { founderOverview, founderSetTenantWorkspaces, applyBillingEntitlements, founderFinance, founderAddLedgerEntry, founderDeleteRecord, founderMarketing, founderSavePost, founderUpdatePost, saveProductRating } from './founder.js'
+import { prisma, requireDecisionApprovalAccess, requireExecutionAccess, requireMerchantAccess, requireOwnerAccess, requireTenantOwnerAccess, requireFounderAccess, requireSignedIn, requireFounderOrInvestorRead, isFounderIdentity, isReservedFounderEmail, hasInvestorAccess, verifyInvestorCode, INVESTOR_GRANT_ACTION, authService } from './auth.js'
+import { PREVIEW_BUSINESS_NAME, founderOverview, founderSetTenantWorkspaces, applyBillingEntitlements, founderFinance, founderAddLedgerEntry, founderDeleteRecord, founderMarketing, founderSavePost, founderUpdatePost, saveProductRating } from './founder.js'
 import { sendWhatsAppText, verifyWebhook, verifyWebhookSignature, whatsappReadiness } from './whatsapp.js'
 import { convertLead, createCustomer, createLead, deleteCustomer, getCustomer, listCustomers, pipelineSummary, updateCustomer, updateLeadStage } from './pipeline.js'
 import { assignDelivery, createCampaign, createDeliveryOperator, createDeliveryVehicle, createDeliveryZone, createInventoryItem, createInvoice, createOrder, createSocialPost, deleteInventoryItem, detectLocation, generateMedia, getBrandProfile, invoiceDocument, operationsSummary, orderDocument, saveBrandProfile, saveLocationProfile, searchInventory, sendInvoice, updateCampaign, updateDeliveryAssignment, updateDeliveryNotification, updateDeliveryOperator, updateDeliveryVehicle, updateDeliveryZone, updateInventoryItem, updateInvoice, updateOrder, updateSocialPost, weatherAt } from './operations.js'
@@ -303,6 +303,40 @@ apiRouter.get('/founder/access', requireSignedIn, async (_req, res, next) => {
     res.json({ success: true, data: { founder: isFounderIdentity(res.locals.auth), investor: await hasInvestorAccess(res.locals.auth) } })
   } catch (error) { next(error) }
 })
+// One-step sign-in for admins/investors: their access code signs them in (creating a preview
+// account the first time) and unlocks SuperDash. The website calls this server-to-server with the
+// bootstrap token after its own access gate has verified the code, so visitors only enter it once.
+const codeLoginAttempts = new Map<string, { count: number; resetAt: number }>()
+apiRouter.post('/access/code-login', async (req, res, next) => {
+  try {
+    const email = String(req.body?.email ?? '').trim().toLowerCase()
+    const trusted = verifyBootstrapToken(req.header('x-bootstrap-token'))
+    const key = trusted ? `web:${email}` : String(req.ip || 'unknown')
+    const now = Date.now()
+    const attempts = codeLoginAttempts.get(key)
+    if (!trusted && attempts && attempts.resetAt > now && attempts.count >= 8) return res.status(429).json({ success: false, message: 'Too many attempts. Try again in 15 minutes.' })
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) return res.status(400).json({ success: false, message: 'Enter a valid email address.' })
+    if (!trusted && !verifyInvestorCode(req.body?.code)) {
+      codeLoginAttempts.set(key, attempts && attempts.resetAt > now ? { count: attempts.count + 1, resetAt: attempts.resetAt } : { count: 1, resetAt: now + 15 * 60_000 })
+      return res.status(401).json({ success: false, message: 'Invalid email or password' })
+    }
+    if (isReservedFounderEmail(email)) return res.status(403).json({ success: false, message: 'Sign in with your founder password.' })
+    codeLoginAttempts.delete(key)
+    let user = await prisma.authUser.findUnique({ where: { email } })
+    if (!user) {
+      await bootstrapTenant({ email, password: randomBytes(24).toString('base64url'), businessName: PREVIEW_BUSINESS_NAME, ownerName: email.split('@')[0], plan: 'growth' })
+      user = await prisma.authUser.findUnique({ where: { email } })
+    }
+    if (!user?.active) return res.status(403).json({ success: false, message: 'This account is not active.' })
+    if (!(await hasInvestorAccess({ id: user.id, email }))) {
+      await prisma.workspaceAuditEvent.create({ data: { tenantId: user.tenantId || 'platform', actorId: user.id, action: INVESTOR_GRANT_ACTION, metadata: { email, via: trusted ? 'web' : 'app-login' } } })
+    }
+    const deviceFingerprint = String(req.header('x-device-fingerprint') || '')
+    if (!deviceFingerprint) return res.status(400).json({ success: false, message: 'Device fingerprint is required' })
+    const session = await authService.loginWithVerifiedIdentity(email, { deviceFingerprint, ipAddress: req.ip })
+    res.json({ success: true, user: session.user, token: session.token, refreshToken: session.refreshToken })
+  } catch (error) { next(error) }
+})
 // Five wrong codes per account per 15 minutes, then a cool-off — the codes are short and shared by hand.
 const investorUnlockAttempts = new Map<string, { count: number; resetAt: number }>()
 apiRouter.post('/founder/investor-unlock', requireSignedIn, async (req, res, next) => {
@@ -323,13 +357,13 @@ apiRouter.post('/founder/investor-unlock', requireSignedIn, async (req, res, nex
     res.json({ success: true, data: { founder: isFounderIdentity(auth), investor: true } })
   } catch (error) { next(error) }
 })
-apiRouter.get('/founder/overview', requireFounderAccess, async (_req, res, next) => {
+apiRouter.get('/founder/overview', requireFounderOrInvestorRead, async (_req, res, next) => {
   try {
-    await ensureFounderEntitlements(res.locals.auth?.tenantId)
+    if (isFounderIdentity(res.locals.auth)) await ensureFounderEntitlements(res.locals.auth?.tenantId)
     res.json({ success: true, data: await founderOverview(res.locals.auth?.tenantId) })
   } catch (error) { next(error) }
 })
-apiRouter.get('/founder/finance', requireFounderAccess, async (_req, res, next) => {
+apiRouter.get('/founder/finance', requireFounderOrInvestorRead, async (_req, res, next) => {
   try { res.json({ success: true, data: await founderFinance(res.locals.auth?.tenantId) }) } catch (error) { next(error) }
 })
 apiRouter.post('/founder/ledger', requireFounderAccess, async (req, res, next) => {
@@ -338,7 +372,7 @@ apiRouter.post('/founder/ledger', requireFounderAccess, async (req, res, next) =
 apiRouter.delete('/founder/ledger/:id', requireFounderAccess, async (req, res, next) => {
   try { res.json({ success: true, data: await founderDeleteRecord(res.locals.auth?.tenantId, String(req.params.id), 'founder-ledger') }) } catch (error) { next(error) }
 })
-apiRouter.get('/founder/marketing', requireFounderAccess, async (_req, res, next) => {
+apiRouter.get('/founder/marketing', requireFounderOrInvestorRead, async (_req, res, next) => {
   try { res.json({ success: true, data: await founderMarketing(res.locals.auth?.tenantId) }) } catch (error) { next(error) }
 })
 apiRouter.post('/founder/marketing/posts', requireFounderAccess, async (req, res, next) => {
@@ -352,7 +386,7 @@ apiRouter.delete('/founder/marketing/posts/:id', requireFounderAccess, async (re
 })
 apiRouter.post('/founder/tenants/:tenantId/workspaces', requireFounderAccess, async (req, res, next) => {
   try {
-    res.json({ success: true, data: await founderSetTenantWorkspaces(res.locals.auth.id, req.params.tenantId, req.body || {}) })
+    res.json({ success: true, data: await founderSetTenantWorkspaces(res.locals.auth.id, String(req.params.tenantId), req.body || {}) })
   } catch (error) { next(error) }
 })
 // Called by the web billing webhook after Stripe verifies a subscription change.

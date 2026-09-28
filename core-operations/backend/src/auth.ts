@@ -62,6 +62,13 @@ const verifyAny = createAccessMiddleware(authService)
 export const requireFounderAccess = (req: Parameters<typeof verifyAny>[0], res: Parameters<typeof verifyAny>[1], next: Parameters<typeof verifyAny>[2]) =>
   verifyAny(req, res, () => (isFounderIdentity(res.locals.auth) ? next() : res.status(403).json({ success: false, message: 'Founder access only' })))
 export const requireSignedIn = verifyAny
+// SuperDash is readable by the founder and by admins/investors unlocked with an access code;
+// every change (ledger, posts, switching tenant workspaces) stays founder-only.
+export const requireFounderOrInvestorRead = (req: Parameters<typeof verifyAny>[0], res: Parameters<typeof verifyAny>[1], next: Parameters<typeof verifyAny>[2]) =>
+  verifyAny(req, res, () => {
+    if (isFounderIdentity(res.locals.auth)) return next()
+    hasInvestorAccess(res.locals.auth).then((allowed) => (allowed ? next() : res.status(403).json({ success: false, message: 'Founder access only' })), next)
+  })
 
 const ensureDemoRetailUser = async () => {
   const email = process.env.DEMO_RETAIL_EMAIL || 'retail.manager@demo.local'

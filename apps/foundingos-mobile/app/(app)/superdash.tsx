@@ -4,7 +4,7 @@
 */
 // Founder SuperDash: run FoundingOS itself — subscriptions, revenue, upgrade
 // requests, platform health, growth, plus FoundingOS's own Finance and Marketing tabs.
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { RefreshControl, StyleSheet, View } from 'react-native'
 import { FounderFinancePanel } from '../../components/founder/FounderFinance'
 import { FounderMarketingPanel } from '../../components/founder/FounderMarketing'
@@ -57,8 +57,9 @@ export default function SuperDashScreen() {
   const [demo, setDemo] = useState(isDemoData())
   const access = useSuperDashAccess()
   const investor = access === 'investor'
-  // Investors only ever see example figures.
-  useEffect(() => { if (investor && !demo) setDemoData(true) }, [investor, demo])
+  // Admins/investors open on example figures and can switch to live figures (read-only) any time.
+  const startedInvestorDemo = useRef(false)
+  useEffect(() => { if (investor && !startedInvestorDemo.current) { startedInvestorDemo.current = true; setDemoData(true) } }, [investor])
 
   const load = useCallback(async () => {
     try {
@@ -94,14 +95,15 @@ export default function SuperDashScreen() {
   return (
     <QuantumScreen refreshControl={<RefreshControl refreshing={refreshing} tintColor="#38BDF8" onRefresh={async () => { setRefreshing(true); setReloadKey((key) => key + 1); await load(); setRefreshing(false) }} />}>
       <View style={styles.head}>
-        <QuantumText variant="overline" color="#38BDF8">{investor ? 'FoundingOS · Investor preview' : 'FoundingOS · Founder'}</QuantumText>
+        <QuantumText variant="overline" color="#38BDF8">{investor ? 'FoundingOS · Admin view' : 'FoundingOS · Founder'}</QuantumText>
         <QuantumText variant="h1">SuperDash</QuantumText>
-        <QuantumText variant="caption" color={quantumColors.neutral300}>{investor ? 'Example data · read-only' : demo ? 'Example data' : data ? `Updated ${ago(data.generatedAt)} · pull to refresh` : error ? 'Live figures unavailable' : 'Loading…'}</QuantumText>
+        <QuantumText variant="caption" color={quantumColors.neutral300}>{investor ? (demo ? 'Example data · view only' : 'Live figures · view only') : demo ? 'Example data' : data ? `Updated ${ago(data.generatedAt)} · pull to refresh` : error ? 'Live figures unavailable' : 'Loading…'}</QuantumText>
       </View>
       <View style={[styles.demoBar, demo ? styles.demoBarOn : null]}>
         {investor ? <>
-          <QuantumText variant="label">Investor preview · EXAMPLE DATA</QuantumText>
-          <QuantumText variant="caption" color={quantumColors.neutral300}>This is the founder’s SuperDash: every tab, report and tool used to run FoundingOS. Subscribers, books, forecasts, deals and campaigns are example figures, and nothing can be changed.</QuantumText>
+          <QuantumText variant="label">{demo ? 'Admin view · EXAMPLE DATA' : 'Admin view · LIVE FIGURES'}</QuantumText>
+          <QuantumText variant="caption" color={quantumColors.neutral300}>This is the founder’s SuperDash: every tab, report and tool used to run FoundingOS. Switch between example figures and the real live figures. It is view-only, so nothing can be changed.</QuantumText>
+          <QuantumButton tone={demo ? 'secondary' : undefined} onPress={() => setDemoData(!demo)}>{demo ? 'Show live figures' : 'Show demo figures'}</QuantumButton>
         </> : <>
           <QuantumText variant="label">{demo ? 'FoundingOS demo · EXAMPLE DATA' : 'Preview FoundingOS with example figures'}</QuantumText>
           <QuantumText variant="caption" color={quantumColors.neutral300}>{demo ? 'Subscribers, books, forecast, sales and marketing are made up. Nothing is saved to your account.' : 'Fill every tab with example subscribers, a year of books, a 2-year forecast, deals and campaigns.'}</QuantumText>
@@ -157,7 +159,7 @@ export default function SuperDashScreen() {
               <QuantumText variant="caption" color={quantumColors.neutral300}>{request.ownerEmail} · {ago(request.createdAt)}</QuantumText>
               <QuantumText variant="caption">Wants {request.pending.map(title).join(', ')}</QuantumText>
             </View>
-            <QuantumButton disabled={busy === request.tenantId} onPress={() => enable(request.tenantId, request.pending)}>{busy === request.tenantId ? '…' : 'Switch on'}</QuantumButton>
+            {investor ? null : <QuantumButton disabled={busy === request.tenantId} onPress={() => enable(request.tenantId, request.pending)}>{busy === request.tenantId ? '…' : 'Switch on'}</QuantumButton>}
           </View>
         )) : <QuantumText variant="caption" color={quantumColors.neutral300}>No pending requests.</QuantumText>}
       </QuantumCard>

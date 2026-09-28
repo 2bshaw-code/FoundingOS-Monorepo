@@ -232,6 +232,17 @@ export const getProductionSession = (): ProductionSession | null => {
   }
 }
 
+// The backend ties each refresh token to the device fingerprint used at sign-in, so it must stay
+// the same for this browser — a fresh random value on every refresh silently ended web sessions.
+const FINGERPRINT_KEY = 'foundingos-device-fingerprint-v1'
+const deviceFingerprint = () => {
+  const stored = window.localStorage.getItem(FINGERPRINT_KEY)
+  if (stored) return stored
+  const created = crypto.randomUUID()
+  window.localStorage.setItem(FINGERPRINT_KEY, created)
+  return created
+}
+
 const saveSession = (session: ProductionSession | null) => {
   if (session) window.localStorage.setItem(SESSION_KEY, JSON.stringify(session))
   else window.localStorage.removeItem(SESSION_KEY)
@@ -241,12 +252,24 @@ export async function loginToProduction(email: string, password: string) {
   const response = await fetch(`${apiRoot()}/auth/login`, {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', 'X-Device-Fingerprint': crypto.randomUUID() },
+    headers: { 'Content-Type': 'application/json', 'X-Device-Fingerprint': deviceFingerprint() },
     body: JSON.stringify({ email, password }),
   })
   const body = await readBody(response) as { accessToken?: string; token?: string; refreshToken?: string; user?: ProductionUser }
   const accessToken = body.accessToken || body.token
   if (!accessToken || !body.refreshToken || !body.user) throw new Error('Authentication response did not include a complete session')
+  const session = { accessToken, refreshToken: body.refreshToken, user: body.user }
+  saveSession(session)
+  return session
+}
+
+// Admins/investors who passed the website access page with their code get a full SuperDash
+// session without signing in again: the site's server exchanges its verified access cookie.
+export async function adoptPreviewSession() {
+  const response = await fetch('/api/access/session', { method: 'POST', cache: 'no-store', headers: { 'X-Device-Fingerprint': deviceFingerprint() } })
+  const body = await readBody(response) as { accessToken?: string; token?: string; refreshToken?: string; user?: ProductionUser }
+  const accessToken = body.accessToken || body.token
+  if (!accessToken || !body.refreshToken || !body.user) throw new Error('Preview session unavailable')
   const session = { accessToken, refreshToken: body.refreshToken, user: body.user }
   saveSession(session)
   return session
@@ -274,7 +297,7 @@ async function refreshSession(session: ProductionSession) {
   const response = await fetch(`${apiRoot()}/auth/refresh`, {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', 'X-Refresh-Token': session.refreshToken, 'X-Device-Fingerprint': crypto.randomUUID() },
+    headers: { 'Content-Type': 'application/json', 'X-Refresh-Token': session.refreshToken, 'X-Device-Fingerprint': deviceFingerprint() },
     body: '{}',
   })
   const body = await readBody(response) as { accessToken?: string; token?: string; refreshToken?: string; user?: ProductionUser }

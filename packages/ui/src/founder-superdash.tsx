@@ -5,11 +5,11 @@
 */
 // Founder SuperDash: subscriptions, revenue, upgrade requests, platform health,
 // growth, plus FoundingOS's own Finance (books, P&L, runway) and Marketing (FoundAI posts, campaigns, calendar).
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FounderFinancePanel, FounderMarketingPanel, FounderScenarioPanel } from './founder-superdash-modules'
 import { founderDemoFinance, founderDemoMarketing, founderDemoOverview } from './founder-superdash-demo'
 import { useDemoData } from './pro-coach'
-import { getProductionSession, loginToProduction, logoutProduction, productionRecords, productionRequest } from './workspace-production-client'
+import { adoptPreviewSession, getProductionSession, loginToProduction, logoutProduction, productionRecords, productionRequest } from './workspace-production-client'
 import { FinanceReportsPage, MarketingReportsPage, SalesReportsPage } from './pro/reports'
 import { proRecordFromBackend } from './pro/models'
 import type { LoadRecords } from './pro/shared'
@@ -64,7 +64,7 @@ export function FounderSuperDash() {
   const [sub, setSubState] = useState('')
   // Shared with the workspace demo switch so embedded Finance, Sales and Marketing tools show example records too.
   const [demo, setDemo] = useDemoData()
-  // Investors (signed in to the website with an investor password) get the full SuperDash, read-only and with example figures only.
+  // Admins/investors (who entered an access code on the website) see the full founder SuperDash, view-only, and can switch between example and live figures.
   const [investor, setInvestor] = useState(false)
   useEffect(() => {
     const sync = () => { const [nextTab, nextSub] = readHash(); setTabState(nextTab); setSubState(nextSub) }
@@ -86,12 +86,30 @@ export function FounderSuperDash() {
   }, [])
 
   useEffect(() => {
-    const has = Boolean(getProductionSession())
-    setSignedIn(has)
-    if (has) { void load(); return }
-    void fetch('/api/access/role', { cache: 'no-store' }).then((response) => (response.ok ? response.json() : null)).then((body: { role?: string } | null) => { if (body?.role === 'investor') setInvestor(true) }).catch(() => undefined)
+    let cancelled = false
+    void (async () => {
+      const has = Boolean(getProductionSession())
+      if (has) {
+        setSignedIn(true)
+        void load()
+        const access = await productionRequest<{ founder?: boolean; investor?: boolean }>('/founder/access').catch(() => null)
+        if (!cancelled && access && !access.founder && access.investor) setInvestor(true)
+        return
+      }
+      const role = await fetch('/api/access/role', { cache: 'no-store' }).then((response) => (response.ok ? response.json() : null)).catch(() => null) as { role?: string } | null
+      if (cancelled || role?.role !== 'investor') return
+      setInvestor(true)
+      // The access code already proved who they are, so swap it for a session instead of asking them to sign in again.
+      const session = await adoptPreviewSession().catch(() => null)
+      if (cancelled || !session) return
+      setSignedIn(true)
+      void load()
+    })()
+    return () => { cancelled = true }
   }, [load])
-  useEffect(() => { if (investor && !demo) setDemo(true) }, [investor, demo, setDemo])
+  // Admins open on example figures (real figures stay at zero until launch) and can switch to live whenever they like.
+  const startedInvestorDemo = useRef(false)
+  useEffect(() => { if (investor && !startedInvestorDemo.current) { startedInvestorDemo.current = true; setDemo(true) } }, [investor, setDemo])
 
   const signIn = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -159,8 +177,8 @@ export function FounderSuperDash() {
 
   return <main className="sd-shell">
     <header className="sd-top">
-      <div><p className="sd-eyebrow">{investor ? 'FoundingOS · Investor preview' : 'FoundingOS · Founder'}</p><h1>SuperDash</h1><small>{investor ? 'Example data · read-only' : demo ? 'Example data' : data ? `Updated ${ago(data.generatedAt)}` : error ? 'Live figures unavailable' : 'Loading…'}</small></div>
-      <nav><span className="sd-plan">Complete · all Pro tools on</span>{investor ? <span className="sd-plan">Read-only</span> : <><button onClick={() => void load()} type="button">Refresh</button><button className="ghost" onClick={() => { void logoutProduction().then(() => { setSignedIn(false); setData(null); setDemo(false) }) }} type="button">Sign out</button></>}</nav>
+      <div><p className="sd-eyebrow">{investor ? 'FoundingOS · Admin view' : 'FoundingOS · Founder'}</p><h1>SuperDash</h1><small>{investor ? (demo ? 'Example data · view only' : 'Live figures · view only') : demo ? 'Example data' : data ? `Updated ${ago(data.generatedAt)}` : error ? 'Live figures unavailable' : 'Loading…'}</small></div>
+      <nav><span className="sd-plan">Complete · all Pro tools on</span>{investor ? <><span className="sd-plan">View only</span>{signedIn && !demo ? <button onClick={() => void load()} type="button">Refresh</button> : null}</> : <><button onClick={() => void load()} type="button">Refresh</button><button className="ghost" onClick={() => { void logoutProduction().then(() => { setSignedIn(false); setData(null); setDemo(false) }) }} type="button">Sign out</button></>}</nav>
     </header>
     <div className="sd-tab-bar">
       <div className="sd-tabs" role="tablist">
@@ -168,8 +186,9 @@ export function FounderSuperDash() {
       </div>
       <a className="sd-site-link" href="/">← Back to website</a>
     </div>
-    {investor ? <div className="sd-demo-bar is-on">
-      <div><strong>Investor preview · EXAMPLE DATA</strong><small>This is the founder&apos;s SuperDash: every tab, report and tool the founder uses to run FoundingOS. Subscribers, books, forecasts, deals and campaigns are example figures, and nothing can be changed.</small></div>
+    {investor ? <div className={`sd-demo-bar${demo ? ' is-on' : ''}`}>
+      <div><strong>{demo ? 'Admin view · EXAMPLE DATA' : 'Admin view · LIVE FIGURES'}</strong><small>This is the founder&apos;s SuperDash: every tab, report and tool used to run FoundingOS. Switch between example figures and the real live figures. It is view-only, so nothing can be changed.</small></div>
+      {signedIn ? <button onClick={() => { setDemo(!demo); setFilter(''); setError('') }} type="button">{demo ? 'Show live figures' : 'Show demo figures'}</button> : null}
     </div> : <div className={`sd-demo-bar${demo ? ' is-on' : ''}`}>
       <div><strong>{demo ? 'FoundingOS demo · EXAMPLE DATA' : 'Preview FoundingOS with example figures'}</strong><small>{demo ? 'Subscribers, books, forecast, sales and marketing across every tab are made up. Nothing is saved to your account, and platform health stays live.' : 'Fill Business, Finance, Sales and Marketing with example subscribers, a year of books, a 2-year forecast, deals and campaigns. Your real numbers stay unchanged.'}</small></div>
       <button onClick={() => { setDemo(!demo); setFilter(''); setError('') }} type="button">{demo ? 'Back to live figures' : 'Load demo figures'}</button>
@@ -205,7 +224,7 @@ export function FounderSuperDash() {
         <h2>Upgrade requests</h2>
         {pending.length ? pending.map((request) => <div className="sd-row" key={request.id}>
           <div><strong>{request.business}</strong><small>{request.ownerEmail} · {ago(request.createdAt)}</small><small>Wants: {request.pending.map(title).join(', ')}{request.note ? ` — “${request.note}”` : ''}</small></div>
-          <button disabled={demo || busy === request.tenantId} onClick={() => void enable(request.tenantId, request.pending)} type="button">{demo ? 'Example only' : busy === request.tenantId ? 'Switching on…' : 'Switch on'}</button>
+          <button disabled={demo || investor || busy === request.tenantId} onClick={() => void enable(request.tenantId, request.pending)} type="button">{demo ? 'Example only' : busy === request.tenantId ? 'Switching on…' : 'Switch on'}</button>
         </div>) : <p className="sd-muted">No pending requests.</p>}
       </section>
 

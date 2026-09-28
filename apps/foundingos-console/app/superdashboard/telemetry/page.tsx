@@ -51,7 +51,7 @@ export default async function TelemetryDashboardRoute({
         <Table title="Top event names" rows={summary.byName.slice(0, 15).map((r) => [r.name, r.count])} />
         <Table
           title="Recent events"
-          rows={summary.recent.slice(0, 15).map((r) => [`${r.suite}/${r.name}`, new Date(r.occurredAt).toLocaleString()])}
+          rows={summary.recent.slice(0, 15).map((r) => [`${r.suite}/${r.name}`, new Date(r.occurredAt).toLocaleString('en-GB', { timeZone: 'Europe/London' })])}
         />
       </section>
     </main>

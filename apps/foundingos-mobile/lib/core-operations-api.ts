@@ -62,7 +62,17 @@ export async function login(email: string, password: string): Promise<LoginResul
   } catch {
     return { ok: false, error: 'Cannot reach Core.Operations. Check your connection and try again.' }
   }
-  const data = await response.json().catch(() => ({}))
+  let data = await response.json().catch(() => ({}))
+  if (response.status === 401) {
+    // Admins/investors sign in with the access code they were given instead of an account password.
+    const viaCode = await fetch(`${CORE_OPS_API_BASE}/api/v1/ops/access/code-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Fingerprint': deviceFingerprint },
+      body: JSON.stringify({ email, code: password }),
+    }).catch(() => null)
+    const codeData = await viaCode?.json().catch(() => ({}))
+    if (viaCode?.ok && codeData?.success) { response = viaCode; data = codeData }
+  }
   if (!response.ok || !data?.success) {
     return { ok: false, error: data?.message || 'Sign in failed. Check your email and password.' }
   }

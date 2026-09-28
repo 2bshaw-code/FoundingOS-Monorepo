@@ -171,23 +171,13 @@ if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
 // the voice pack isn't brand- or context-specific, so it doesn't belong in smartActions().
 const FOUNDAI_STORY_ACTION: SmartAction = { label: '\ud83d\udd0a Hear a FoundAI story', audioBank: AUDIO_SET }
 
-// Real, single-step AI Auto-Actions — appended in every real console context (see FoundAI
-// component below), since CRM Deals, Accounting Invoices, and Brand Finance are the only
-// three database-persisted create/update handlers anywhere in the app. Each one is real
-// navigation straight to that real form's one truly-required field (via a real URL anchor)
-// — never a fabricated zero-input creation, since the record's real name/value/amount still
-// has to come from the user, not be invented.
-function aiAutoActions(brand: FoundAIBrand): SmartAction[] {
-  const actions: SmartAction[] = [
-    { label: '\u2795 Create a deal for me', href: '/crm#quick-add-deal' },
-    { label: '\u2795 Log an invoice for me', href: '/modules/accounting#quick-add-invoice' },
+// Single-step AI Auto-Actions: each opens the real create form in the live workspace
+// (via "#new"), so the record's name/value/amount still comes from the user.
+function aiAutoActions(_brand: FoundAIBrand): SmartAction[] {
+  return [
+    { label: '\u2795 Create a deal for me', href: '/app/retail/sales-pipeline#new' },
+    { label: '\u2795 Log an invoice for me', href: '/app/finance/invoices#new' },
   ]
-  // FoundingOS's own dashboard (/founder) is a bespoke founder view, not BrandDashboard — it
-  // never renders RealBrandFinancePanel, so this action would land nowhere real there.
-  if (brand.name !== 'FoundingOS') {
-    actions.push({ label: '\u2795 Update brand finance for me', href: '/dashboard#quick-add-finance' })
-  }
-  return actions
 }
 
 // Interpreters for the Full Demo Mode data engines (/api/feeds/update,

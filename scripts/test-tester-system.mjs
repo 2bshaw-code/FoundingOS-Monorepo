@@ -46,13 +46,11 @@ test('every credential maps to a survey with at least 3 tailored questions', () 
   }
 })
 
-test('finance and crypto credentials are wired correctly', () => {
+test('finance credentials are wired correctly; retired FoundCrypto has no tester access', () => {
   const finance = findCredentialByPassword('finance-5511')
-  const crypto = findCredentialByPassword('crypto-6622')
   assert.equal(finance?.moduleId, 'finance')
   assert.equal(finance?.surveyId, 'survey-k')
-  assert.equal(crypto?.moduleId, 'crypto')
-  assert.equal(crypto?.surveyId, 'survey-l')
+  assert.notEqual(findCredentialByPassword('crypto-6622')?.moduleId, 'crypto')
 })
 
 test('auth flow: unknown password is rejected', () => {
@@ -123,15 +121,14 @@ test('survey replay: completing a run archives it and resets the working buffer'
   assert.equal(tester.runs[1].answers.find((a) => a.questionId === 'k1').answer, 'QuickBooks')
 })
 
-test('Finance and Crypto module access: reachable through the same catalog as every other module', () => {
+test('Finance module access is in the shared catalog; retired Crypto module is not', () => {
   // Real invariant update: MODULE_OPTIONS legitimately grew from 12 to 18 as new modules
   // (CRM, the whole-ecosystem tour, admin ops tour, buyer/customer overview, etc.) were added
   // this session — a floor rather than an exact count keeps this meaningful as it keeps growing.
   assert.ok(MODULE_OPTIONS.length >= 12, 'module catalog should only grow, never shrink below its original size')
   const finance = findModuleOption('finance')
-  const crypto = findModuleOption('crypto')
   assert.equal(finance?.surveyId, 'survey-k')
-  assert.equal(crypto?.surveyId, 'survey-l')
+  assert.equal(findModuleOption('crypto'), null)
   assert.equal(findModuleOption('not-a-real-module'), null)
 })
 
