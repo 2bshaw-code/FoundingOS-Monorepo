@@ -74,6 +74,26 @@ const HOME_WIDGETS = ['workspaces', 'whatsapp', 'autopilot', 'ask', 'attention',
 type HomeWidget = typeof HOME_WIDGETS[number]
 const HOME_WIDGET_LABELS: Record<string, string> = { workspaces: 'Your workspaces', whatsapp: 'FoundAI on WhatsApp', autopilot: 'Autopilot', ask: 'Ask FoundAI', attention: 'Needs your attention', activity: 'Recent activity', quick: 'Quick actions' }
 
+// The card order is saved per signed-in email. A signed-out moment (an expired
+// session, or the backend being unreachable) would otherwise switch the key to
+// "guest" and silently reset a layout the founder had arranged. Fall back to any
+// layout already saved on this device, and carry it over to the new key.
+async function restoreWidgetOrder(key: string): Promise<string[]> {
+  const fallbackKey = widgetOrderKey('mobile-home', null)
+  try {
+    const raw = await getStoredValue(key)
+    if (raw) return applyWidgetOrder(HOME_WIDGETS, JSON.parse(raw))
+    if (key === fallbackKey) return [...HOME_WIDGETS]
+    const carried = await getStoredValue(fallbackKey)
+    if (!carried) return [...HOME_WIDGETS]
+    const order = applyWidgetOrder(HOME_WIDGETS, JSON.parse(carried))
+    await setStoredValue(key, JSON.stringify(order)).catch(() => undefined)
+    return order
+  } catch {
+    return [...HOME_WIDGETS]
+  }
+}
+
 export default function TodayScreen() {
   const activeWorkspaceSlug = useQuantumStore((state) => state.activeBrandSlug)
   const pendingSyncCount = useQuantumStore((state) => state.pendingSyncCount)
@@ -106,7 +126,7 @@ export default function TodayScreen() {
     setConnected(Boolean(session) || Boolean(legacyToken))
     const key = widgetOrderKey('mobile-home', session?.email)
     setOrderKey(key)
-    getStoredValue(key).then((raw) => setOrder(applyWidgetOrder(HOME_WIDGETS, raw ? JSON.parse(raw) : null))).catch(() => setOrder([...HOME_WIDGETS]))
+    void restoreWidgetOrder(key).then(setOrder)
 
     const [queueResult, eventsResult, onboardingResult] = await Promise.all([
       fetchApprovalsQueue(),
