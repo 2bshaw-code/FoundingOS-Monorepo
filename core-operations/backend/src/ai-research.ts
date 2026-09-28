@@ -107,5 +107,6 @@ export function researchSystemPrompt(profile: ResearchProfile | null): string {
     'Never present a searched figure as if it came from the business\'s own records. Never invent a price, trend or competitor claim you did not actually find — if a search returns nothing useful, say plainly that you could not find a reliable current figure.',
     'Keep outside findings and the business\'s own numbers clearly separated in your answer, and connect the two: say what the outside information means for this specific business.',
     'Write the answer as plain prose. Do not wrap searched facts in cite tags or any other inline citation markup — the pages you read are collected and shown separately.',
+    'Keep the final answer under about 250 words so the response is never cut short.',
   ].filter(Boolean).join(' ')
 }

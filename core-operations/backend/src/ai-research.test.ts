@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { canResearch, collectWebSources, lastTextBlock, webSearchTool } from './ai-research.js'
-import { readHistory, stripCitationMarkup } from './ai.js'
+import { readHistory, salvageAnswer, stripCitationMarkup } from './ai.js'
 
 test('live research is limited to the top plans and the founder', () => {
   assert.equal(canResearch('growth', false), true)
@@ -105,4 +105,23 @@ test('both cite markup forms are stripped, and plain text is untouched', () => {
   assert.equal(stripCitationMarkup('Prices rose (cite index="1-2">by 4%</cite> last month.'), expected)
   assert.equal(stripCitationMarkup('Prices rose <cite index="1-2">by 4%</cite> last month.'), expected)
   assert.equal(stripCitationMarkup('Your MRR is \u00a30.'), 'Your MRR is \u00a30.')
+})
+
+test('a well-formed JSON answer is parsed as normal', () => {
+  const parsed = salvageAnswer('{"answer":"Your MRR is 0.","citations":[],"suggestedActions":["Review pricing"]}')
+  assert.equal(parsed?.answer, 'Your MRR is 0.')
+  assert.deepEqual(parsed?.suggestedActions, ['Review pricing'])
+})
+
+test('prose is salvaged when the model does not return JSON', () => {
+  const parsed = salvageAnswer('Maize is trading around 4,200 KES a bag in Nairobi this week.')
+  assert.equal(parsed?.answer, 'Maize is trading around 4,200 KES a bag in Nairobi this week.')
+  // Nothing structured came back, so nothing structured may be claimed.
+  assert.deepEqual(parsed?.citations, [])
+  assert.deepEqual(parsed?.suggestedActions, [])
+})
+
+test('truncated JSON is rejected rather than shown as gibberish', () => {
+  assert.equal(salvageAnswer('{"answer":"Prices are ris'), null)
+  assert.equal(salvageAnswer('   '), null)
 })

@@ -263,6 +263,21 @@ function parseJsonResponse(text: string): unknown {
   return JSON.parse(trimmed)
 }
 
+// The model is asked for strict JSON, but a long research turn can be cut off mid-object or
+// come back as plain prose. A readable prose answer is still worth showing, so fall back to
+// it rather than losing the question — with no citations or actions, since those can only be
+// trusted when they were actually structured.
+export function salvageAnswer(text: string): ParsedAnswer | null {
+  try {
+    return parseModelResponse(parseJsonResponse(text))
+  } catch {
+    const trimmed = stripCitationMarkup(text)
+    // Anything still looking like unparsed JSON would read as gibberish to a person.
+    if (!trimmed || trimmed.startsWith('{') || trimmed.startsWith('[')) return null
+    return { answer: trimmed, citations: [], suggestedActions: [], quotedMessages: [] }
+  }
+}
+
 export async function askFoundAi(input: {
   tenantId: string
   actorId: string
@@ -392,17 +407,19 @@ export async function askFoundAi(input: {
       headers: anthropicHeaders(apiKey),
       body: JSON.stringify({
         model,
-        max_tokens: withResearch ? 2_000 : 900,
+        // Searching burns output tokens on narration between tool calls, so the budget has
+        // to cover that as well as the answer — too small and the closing JSON is truncated.
+        max_tokens: withResearch ? 6_000 : 900,
         temperature: 0.2,
         system,
         messages,
-        ...(withResearch ? { tools: [webSearchTool(research.profile, 5)] } : {}),
+        ...(withResearch ? { tools: [webSearchTool(research.profile, 4)] } : {}),
       }),
       // Searching the live web takes far longer than answering from records alone.
       signal: AbortSignal.timeout(withResearch ? 110_000 : 25_000),
     })
     const body = await response.json().catch(() => null) as
-      | { content?: Array<{ type?: string; text?: string; content?: unknown }>; error?: { message?: string } }
+      | { content?: Array<{ type?: string; text?: string; content?: unknown }>; error?: { message?: string }; stop_reason?: string }
       | null
     return { ok: response.ok, status: response.status, body }
   }
@@ -423,14 +440,19 @@ export async function askFoundAi(input: {
   const webSources = researched ? collectWebSources(attempt.body?.content) : []
   // With search in play the model narrates between tool calls, so the answer JSON is in the
   // final text block rather than the first.
-  const text = lastTextBlock(attempt.body?.content)
-  if (!text) throw Object.assign(new Error('FoundAI provider returned no text response.'), { status: 502 })
-  let parsed: ParsedAnswer
-  try {
-    parsed = parseModelResponse(parseJsonResponse(text))
-  } catch {
-    throw Object.assign(new Error('FoundAI returned an unreadable response. Please try again.'), { status: 502 })
+  let text = lastTextBlock(attempt.body?.content)
+  let parsed: ParsedAnswer | null = text ? salvageAnswer(text) : null
+  if (!parsed && researched) {
+    // A long research turn can run out of output tokens mid-JSON. Rather than losing the
+    // question, ask again from records alone, which is short and reliable.
+    console.error('[ai] research answer was unusable, retrying without search:', attempt.body?.stop_reason)
+    researched = false
+    attempt = await callModel(false)
+    if (!attempt.ok) throw Object.assign(new Error(attempt.body?.error?.message || `FoundAI provider returned HTTP ${attempt.status}.`), { status: 502 })
+    text = lastTextBlock(attempt.body?.content)
+    parsed = text ? salvageAnswer(text) : null
   }
+  if (!parsed) throw Object.assign(new Error('FoundAI returned an unreadable response. Please try again.'), { status: 502 })
   const permittedReferences = new Set(context.map((record) => `${record.workspace}:${record.module}:${record.reference}:${record.name}`))
   const citations = parsed.citations.filter((citation) => permittedReferences.has(`${citation.workspace}:${citation.module}:${citation.reference}:${citation.name}`))
   await prisma.workspaceAuditEvent.create({
