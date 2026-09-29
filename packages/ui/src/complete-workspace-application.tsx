@@ -21,7 +21,7 @@ import { opsSchemaFor } from './pro/ops-registry'
 import { OpsFormPanel, OpsInsightsPanel } from './pro/ops-panel'
 import { linkedProductImage, productImageUrl } from './product-images'
 import { applyWidgetOrder, moveWidget, widgetOrderKey } from './widget-order'
-import { bootstrapProduction, getProductionSession, loginToProduction, logoutProduction, productionAgentActions, productionApiConfigured, productionModeEnabled, productionPlatform, productionRecords, productionRequest, type AgentAction, type AgentIntelligenceSummary, type ControlSettings, type ProductionInvitation, type ProductionSession, type ProductionWorkspaceRecord } from './workspace-production-client'
+import { adoptPreviewSession, bootstrapProduction, getProductionSession, loginToProduction, logoutProduction, productionAgentActions, productionApiConfigured, productionModeEnabled, productionPlatform, productionRecords, productionRequest, type AgentAction, type AgentIntelligenceSummary, type ControlSettings, type ProductionInvitation, type ProductionSession, type ProductionWorkspaceRecord } from './workspace-production-client'
 import { greetingFor, liveWorkspaceMetrics, type OwnerMetrics } from './workspace-overview-data'
 
 const workspaceRoot = productionModeEnabled ? '/app' : '/test-workspaces'
@@ -3049,6 +3049,17 @@ function ProductionAccess({ onAuthenticated }: { onAuthenticated: (session: Prod
   const [initializing, setInitializing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  // They already gave their email at the access page, so carry it through rather than making
+  // them type it again — and say plainly why a second step is needed at all.
+  const [knownEmail, setKnownEmail] = useState('')
+  useEffect(() => {
+    let live = true
+    fetch('/api/access/role', { cache: 'no-store' })
+      .then((response) => response.ok ? response.json() as Promise<{ email?: string | null }> : null)
+      .then((body) => { if (live && body?.email) setKnownEmail(body.email) })
+      .catch(() => undefined)
+    return () => { live = false }
+  }, [])
   const login = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setBusy(true)
@@ -3078,7 +3089,7 @@ function ProductionAccess({ onAuthenticated }: { onAuthenticated: (session: Prod
       setBusy(false)
     }
   }
-  return <main className="complete-workspace-access"><section><div className="complete-workspace-access-brand"><span>F</span><div><strong>FoundingOS</strong><small>Business in a box</small></div></div><p className="eyebrow">{initializing ? 'First deployment' : 'Secure workspace access'}</p><h1>{initializing ? 'Initialize your business' : 'Sign in to FoundingOS'}</h1><p>{initializing ? 'Create the first tenant and owner. The bootstrap token comes from your deployment secret manager and is never stored in the browser.' : 'Access every enabled workspace with your tenant-scoped account.'}</p><form onSubmit={(event) => void (initializing ? bootstrap(event) : login(event))}>{initializing ? <><label>Business name<input name="businessName" required /></label><label>Owner name<input name="ownerName" required /></label></> : null}<label>Email<input autoComplete="email" name="email" required type="email" /></label><label>Password<input autoComplete={initializing ? 'new-password' : 'current-password'} minLength={12} name="password" required type="password" /></label>{initializing ? <label>Deployment bootstrap token<input autoComplete="off" name="bootstrapToken" required type="password" /></label> : null}{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<button className="retail-app-primary" disabled={busy} type="submit">{busy ? 'Please wait…' : initializing ? 'Initialize and sign in' : 'Sign in'}</button></form><button className="complete-workspace-access-switch" onClick={() => { setInitializing((value) => !value); setError('') }} type="button">{initializing ? 'Return to sign in' : 'Initialize a new deployment'}</button></section></main>
+  return <main className="complete-workspace-access"><section><div className="complete-workspace-access-brand"><span>F</span><div><strong>FoundingOS</strong><small>Business in a box</small></div></div><p className="eyebrow">{initializing ? 'First deployment' : 'Secure workspace access'}</p><h1>{initializing ? 'Initialize your business' : 'Sign in to FoundingOS'}</h1><p>{initializing ? 'Create the first tenant and owner. The bootstrap token comes from your deployment secret manager and is never stored in the browser.' : 'One more step: use the password for your own FoundingOS account, not the invitation password.'}</p><form onSubmit={(event) => void (initializing ? bootstrap(event) : login(event))}>{initializing ? <><label>Business name<input name="businessName" required /></label><label>Owner name<input name="ownerName" required /></label></> : null}<label>Email<input autoComplete="email" defaultValue={initializing ? undefined : knownEmail} key={knownEmail} name="email" required type="email" /></label><label>Password<input autoComplete={initializing ? 'new-password' : 'current-password'} autoFocus={!initializing && Boolean(knownEmail)} minLength={12} name="password" required type="password" /></label>{initializing ? <label>Deployment bootstrap token<input autoComplete="off" name="bootstrapToken" required type="password" /></label> : null}{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<button className="retail-app-primary" disabled={busy} type="submit">{busy ? 'Please wait…' : initializing ? 'Initialize and sign in' : 'Sign in'}</button></form><button className="complete-workspace-access-switch" onClick={() => { setInitializing((value) => !value); setError('') }} type="button">{initializing ? 'Return to sign in' : 'Initialize a new deployment'}</button></section></main>
 }
 
 // A cross-workspace command palette (Cmd/Ctrl+K) — the single fastest way to jump to any
@@ -3123,9 +3134,21 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview', 
   const current = config.modules.find((item) => item.id === section) ?? config.modules[0]
   const [hydrated, setHydrated] = useState(!productionModeEnabled)
   const [session, setSession] = useState<ProductionSession | null>(null)
+  // Anyone who already proved who they are at the website's access page should not be asked
+  // to sign in a second time — SuperDash already works this way, and the workspaces now match.
   useEffect(() => {
-    setSession(getProductionSession())
-    setHydrated(true)
+    const existing = getProductionSession()
+    if (existing || !productionModeEnabled || !productionApiConfigured) {
+      setSession(existing)
+      setHydrated(true)
+      return
+    }
+    let live = true
+    adoptPreviewSession()
+      .then((adopted) => { if (live) setSession(adopted) })
+      .catch(() => { if (live) setSession(null) })
+      .finally(() => { if (live) setHydrated(true) })
+    return () => { live = false }
   }, [])
   const { state, events, update, reset, loading, error, production, demo, setDemo, ownerProfile, liveMetrics, createRecord, advanceRecord, attachRecord, uploadProductPhoto, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords } = useWorkspaceState(workspace, current.id, session)
   const autopilot = useAutopilot({
