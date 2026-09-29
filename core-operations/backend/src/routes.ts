@@ -36,7 +36,10 @@ const requireTenant: RequestHandler = (_req, res, next) => {
   next()
 }
 const requireCoreOperationsModule = createModuleAccessMiddleware('core_operations')
-const readTenant = (req: { header(name: string): string | undefined }, res: { locals: Record<string, any> }) => res.locals.auth?.role === 'founder_master' ? req.header('x-tenant-id') || undefined : res.locals.auth?.tenantId
+// A founder_master names the tenant they are inspecting with x-tenant-id. When they are simply
+// using their own workspace there is no header to send, so fall back to their own tenant instead
+// of refusing every request.
+const readTenant = (req: { header(name: string): string | undefined }, res: { locals: Record<string, any> }) => res.locals.auth?.role === 'founder_master' ? req.header('x-tenant-id') || res.locals.auth?.tenantId || undefined : res.locals.auth?.tenantId
 const writeTenant = (req: { body?: Record<string, unknown>; header(name: string): string | undefined }, res: { locals: Record<string, any> }) => readTenant(req, res) || String(req.body?.tenantId || '')
 // Phase 34 — FeatureFlag rows are global (not tenant-scoped: `key` is
 // unique across the whole deployment), so this is an internal/FoundingOS
