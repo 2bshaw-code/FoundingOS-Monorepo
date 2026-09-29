@@ -506,7 +506,9 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
             if (onboarding.businessName) setState((current) => ({ ...current, settings: { ...current.settings, businessName: onboarding.businessName as string, region: onboarding.countryCode || current.settings.region } }))
           })
           .catch(() => undefined))
-        requests.push(productionRequest<{ metrics?: OwnerMetrics } | null>('/owner/overview')
+        // /owner/pipeline returns the same summary as /owner/overview but inside the standard
+        // { data } envelope this client unwraps.
+        requests.push(productionRequest<{ metrics?: OwnerMetrics } | null>('/owner/pipeline')
           .then((summary) => setLiveMetrics(summary?.metrics ?? null))
           .catch(() => setLiveMetrics(null)))
       }
