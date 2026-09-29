@@ -75,3 +75,22 @@ test('partner codes take priority and carry full-access role', () => {
   assert.equal(readSiteAccess(signSiteAccess('p@example.com', Date.now(), 'partner'))?.role, 'partner')
   delete process.env.SITE_PARTNER_ACCESS_HASH
 })
+
+test('a pinned role overrides the partner list, so an issued code can be narrowed', () => {
+  const hash = (password: string) => { const salt = randomBytes(16); return `scrypt$${salt.toString('hex')}$${scryptSync(password, salt, 32).toString('hex')}` }
+  process.env.SITE_ACCESS_PASSWORD_HASH = hash('guest-pw')
+  process.env.SITE_PARTNER_ACCESS_HASH = [hash('lawyer-pw'), hash('founder-pw')].join(';')
+  process.env.SITE_ACCESS_ROLE_PINS = `tester:${hash('lawyer-pw')}`
+  assert.equal(siteAccessRole('lawyer-pw'), 'tester')
+  assert.equal(siteAccessRole('founder-pw'), 'partner')
+  assert.equal(siteAccessRole('guest-pw'), 'guest')
+  assert.equal(siteAccessRole('nope'), null)
+  process.env.SITE_ACCESS_ROLE_PINS = `investor:${hash('founder-pw')}`
+  assert.equal(siteAccessRole('founder-pw'), 'investor')
+  // A broken pin must not lock anyone out; the code falls back to its normal role.
+  process.env.SITE_ACCESS_ROLE_PINS = [hash('lawyer-pw'), 'tester:not-a-hash', `wizard:${hash('lawyer-pw')}`].join(';')
+  assert.equal(siteAccessRole('lawyer-pw'), 'partner')
+  assert.equal(siteAccessRole('guest-pw'), 'guest')
+  delete process.env.SITE_ACCESS_ROLE_PINS
+  delete process.env.SITE_PARTNER_ACCESS_HASH
+})

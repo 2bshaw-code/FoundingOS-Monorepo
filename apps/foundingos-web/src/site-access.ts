@@ -73,6 +73,21 @@ export function siteAccessRole(candidate: string): SiteAccessRole | null {
   // Check every entry (rather than short-circuiting) so response time does not
   // reveal which slot, if any, matched.
   let matched: SiteAccessRole | null = null
+  // SITE_ACCESS_ROLE_PINS ("role:scrypt$salt$hash" entries) fixes a code to one role and overrides
+  // every other list. It lets an issued code be narrowed (say, partner to tester) without editing
+  // the secret lists it already appears in.
+  let pinned: SiteAccessRole | null = null
+  for (const entry of String(process.env.SITE_ACCESS_ROLE_PINS || '').split(';').map((value) => value.trim()).filter(Boolean)) {
+    // A malformed pin is skipped rather than thrown: it must never lock every other code out.
+    const separator = entry.indexOf(':')
+    const role = separator > 0 ? entry.slice(0, separator) : ''
+    if (!ROLES.includes(role as SiteAccessRole)) { console.error('[access] ignoring SITE_ACCESS_ROLE_PINS entry without a valid role'); continue }
+    try {
+      if (verifyAgainstHash(candidate, entry.slice(separator + 1))) pinned = role as SiteAccessRole
+    } catch {
+      console.error('[access] ignoring malformed SITE_ACCESS_ROLE_PINS entry')
+    }
+  }
   // Trusted partner codes (SITE_PARTNER_ACCESS_HASH, plain scrypt entries) win over any other match.
   for (const entry of String(process.env.SITE_PARTNER_ACCESS_HASH || '').split(';').map((value) => value.trim().replace(/^partner:/, '')).filter(Boolean)) {
     if (verifyAgainstHash(candidate, entry)) matched = 'partner'
@@ -81,7 +96,7 @@ export function siteAccessRole(candidate: string): SiteAccessRole | null {
     const [prefix, rest] = entry.startsWith('scrypt$') ? ['guest', entry] : [entry.slice(0, entry.indexOf(':')), entry.slice(entry.indexOf(':') + 1)]
     if (verifyAgainstHash(candidate, rest) && !matched) matched = asRole(prefix)
   }
-  return matched
+  return pinned ?? matched
 }
 
 export const verifySitePassword = (candidate: string) => siteAccessRole(candidate) !== null
