@@ -22,6 +22,7 @@ import { OpsFormPanel, OpsInsightsPanel } from './pro/ops-panel'
 import { linkedProductImage, productImageUrl } from './product-images'
 import { applyWidgetOrder, moveWidget, widgetOrderKey } from './widget-order'
 import { bootstrapProduction, getProductionSession, loginToProduction, logoutProduction, productionAgentActions, productionApiConfigured, productionModeEnabled, productionPlatform, productionRecords, productionRequest, type AgentAction, type AgentIntelligenceSummary, type ControlSettings, type ProductionInvitation, type ProductionSession, type ProductionWorkspaceRecord } from './workspace-production-client'
+import { greetingFor, liveWorkspaceMetrics, type OwnerMetrics } from './workspace-overview-data'
 
 const workspaceRoot = productionModeEnabled ? '/app' : '/test-workspaces'
 
@@ -459,6 +460,8 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
     setState(demo ? (stored ? JSON.parse(stored) as WorkspaceState : seedWorkspace(workspace)) : emptyWorkspace(workspace))
   }, [demo, workspace])
   const [events, setEvents] = useState<WorkspaceEvent[]>([])
+  const [ownerProfile, setOwnerProfile] = useState<{ ownerName: string; businessName: string } | null>(null)
+  const [liveMetrics, setLiveMetrics] = useState<OwnerMetrics | null>(null)
   const [loading, setLoading] = useState(production)
   const [error, setError] = useState('')
   useEffect(() => {
@@ -492,6 +495,20 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
         requests.push(productionRequest<{ businessName: string; countryCode: string } | null>('/platform/onboarding').then((onboarding) => {
           if (onboarding) setState((current) => ({ ...current, settings: { ...current.settings, businessName: onboarding.businessName, region: onboarding.countryCode } }))
         }))
+      }
+      // The overview greets the owner by name and reports their real trading figures, so it
+      // needs the tenant's own details rather than the sample business shown in the demo.
+      if (activeModule === 'overview') {
+        requests.push(productionRequest<{ businessName?: string; ownerName?: string; countryCode?: string } | null>('/platform/onboarding')
+          .then((onboarding) => {
+            if (!onboarding) return
+            setOwnerProfile({ ownerName: onboarding.ownerName || '', businessName: onboarding.businessName || '' })
+            if (onboarding.businessName) setState((current) => ({ ...current, settings: { ...current.settings, businessName: onboarding.businessName as string, region: onboarding.countryCode || current.settings.region } }))
+          })
+          .catch(() => undefined))
+        requests.push(productionRequest<{ metrics?: OwnerMetrics } | null>('/owner/overview')
+          .then((summary) => setLiveMetrics(summary?.metrics ?? null))
+          .catch(() => setLiveMetrics(null)))
       }
       requests.push(
         productionRequest<Array<{ id: string; source: BusinessWorkspaceSlug; type: string; payload?: Record<string, unknown>; createdAt: string }>>('/platform/events?limit=20')
@@ -636,7 +653,7 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
     window.localStorage.removeItem(storageKey(workspace))
     setState(seedWorkspace(workspace))
   }
-  return { state, events, update, reset, loading, error, production, demo, setDemo, createRecord, advanceRecord, attachRecord, uploadProductPhoto, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords }
+  return { state, events, update, reset, loading, error, production, demo, setDemo, ownerProfile, liveMetrics, createRecord, advanceRecord, attachRecord, uploadProductPhoto, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords }
 }
 
 function appendDemoRecord(workspace: BusinessWorkspaceSlug, module: string, record: WorkspaceRecord) {
@@ -832,7 +849,7 @@ const OVERVIEW_WIDGETS = ['trend', 'attention', 'coverage', 'events'] as const
 type OverviewWidget = typeof OVERVIEW_WIDGETS[number]
 const OVERVIEW_WIDGET_LABELS: Record<string, string> = { trend: 'Seven-day trend', attention: 'Needs attention', coverage: 'Workspace coverage', events: 'Cross-workspace events' }
 
-function Overview({ workspace, config, state, events, production, agentActions, userKey }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; state: WorkspaceState; events: WorkspaceEvent[]; production: boolean; agentActions: AgentAction[]; userKey: string | null }) {
+function Overview({ workspace, config, state, events, production, agentActions, userKey, ownerProfile, liveMetrics }: { workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; state: WorkspaceState; events: WorkspaceEvent[]; production: boolean; agentActions: AgentAction[]; userKey: string | null; ownerProfile?: { ownerName: string; businessName: string } | null; liveMetrics?: OwnerMetrics | null }) {
   const operational = config.modules.filter((item) => !['overview', 'settings', 'integrations', 'security', 'team'].includes(item.id)).slice(0, 5)
   // In production, a founder's real activity is what should build trust — fabricated
   // placeholder events would contradict "nothing here is a demo". Only the interactive
@@ -862,10 +879,11 @@ function Overview({ workspace, config, state, events, production, agentActions, 
     coverage: <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Connected system</p><h2>Workspace coverage</h2></div></div><div className="complete-workspace-coverage">{config.modules.slice(1, 9).map((item) => <Link href={`${workspaceRoot}/${workspace}/${item.id}`} key={item.id}><strong>{state.records[item.id]?.length ?? 0}</strong><span>{item.label}</span></Link>)}</div></article>,
     events: <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Shared backbone</p><h2>Latest cross-workspace events</h2></div><Link href={`${workspaceRoot}/intelligence/event-feed`}>View feed</Link></div>{activityItems.length ? <ul className="retail-app-activity">{activityItems.slice(0, 5).map((event) => <li key={event.id}><i /><span><strong>{configs[event.workspace].label}</strong> · {event.text}</span><span>{event.time}</span></li>)}</ul> : <p className="complete-workspace-empty-note">Nothing has happened across your workspaces yet. Once your team starts working, real activity — not sample data — will show up here.</p>}</article>,
   }
+  const productionMetrics = production ? liveWorkspaceMetrics(liveMetrics ?? null) : null
   return <>
-    <WorkspaceHeading eyebrow={`${config.label} command centre`} title={`Good morning, Bobby`} copy={config.description} />
+    <WorkspaceHeading eyebrow={`${config.label} command centre`} title={production ? greetingFor(new Date(), ownerProfile?.ownerName) : 'Good morning, Bobby'} copy={config.description} />
     {production ? <p className="complete-workspace-trust-strip">FoundingOS shows you what needs attention today. Nothing here is simulated.</p> : null}
-    <section className="retail-app-metrics">{config.metrics.map((metric) => <Metric key={metric.label} {...metric} />)}</section>
+    <section className="retail-app-metrics">{(productionMetrics ?? config.metrics).map((metric) => <Metric key={metric.label} {...metric} />)}</section>
     <div className="workspace-arrange-bar"><button aria-pressed={arranging} onClick={() => setArranging((value) => !value)} type="button">{arranging ? 'Done arranging' : 'Arrange cards'}</button>{arranging ? <button onClick={() => saveOrder([...OVERVIEW_WIDGETS])} type="button">Reset layout</button> : null}</div>
     <section className={`retail-app-dashboard-grid is-arrangeable${arranging ? ' is-arranging' : ''}`}>
       {order.map((id, index) => <div className="workspace-widget" key={id}>
@@ -3107,7 +3125,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview', 
     setSession(getProductionSession())
     setHydrated(true)
   }, [])
-  const { state, events, update, reset, loading, error, production, demo, setDemo, createRecord, advanceRecord, attachRecord, uploadProductPhoto, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords } = useWorkspaceState(workspace, current.id, session)
+  const { state, events, update, reset, loading, error, production, demo, setDemo, ownerProfile, liveMetrics, createRecord, advanceRecord, attachRecord, uploadProductPhoto, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords } = useWorkspaceState(workspace, current.id, session)
   const autopilot = useAutopilot({
     workspace,
     production,
@@ -3168,7 +3186,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview', 
   if (current.id === 'overview' && workspace === 'intelligence') content = <SuperDashboardOverview activateIntelligence={agent.activate} agentActions={agent.actions} intelligence={agent.intelligence} agentBusy={agent.busy} agentError={agent.error} agentRetry={agent.retry} decideAgentAction={agent.decide} events={events} executeAgentAction={agent.execute} proposeAgentAction={agent.propose} reverseAgentAction={agent.reverse} />
   else if (current.id === 'outcomes' && workspace === 'intelligence') content = <OutcomesPage intelligence={agent.intelligence} production={production} />
   else if (current.id === 'strategic-overview' && workspace === 'intelligence') content = <><WorkspaceHeading eyebrow="Buyer-ready platform summary" title="Strategic overview" copy="A concise view of the platform’s defensibility, measured evidence, governance boundaries, and WhatsApp-native advantage." /><StrategicOverview intelligence={agent.intelligence} /></>
-  else if (current.id === 'overview') content = <Overview agentActions={agent.actions} config={config} userKey={session?.user.email ?? null} events={events} production={production} state={state} workspace={workspace} />
+  else if (current.id === 'overview') content = <Overview agentActions={agent.actions} config={config} userKey={session?.user.email ?? null} events={events} liveMetrics={liveMetrics} ownerProfile={ownerProfile} production={production} state={state} workspace={workspace} />
   else if (current.id === 'automations') content = <AutomationsPage config={config} state={state} update={update} />
   else if (current.id === 'integrations') content = <IntegrationsPage production={production} state={state} update={update} />
   else if (current.id === 'security') content = <SecurityPage workspace={workspace} />
