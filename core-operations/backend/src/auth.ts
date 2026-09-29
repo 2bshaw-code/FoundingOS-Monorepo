@@ -14,7 +14,26 @@ const required = (name: string) => {
   return value
 }
 
-export const prisma = new PrismaClient()
+// Every serverless instance opens its own pool, so the default pool size (cpus * 2 + 1) multiplied
+// by the instances a busy minute creates exhausts the database's connection limit and turns
+// ordinary reads into 500s. One connection per instance is plenty for request-scoped queries.
+const pooledDatabaseUrl = () => {
+  const url = process.env.DATABASE_URL
+  if (!url || !/^postgres(ql)?:\/\//.test(url)) return undefined
+  try {
+    const parsed = new URL(url)
+    if (!parsed.searchParams.has('connection_limit')) parsed.searchParams.set('connection_limit', '1')
+    if (!parsed.searchParams.has('pool_timeout')) parsed.searchParams.set('pool_timeout', '20')
+    return parsed.toString()
+  } catch {
+    return undefined
+  }
+}
+
+const prismaCache = globalThis as unknown as { foundingosPrisma?: PrismaClient }
+const datasourceUrl = pooledDatabaseUrl()
+export const prisma = prismaCache.foundingosPrisma ?? (datasourceUrl ? new PrismaClient({ datasourceUrl }) : new PrismaClient())
+prismaCache.foundingosPrisma = prisma
 export const authService = new AuthService(createPrismaAuthRepository(prisma), {
   accessTokenSecret: required('AUTH_ACCESS_TOKEN_SECRET'),
   refreshTokenSecret: required('AUTH_REFRESH_TOKEN_SECRET'),

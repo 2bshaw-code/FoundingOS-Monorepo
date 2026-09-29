@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { greetingFor, liveWorkspaceMetrics } from './workspace-overview-data'
+import { greetingFor, liveWorkspaceMetrics, pendingWorkspaceMetrics } from './workspace-overview-data'
 
 const at = (hour: number) => new Date(2026, 8, 29, hour, 0, 0)
 
@@ -49,7 +49,15 @@ test('treats missing figures as zero rather than blank', () => {
   assert.deepEqual(liveWorkspaceMetrics({})?.map((item) => item.value), ['£0', '0', '0', '0'])
 })
 
-test('returns nothing when live figures could not be loaded', () => {
-  assert.equal(liveWorkspaceMetrics(null), null)
-  assert.equal(liveWorkspaceMetrics(undefined), null)
+test('shows placeholders, never sample figures, when live figures are unavailable', () => {
+  for (const missing of [null, undefined]) {
+    const metrics = liveWorkspaceMetrics(missing)
+    assert.deepEqual(metrics.map((item) => item.value), ['\u2014', '\u2014', '\u2014', '\u2014'])
+    assert.deepEqual(metrics.map((item) => item.label), ['Pipeline', 'Customers', 'Open orders', 'Messages'])
+  }
+})
+
+test('placeholder figures never contain the sample business numbers', () => {
+  const rendered = JSON.stringify(pendingWorkspaceMetrics())
+  for (const sample of ['18.6k', '42.8k', '1,284']) assert.ok(!rendered.includes(sample))
 })

@@ -883,6 +883,7 @@ function Overview({ workspace, config, state, events, production, agentActions, 
     coverage: <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Connected system</p><h2>Workspace coverage</h2></div></div><div className="complete-workspace-coverage">{config.modules.slice(1, 9).map((item) => <Link href={`${workspaceRoot}/${workspace}/${item.id}`} key={item.id}><strong>{state.records[item.id]?.length ?? 0}</strong><span>{item.label}</span></Link>)}</div></article>,
     events: <article className="retail-app-panel"><div className="retail-app-panel-heading"><div><p>Shared backbone</p><h2>Latest cross-workspace events</h2></div><Link href={`${workspaceRoot}/intelligence/event-feed`}>View feed</Link></div>{activityItems.length ? <ul className="retail-app-activity">{activityItems.slice(0, 5).map((event) => <li key={event.id}><i /><span><strong>{configs[event.workspace].label}</strong> · {event.text}</span><span>{event.time}</span></li>)}</ul> : <p className="complete-workspace-empty-note">Nothing has happened across your workspaces yet. Once your team starts working, real activity — not sample data — will show up here.</p>}</article>,
   }
+  // A live workspace must never borrow the sample business's figures, even for a moment.
   const productionMetrics = production ? liveWorkspaceMetrics(liveMetrics ?? null) : null
   return <>
     <WorkspaceHeading eyebrow={`${config.label} command centre`} title={production ? greetingFor(new Date(), ownerProfile?.ownerName) : 'Good morning, Bobby'} copy={config.description} />

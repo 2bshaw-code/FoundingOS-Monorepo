@@ -17,9 +17,20 @@ export function greetingFor(now: Date, ownerName?: string | null) {
 
 const gbp = (pence: number) => `£${(Math.max(0, pence) / 100).toLocaleString('en-GB', { maximumFractionDigits: 0 })}`
 
+const METRIC_LABELS = [
+  { label: 'Pipeline', change: 'Open leads' },
+  { label: 'Customers', change: 'On your books' },
+  { label: 'Open orders', change: 'Awaiting fulfilment' },
+  { label: 'Messages', change: 'Recent conversations' },
+]
+
+// Shown while the figures are still loading, or when they could not be read. Anything is better
+// than quietly falling back to the sample business's numbers, which look entirely real.
+export const pendingWorkspaceMetrics = () => METRIC_LABELS.map((metric) => ({ ...metric, value: '—' }))
+
 // A brand-new business genuinely has zeros here, and showing them honestly is the point.
 export function liveWorkspaceMetrics(metrics: OwnerMetrics | null | undefined) {
-  if (!metrics) return null
+  if (!metrics) return pendingWorkspaceMetrics()
   const leads = metrics.leads ?? 0
   return [
     { label: 'Pipeline', value: gbp(metrics.pipelineValuePence ?? 0), change: `${leads} open ${leads === 1 ? 'lead' : 'leads'}` },
