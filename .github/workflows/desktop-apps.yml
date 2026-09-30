@@ -1,0 +1,43 @@
+name: Desktop apps
+
+# Builds the FoundingOS desktop app for Windows (installer) and Mac (dmg).
+# Run it from the Actions tab, then download the files from the run's Artifacts.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - apps/foundingos-desktop/**
+      - .github/workflows/desktop-apps.yml
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            script: dist:win
+            files: apps/foundingos-desktop/dist/*.exe
+          - os: macos-latest
+            script: dist:mac
+            files: apps/foundingos-desktop/dist/*.dmg
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: apps/foundingos-desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci --workspaces=false
+      - run: npm test
+      - run: npm run ${{ matrix.script }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FoundingOS-${{ runner.os }}
+          path: ${{ matrix.files }}
+          if-no-files-found: error

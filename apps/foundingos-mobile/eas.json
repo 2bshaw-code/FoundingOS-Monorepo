@@ -29,6 +29,12 @@
       },
       "channel": "production"
     },
+    "production-apk": {
+      "extends": "production",
+      "android": {
+        "buildType": "apk"
+      }
+    },
     "foundretail": {
       "extends": "production",
       "env": {

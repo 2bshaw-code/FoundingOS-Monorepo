@@ -1,0 +1,55 @@
+{
+  "name": "foundingos-desktop",
+  "productName": "FoundingOS",
+  "version": "1.0.0",
+  "description": "FoundingOS for Windows and Mac",
+  "author": "FoundingOS",
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test src/",
+    "dist:mac": "electron-builder --mac --universal",
+    "dist:win": "electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "com.foundingos.desktop",
+    "productName": "FoundingOS",
+    "copyright": "Copyright © 2026 FoundingOS",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "!src/**/*.test.js",
+      "build/icon.png"
+    ],
+    "mac": {
+      "category": "public.app-category.business",
+      "target": [
+        "dmg"
+      ],
+      "icon": "build/icon.png",
+      "identity": null,
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "FoundingOS uses the microphone when you talk to FoundAI or record a voice note."
+      }
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "FoundingOS"
+    }
+  },
+  "devDependencies": {
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3"
+  }
+}
