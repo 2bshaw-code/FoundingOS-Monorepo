@@ -11,7 +11,7 @@ import { isReservedFounderEmail, prisma } from './auth.js'
 import { publishEvent } from './event-feed.js'
 import { assertExpectedVersion, decryptIntegrationCredentials, encryptIntegrationCredentials, isActiveIdempotencyRecord, roleCanAccessWorkspace } from './platform-security.js'
 
-export const workspaceSlugs = ['retail', 'logistics', 'finance', 'marketing', 'talent', 'hr', 'health', 'intelligence'] as const
+export const workspaceSlugs = ['retail', 'logistics', 'finance', 'marketing', 'talent', 'hr', 'health', 'legal', 'intelligence'] as const
 export type WorkspaceSlug = typeof workspaceSlugs[number]
 
 const workspaceSet = new Set<string>(workspaceSlugs)

@@ -29,7 +29,7 @@ type SuiteCard = {
 }
 
 type FounderPage = 'home' | 'suites' | 'workspaces' | 'consoles' | 'marketing' | 'intelligence' | 'pricing' | 'about' | 'contact'
-export type WorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'talent' | 'hr' | 'health'
+export type WorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'talent' | 'hr' | 'health' | 'legal'
 export type ConsoleSlug = WorkspaceSlug
 
 type WorkspaceProduct = WorkspacePreviewProduct & {
@@ -190,6 +190,28 @@ const workspaceProducts: WorkspaceProduct[] = [
     automation: 'Capacity and stock rules flag pressure early and prepare follow-up actions for the operations team.',
     insight: 'Moving six flexible appointments to the afternoon would cut the morning wait forecast by 11 minutes.',
   },
+  {
+    slug: 'legal',
+    name: 'Legal Workspace',
+    suite: 'Core Operations',
+    audience: 'For law firms, legal teams and businesses managing contracts and subscriptions',
+    summary: 'Run matters, capture every billable call, letter and message, preserve evidence, and manage contracts, NDAs and renewals.',
+    outcome: 'Issue professional bills that can be traced back to the work, time, communication and evidence behind every charge.',
+    modules: ['Matters', 'Clients', 'Conflict checks', 'Time entries', 'Communications', 'Evidence', 'Documents', 'NDAs', 'Contracts', 'Subscriptions', 'Pre-bills', 'Invoices'],
+    metrics: [
+      { label: 'Active matters', value: '38', change: '7 need attention' },
+      { label: 'Unbilled work', amountGbp: 42600, change: '186 evidenced entries' },
+      { label: 'Billable capture', value: '96%', change: '+8 points' },
+    ],
+    workQueue: [
+      { task: 'Review this month’s pre-bills', detail: '14 matters have approved work ready to bill', status: 'Action' },
+      { task: 'Complete evidence links', detail: '6 time entries need a supporting call, message or document', status: 'Risk' },
+      { task: 'Prepare for renewals', detail: '3 contracts and subscriptions enter their notice period this month', status: 'Insight' },
+    ],
+    workflow: ['Matter opened', 'Work captured', 'Evidence linked', 'Pre-bill approved', 'Invoice issued'],
+    automation: 'FoundAI captures activity, links evidence, flags missing time and prepares pre-bills for human approval.',
+    insight: 'Twelve unbilled calls and letters can be evidenced and added to this month’s client bills.',
+  },
 ]
 
 const operatingLayers = [
@@ -199,7 +221,7 @@ const operatingLayers = [
   { label: 'Buyer subset flags', value: 'Configured', detail: 'Role-based access and market-specific feature toggles.' },
 ] as const
 
-const WORKSPACE_ACCENTS: Record<string, string> = { retail: '#159151', logistics: '#FF496E', finance: '#FFB33E', marketing: '#F56FC2', talent: '#FF8A33', hr: '#2EC4B6', health: '#4CC9FF' }
+const WORKSPACE_ACCENTS: Record<string, string> = { retail: '#159151', logistics: '#FF496E', finance: '#FFB33E', marketing: '#F56FC2', talent: '#FF8A33', hr: '#2EC4B6', health: '#4CC9FF', legal: '#3158D4' }
 type MapTile = { slug: string; name: string; summary: string; href: string; tryHref?: string }
 const marketingTile: MapTile = { slug: 'marketing', name: 'Marketing', summary: 'Campaigns, audiences, brand-aware content, publishing and revenue attribution.', href: '/workspaces/marketing', tryHref: '/test-workspaces/marketing' }
 const toTile = (product: WorkspaceProduct): MapTile => ({ slug: product.slug, name: product.name.replace(/ Workspace$/, ''), summary: product.summary, href: `/workspaces/${product.slug}`, tryHref: `/test-workspaces/${product.slug}` })
@@ -328,7 +350,7 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
 
   if (page === 'workspaces' || page === 'consoles') return (
     <>
-      <PageIntro eyebrow="One account · Modular workspaces" title="Every part of the business, inside one FoundingOS" copy="Retail, Logistics, Finance, Marketing, Talent, HR, and Health are connected workspaces, not separate products or operating systems. Your team signs into one account and sees the workspaces their role and plan enable." />
+      <PageIntro eyebrow="One account · Modular workspaces" title="Every part of the business, inside one FoundingOS" copy="Retail, Logistics, Finance, Marketing, Talent, HR, Health and Legal are connected workspaces, not separate products or operating systems. Your team signs into one account and sees the workspaces their role and plan enable." />
       <SuiteWorkspaceMap />
     </>
   )
@@ -417,7 +439,7 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
   if (page === 'pricing') return (
     <>
       <BackButton />
-      <PageIntro eyebrow="Simple, modular pricing" title="Start free. Add only what you need." copy="Pick the workspaces you run at £19/month each: Retail &amp; Logistics, Talent or HR. Add Commerce Pro or Core.Intelligence as you grow, or take everything with Complete. No sales call needed." />
+      <PageIntro eyebrow="Simple, modular pricing" title="Start free. Add only what you need." copy="Most workspaces are £19/month; specialist Legal is £29/month. Add Commerce Pro or Core.Intelligence as you grow, or take everything with Complete. No sales call needed." />
       <section className="module-grid">
         {packagePlans.map((plan) => {
           const details = commercialPlans[plan.tier]
@@ -438,7 +460,7 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
         })}
       </section>
 
-      <PageIntro eyebrow="Core workspaces" title="£19/month each. Take one, or combine them." copy="Retail &amp; Logistics, Talent and HR are priced the same. Start with the one you need and add the others whenever you like. Complete includes them all." />
+      <PageIntro eyebrow="Core workspaces" title="Take one, or combine them." copy="Retail &amp; Logistics, Talent, HR and Health are £19/month each. Specialist Legal is £29/month. Complete includes them all." />
       <section className="module-grid">
         {baseKeys.map((key) => {
           const base = commercialBases[key]
@@ -535,6 +557,7 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
             <li>Talent</li>
             <li>HR</li>
             <li>Health</li>
+            <li>Legal</li>
           </ul>
           <div className="hero-actions">
             <Link className="btn btn-primary" href="/signup">Put FoundAI to work</Link>

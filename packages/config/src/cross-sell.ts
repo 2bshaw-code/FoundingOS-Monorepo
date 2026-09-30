@@ -2,7 +2,7 @@
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
-export type CrossSellWorkspace = 'retail' | 'logistics' | 'finance' | 'marketing' | 'talent' | 'hr' | 'health' | 'intelligence'
+export type CrossSellWorkspace = 'retail' | 'logistics' | 'finance' | 'marketing' | 'talent' | 'hr' | 'health' | 'legal' | 'intelligence'
 
 export type CrossSellOffer = {
   target: CrossSellWorkspace
@@ -30,6 +30,7 @@ export const crossSellOffers: Record<CrossSellWorkspace, CrossSellOffer[]> = {
     { target: 'retail', label: 'Retail & Logistics', price: '£19/mo', headline: 'Sales flow straight into your books.', examples: ['Orders and payments post themselves', 'Stock valued automatically', 'No more re-keying from your till'] },
     { target: 'intelligence', label: 'Core.Intelligence', price: '+£35/mo', headline: 'See next quarter’s cash before it happens.', examples: ['Cash-flow forecasts from real trading', 'Unusual spend flagged instantly', 'AI-drafted board summaries'] },
     { target: 'hr', label: 'HR', price: '£19/mo', headline: 'Payroll inputs without the spreadsheet.', examples: ['Hours, holiday and sickness feed payroll', 'Headcount cost by team', 'Contract changes logged and audited'] },
+    { target: 'legal', label: 'Legal', price: '£29/mo', headline: 'Turn evidenced work into defensible client bills.', examples: ['Approved activity becomes a pre-bill', 'Every charge links to time and evidence', 'Contracts and renewals stay visible'] },
   ],
   marketing: [
     { target: 'retail', label: 'Retail & Logistics', price: '£19/mo', headline: 'Prove which campaigns actually made money.', examples: ['Orders linked back to the post that drove them', 'Customer segments built from real purchases', 'Promote what is in stock, never what has sold out'] },
@@ -45,11 +46,17 @@ export const crossSellOffers: Record<CrossSellWorkspace, CrossSellOffer[]> = {
     { target: 'talent', label: 'Talent', price: '£19/mo', headline: 'Fill vacancies without leaving FoundingOS.', examples: ['Post jobs and track candidates on one board', 'Interviews booked and scored by the team', 'New starters flow straight into HR'] },
     { target: 'finance', label: 'Finance', price: '+£25/mo with Commerce Pro', headline: 'Payroll and people costs in your books.', examples: ['Wage costs posted automatically', 'Expenses approved and reimbursed', 'Headcount budget vs actual'] },
     { target: 'intelligence', label: 'Core.Intelligence', price: '+£35/mo', headline: 'Spot burnout and absence trends early.', examples: ['Absence patterns flagged', 'Overtime and cost anomalies', 'Staffing forecasts for busy periods'] },
+    { target: 'legal', label: 'Legal', price: '£29/mo', headline: 'Connect employment cases to specialist legal work.', examples: ['Grievances and disciplinaries stay evidenced', 'Employment documents remain controlled', 'External legal work and cost tracked by matter'] },
   ],
   health: [
     { target: 'hr', label: 'HR', price: '£19/mo', headline: 'Clinical rotas and compliance, handled.', examples: ['Rotas built around appointments', 'Registration and training expiry reminders', 'Timesheets ready for payroll'] },
     { target: 'finance', label: 'Finance', price: '+£25/mo with Commerce Pro', headline: 'Bill every appointment automatically.', examples: ['Completed appointments raise invoices', 'Insurer and patient payments reconciled', 'Clinic revenue by practitioner'] },
     { target: 'marketing', label: 'Marketing', price: 'from £19/mo', headline: 'Fill empty appointment slots.', examples: ['Reminders and recalls sent for you', 'Posts promoting quiet clinics', 'Reviews requested after visits'] },
+  ],
+  legal: [
+    { target: 'finance', label: 'Finance', price: '+£25/mo with Commerce Pro', headline: 'Connect client bills to cash and reconciliation.', examples: ['Approved pre-bills become invoices', 'Payments matched to client and matter', 'WIP, debt and cash visible together'] },
+    { target: 'hr', label: 'HR', price: '£19/mo', headline: 'Keep employment work and people records connected.', examples: ['Employment cases linked to the employee record', 'Contracts and policies controlled', 'Sensitive access remains role based'] },
+    { target: 'intelligence', label: 'Core.Intelligence', price: '+£35/mo', headline: 'See matter, billing and renewal risk early.', examples: ['Missing time and evidence flagged', 'Matter budgets forecast', 'Renewal and deadline risks surfaced'] },
   ],
   intelligence: [
     { target: 'retail', label: 'Retail & Logistics', price: '£19/mo', headline: 'Feed FoundAI live sales and stock.', examples: ['Forecasts from real orders', 'Stock-out and margin alerts', 'Recommendations it can act on'] },

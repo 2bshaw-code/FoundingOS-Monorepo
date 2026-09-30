@@ -6,7 +6,7 @@ import { WorkspaceGate } from '../../../components/WorkspaceAccess'
 import { ProCoach } from '../../../components/ProCoach'
 import { MonthCalendar, dayKey } from '../../../components/MonthCalendar'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, Alert, Image, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { ActivityIndicator, Alert, Image, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import { useLocalSearchParams } from 'expo-router'
 import { QuantumBackButton } from '../../../components/QuantumBackButton'
@@ -44,6 +44,7 @@ import {
   QuantumPill,
   QuantumScreen,
   QuantumText,
+  QuantumTextInput,
   quantumColors,
   quantumSpace,
   useActiveQuantumTheme,
@@ -135,6 +136,12 @@ function WorkspaceModuleScreenInner() {
   const [filter, setFilter] = useState<string>('All')
   const [selectedDay, setSelectedDay] = useState(() => dayKey(new Date()))
   const [photoBusyId, setPhotoBusyId] = useState<string | null>(null)
+  const [productFormOpen, setProductFormOpen] = useState(false)
+  const [productName, setProductName] = useState('')
+  const [productCategory, setProductCategory] = useState('')
+  const [productPrice, setProductPrice] = useState('')
+  const [productPhoto, setProductPhoto] = useState<{ uri: string; mimeType?: string } | null>(null)
+  const [productSaving, setProductSaving] = useState(false)
   const photoEnabled = module ? PHOTO_ENABLED_MODULES.has(module.id) : false
   const { feedback, showError } = useActionFeedback()
   const inFlight = useRef<Set<string>>(new Set())
@@ -247,7 +254,7 @@ function WorkspaceModuleScreenInner() {
     }
   }
 
-  async function addRecord() {
+  async function addRecord(input?: { name: string; category: string; valuePence: number | null }) {
     if (!workspace || !module) return
     // Optimistic: show the new record in the list immediately with a
     // temporary id, then swap in the server's real record once it responds.
@@ -258,11 +265,11 @@ function WorkspaceModuleScreenInner() {
     const optimisticRecord: WorkspaceRecordDTO = {
       id: tempId,
       reference: `${targetModule?.id ?? module.id}-${Date.now()}`,
-      name: `New ${(targetModule ?? module).label.toLowerCase().replace(/s$/, '')}`,
+      name: input?.name ?? `New ${(targetModule ?? module).label.toLowerCase().replace(/s$/, '')}`,
       status: (targetModule ?? module).statuses?.[0] ?? 'New',
       ownerId: null,
-      valuePence: null,
-      data: scheduled ?? {},
+      valuePence: input?.valuePence ?? null,
+      data: { ...(scheduled ?? {}), ...(input?.category ? { category: input.category } : {}) },
       version: 0,
       updatedAt: new Date().toISOString(),
     }
@@ -272,13 +279,74 @@ function WorkspaceModuleScreenInner() {
         reference: optimisticRecord.reference,
         name: optimisticRecord.name,
         status: optimisticRecord.status,
-        ...(scheduled ? { data: scheduled } : {}),
+        ...(optimisticRecord.valuePence === null ? {} : { valuePence: optimisticRecord.valuePence }),
+        data: optimisticRecord.data ?? {},
       })
       setRecords((current) => current.map((item) => (item.id === tempId ? created : item)))
       logAction('record_created', 'success', { module: module.id })
+      return created
     } catch (err) {
       setRecords((current) => current.filter((item) => item.id !== tempId))
-      showError(err, addRecord)
+      showError(err, () => addRecord(input))
+      return undefined
+    }
+  }
+
+  function beginAddRecord() {
+    if (module?.id === 'products') {
+      setProductFormOpen(true)
+      return
+    }
+    void addRecord()
+  }
+
+  async function chooseNewProductPhoto(source: 'camera' | 'library') {
+    const permission =
+      source === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (!permission.granted) {
+      Alert.alert('Permission needed', `Allow ${source === 'camera' ? 'camera' : 'photo library'} access to add a product photo.`)
+      return
+    }
+    const result = source === 'camera'
+      ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.7 })
+      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 })
+    if (!result.canceled && result.assets?.[0]) {
+      setProductPhoto({ uri: result.assets[0].uri, mimeType: result.assets[0].mimeType })
+    }
+  }
+
+  async function saveNewProduct() {
+    const name = productName.trim()
+    if (!name) {
+      Alert.alert('Add a product name', 'Enter the name customers and your team will recognise.')
+      return
+    }
+    const pounds = productPrice.trim() ? Number(productPrice.replace(/[^0-9.]/g, '')) : null
+    if (pounds !== null && !Number.isFinite(pounds)) {
+      Alert.alert('Check the price', 'Enter a number such as 12.50.')
+      return
+    }
+    setProductSaving(true)
+    try {
+      const created = await addRecord({ name, category: productCategory.trim(), valuePence: pounds === null ? null : Math.round(pounds * 100) })
+      if (!created) return
+      let finalRecord = created
+      if (productPhoto) {
+        const uploaded = await uploadWorkspaceRecordImage(created.id, productPhoto.uri, productPhoto.mimeType || 'image/jpeg')
+        finalRecord = uploaded.record
+        setRecords((current) => current.map((item) => (item.id === created.id ? finalRecord : item)))
+        setProductCatalogue((current) => [finalRecord, ...current.filter((item) => item.id !== finalRecord.id)])
+      }
+      setProductFormOpen(false)
+      setProductName('')
+      setProductCategory('')
+      setProductPrice('')
+      setProductPhoto(null)
+      setSheetRecordId(finalRecord.id)
+    } catch (err) {
+      showError(err, saveNewProduct)
+    } finally {
+      setProductSaving(false)
     }
   }
 
@@ -461,7 +529,7 @@ function WorkspaceModuleScreenInner() {
         </QuantumCard>
         <View style={styles.headerRow}>
           <QuantumText variant="label">{label}</QuantumText>
-          <QuantumButton tone="secondary" onPress={addRecord}>+ Add on this day</QuantumButton>
+          <QuantumButton tone="secondary" onPress={beginAddRecord}>+ Add on this day</QuantumButton>
         </View>
         {onDay.length ? onDay.map(renderRecordCard) : <QuantumText variant="caption" color={quantumColors.neutral300}>Nothing booked on this day.</QuantumText>}
         {undated.length ? (
@@ -500,7 +568,7 @@ function WorkspaceModuleScreenInner() {
           ) : null}
           {copy ? <QuantumText variant="caption" color={quantumColors.neutral500}>{copy.extensibility}</QuantumText> : null}
           {showAddButton ? (
-            <QuantumButton onPress={addRecord}>Add the first {module?.label.toLowerCase().replace(/s$/, '') ?? 'record'}</QuantumButton>
+            <QuantumButton onPress={beginAddRecord}>Add the first {module?.label.toLowerCase().replace(/s$/, '') ?? 'record'}</QuantumButton>
           ) : null}
           <QuantumText variant="caption" color={quantumColors.neutral500}>Nothing here is simulated — this fills in as real activity happens.</QuantumText>
         </View>
@@ -569,8 +637,8 @@ function WorkspaceModuleScreenInner() {
           {records.length} record{records.length === 1 ? '' : 's'}
         </QuantumText>
         {showAddButton ? (
-          <QuantumButton tone="secondary" onPress={addRecord}>
-            + Add
+          <QuantumButton tone="secondary" onPress={beginAddRecord}>
+            {module.id === 'products' ? '+ Add product' : '+ Add'}
           </QuantumButton>
         ) : null}
       </View>
@@ -617,6 +685,27 @@ function WorkspaceModuleScreenInner() {
           workspace={workspace.slug}
         />
       ) : null}
+      <Modal animationType="slide" onRequestClose={() => setProductFormOpen(false)} transparent visible={productFormOpen}>
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.productForm, { backgroundColor: theme.cardBg }]}>
+            <QuantumText variant="overline" color={workspace.accent}>Retail catalogue</QuantumText>
+            <QuantumText variant="h2">Add a product</QuantumText>
+            <QuantumText variant="caption" color={theme.subtextColor}>Add the basics now. You can open the product afterwards to add stock, supplier and barcode details.</QuantumText>
+            <QuantumTextInput autoFocus onChangeText={setProductName} placeholder="Product name" value={productName} />
+            <QuantumTextInput onChangeText={setProductCategory} placeholder="Category, for example Drinks" value={productCategory} />
+            <QuantumTextInput keyboardType="decimal-pad" onChangeText={setProductPrice} placeholder="Selling price, for example 12.50" value={productPrice} />
+            {productPhoto ? <Image source={{ uri: productPhoto.uri }} style={styles.productPreview} /> : null}
+            <View style={styles.photoActions}>
+              <QuantumButton tone="secondary" onPress={() => void chooseNewProductPhoto('camera')}>Take photo</QuantumButton>
+              <QuantumButton tone="secondary" onPress={() => void chooseNewProductPhoto('library')}>Choose photo</QuantumButton>
+            </View>
+            <View style={styles.modalActions}>
+              <QuantumButton tone="secondary" onPress={() => setProductFormOpen(false)}>Cancel</QuantumButton>
+              <QuantumButton disabled={productSaving} onPress={() => void saveNewProduct()}>{productSaving ? 'Saving…' : 'Save product'}</QuantumButton>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </QuantumScreen>
   )
 }
@@ -645,6 +734,11 @@ const styles = StyleSheet.create({
   recordCard: { gap: quantumSpace.sm },
   recordHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', gap: quantumSpace.md },
   recordTitle: { flex: 1, minWidth: 0 },
+  modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0, 0, 0, 0.6)' },
+  productForm: { gap: quantumSpace.md, padding: quantumSpace.lg, paddingBottom: 36, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  productPreview: { width: '100%', height: 180, borderRadius: 16 },
+  photoActions: { flexDirection: 'row', flexWrap: 'wrap', gap: quantumSpace.sm },
+  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: quantumSpace.sm },
 })
 
 export default function WorkspaceModuleScreen() {

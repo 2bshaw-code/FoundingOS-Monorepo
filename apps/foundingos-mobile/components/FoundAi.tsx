@@ -26,7 +26,7 @@ import { deleteStoredValue, getStoredValue, setStoredValue } from '../lib/platfo
 import { AI_AUTOPILOT_DISCLAIMER, AI_DISCLAIMER } from '@foundingos/ui/ai-disclaimer'
 
 const FOUNDAI = '#24C47A'
-const WORKSPACE_LABEL: Record<string, string> = { retail: 'Retail', logistics: 'Logistics', finance: 'Finance', marketing: 'Marketing', talent: 'Talent', hr: 'HR', health: 'Health', intelligence: 'Intelligence' }
+const WORKSPACE_LABEL: Record<string, string> = { retail: 'Retail', logistics: 'Logistics', finance: 'Finance', marketing: 'Marketing', talent: 'Talent', hr: 'HR', health: 'Health', legal: 'Legal', intelligence: 'Intelligence' }
 const money = (pence: number | null) => (pence === null ? '' : `£${(pence / 100).toLocaleString('en-GB', { maximumFractionDigits: 0 })}`)
 const ago = (iso: string) => {
   const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60000)

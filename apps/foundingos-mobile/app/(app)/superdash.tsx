@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 // Founder SuperDash: run FoundingOS itself — subscriptions, revenue, upgrade
-// requests, platform health, growth, plus FoundingOS's own Finance and Marketing tabs.
+// requests, platform health, growth, plus FoundingOS's own Finance, Marketing and Legal tabs.
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { RefreshControl, StyleSheet, View } from 'react-native'
 import { FounderFinancePanel } from '../../components/founder/FounderFinance'
@@ -30,11 +30,12 @@ const title = (slug: string) => slug.charAt(0).toUpperCase() + slug.slice(1)
 // so the app shows every tab, report and tool the founder sees on the web.
 // 'workspace/module' keys open the full professional module screen; other keys
 // render a SuperDash-only panel inline.
-type SuperTab = 'business' | 'finance' | 'sales' | 'marketing'
+type SuperTab = 'business' | 'finance' | 'sales' | 'marketing' | 'legal'
 const SECTIONS: Record<Exclude<SuperTab, 'business'>, Array<[key: string, label: string]>> = {
   finance: [['books', 'Books & runway'], ['scenario', 'WhatsApp growth scenario'], ['finance/invoices', 'Invoices'], ['finance/bills', 'Bills'], ['finance/expenses', 'Expenses'], ['finance/banking', 'Banking'], ['finance/reconciliation', 'Reconciliation'], ['finance/budgets', 'Budgets'], ['finance/tax', 'Tax & VAT'], ['reports', 'Reports']],
   sales: [['forecast', 'Forecast'], ['retail/sales-pipeline', 'Deals & quotes'], ['subscribers', 'Subscribers'], ['retail/crm', 'Customers'], ['marketing/leads', 'Leads'], ['retail/orders', 'Orders'], ['retail/service', 'Support']],
   marketing: [['posts', 'FoundAI posts'], ['marketing/campaigns', 'Campaigns'], ['marketing/content', 'Content'], ['marketing/calendar', 'Calendar'], ['marketing/audiences', 'Audiences'], ['marketing/journeys', 'Journeys'], ['reports', 'ROI & attribution']],
+  legal: [['legal/matters', 'Matters'], ['legal/time-entries', 'Billable work'], ['legal/communications', 'Calls & messages'], ['legal/billing-audit', 'Evidence packs'], ['legal/invoices', 'Client invoices'], ['legal/contracts', 'Contracts'], ['legal/subscriptions', 'Subscriptions'], ['legal/ndas', 'NDAs']],
 }
 
 function Kpi({ label, value, sub, alert }: { label: string; value: string; sub: string; alert?: boolean }) {
@@ -149,6 +150,7 @@ export default function SuperDashScreen() {
         <QuantumPill active={tab === 'finance'} onPress={() => goTab('finance')}>Finance</QuantumPill>
         <QuantumPill active={tab === 'sales'} onPress={() => goTab('sales')}>Sales</QuantumPill>
         <QuantumPill active={tab === 'marketing'} onPress={() => goTab('marketing')}>Marketing</QuantumPill>
+        <QuantumPill active={tab === 'legal'} onPress={() => goTab('legal')}>Legal</QuantumPill>
       </View>
       {tab !== 'business' ? <>
         <View style={styles.subLinks}>

@@ -44,7 +44,7 @@ export function founderDemoOverview(live: FounderOverview | null, now = Date.now
   }))
   const paying = tenants.filter((tenant) => tenant.monthlyValueGbp > 0)
   const mrrGbp = tenants.reduce((sum, tenant) => sum + tenant.monthlyValueGbp, 0)
-  const workspaces = ['retail', 'logistics', 'finance', 'marketing', 'talent', 'hr', 'health', 'intelligence']
+  const workspaces = ['retail', 'logistics', 'finance', 'marketing', 'talent', 'hr', 'health', 'legal', 'intelligence']
   const boltOnPrices: Record<string, number> = { finance: 25, talent: 19, hr: 19, health: 19, intelligence: 35 }
   const signupsByDay = Array.from({ length: 14 }, (_, index) => {
     const date = new Date(today.getTime() - (13 - index) * DAY).toISOString().slice(0, 10)

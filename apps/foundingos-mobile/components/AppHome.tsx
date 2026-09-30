@@ -195,6 +195,7 @@ const WORKSPACES = [
   { name: 'Talent', icon: '🎯', does: 'Screens applicants, schedules interviews, chases references and prepares offers.' },
   { name: 'HR', icon: '👥', does: 'Fills rota gaps, approves timesheets, tracks holiday and sickness, prepares payroll inputs.' },
   { name: 'Health', icon: '🩺', does: 'Confirms appointments, follows up patients, prepares claims.' },
+  { name: 'Legal', icon: '⚖️', does: 'Captures billable work and evidence, manages matters, contracts, NDAs and renewals.' },
   { name: 'Intelligence', icon: '✦', does: 'Spots risks and trends across everything and tells you what to do.' },
 ]
 

@@ -11,13 +11,14 @@ type SelfServePlan = 'lite' | 'core' | 'complete'
 const PLAN_TIER: Record<SelfServePlan, PlanTier> = { lite: 'lite', core: 'starter', complete: 'growth' }
 
 // Stripe Price IDs, one monthly recurring price per chargeable item.
-// Core is billed per base workspace (Retail & Logistics, Talent, HR — £19 each).
+// Core is billed per base workspace (Legal is £29; the other bases are £19).
 const PRICE_ENV = {
   complete: 'STRIPE_PRICE_COMPLETE',
   retail: 'STRIPE_PRICE_CORE',
   talent: 'STRIPE_PRICE_TALENT',
   hr: 'STRIPE_PRICE_HR',
   health: 'STRIPE_PRICE_HEALTH',
+  legal: 'STRIPE_PRICE_LEGAL',
   commerce_pro: 'STRIPE_PRICE_COMMERCE_PRO',
   core_intelligence: 'STRIPE_PRICE_INTELLIGENCE',
   extra_seat: 'STRIPE_PRICE_EXTRA_SEAT',

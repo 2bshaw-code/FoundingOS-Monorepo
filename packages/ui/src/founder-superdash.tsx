@@ -31,15 +31,16 @@ const ago = (iso: string | null) => {
 const loadFounderRecords: LoadRecords = async (workspace, module) => (await productionRecords.list(workspace, module)).map(proRecordFromBackend)
 const loadDemoRecords: LoadRecords = async (workspace, module) => demoWorkspaceRecords(workspace as BusinessWorkspaceSlug, module)
 
-type Tab = 'overview' | 'finance' | 'sales' | 'marketing'
+type Tab = 'overview' | 'finance' | 'sales' | 'marketing' | 'legal'
 // Each SuperDash tab hosts FoundingOS's own records. 'workspace/module' entries render the full
 // professional workspace module inline; other keys are SuperDash-only views.
 const sections: Record<Exclude<Tab, 'overview'>, Array<[key: string, label: string]>> = {
   finance: [['books', 'Books & runway'], ['scenario', 'WhatsApp growth scenario'], ['finance/invoices', 'Invoices'], ['finance/bills', 'Bills'], ['finance/expenses', 'Expenses'], ['finance/banking', 'Banking'], ['finance/reconciliation', 'Reconciliation'], ['finance/budgets', 'Budgets'], ['finance/tax', 'Tax & VAT'], ['reports', 'Reports']],
   sales: [['forecast', 'Forecast'], ['retail/sales-pipeline', 'Deals & quotes'], ['subscribers', 'Subscribers'], ['retail/crm', 'Customers'], ['marketing/leads', 'Leads'], ['retail/orders', 'Orders'], ['retail/service', 'Support']],
   marketing: [['posts', 'FoundAI posts'], ['marketing/campaigns', 'Campaigns'], ['marketing/content', 'Content'], ['marketing/calendar', 'Calendar'], ['marketing/audiences', 'Audiences'], ['marketing/journeys', 'Journeys'], ['reports', 'ROI & attribution']],
+  legal: [['legal/matters', 'Matters'], ['legal/time-entries', 'Billable work'], ['legal/communications', 'Calls & messages'], ['legal/billing-audit', 'Evidence packs'], ['legal/invoices', 'Client invoices'], ['legal/contracts', 'Contracts'], ['legal/subscriptions', 'Subscriptions'], ['legal/ndas', 'NDAs']],
 }
-const tabs: Tab[] = ['overview', 'finance', 'sales', 'marketing']
+const tabs: Tab[] = ['overview', 'finance', 'sales', 'marketing', 'legal']
 const readHash = (): [Tab, string] => {
   if (typeof window === 'undefined') return ['overview', '']
   const [tab, ...rest] = window.location.hash.replace(/^#/, '').split('/')
@@ -190,7 +191,7 @@ export function FounderSuperDash() {
     </header>
     <div className="sd-tab-bar">
       <div className="sd-tabs" role="tablist">
-        {(['overview', 'finance', 'sales', 'marketing'] as const).map((key) => <button aria-selected={tab === key} className={tab === key ? 'on' : ''} key={key} onClick={() => setTab(key)} role="tab" type="button">{key === 'overview' ? 'Business' : key === 'finance' ? 'Finance' : key === 'sales' ? 'Sales' : 'Marketing'}</button>)}
+        {tabs.map((key) => <button aria-selected={tab === key} className={tab === key ? 'on' : ''} key={key} onClick={() => setTab(key)} role="tab" type="button">{key === 'overview' ? 'Business' : title(key)}</button>)}
       </div>
       <a className="sd-site-link" href="/">← Back to website</a>
     </div>

@@ -432,6 +432,108 @@ const profiles: Record<string, ModuleProfile> = {
       { label: 'Placements', value: String(records.length), tone: 'info' },
     ],
   },
+  'hr/employee-relations': {
+    noun: 'case', copy: 'Keep grievances, disciplinaries and sensitive employee issues complete, fair and evidenced.',
+    fields: { name: 'Case', secondary: 'Employee and issue', value: 'Risk or cost', owner: 'Case owner' }, valueHint: '£0',
+    kpis: (records, statuses) => [
+      { label: 'Open cases', value: String(notIn(records, last(statuses)).length), tone: 'watch' },
+      { label: 'At hearing', value: String(inStatus(records, 'Hearing').length), tone: 'watch' },
+      { label: 'Resolved', value: String(inStatus(records, last(statuses)).length), tone: 'good' },
+    ],
+  },
+  'hr/legal-register': {
+    noun: 'legal duty', copy: 'A live register of employment-law duties, reviews, evidence and actions.',
+    fields: { name: 'Duty or review', secondary: 'Requirement and evidence', value: 'Risk or cost', owner: 'Responsible person' }, valueHint: '£0',
+    kpis: (records) => [
+      { label: 'Action needed', value: String(inStatus(records, 'Action needed').length), tone: count(inStatus(records, 'Action needed').length, 0, 0) },
+      { label: 'Due', value: String(inStatus(records, 'Due', 'In progress').length), tone: 'watch' },
+      { label: 'Compliant', value: String(inStatus(records, 'Compliant').length), tone: 'good' },
+    ],
+  },
+  // Legal: matter management and defensible billing
+  'legal/matters': {
+    noun: 'matter', copy: 'Every client matter, owner, stage, value, deadline and connected item in one place.',
+    fields: { name: 'Matter', secondary: 'Client and matter number', value: 'Budget or value', owner: 'Responsible lawyer' }, valueHint: '£0',
+    kpis: (records, statuses) => [
+      { label: 'Active matters', value: String(inStatus(records, 'Active').length), tone: 'info' },
+      { label: 'At intake', value: String(inStatus(records, first(statuses)).length), tone: 'watch' },
+      { label: 'Matter value', value: gbp(sum(notIn(records, last(statuses)))), tone: 'info' },
+      { label: 'Overdue actions', value: String(overdue(notIn(records, last(statuses)))), tone: count(overdue(notIn(records, last(statuses))), 0, 0) },
+    ],
+  },
+  'legal/time-entries': {
+    noun: 'activity', copy: 'Record calls, letters, messages, drafting, research and meetings with the time, rate and proof behind each charge.',
+    fields: { name: 'Work done', secondary: 'Matter and activity type', value: 'Billable amount', owner: 'Fee earner' }, valueHint: '£0',
+    kpis: (records, statuses) => [
+      { label: 'Unbilled work', value: gbp(sum(notIn(records, last(statuses)))), tone: 'watch' },
+      { label: 'Awaiting approval', value: String(inStatus(records, 'Recorded').length), tone: 'watch' },
+      { label: 'Billed', value: gbp(sum(inStatus(records, last(statuses)))), tone: 'good' },
+      { label: 'Fee earners', value: String(owners(records)), tone: 'info' },
+    ],
+  },
+  'legal/communications': {
+    noun: 'communication', copy: 'Capture every call, letter, email and message, link it to a matter and preserve evidence for billing.',
+    fields: { name: 'Communication', secondary: 'Matter, channel and recipient', value: 'Billable amount', owner: 'Fee earner' }, valueHint: '£0',
+    kpis: (records, statuses) => [
+      { label: 'Captured', value: String(records.length), tone: 'info' },
+      { label: 'Needs linking', value: String(inStatus(records, first(statuses)).length), tone: 'watch' },
+      { label: 'Evidenced and billed', value: String(inStatus(records, last(statuses)).length), tone: 'good' },
+    ],
+  },
+  'legal/evidence': {
+    noun: 'evidence item', copy: 'A controlled index of documents, messages, recordings and exhibits with ownership and review status.',
+    fields: { name: 'Evidence', secondary: 'Matter and source', value: 'Reference or value', owner: 'Custodian' }, valueHint: 'Reference',
+    kpis: (records, statuses) => [
+      { label: 'Items held', value: String(records.length), tone: 'info' },
+      { label: 'Awaiting review', value: String(inStatus(records, first(statuses), 'Indexed').length), tone: 'watch' },
+      { label: 'Reviewed', value: String(inStatus(records, 'Reviewed', last(statuses)).length), tone: 'good' },
+    ],
+  },
+  'legal/contracts': {
+    noun: 'contract', copy: 'Control negotiation, signatures, renewal dates, obligations and the final signed evidence.',
+    fields: { name: 'Contract', secondary: 'Counterparty and contract type', value: 'Contract value', owner: 'Contract owner' }, valueHint: '£0',
+    kpis: (records, statuses) => [
+      { label: 'In negotiation', value: String(inStatus(records, 'Draft', 'Negotiation').length), tone: 'watch' },
+      { label: 'Signed value', value: gbp(sum(inStatus(records, 'Signed'))), tone: 'good' },
+      { label: 'Expired', value: String(inStatus(records, last(statuses)).length), tone: count(inStatus(records, last(statuses)).length, 5, 0) },
+    ],
+  },
+  'legal/subscriptions': {
+    noun: 'subscription', copy: 'Track the cost, owner, notice period and renewal date for every subscription and recurring contract.',
+    fields: { name: 'Subscription', secondary: 'Supplier and billing period', value: 'Recurring cost', owner: 'Contract owner' }, valueHint: '£0',
+    kpis: (records) => [
+      { label: 'Active cost', value: gbp(sum(inStatus(records, 'Active', 'Renewal due'))), tone: 'info' },
+      { label: 'Renewal due', value: String(inStatus(records, 'Renewal due').length), tone: count(inStatus(records, 'Renewal due').length, 4, 0) },
+      { label: 'Cancelled', value: String(inStatus(records, 'Cancelled').length), tone: 'good' },
+    ],
+  },
+  'legal/pre-bills': {
+    noun: 'pre-bill', copy: 'Review every proposed charge against recorded work and evidence before a client invoice is issued.',
+    fields: { name: 'Pre-bill', secondary: 'Client, matter and period', value: 'Amount', owner: 'Billing partner' }, valueHint: '£0',
+    kpis: (records, statuses) => [
+      { label: 'In review', value: String(inStatus(records, first(statuses), 'Review').length), tone: 'watch' },
+      { label: 'Value to approve', value: gbp(sum(notIn(records, last(statuses)))), tone: 'watch' },
+      { label: 'Issued', value: gbp(sum(inStatus(records, last(statuses)))), tone: 'good' },
+    ],
+  },
+  'legal/invoices': {
+    noun: 'client invoice', copy: 'Client bills linked back to approved activity, expenses and their supporting evidence.',
+    fields: { name: 'Invoice', secondary: 'Client and matter', value: 'Invoice total', owner: 'Billing partner' }, valueHint: '£0',
+    kpis: (records) => [
+      { label: 'Outstanding', value: gbp(sum(inStatus(records, 'Sent', 'Overdue'))), tone: 'watch' },
+      { label: 'Overdue', value: gbp(sum(inStatus(records, 'Overdue'))), tone: count(inStatus(records, 'Overdue').length, 2, 0) },
+      { label: 'Paid', value: gbp(sum(inStatus(records, 'Paid'))), tone: 'good' },
+    ],
+  },
+  'legal/billing-audit': {
+    noun: 'evidence pack', copy: 'A client-ready explanation of each bill, with the work, communications, expenses and evidence behind it.',
+    fields: { name: 'Evidence pack', secondary: 'Invoice, client and matter', value: 'Supported bill value', owner: 'Reviewer' }, valueHint: '£0',
+    kpis: (records, statuses) => [
+      { label: 'Building', value: String(inStatus(records, first(statuses)).length), tone: 'watch' },
+      { label: 'Ready to share', value: String(inStatus(records, 'Ready').length), tone: 'good' },
+      { label: 'Accepted', value: gbp(sum(inStatus(records, last(statuses)))), tone: 'good' },
+    ],
+  },
   'talent/references': {
     noun: 'reference', copy: 'Reference and background checks before anyone starts.',
     fields: { name: 'Candidate', secondary: 'Referee', value: 'Outcome', owner: 'Checked by' }, valueHint: 'e.g. Positive',
@@ -656,4 +758,3 @@ profiles['retail/content'] = profiles.content
 export function getModuleProfile(workspace: string, moduleId: string): ModuleProfile | undefined {
   return profiles[`${workspace}/${moduleId}`] ?? profiles[moduleId]
 }
-

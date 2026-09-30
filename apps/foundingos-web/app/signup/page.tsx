@@ -9,7 +9,7 @@ type Plan = 'lite' | 'core' | 'complete'
 
 const PLANS: Record<Plan, { tier: PlanTier; summary: string }> = {
   lite: { tier: 'lite', summary: 'One user, Core.Operations basics.' },
-  core: { tier: 'starter', summary: 'Three users. Pick Retail & Logistics, Talent or HR — £19/month each — and combine as many as you like.' },
+  core: { tier: 'starter', summary: 'Three users. Pick the workspaces you need. Most are £19/month; specialist Legal is £29/month.' },
   complete: { tier: 'growth', summary: 'Fifteen users with every suite and bolt-on included.' },
 }
 
