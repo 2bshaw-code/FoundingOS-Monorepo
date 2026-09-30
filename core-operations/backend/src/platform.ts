@@ -210,7 +210,7 @@ export async function listWorkspaceRecords(tenantId: string, workspaceValue: unk
   const module = assertModule(moduleValue)
   const search = optionalText(query.search)
   const status = optionalText(query.status)
-  const take = Math.min(200, Math.max(1, Number(query.limit || 100)))
+  const take = Math.min(1000, Math.max(1, Number(query.limit || 100)))
   return prisma.workspaceRecord.findMany({
     where: {
       tenantId, workspace, module, deletedAt: null,
@@ -249,6 +249,39 @@ export async function createWorkspaceRecord(tenantId: string, actorId: string, w
     publishEvent({ tenantId, type: 'workspace.record.created', source: workspace, payload: { module, recordId: record.id, reference: record.reference, status: record.status } }),
   ])
   return record
+}
+
+export const MAX_IMPORT_BATCH = 50
+
+// Spreadsheet import: saves up to 50 rows in one request so a 500 row file stays well inside the
+// API rate limit. Rows whose reference already exists are skipped rather than failing the batch.
+export async function importWorkspaceRecords(tenantId: string, actorId: string, workspaceValue: unknown, moduleValue: unknown, input: Record<string, unknown>, requestId?: string) {
+  const workspace = assertWorkspace(workspaceValue)
+  const module = assertModule(moduleValue)
+  const rows = Array.isArray(input.records) ? input.records as Array<Record<string, unknown>> : []
+  if (!rows.length) throw Object.assign(new Error('Add at least one row to import'), { status: 400 })
+  if (rows.length > MAX_IMPORT_BATCH) throw Object.assign(new Error(`Import at most ${MAX_IMPORT_BATCH} rows per request`), { status: 400 })
+  const data = rows.map((row, index) => {
+    if (!row || typeof row !== 'object') throw Object.assign(new Error(`Row ${index + 1} is not valid`), { status: 400 })
+    const valuePence = row.valuePence === undefined || row.valuePence === null || row.valuePence === '' ? null : Math.round(Number(row.valuePence))
+    return {
+      tenantId, workspace, module,
+      reference: requiredText(row.reference, 'Reference').slice(0, 120),
+      name: requiredText(row.name, 'Name').slice(0, 200),
+      status: requiredText(row.status, 'Status').slice(0, 80),
+      ownerId: optionalText(row.ownerId),
+      valuePence: valuePence === null || Number.isFinite(valuePence) ? valuePence : null,
+      data: json(row.data && typeof row.data === 'object' ? row.data : {}),
+      createdBy: actorId,
+      updatedBy: actorId,
+    }
+  })
+  const { count } = await prisma.workspaceRecord.createMany({ data, skipDuplicates: true })
+  await Promise.all([
+    audit({ tenantId, actorId, action: 'records.imported', workspace, module, requestId, metadata: { rows: rows.length, created: count } }),
+    publishEvent({ tenantId, type: 'workspace.records.imported', source: workspace, payload: { module, created: count } }),
+  ])
+  return { created: count, skipped: rows.length - count }
 }
 
 export async function updateWorkspaceRecord(tenantId: string, actorId: string, role: string, id: string, input: Record<string, unknown>, requestId?: string) {
@@ -499,9 +532,39 @@ export async function inviteTeamMember(tenantId: string, actorId: string, input:
   const invitation = await prisma.tenantInvitation.create({
     data: { tenantId, email, role, permissions: json(permissions), tokenHash: createHash('sha256').update(token).digest('hex'), expiresAt: new Date(Date.now() + 72 * 60 * 60 * 1000), invitedBy: actorId },
   })
-  await audit({ tenantId, actorId, action: 'team.invitation.created', entityId: invitation.id, requestId, metadata: { email, role, workspaces: permissions.workspaces, expiresAt: invitation.expiresAt.toISOString(), delivery: 'simulated' } })
-  const baseUrl = String(process.env.FOUNDINGOS_WEB_URL || 'http://localhost:3000').replace(/\/$/, '')
-  return { invitation: { id: invitation.id, email, role, permissions, expiresAt: invitation.expiresAt, invitationUrl: `${baseUrl}/invite/${encodeURIComponent(token)}` }, delivery: { status: 'simulated', message: 'Invitation prepared for configured email delivery.' } }
+  await audit({ tenantId, actorId, action: 'team.invitation.created', entityId: invitation.id, requestId, metadata: { email, role, workspaces: permissions.workspaces, expiresAt: invitation.expiresAt.toISOString(), delivery: 'link' } })
+  const invitationUrl = `${webBaseUrl()}/invite/${encodeURIComponent(token)}`
+  const onboarding = await prisma.tenantOnboarding.findUnique({ where: { tenantId }, select: { businessName: true } }).catch(() => null)
+  const emailed = await sendInvitationEmail(email, invitationUrl, onboarding?.businessName || 'a FoundingOS workspace')
+  return {
+    invitation: { id: invitation.id, email, role, permissions, expiresAt: invitation.expiresAt, invitationUrl },
+    delivery: emailed
+      ? { status: 'emailed', message: `Invitation emailed to ${email}. You can also share the link yourself.` }
+      : { status: 'link', message: 'Copy the link and send it to them on WhatsApp or by email. It works once and expires in 72 hours.' },
+  }
+}
+
+// Invitation links must open the live site, never localhost, even if FOUNDINGOS_WEB_URL is unset.
+export function webBaseUrl() {
+  const configured = process.env.FOUNDINGOS_WEB_URL?.trim()
+  if (configured) return configured.replace(/\/$/, '')
+  return process.env.NODE_ENV === 'production' || process.env.VERCEL ? 'https://www.foundingos.com' : 'http://localhost:3000'
+}
+
+async function sendInvitationEmail(to: string, url: string, businessName: string) {
+  const key = process.env.RESEND_API_KEY?.trim()
+  if (!key) return false
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      from: process.env.RESEND_FROM_EMAIL?.trim() || 'FoundingOS <no-reply@foundingos.com>',
+      to,
+      subject: `You have been invited to ${businessName} on FoundingOS`,
+      text: `Hello,\n\nYou have been invited to join ${businessName} on FoundingOS.\n\nOpen this link to choose your password: ${url}\n\nThe link works once and expires in 72 hours.\n\nFoundingOS`,
+    }),
+  }).catch(() => null)
+  return Boolean(response?.ok)
 }
 
 export async function acceptTeamInvitation(tokenValue: unknown, passwordValue: unknown) {

@@ -6673,6 +6673,118 @@ body:has(.complete-workspace-directory) .found-ai-panel {
   justify-content: flex-end;
 }
 
+.retail-app-modal.spreadsheet-import {
+  max-height: calc(100vh - 40px);
+  max-width: 720px;
+  overflow-y: auto;
+}
+
+.spreadsheet-import .spreadsheet-import__summary,
+.spreadsheet-import .spreadsheet-import__hint,
+.spreadsheet-import .spreadsheet-import__progress p {
+  color: #334155;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.spreadsheet-import .spreadsheet-import__hint {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.spreadsheet-import__steps {
+  color: #334155;
+  display: grid;
+  font-size: 14px;
+  gap: 8px;
+  line-height: 1.5;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.spreadsheet-import__pick {
+  cursor: pointer;
+  justify-self: start;
+}
+
+.spreadsheet-import__link {
+  background: none;
+  border: 0;
+  color: #0f766e;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  justify-self: start;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.spreadsheet-import__mapping {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+}
+
+.spreadsheet-import__preview {
+  display: grid;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.spreadsheet-import__preview table {
+  border-collapse: collapse;
+  font-size: 12px;
+  width: 100%;
+}
+
+.spreadsheet-import__preview th,
+.spreadsheet-import__preview td {
+  border-bottom: 1px solid #e2e8f0;
+  color: #172033;
+  max-width: 180px;
+  overflow: hidden;
+  padding: 6px 8px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spreadsheet-import__preview th {
+  background: #f1f5f9;
+  font-weight: 700;
+}
+
+.retail-app-modal .spreadsheet-import__check {
+  align-items: center;
+  display: flex;
+  font-size: 13px;
+  gap: 8px;
+}
+
+.spreadsheet-import__progress progress {
+  height: 10px;
+  width: 100%;
+}
+
+.invite-link-modal__message {
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.invite-link-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.invite-link-modal__actions a {
+  text-decoration: none;
+}
+
 .retail-app-bars {
   display: grid;
   gap: 17px;

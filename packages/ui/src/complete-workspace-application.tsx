@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { Fragment, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react'
 import { CrossSellTicker } from './cross-sell-banner'
 import { ProductRatingButton } from './product-rating'
+import { SpreadsheetImportDialog } from './spreadsheet-import-dialog'
 import { ExperienceToggle, ProCoach, ProExperience, useDemoData, useExperienceMode } from './pro-coach'
 import { CampaignPlanner, type CampaignBrief, type CampaignPlan } from './marketing-studio'
 import { DocumentPanel, DocumentSettingsPanel, useDocumentProfile } from './pro/document-panel'
@@ -648,6 +649,22 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
   const bulkAdvance = async (module: string, records: WorkspaceRecord[], status: string) => {
     for (const record of records) await advanceRecord(module, record, status)
   }
+  // Saves one batch of spreadsheet rows. Live accounts send the batch in a single request.
+  const importRecords = async (module: string, records: WorkspaceRecord[]) => {
+    if (!production) {
+      update((current) => ({ ...current, records: { ...current.records, [module]: [...records, ...(current.records[module] ?? [])] } }), `${module}: ${records.length} imported`)
+      return { created: records.length, skipped: 0 }
+    }
+    return productionRecords.importMany(workspace, module, records.map((record) => {
+      const numericValue = Number(record.value.replace(/[^0-9.-]/g, ''))
+      return { reference: record.id, name: record.name, status: record.status, ownerId: record.owner, valuePence: Number.isFinite(numericValue) && record.value.trim() ? Math.round(numericValue * 100) : null, data: { secondary: record.secondary, value: record.value, owner: record.owner, source: 'import', ...Object.fromEntries((['dueDate', 'email', 'phone'] as const).filter((key) => record[key]).map((key) => [key, record[key]])) } }
+    }))
+  }
+  const reloadModule = async (module: string) => {
+    if (!production) return
+    const records = await productionRecords.list(workspace, module)
+    setState((current) => ({ ...current, records: { ...current.records, [module]: records.map(fromProductionRecord) } }))
+  }
   const publishHandoff = async (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => {
     if (production) await productionRequest('/platform/events', { method: 'POST', body: JSON.stringify({ type: 'workspace.handoff.requested', source: workspace, payload: { module, recordId: record.backendId, reference: record.id, target } }) })
     update((current) => current, `${module}: ${record.name} handed to ${configs[target].label}`)
@@ -657,7 +674,7 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
     window.localStorage.removeItem(storageKey(workspace))
     setState(seedWorkspace(workspace))
   }
-  return { state, events, update, reset, loading, error, production, demo, setDemo, ownerProfile, liveMetrics, createRecord, advanceRecord, attachRecord, uploadProductPhoto, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords }
+  return { state, events, update, reset, loading, error, production, demo, setDemo, ownerProfile, liveMetrics, createRecord, advanceRecord, attachRecord, uploadProductPhoto, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords, importRecords, reloadModule }
 }
 
 function appendDemoRecord(workspace: BusinessWorkspaceSlug, module: string, record: WorkspaceRecord) {
@@ -2232,7 +2249,7 @@ async function convertToInvoice(create: (workspace: BusinessWorkspaceSlug, modul
   return `Draft invoice ${input.reference} created in ${configs[targetWorkspace].label}`
 }
 
-function RecordsPage({ autopilot, workspace, config, item, state, createRecord, advanceRecord, attachRecord, uploadProductPhoto, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords }: { autopilot?: AutopilotController; workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; uploadProductPhoto: (record: WorkspaceRecord, file: File) => Promise<void>; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string, kind?: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate' | 'email' | 'phone'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void>; saveRecordData: (module: string, record: WorkspaceRecord, patch: ProPatch) => Promise<void>; createLinkedRecord: (workspace: BusinessWorkspaceSlug, module: string, input: { reference: string; name: string; status: string; valuePence: number; data: Record<string, unknown> }) => Promise<void>; loadRecords: LoadRecords }) {
+function RecordsPage({ autopilot, workspace, config, item, state, createRecord, advanceRecord, attachRecord, uploadProductPhoto, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords, importRecords, reloadModule }: { autopilot?: AutopilotController; workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; uploadProductPhoto: (record: WorkspaceRecord, file: File) => Promise<void>; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string, kind?: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate' | 'email' | 'phone'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void>; saveRecordData: (module: string, record: WorkspaceRecord, patch: ProPatch) => Promise<void>; createLinkedRecord: (workspace: BusinessWorkspaceSlug, module: string, input: { reference: string; name: string; status: string; valuePence: number; data: Record<string, unknown> }) => Promise<void>; loadRecords: LoadRecords; importRecords: (module: string, records: WorkspaceRecord[]) => Promise<{ created: number; skipped: number }>; reloadModule: (module: string) => Promise<void> }) {
   const records = state.records[item.id] ?? []
   const documentKind = documentKindFor(workspace, item.id)
   const proDocuments = useProDocuments(workspace, documentKind || item.id === 'sales-pipeline' ? workspace : '', loadRecords)
@@ -2242,6 +2259,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
   const [selectedId, setSelectedId] = useState(records[0]?.id)
   const editorRef = useRef<HTMLDivElement>(null)
   const [creating, setCreating] = useState(false)
+  const [importing, setImporting] = useState(false)
   const [createDay, setCreateDay] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -2575,6 +2593,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
         <button aria-pressed={boardView === 'list'} onClick={() => setBoardView('list')} type="button">☰ List</button>
       </div> : null}
       <span className="retail-app-record-count">{visible.length} matching</span>
+      {!isCalendar ? <button onClick={() => setImporting(true)} type="button">Import</button> : null}
       <button onClick={() => exportCsv(visible)} type="button">Export CSV</button>
       <button onClick={() => window.print()} type="button">Print</button>
       {item.id === 'crm' ? <button onClick={() => setCheckedIds(visible.filter((record) => computeLeadScore(record, statuses, records).tier === 'Hot').map((record) => record.id))} type="button">🔥 Select hot leads</button> : null}
@@ -2720,6 +2739,17 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
         {...(documentKind === 'quote' ? { convertLabel: 'Convert to invoice', onConvert: (doc: BusinessDocument) => convertToInvoice(createLinkedRecord, invoiceTargetFor(workspace) as [BusinessWorkspaceSlug, string], doc, proDocuments.profile) } : {})} /> : null}
       {isSalesPipeline ? <DealPanel key={selected.id} createInvoice={(doc) => convertToInvoice(createLinkedRecord, ['finance', 'invoices'], doc, proDocuments.profile)} profile={proDocuments.profile} record={selected} save={(patch) => saveRecordData(item.id, selected, patch)} /> : null}
     </div> : null}
+    {importing ? <SpreadsheetImportDialog
+      existing={records}
+      fields={fields}
+      moduleId={item.id}
+      moduleLabel={item.label}
+      noun={noun}
+      onClose={() => setImporting(false)}
+      onFinished={() => reloadModule(item.id)}
+      onSaveBatch={(rows, start, batch) => importRecords(item.id, rows.map((row, offset) => ({ id: `${item.id.slice(0, 3).toUpperCase()}-${batch}-${start + offset + 1}`, name: row.name, secondary: row.secondary, value: row.value, status: row.status ?? statuses[0], owner: row.owner ?? 'Unassigned', updated: 'Now', email: row.email, phone: row.phone, dueDate: row.dueDate })))}
+      statuses={statuses}
+    /> : null}
     {creating ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void create(event)}><div><p>{item.label}</p><h2>New {noun}</h2></div><label>{fields.name}<input name="name" required /></label><label>{fields.secondary}<input name="secondary" required /></label><div className="retail-app-form-grid"><label>{fields.value}<input name="value" placeholder={profile?.valueHint ?? '£0 or priority'} required /></label><label>{fields.owner}<select name="owner"><option>Maya</option><option>Noah</option><option>Ava</option><option>Bobby</option></select></label></div>{isCalendar ? <label>Date<input defaultValue={createDay} key={createDay} name="dueDate" required type="date" /></label> : null}<label>Attachment (optional)<input accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv" name="attachment" type="file" /></label>{error ? <div className="complete-workspace-error" role="alert"><span>{error}</span>{retry ? <button type="button" className="complete-workspace-error__retry" onClick={retry}>Retry</button> : null}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setCreating(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Saving…' : `Create ${noun}`}</button></footer></form></div> : null}
   </>
 }
@@ -2923,6 +2953,16 @@ function TeamPage({ workspace }: { workspace: BusinessWorkspaceSlug }) {
   const [members, setMembers] = useState<ProductionTeamMember[]>([])
   const [invitations, setInvitations] = useState<ProductionInvitation[]>([])
   const [inviting, setInviting] = useState(false)
+  const [shared, setShared] = useState<{ email: string; url: string; message: string } | null>(null)
+  const [copied, setCopied] = useState(false)
+  const showLink = (result: { invitation: ProductionInvitation; delivery: { message: string } }) => {
+    setCopied(false)
+    if (result.invitation.invitationUrl) setShared({ email: result.invitation.email, url: result.invitation.invitationUrl, message: result.delivery.message })
+  }
+  const copyLink = async () => {
+    if (!shared) return
+    try { await navigator.clipboard.writeText(shared.url); setCopied(true) } catch { setCopied(false) }
+  }
   const [error, setError] = useState('')
   const load = () => Promise.all([productionRequest<ProductionTeamMember[]>('/platform/team'), productionPlatform.teamInvitations()]).then(([team, pending]) => { setMembers(team); setInvitations(pending) })
   useEffect(() => { void load().catch((cause: unknown) => setError(cause instanceof Error ? cause.message : 'Team could not be loaded')) }, [])
@@ -2934,6 +2974,7 @@ function TeamPage({ workspace }: { workspace: BusinessWorkspaceSlug }) {
       const result = await productionRequest<{ invitation: ProductionInvitation; delivery: { status: string; message: string } }>('/platform/team', { method: 'POST', body: JSON.stringify({ email: form.get('email'), role: form.get('role'), workspaces: form.getAll('workspaces') }) })
       setInvitations((current) => [result.invitation, ...current])
       setInviting(false)
+      showLink(result)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Invitation could not be created')
     }
@@ -2967,11 +3008,12 @@ function TeamPage({ workspace }: { workspace: BusinessWorkspaceSlug }) {
     try {
       const result = await productionPlatform.resendTeamInvitation(id)
       setInvitations((current) => [result.invitation, ...current.filter((invitation) => invitation.id !== id)])
+      showLink(result)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Invitation could not be resent')
     }
   }
-  return <><WorkspaceHeading eyebrow="Administration" title="Team & access" copy="Invite operators, assign role-based workspace access, and suspend access without deleting audit history." action={<button className="retail-app-primary" onClick={() => setInviting(true)} type="button">+ Invite team member</button>} /><section className="retail-app-dashboard-grid lower team-capabilities"><article className="retail-app-panel"><p>Capability matrix</p><h2>Governance boundaries</h2><ul><li><strong>Founder / Owner</strong><span>Manage team, settings, approve, execute, reverse</span></li><li><strong>Manager</strong><span>Operate assigned workspaces and approve; no execution or reversal</span></li><li><strong>Operator</strong><span>Operate assigned workspaces; no approvals or execution</span></li><li><strong>Viewer</strong><span>Read-only visibility for assigned workspaces and evidence</span></li></ul></article></section>{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}{invitations.length ? <section className="retail-app-table-card full"><div className="retail-app-panel-heading"><div><p>Pending invitations</p><h2>{invitations.length} awaiting acceptance</h2></div><span>Expires after 72 hours</span></div><div className="retail-app-table-scroll"><table><thead><tr><th>Email</th><th>Role</th><th>Expires</th><th>Delivery</th><th>Actions</th></tr></thead><tbody>{invitations.map((invitation) => <tr key={invitation.id}><td><strong>{invitation.email}</strong></td><td>{invitation.role.replaceAll('_', ' ')}</td><td>{new Date(invitation.expiresAt).toLocaleString('en-GB', { timeZone: 'UTC' })}</td><td><span className="retail-app-status status-draft">Simulated email ready</span></td><td><button className="retail-app-secondary" onClick={() => void resendInvitation(invitation.id)} type="button">Resend</button> <button className="retail-app-secondary" onClick={() => void revokeInvitation(invitation.id)} type="button">Revoke</button></td></tr>)}</tbody></table></div></section> : null}<div className="retail-app-table-card full"><div className="retail-app-panel-heading"><div><p>Access control</p><h2>{members.length} team members</h2></div></div><div className="retail-app-table-scroll"><table><thead><tr><th>Email</th><th>Role</th><th>Workspaces</th><th>Status</th><th>Action</th></tr></thead><tbody>{members.map((member) => <tr key={member.id}><td><strong>{member.email}</strong></td><td><select aria-label={`Role for ${member.email}`} onChange={(event) => void changeRole(member, event.target.value)} value={member.role}><option value="business_viewer">Viewer</option><option value="business_staff">Operator</option><option value="business_manager">Manager</option><option value="business_owner">Owner</option></select></td><td>{member.permissions?.workspaces?.join(', ') || 'All enabled'}</td><td><span className={`retail-app-status ${member.active ? 'status-active' : 'status-draft'}`}>{member.active ? 'Active' : 'Suspended'}</span></td><td><button className="retail-app-secondary" onClick={() => void toggle(member)} type="button">{member.active ? 'Suspend' : 'Restore'}</button></td></tr>)}</tbody></table></div></div>{inviting ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void invite(event)}><div><p>Team access</p><h2>Invite a team member</h2></div><label>Email<input name="email" required type="email" /></label><label>Role<select name="role"><option value="business_viewer">Viewer</option><option value="business_staff">Operator</option><option value="business_manager">Manager</option><option value="business_owner">Owner</option></select></label><fieldset className="complete-workspace-checkboxes"><legend>Workspace access</legend>{workspaceOrder.map((item) => <label key={item}><input defaultChecked={item === workspace} name="workspaces" type="checkbox" value={item} /> {configs[item].label}</label>)}</fieldset>{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setInviting(false)} type="button">Cancel</button><button className="retail-app-primary" type="submit">Create invitation</button></footer></form></div> : null}</>
+  return <><WorkspaceHeading eyebrow="Administration" title="Team & access" copy="Invite operators, assign role-based workspace access, and suspend access without deleting audit history." action={<button className="retail-app-primary" onClick={() => setInviting(true)} type="button">+ Invite team member</button>} /><section className="retail-app-dashboard-grid lower team-capabilities"><article className="retail-app-panel"><p>Capability matrix</p><h2>Governance boundaries</h2><ul><li><strong>Founder / Owner</strong><span>Manage team, settings, approve, execute, reverse</span></li><li><strong>Manager</strong><span>Operate assigned workspaces and approve; no execution or reversal</span></li><li><strong>Operator</strong><span>Operate assigned workspaces; no approvals or execution</span></li><li><strong>Viewer</strong><span>Read-only visibility for assigned workspaces and evidence</span></li></ul></article></section>{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}{invitations.length ? <section className="retail-app-table-card full"><div className="retail-app-panel-heading"><div><p>Pending invitations</p><h2>{invitations.length} awaiting acceptance</h2></div><span>Expires after 72 hours</span></div><div className="retail-app-table-scroll"><table><thead><tr><th>Email</th><th>Role</th><th>Expires</th><th>Delivery</th><th>Actions</th></tr></thead><tbody>{invitations.map((invitation) => <tr key={invitation.id}><td><strong>{invitation.email}</strong></td><td>{invitation.role.replaceAll('_', ' ')}</td><td>{new Date(invitation.expiresAt).toLocaleString('en-GB', { timeZone: 'UTC' })}</td><td><span className="retail-app-status status-draft">Waiting to join</span></td><td><button className="retail-app-secondary" onClick={() => void resendInvitation(invitation.id)} type="button">New link</button> <button className="retail-app-secondary" onClick={() => void revokeInvitation(invitation.id)} type="button">Revoke</button></td></tr>)}</tbody></table></div></section> : null}<div className="retail-app-table-card full"><div className="retail-app-panel-heading"><div><p>Access control</p><h2>{members.length} team members</h2></div></div><div className="retail-app-table-scroll"><table><thead><tr><th>Email</th><th>Role</th><th>Workspaces</th><th>Status</th><th>Action</th></tr></thead><tbody>{members.map((member) => <tr key={member.id}><td><strong>{member.email}</strong></td><td><select aria-label={`Role for ${member.email}`} onChange={(event) => void changeRole(member, event.target.value)} value={member.role}><option value="business_viewer">Viewer</option><option value="business_staff">Operator</option><option value="business_manager">Manager</option><option value="business_owner">Owner</option></select></td><td>{member.permissions?.workspaces?.join(', ') || 'All enabled'}</td><td><span className={`retail-app-status ${member.active ? 'status-active' : 'status-draft'}`}>{member.active ? 'Active' : 'Suspended'}</span></td><td><button className="retail-app-secondary" onClick={() => void toggle(member)} type="button">{member.active ? 'Suspend' : 'Restore'}</button></td></tr>)}</tbody></table></div></div>{inviting ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void invite(event)}><div><p>Team access</p><h2>Invite a team member</h2></div><label>Email<input name="email" required type="email" /></label><label>Role<select name="role"><option value="business_viewer">Viewer</option><option value="business_staff">Operator</option><option value="business_manager">Manager</option><option value="business_owner">Owner</option></select></label><fieldset className="complete-workspace-checkboxes"><legend>Workspace access</legend>{workspaceOrder.map((item) => <label key={item}><input defaultChecked={item === workspace} name="workspaces" type="checkbox" value={item} /> {configs[item].label}</label>)}</fieldset>{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setInviting(false)} type="button">Cancel</button><button className="retail-app-primary" type="submit">Create invitation</button></footer></form></div> : null}{shared ? <div className="retail-app-modal-backdrop"><div className="retail-app-modal invite-link-modal" role="dialog" aria-modal="true" aria-label="Invitation link"><div><p>Team access</p><h2>Send this link to {shared.email}</h2></div><span className="invite-link-modal__message">{shared.message}</span><input aria-label="Invitation link" onFocus={(event) => event.currentTarget.select()} readOnly value={shared.url} /><div className="invite-link-modal__actions"><button className="retail-app-primary" onClick={() => void copyLink()} type="button">{copied ? "Copied" : "Copy link"}</button><a className="retail-app-secondary" href={`https://wa.me/?text=${encodeURIComponent(`You have been invited to FoundingOS. Open this link to choose your password: ${shared.url}`)}`} rel="noreferrer" target="_blank">Send on WhatsApp</a><a className="retail-app-secondary" href={`mailto:${shared.email}?subject=${encodeURIComponent("Your FoundingOS invitation")}&body=${encodeURIComponent(`Open this link to choose your password: ${shared.url}\n\nIt works once and expires in 72 hours.`)}`}>Send by email</a></div><footer><button className="retail-app-secondary" onClick={() => setShared(null)} type="button">Done</button></footer></div></div> : null}</>
 }
 
 function SecurityPage({ workspace }: { workspace: BusinessWorkspaceSlug }) {
@@ -3153,7 +3195,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview', 
       .finally(() => { if (live) setHydrated(true) })
     return () => { live = false }
   }, [])
-  const { state, events, update, reset, loading, error, production, demo, setDemo, ownerProfile, liveMetrics, createRecord, advanceRecord, attachRecord, uploadProductPhoto, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords } = useWorkspaceState(workspace, current.id, session)
+  const { state, events, update, reset, loading, error, production, demo, setDemo, ownerProfile, liveMetrics, createRecord, advanceRecord, attachRecord, uploadProductPhoto, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords, importRecords, reloadModule } = useWorkspaceState(workspace, current.id, session)
   const autopilot = useAutopilot({
     workspace,
     production,
@@ -3225,7 +3267,7 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview', 
   else if (['reports', 'forecasting', 'attribution'].includes(current.id)) content = <ReportsPage config={config} />
   else if (current.id === 'event-feed') content = <EventFeedPage events={events} />
   else if (current.id === 'settings') content = <SettingsPage config={config} production={production} state={state} update={update} />
-  else content = <RecordsPage key={`${workspace}/${current.id}`} autopilot={autopilot} adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} uploadProductPhoto={uploadProductPhoto} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} saveRecordData={saveRecordData} createLinkedRecord={createLinkedRecord} loadRecords={loadRecords} />
+  else content = <RecordsPage key={`${workspace}/${current.id}`} autopilot={autopilot} adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} uploadProductPhoto={uploadProductPhoto} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} saveRecordData={saveRecordData} createLinkedRecord={createLinkedRecord} loadRecords={loadRecords} importRecords={importRecords} reloadModule={reloadModule} />
   if (current.id === 'overview') content = <><AutopilotPanel controller={autopilot} label={config.label} workspace={workspace} />{content}</>
   const demoBar = productionModeEnabled && productionApiConfigured ? <div className={`demo-data-bar${demo ? ' is-on' : ''}`}>{demo
     ? <><strong>Demo data on</strong><span>Made-up example records so you can see what a busy {config.label} workspace looks like. Changes stay in this browser — nothing touches your real account.</span><button onClick={() => { reset(); setDemo(false) }} type="button">Back to my data</button></>

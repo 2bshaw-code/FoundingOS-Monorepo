@@ -46,6 +46,8 @@ export default function InvitationAcceptancePage({ params }: { params: { token: 
     }
     setStatus('loading')
     try {
+      // Let them past the private preview gate so "Continue to sign in" works.
+      await fetch('/api/access/invitation', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: params.token }) }).catch(() => null)
       const response = await fetch(`${apiRoot}/ops/platform/team/invitations/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
