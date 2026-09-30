@@ -60,7 +60,7 @@ export default function UserGuidePage() {
         <p>FoundingOS is in private preview, so the website asks you to sign in before you see it.</p>
         <Steps>
           <li>Go to <a href="https://www.foundingos.com">www.foundingos.com</a>.</li>
-          <li>On the <strong>Sign in to FoundingOS</strong> page, enter your email address and the invitation code we sent you.</li>
+          <li>On the <strong>Sign in to FoundingOS</strong> page, enter your email address and the invitation code we sent you. If you already have a FoundingOS account, use your own password instead.</li>
           <li>Press <strong>Open FoundingOS</strong>.</li>
         </Steps>
         <Tip>If a teammate invited you, you do not need a code. Open the link they sent you and follow <a href="#joining">Joining a team you were invited to</a>.</Tip>

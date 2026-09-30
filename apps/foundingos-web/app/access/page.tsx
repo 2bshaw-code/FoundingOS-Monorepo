@@ -6,11 +6,11 @@ export default function SiteAccessPage({ searchParams }: { searchParams: { retur
       <div className="complete-workspace-access-brand"><span>F</span><div><strong>FoundingOS</strong><small>Private product preview</small></div></div>
       <p className="eyebrow">Invitation only</p>
       <h1>Sign in to FoundingOS</h1>
-      <p>Use your email address and the shared invitation password to explore the complete FoundingOS system.</p>
+      <p>Use your email address and the invitation code we sent you. Already have a FoundingOS account? Use your own password.</p>
       <form action="/api/access/login" method="post">
         <input name="returnTo" type="hidden" value={searchParams.returnTo || '/'} />
         <label>Email address<input autoComplete="email" autoFocus name="email" required type="email" /></label>
-        <PasswordField label="Invitation password" minLength={8} name="password" />
+        <PasswordField label="Invitation code or password" minLength={8} name="password" />
         {searchParams.error ? <div className="complete-workspace-error" role="alert">That email or password was not accepted. Please try again.</div> : null}
         <button className="retail-app-primary" type="submit">Open FoundingOS</button>
       </form>

@@ -6,6 +6,21 @@ const attempts = new Map<string, { count: number; resetAt: number }>()
 const windowMs = 15 * 60_000
 const maxAttempts = 8
 
+const apiRoot = () => (process.env.CORE_OPERATIONS_API_BASE || process.env.NEXT_PUBLIC_FOUNDINGOS_API_URL || process.env.NEXT_PUBLIC_CORE_OPERATIONS_API_URL || '')
+  .trim().replace(/\/ops\/?$/, '').replace(/\/+$/, '')
+
+// People with a real FoundingOS account (for example invited teammates) can pass the preview gate
+// with their own password. The check session is signed out straight away.
+async function hasAccount(email: string, password: string) {
+  const root = apiRoot()
+  if (!root || password.length < 12) return false
+  const response = await fetch(`${root}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }), cache: 'no-store', signal: AbortSignal.timeout(8000) }).catch(() => null)
+  if (!response?.ok) return false
+  const body = await response.json().catch(() => null) as { refreshToken?: unknown } | null
+  if (typeof body?.refreshToken === 'string') await fetch(`${root}/auth/logout`, { method: 'POST', headers: { 'x-refresh-token': body.refreshToken }, cache: 'no-store' }).catch(() => undefined)
+  return true
+}
+
 export async function POST(request: NextRequest) {
   if (process.env.SITE_ACCESS_ENABLED !== 'true') return NextResponse.redirect(new URL('/', request.url), 303)
   const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -18,7 +33,8 @@ export async function POST(request: NextRequest) {
   const form = await request.formData()
   const returnTo = safeReturnPath(form.get('returnTo'))
   const email = normalizeAccessEmail(String(form.get('email') ?? ''))
-  const role = email ? siteAccessRole(String(form.get('password') ?? '')) : null
+  const password = String(form.get('password') ?? '')
+  const role = email ? siteAccessRole(password) ?? (await hasAccount(email, password) ? 'guest' : null) : null
   if (!email || !role) {
     attempts.set(client, { ...state, count: state.count + 1 })
     const retry = new URL('/access', request.url)
