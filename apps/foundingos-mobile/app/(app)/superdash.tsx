@@ -35,7 +35,7 @@ const SECTIONS: Record<Exclude<SuperTab, 'business'>, Array<[key: string, label:
   finance: [['books', 'Books & runway'], ['scenario', 'WhatsApp growth scenario'], ['finance/invoices', 'Invoices'], ['finance/bills', 'Bills'], ['finance/expenses', 'Expenses'], ['finance/banking', 'Banking'], ['finance/reconciliation', 'Reconciliation'], ['finance/budgets', 'Budgets'], ['finance/tax', 'Tax & VAT'], ['reports', 'Reports']],
   sales: [['forecast', 'Forecast'], ['retail/sales-pipeline', 'Deals & quotes'], ['subscribers', 'Subscribers'], ['retail/crm', 'Customers'], ['marketing/leads', 'Leads'], ['retail/orders', 'Orders'], ['retail/service', 'Support']],
   marketing: [['posts', 'FoundAI posts'], ['marketing/campaigns', 'Campaigns'], ['marketing/content', 'Content'], ['marketing/calendar', 'Calendar'], ['marketing/audiences', 'Audiences'], ['marketing/journeys', 'Journeys'], ['reports', 'ROI & attribution']],
-  legal: [['legal/matters', 'Matters'], ['legal/time-entries', 'Billable work'], ['legal/communications', 'Calls & messages'], ['legal/billing-audit', 'Evidence packs'], ['legal/invoices', 'Client invoices'], ['legal/contracts', 'Contracts'], ['legal/subscriptions', 'Subscriptions'], ['legal/ndas', 'NDAs']],
+  legal: [['legal/overview', 'Control tower'], ['legal/matters', 'Matters'], ['legal/time-entries', 'Billable work'], ['legal/communications', 'Calls & messages'], ['legal/billing-audit', 'Evidence packs'], ['legal/invoices', 'Client invoices'], ['legal/contracts', 'Contracts'], ['legal/subscriptions', 'Subscriptions'], ['legal/ndas', 'NDAs']],
 }
 
 function Kpi({ label, value, sub, alert }: { label: string; value: string; sub: string; alert?: boolean }) {
