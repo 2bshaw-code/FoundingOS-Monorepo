@@ -13,6 +13,7 @@ import { WorkflowWalkthrough } from './workflow-walkthrough'
 import { FoundAiMovie } from './foundai-movie'
 import { WorkspacePreview, type WorkspacePreviewProduct } from './workspace-preview'
 import { MessagingDemo } from './messaging-demo'
+import { AI_DISCLAIMER } from './ai-disclaimer'
 
 export { BrandDashboard as ConsoleDashboard, BrandModulePage as ModulePage, BrandSettingsPage as SettingsPage } from './console'
 export { PremiumSocialLinks } from './social-links'
@@ -571,6 +572,7 @@ export function FounderLauncher({ page = 'home', workspaceSlug, consoleSlug }: {
             <span>Ask anything</span>
             <strong>“What should I do today?”</strong>
             <p>FoundAI answers owners in the chat using live business data, with next steps. Questions never change a record on their own.</p>
+            <p className="ai-disclaimer">{AI_DISCLAIMER}</p>
           </article>
           <article>
             <span>Approve with one word</span>

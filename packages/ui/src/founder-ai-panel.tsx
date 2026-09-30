@@ -10,6 +10,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { productionRequest } from './workspace-production-client'
 import type { FounderFinance } from './founder-types'
+import { AI_DISCLAIMER } from './ai-disclaimer'
 
 type Answer = {
   answer: string
@@ -207,6 +208,7 @@ export function FounderAiPanel({ demo = false, onSaved }: { demo?: boolean; onSa
         FoundAI can see your revenue, subscribers, costs, runway and platform health, and can look up live market
         prices, trends and competitors. Ask follow-up questions like a conversation, or tell it a cost to record.
       </p>
+      <p className="sd-muted ai-disclaimer">{AI_DISCLAIMER}</p>
 
       {thread.length ? (
         <div className="sd-ai-thread">

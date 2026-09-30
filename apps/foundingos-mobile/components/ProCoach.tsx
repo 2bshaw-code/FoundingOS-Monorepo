@@ -9,6 +9,7 @@ import { coachQuestion, moduleHealth, playbookFor, workspaceExperts } from '../l
 import { QuantumButton, QuantumCard, QuantumText, quantumColors, quantumSpace } from './QuantumUI'
 import { SpeakButton } from './SpeakButton'
 import { speakIfAuto } from '../lib/speech'
+import { AI_DISCLAIMER } from '@foundingos/ui/ai-disclaimer'
 
 // "What a professional would do here" plus live checks on this module's records, so someone
 // new to the job gets the same results as someone who has done it for years.
@@ -81,6 +82,7 @@ export function ProCoach({ workspace, moduleId, moduleLabel, statuses, records, 
           ))}
           <QuantumButton disabled={asking} onPress={() => void ask()}>{asking ? 'FoundAI is looking…' : '✦ What should I do today?'}</QuantumButton>
           {answer ? <QuantumText variant="caption">{answer}</QuantumText> : null}
+          {answer ? <QuantumText variant="caption" color={quantumColors.neutral300}>{AI_DISCLAIMER}</QuantumText> : null}
           {answer ? <SpeakButton text={answer} /> : null}
         </View>
       ) : null}

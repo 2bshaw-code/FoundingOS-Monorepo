@@ -11,6 +11,7 @@
     "./pro/ops": "./src/pro/ops-registry.ts",
     "./product-images": "./src/product-images.ts",
     "./widget-order": "./src/widget-order.ts",
+    "./ai-disclaimer": "./src/ai-disclaimer.ts",
     "./founder-forecast": "./src/founder-forecast.ts",
     "./founder-superdash-demo": "./src/founder-superdash-demo.ts",
     "./whatsapp-scenario": "./src/whatsapp-scenario.ts",

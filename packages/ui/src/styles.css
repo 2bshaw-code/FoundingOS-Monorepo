@@ -15557,6 +15557,7 @@ body:has(.cross-sell-ticker) .found-ai-fab { bottom: 64px; }
 .pro-coach-ask { background: linear-gradient(135deg, #0f1d33, #1e3a8a); border: 0; border-radius: 8px; color: #fff; cursor: pointer; font-size: 13px; font-weight: 800; padding: 8px 12px; }
 .pro-coach-ask:disabled { opacity: .7; }
 .pro-coach-answer { background: #f5f8fd; border-radius: 8px; color: #1f2d44; font-size: 13px; margin: 10px 0 0; padding: 10px 12px; white-space: pre-line; }
+.ai-disclaimer { font-size: 11.5px; line-height: 1.4; margin: 6px 0 0; opacity: .72; }
 @media (max-width: 900px) { .pro-coach-body { grid-template-columns: 1fr; } .pro-coach-summary { display: none; } }
 /* Pro mode: denser layout for people who live in the system all day */
 .experience-pro .retail-product-content { padding-top: 18px; }

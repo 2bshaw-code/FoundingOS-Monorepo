@@ -5,6 +5,7 @@
 'use client'
 
 import { SpeakButton } from './speech'
+import { AI_DISCLAIMER } from './ai-disclaimer'
 import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { coachQuestion, moduleHealth, playbookFor, workspaceExperts, type ExperienceMode, type HealthCheck, type HealthRecord } from '@foundingos/config/pro-playbooks'
 
@@ -133,6 +134,7 @@ export function ProCoach({ workspace, moduleId, moduleLabel, noun, statuses, rec
           <ul>{checks.map((check) => <li className={check.ok ? 'ok' : 'todo'} key={check.id}><span aria-hidden>{check.ok ? '✓' : '!'}</span><span>{check.label}</span>{check.ok ? null : <span className="pro-coach-fix">{fix(check)}</span>}</li>)}</ul>
           <button className="pro-coach-ask" disabled={asking} onClick={() => void ask()} type="button">{asking ? 'FoundAI is looking…' : '✦ What should I do today?'}</button>
           {answer ? <p className="pro-coach-answer">{answer} <SpeakButton text={answer} /></p> : null}
+          {answer ? <p className="ai-disclaimer">{AI_DISCLAIMER}</p> : null}
         </div>
       </div> : null}
     </section>

@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { autopilotCategories, defaultAutopilotPolicy, normaliseAutopilotPolicy, planAutopilot, type AutopilotDecision, type AutopilotMode, type AutopilotPolicy, type AutopilotRecord } from '@foundingos/config/autopilot'
 import { productionRequest } from './workspace-production-client'
+import { AI_AUTOPILOT_DISCLAIMER } from './ai-disclaimer'
 
 export type AutopilotApproval = { id: string; status: string; createdAt: string; decision: AutopilotDecision }
 export type AutopilotActivity = { id: string; createdAt: string; decision: AutopilotDecision & { approvedBy?: string | null; sent?: { channel: 'email' | 'whatsapp'; to: string; subject: string; body: string; draftedBy: string } | null } }
@@ -203,7 +204,7 @@ export function AutopilotPanel({ controller, label, workspace }: { controller: A
   const on = controller.policy.enabled
   return <section className="ap-panel" aria-label="FoundAI Autopilot">
     <header>
-      <div><span className={`ap-dot${on ? ' on' : ''}`} /><div><strong>{on ? `FoundAI is running ${label}` : 'FoundAI Autopilot is paused'}</strong><p>Routine work happens automatically. Anything you've marked as a human decision waits here for you.</p></div></div>
+      <div><span className={`ap-dot${on ? ' on' : ''}`} /><div><strong>{on ? `FoundAI is running ${label}` : 'FoundAI Autopilot is paused'}</strong><p>Routine work happens automatically. Anything you've marked as a human decision waits here for you.</p><p className="ai-disclaimer">{AI_AUTOPILOT_DISCLAIMER}</p></div></div>
       <div className="ap-head-actions"><button disabled={controller.busy || !on} onClick={() => { void controller.run() }} type="button">{controller.busy ? 'Working…' : 'Run now'}</button><button onClick={() => setRulesOpen((open) => !open)} type="button">Rules</button></div>
     </header>
     <div className="ap-stats">

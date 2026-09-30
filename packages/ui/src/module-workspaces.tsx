@@ -11,6 +11,7 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import type { ModuleKpi } from './module-profiles'
 import { moduleSamples } from './sample-data'
+import { AI_DISCLAIMER } from './ai-disclaimer'
 
 export { moduleSamples }
 
@@ -450,6 +451,7 @@ export function ModuleAiBar({ moduleId, moduleLabel, noun, records, statuses, kp
     </div> : null}
     {liveError ? <p className="mw-ai-error">Live FoundAI is unavailable ({liveError}). Showing a quick answer from this module instead.</p> : null}
     {applied ? <p className="mw-ai-applied">{applied}</p> : null}
+    {askLive ? <p className="mw-ai-note ai-disclaimer">{AI_DISCLAIMER}</p> : null}
     {!askLive ? <p className="mw-ai-note">Demo mode: answers come from this module’s sample data. When you’re signed in, typed questions are answered by FoundAI from your real business records.</p> : null}
   </section>
 }

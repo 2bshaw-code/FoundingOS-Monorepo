@@ -5,6 +5,8 @@
 // Publicly accessible (not behind the site access gate — see middleware.ts matcher)
 // because Apple App Store Connect and Google Play both require a live, unauthenticated
 // privacy policy URL for app review. Keep the cookie table in step with what the code sets.
+import { AI_DISCLAIMER_LONG } from '@foundingos/ui/ai-disclaimer'
+
 export const metadata = {
   title: 'Privacy & Cookies — FoundingOS',
 }
@@ -24,7 +26,7 @@ export default function PrivacyPolicyPage() {
     <main className="complete-workspace-access">
       <section className="privacy-policy" style={{ maxWidth: 760, textAlign: 'left' }}>
         <div className="complete-workspace-access-brand"><span>F</span><div><strong>FoundingOS</strong><small>Privacy &amp; Cookies</small></div></div>
-        <p className="eyebrow">Last updated 27 September 2026</p>
+        <p className="eyebrow">Last updated 30 September 2026</p>
         <h1>Privacy &amp; Cookies</h1>
 
         <p>
@@ -99,6 +101,9 @@ export default function PrivacyPolicyPage() {
           We keep account and workspace data while your account is active. When a company asks us to close its
           account, we delete its workspace data, except records we must keep by law (such as billing records).
         </p>
+
+        <h2>About FoundAI</h2>
+        <p>{AI_DISCLAIMER_LONG}</p>
 
         <h2>How we protect it</h2>
         <p>

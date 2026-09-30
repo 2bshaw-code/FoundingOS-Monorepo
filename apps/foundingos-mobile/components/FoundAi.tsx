@@ -23,6 +23,7 @@ import { SpeakButton, VoiceToggle } from './SpeakButton'
 import { speakIfAuto } from '../lib/speech'
 import { AskTurn as AskThreadTurn, packThread, threadStorageKey, unpackThread } from '../lib/ai-thread'
 import { deleteStoredValue, getStoredValue, setStoredValue } from '../lib/platform-storage'
+import { AI_AUTOPILOT_DISCLAIMER, AI_DISCLAIMER } from '@foundingos/ui/ai-disclaimer'
 
 const FOUNDAI = '#24C47A'
 const WORKSPACE_LABEL: Record<string, string> = { retail: 'Retail', logistics: 'Logistics', finance: 'Finance', marketing: 'Marketing', talent: 'Talent', hr: 'HR', health: 'Health', intelligence: 'Intelligence' }
@@ -82,6 +83,7 @@ export function FoundAiAutopilotCard({ compact = false, onChanged }: { compact?:
       <QuantumText variant="caption" color={quantumColors.neutral200}>
         FoundAI does routine work itself — invoices, reminders, reorders, rebookings, posts — and only asks you about refunds, big spends, people and regulated decisions.
       </QuantumText>
+      <QuantumText variant="caption" color={quantumColors.neutral300}>{AI_AUTOPILOT_DISCLAIMER}</QuantumText>
       {!state && !error ? <ActivityIndicator color={FOUNDAI} style={{ marginTop: quantumSpace.md }} /> : null}
       {error ? <QuantumText variant="caption" color={quantumColors.warning}>{error}</QuantumText> : null}
       {note ? <QuantumText variant="caption" color={FOUNDAI}>{note}</QuantumText> : null}
@@ -232,6 +234,7 @@ export function AskFoundAiCard({ workspace }: { workspace?: string }) {
           </> : null}
         </View>
       ))}
+      {thread.some((turn) => turn.answer) ? <QuantumText variant="caption" color={quantumColors.neutral300}>{AI_DISCLAIMER}</QuantumText> : null}
 
       <View style={styles.inputRow}>
         <TextInput
