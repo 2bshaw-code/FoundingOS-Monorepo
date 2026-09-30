@@ -14,10 +14,10 @@ const apiRoot = () => (process.env.CORE_OPERATIONS_API_BASE || process.env.NEXT_
 async function hasAccount(email: string, password: string) {
   const root = apiRoot()
   if (!root || password.length < 12) return false
-  const response = await fetch(`${root}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }), cache: 'no-store', signal: AbortSignal.timeout(8000) }).catch(() => null)
+  const response = await fetch(`${root}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Device-Fingerprint': 'foundingos-web-access-gate' }, body: JSON.stringify({ email, password }), cache: 'no-store', signal: AbortSignal.timeout(8000) }).catch(() => null)
   if (!response?.ok) return false
   const body = await response.json().catch(() => null) as { refreshToken?: unknown } | null
-  if (typeof body?.refreshToken === 'string') await fetch(`${root}/auth/logout`, { method: 'POST', headers: { 'x-refresh-token': body.refreshToken }, cache: 'no-store' }).catch(() => undefined)
+  if (typeof body?.refreshToken === 'string') await fetch(`${root}/auth/logout`, { method: 'POST', headers: { 'x-refresh-token': body.refreshToken, 'X-Device-Fingerprint': 'foundingos-web-access-gate' }, cache: 'no-store' }).catch(() => undefined)
   return true
 }
 
