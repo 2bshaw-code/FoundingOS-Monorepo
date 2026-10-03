@@ -1,4 +1,5 @@
 'use client'
+import { FoundingOSBrandMark } from './brand-mark'
 /*
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
@@ -36,7 +37,7 @@ export function AccountNavLinks({ variant = 'account' }: { variant?: 'account' |
 
   if (variant !== 'account') {
     if (variant === 'card') return <Link href="/superdash">
-      <span>Fos</span>
+      <FoundingOSBrandMark workspace="superdash" />
       <div><small>Founder, partner and investor access required</small><h2>Founder SuperDash</h2><p>Run FoundingOS itself: business, finance, sales, marketing media and legal.</p></div>
       <footer><strong>Separate from Core Intelligence</strong><b>{superDash ? 'Open SuperDash' : 'Open protected SuperDash'}</b></footer>
     </Link>

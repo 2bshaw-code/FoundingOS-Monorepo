@@ -5,6 +5,11 @@ artwork. Nine workspace variants retain the same shape and lettering:
 Retail emerald, Finance gold, Marketing rose, Logistics coral, Legal indigo,
 Health sky blue, Talent orange, HR teal and Intelligence violet.
 
+SuperDash has a separate navy/cyan FOS mark with a gold SuperDash badge, used
+on its login/header and directory entry on web/Mac, and its native header.
+It is not a tenth customer workspace and does not replace the multicolour
+FoundingOS main icon. Only the eleven approved PNG paths bypass the access gate.
+
 These 256px PNGs were exported locally from the approved 768px raster artwork.
 They are not vector originals. Do not enlarge them for print; use the approved
 high-resolution originals instead. The matching native assets are bundled in

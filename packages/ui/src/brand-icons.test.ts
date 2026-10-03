@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { brandIconPath, isPublicBrandIcon, workspaceBrandIcons } from './brand-icons'
+import { brandIconLabel, brandIconPath, isPublicBrandIcon, workspaceBrandIcons } from './brand-icons'
 import { WORKSPACES } from '../../../apps/foundingos-mobile/lib/workspace-modules'
 
 test('every workspace has the approved colour and a matching web/native PNG', () => {
   assert.equal(Object.keys(workspaceBrandIcons).length, 9)
-  for (const name of ['foundingos', ...Object.keys(workspaceBrandIcons)]) {
+  for (const name of ['foundingos', 'superdash', ...Object.keys(workspaceBrandIcons)]) {
     const web = readFileSync(new URL(`../../../apps/foundingos-web/public/brand/fos/${name}.png`, import.meta.url))
     const native = readFileSync(new URL(`../../../apps/foundingos-mobile/assets/brand/${name}.png`, import.meta.url))
     const shared = readFileSync(new URL(`../assets/fos/${name}.png`, import.meta.url))
@@ -32,10 +32,25 @@ test('branding remains separate from the FoundAI mascot and uses the selected wo
   assert.ok(ai.includes('<FoundAIMascot'))
 })
 
-test('only the ten approved icon paths bypass the website access gate', () => {
+test('only the eleven approved icon paths bypass the website access gate', () => {
   assert.ok(isPublicBrandIcon(brandIconPath()))
+  assert.ok(isPublicBrandIcon(brandIconPath('superdash')))
   for (const name of Object.keys(workspaceBrandIcons)) assert.ok(isPublicBrandIcon(`/brand/fos/${name}.png`))
   for (const path of ['/brand/fos/README.md', '/brand/fos/private.png', '/brand/fos/talent.png/extra', '/app/talent', '/brand/fos/../secret']) assert.ok(!isPublicBrandIcon(path))
   const middleware = readFileSync(new URL('../../../apps/foundingos-web/middleware.ts', import.meta.url), 'utf8')
   assert.ok(middleware.includes('isPublicBrandIcon(request.nextUrl.pathname)'))
+})
+
+test('SuperDash has its own accessible mark without becoming a tenth workspace', () => {
+  assert.equal(brandIconLabel('superdash'), 'SuperDash logo')
+  assert.equal(brandIconLabel(), 'FoundingOS logo')
+  assert.equal(brandIconLabel('talent'), 'Talent workspace logo')
+  assert.equal(brandIconPath('superdash'), '/brand/fos/superdash.png')
+  assert.equal(Object.keys(workspaceBrandIcons).length, 9)
+  for (const file of ['./founder-superdash.tsx', './account-nav.tsx', '../../../apps/foundingos-mobile/app/(app)/superdash.tsx']) {
+    assert.ok(readFileSync(new URL(file, import.meta.url), 'utf8').includes('workspace="superdash"'))
+  }
+  const main = readFileSync(new URL('../assets/fos/foundingos.png', import.meta.url))
+  const superdash = readFileSync(new URL('../assets/fos/superdash.png', import.meta.url))
+  assert.ok(!main.equals(superdash))
 })

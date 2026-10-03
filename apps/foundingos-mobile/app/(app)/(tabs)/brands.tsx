@@ -113,7 +113,7 @@ export default function WorkspaceDirectoryScreen() {
         ))}
       </View>
 
-      {canOpenSuperDash ? <QuantumButton onPress={() => router.push('/(app)/superdash' as never)}>Open SuperDash</QuantumButton> : connected ? <InvestorUnlockCard /> : null}
+      {canOpenSuperDash ? <View style={{ alignItems: 'center', gap: quantumSpace.sm }}><FoundingOSBrandMark workspace="superdash" size={64} /><QuantumButton onPress={() => router.push('/(app)/superdash' as never)}>Open SuperDash</QuantumButton></View> : connected ? <InvestorUnlockCard /> : null}
       <ProductRatingCard />
       <QuantumButton tone="ghost" onPress={() => router.push('/(app)/upgrade' as never)}>Manage your plan</QuantumButton>
       <QuantumButton tone="danger" onPress={() => { void signOut() }}>Sign out</QuantumButton>

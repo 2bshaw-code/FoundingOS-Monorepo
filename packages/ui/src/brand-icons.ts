@@ -11,12 +11,17 @@ export const workspaceBrandIcons = {
 } as const
 
 export type WorkspaceBrandIcon = keyof typeof workspaceBrandIcons
+export type BrandIcon = WorkspaceBrandIcon | 'superdash'
 
-export function brandIconPath(workspace?: WorkspaceBrandIcon) {
+export function brandIconPath(workspace?: BrandIcon) {
   return `/brand/fos/${workspace ?? 'foundingos'}.png`
 }
 
-const publicBrandPaths = new Set([brandIconPath(), ...Object.keys(workspaceBrandIcons).map((key) => `/brand/fos/${key}.png`)])
+const publicBrandPaths = new Set([brandIconPath(), brandIconPath('superdash'), ...Object.keys(workspaceBrandIcons).map((key) => `/brand/fos/${key}.png`)])
+
+export function brandIconLabel(icon?: BrandIcon) {
+  return icon === 'superdash' ? 'SuperDash logo' : icon ? `${workspaceBrandIcons[icon].label} workspace logo` : 'FoundingOS logo'
+}
 
 export function isPublicBrandIcon(path: string) {
   return publicBrandPaths.has(path)

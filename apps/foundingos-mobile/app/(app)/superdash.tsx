@@ -130,7 +130,7 @@ function SuperDashScreen() {
 
   return (
     <QuantumScreen refreshControl={<RefreshControl refreshing={refreshing} tintColor="#38BDF8" onRefresh={async () => { setRefreshing(true); setReloadKey((key) => key + 1); await load(); setRefreshing(false) }} />}>
-      <FoundingOSBrandMark size={64} />
+      <FoundingOSBrandMark workspace="superdash" size={64} />
       <View style={styles.head}>
         <QuantumText variant="overline" color="#38BDF8">{investor ? 'FoundingOS · Admin view' : 'FoundingOS · Founder'}</QuantumText>
         <QuantumText variant="h1">SuperDash</QuantumText>
