@@ -16,6 +16,7 @@ export type ModuleProfile = {
   copy: string
   fields: { name: string; secondary: string; value: string; owner: string }
   valueHint: string
+  valueRequired?: boolean
   kpis: (records: ProfileRecord[], statuses: string[]) => ModuleKpi[]
 }
 
@@ -369,12 +370,13 @@ const profiles: Record<string, ModuleProfile> = {
   },
   // Core.Workforce
   'talent/candidates': {
-    noun: 'candidate', copy: 'Everyone applying to work with you, from application to offer.',
+    noun: 'candidate', copy: 'Everyone applying to work with you, from application through offer to a recorded hire.',
     fields: { name: 'Candidate', secondary: 'Role applied for', value: 'Expected salary', owner: 'Recruiter' }, valueHint: '£0',
     kpis: (records, statuses) => [
       { label: 'In pipeline', value: String(records.length), tone: 'info' },
       { label: 'Interviewing', value: String(inStatus(records, 'Interview').length), tone: 'info' },
-      { label: 'At offer', value: String(inStatus(records, last(statuses)).length), tone: 'good' },
+      { label: 'At offer', value: String(inStatus(records, 'Offer').length), tone: 'info' },
+      { label: 'Hired', value: String(inStatus(records, 'Hired').length), tone: 'good' },
       { label: 'Need screening', value: String(inStatus(records, first(statuses)).length), tone: count(inStatus(records, first(statuses)).length, 10, 3) },
     ],
   },
@@ -431,6 +433,21 @@ const profiles: Record<string, ModuleProfile> = {
       { label: 'Fees invoiced', value: gbp(sum(inStatus(records, 'Invoiced', last(statuses)))), tone: 'good' },
       { label: 'Placements', value: String(records.length), tone: 'info' },
     ],
+  },
+  'talent/submissions': {
+    noun: 'submission', copy: 'Keep every candidate-to-client submission, sharing review and feedback follow-up in one place. Saving a record does not send a CV.',
+    fields: { name: 'Candidate / submission', secondary: 'Client and role', value: 'Reference / detail', owner: 'Recruiter' }, valueHint: 'Optional reference',
+    valueRequired: false, kpis: () => [],
+  },
+  'talent/outreach': {
+    noun: 'follow-up', copy: 'Plan manual recruiter follow-ups, review contact restrictions and keep the draft and outcome together. This queue does not automatically send messages or make calls.',
+    fields: { name: 'Candidate / contact', secondary: 'Purpose and role', value: 'Reference / detail', owner: 'Recruiter' }, valueHint: 'Optional reference',
+    valueRequired: false, kpis: () => [],
+  },
+  'talent/activities': {
+    noun: 'activity', copy: 'Record calls, screens, meetings, submissions and placements with a date, recruiter and outcome. Counts reflect your records, not verified phone or email events.',
+    fields: { name: 'Activity summary', secondary: 'Candidate / client and role', value: 'Reference / detail', owner: 'Recruiter' }, valueHint: 'Optional reference',
+    valueRequired: false, kpis: () => [],
   },
   'hr/employee-relations': {
     noun: 'case', copy: 'Keep grievances, disciplinaries and sensitive employee issues complete, fair and evidenced.',

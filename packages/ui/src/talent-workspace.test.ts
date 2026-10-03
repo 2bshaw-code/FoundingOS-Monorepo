@@ -6,6 +6,8 @@ import { outreachSchema, recruiterActivitySchema, submissionSchema } from './pro
 import { opsSchemaFor } from './pro/ops-registry'
 import { opsToday, readOps, shiftDate, type OpsRow } from './pro/ops'
 import { findWorkspace } from '../../../apps/foundingos-mobile/lib/workspace-modules'
+import { getModuleProfile } from './module-profiles'
+import { loadTalentReportSources, talentReportModules } from './pro/talent-report-data'
 
 const row = (id: string, status: string, v: OpsRow['v'] = {}): OpsRow => ({ record: { id, name: id, status }, v })
 const ctx = { statuses: talentModules.find((module) => module.id === 'candidates')!.statuses! }
@@ -25,6 +27,36 @@ test('candidate offers are not counted as hires, even with the old status catalo
   const insight = candidateSchema.insights([row('offer', 'Offer', { source: 'Indeed' }), row('hire', 'Hired', { source: 'Indeed' })], { statuses: ['Applied', 'Screening', 'Interview', 'Offer'] })
   assert.equal(insight.kpis.find((kpi) => kpi.label === 'Hire rate')?.value, '50%')
   assert.deepEqual(insight.tables[0].rows, [['Indeed', '2', '1', '50%']])
+})
+
+test('candidate overview labels distinguish offers from hires and recruiter modules have explicit identities', () => {
+  const profile = getModuleProfile('talent', 'candidates')!
+  const kpis = profile.kpis([
+    { status: 'Offer', value: '', owner: 'Amina' },
+    { status: 'Hired', value: '', owner: 'Amina' },
+    { status: 'Hired', value: '', owner: 'Amina' },
+  ], ctx.statuses)
+  assert.equal(kpis.find((kpi) => kpi.label === 'At offer')?.value, '1')
+  assert.equal(kpis.find((kpi) => kpi.label === 'Hired')?.value, '2')
+  for (const id of ['submissions', 'outreach', 'activities']) {
+    assert.ok(getModuleProfile('talent', id)?.noun)
+    assert.equal(getModuleProfile('talent', id)?.valueRequired, false)
+  }
+})
+
+test('recruitment reports load all six Talent sources and never mask failed sources with zero totals', async () => {
+  const calls: string[] = []
+  const sources = await loadTalentReportSources(async (workspace, module) => {
+    calls.push(`${workspace}/${module}`)
+    return [{ id: module, backendId: module, name: module, secondary: '', status: 'Draft', value: '', owner: 'Amina' }]
+  })
+  assert.deepEqual(calls, talentReportModules.map((id) => `talent/${id}`))
+  assert.deepEqual(Object.keys(sources), [...talentReportModules])
+  assert.equal(sources.submissions[0].backendId, 'submissions')
+  await assert.rejects(loadTalentReportSources(async (_workspace, module) => {
+    if (module === 'activities') throw new Error('Recruiter activity is unavailable')
+    return []
+  }), /Recruiter activity is unavailable/)
 })
 
 test('candidate contact alerts exclude terminal records and do-not-contact preferences', () => {

@@ -5,21 +5,11 @@
 import { FounderLauncher, type WorkspaceSlug } from '@foundingos/ui'
 import { WorkspaceDirectory, WorkspaceTestPage, type TestWorkspaceSlug } from '@foundingos/ui/workspace-test-page'
 import { notFound } from 'next/navigation'
+import { workspaceSections, workspaceStaticParams } from '../../src/workspace-routes'
 
 const pages = new Set(['suites', 'workspaces', 'consoles', 'app', 'test-workspaces', 'marketing', 'intelligence', 'about', 'pricing', 'contact'])
 const workspaceSlugs = new Set<WorkspaceSlug>(['retail', 'logistics', 'finance', 'talent', 'hr', 'health', 'legal'])
 const testWorkspaceSlugs = new Set<TestWorkspaceSlug>(['retail', 'logistics', 'finance', 'marketing', 'talent', 'hr', 'health', 'legal', 'intelligence'])
-const workspaceSections: Record<TestWorkspaceSlug, string[]> = {
-  retail: ['overview', 'products', 'inventory', 'sales-pipeline', 'orders', 'point-of-sale', 'crm', 'segments', 'loyalty', 'inbox', 'campaigns', 'automations', 'content', 'promotions', 'channels', 'production-orders', 'boms', 'purchasing', 'suppliers', 'fulfilment', 'returns', 'service', 'payments', 'reports', 'team', 'integrations', 'security', 'settings'],
-  logistics: ['overview', 'dispatch', 'routes', 'deliveries', 'tracking', 'exceptions', 'fleet', 'drivers', 'warehouses', 'customers', 'quotes', 'billing', 'reports', 'automations', 'team', 'integrations', 'security', 'settings'],
-  finance: ['overview', 'cashflow', 'invoices', 'bills', 'banking', 'reconciliation', 'expenses', 'payments', 'budgets', 'forecasting', 'tax', 'approvals', 'reports', 'automations', 'team', 'integrations', 'security', 'settings'],
-  marketing: ['overview', 'campaigns', 'calendar', 'audiences', 'segments', 'leads', 'content', 'brand-studio', 'channels', 'journeys', 'inbox', 'attribution', 'reports', 'automations', 'team', 'integrations', 'security', 'settings'],
-  talent: ['overview', 'jobs', 'candidates', 'interviews', 'offers', 'references', 'talent-pool', 'clients', 'placements', 'reports', 'automations', 'team', 'integrations', 'security', 'settings'],
-  hr: ['overview', 'people', 'onboarding', 'contracts', 'employee-relations', 'legal-register', 'right-to-work', 'documents', 'policies', 'rotas', 'timesheets', 'time-off', 'sickness', 'performance', 'learning', 'engagement', 'payroll', 'reports', 'automations', 'team', 'integrations', 'security', 'settings'],
-  health: ['overview', 'appointments', 'patients', 'care-plans', 'triage', 'clinical-inbox', 'follow-ups', 'practitioners', 'locations', 'inventory', 'billing', 'claims', 'compliance', 'reports', 'automations', 'team', 'integrations', 'security', 'settings'],
-  legal: ['overview', 'matters', 'clients', 'conflicts', 'deadlines', 'time-entries', 'communications', 'expenses', 'evidence', 'documents', 'ndas', 'contracts', 'subscriptions', 'obligations', 'pre-bills', 'invoices', 'billing-audit', 'compliance', 'reports', 'automations', 'team', 'integrations', 'security', 'settings'],
-  intelligence: ['overview', 'outcomes', 'strategic-overview', 'signals', 'risks', 'recommendations', 'forecasts', 'scenarios', 'anomalies', 'event-feed', 'workflows', 'models', 'data-sources', 'reports', 'automations', 'team', 'integrations', 'security', 'settings'],
-}
 
 export const dynamicParams = false
 
@@ -39,12 +29,7 @@ export function generateStaticParams() {
     { slug: ['workspaces', 'hr'] },
     { slug: ['workspaces', 'health'] },
     { slug: ['workspaces', 'legal'] },
-    ...Object.entries(workspaceSections).flatMap(([workspace, sections]) => [
-      { slug: ['test-workspaces', workspace] },
-      ...sections.filter((section) => section !== 'overview').map((section) => ({ slug: ['test-workspaces', workspace, section] })),
-      { slug: ['app', workspace] },
-      ...sections.filter((section) => section !== 'overview').map((section) => ({ slug: ['app', workspace, section] })),
-    ]),
+    ...workspaceStaticParams(),
     // Compatibility paths for previously published links.
     { slug: ['consoles'] },
     { slug: ['consoles', 'retail'] },

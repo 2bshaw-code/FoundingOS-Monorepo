@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { AccountNavLinks } from './account-nav'
 import { CompleteWorkspaceApplication, type BusinessWorkspaceSlug } from './complete-workspace-application'
+import { talentModules } from './talent-workspace'
 
 export type TestWorkspaceSlug = BusinessWorkspaceSlug
 
@@ -11,7 +12,7 @@ const workspaces: Array<{ slug: TestWorkspaceSlug; label: string; suite: string;
   { slug: 'logistics', label: 'Logistics', suite: 'Core.Operations', summary: 'Dispatch, routes, deliveries, tracking, fleet, drivers, billing, and exceptions.', modules: 17, accent: '#2f80ed' },
   { slug: 'finance', label: 'Finance', suite: 'Core.Operations', summary: 'Cash flow, invoices, bills, banking, reconciliation, budgets, tax, and approvals.', modules: 18, accent: '#7c5ce7' },
   { slug: 'marketing', label: 'Marketing', suite: 'Core.Operations', summary: 'Campaigns, audiences, leads, content, journeys, channels, and attribution.', modules: 18, accent: '#ef6c57' },
-  { slug: 'talent', label: 'Talent', suite: 'Core.Workforce', summary: 'Recruitment: jobs, candidates, interviews, offers, checks, agency clients and placements.', modules: 15, accent: '#d65db1' },
+  { slug: 'talent', label: 'Talent', suite: 'Core.Workforce', summary: 'Recruitment: jobs, candidates, interviews, offers, client submissions, outreach follow-ups, recruiter activity and placements.', modules: talentModules.length, accent: '#d65db1' },
   { slug: 'hr', label: 'HR', suite: 'Core.Workforce', summary: 'Employees, contracts, rotas, timesheets, holiday, sickness, right-to-work, policies and payroll inputs.', modules: 21, accent: '#2ec4b6' },
   { slug: 'health', label: 'Health', suite: 'Core.Operations', summary: 'Appointments, patients, care plans, triage, practitioners, billing, claims, and compliance.', modules: 18, accent: '#00a6a6' },
   { slug: 'legal', label: 'Legal', suite: 'Core.Operations', summary: 'Matters, billable activity, calls, letters, evidence, NDAs, contracts, subscriptions and defensible client bills.', modules: 24, accent: '#3158d4' },

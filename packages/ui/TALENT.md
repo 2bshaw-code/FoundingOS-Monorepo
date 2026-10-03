@@ -7,7 +7,9 @@ direction, not a claim of current feature parity with commercial vendors.
 ## Implemented foundation
 
 Web/Mac and native mobile use `src/talent-workspace.ts` for the same Talent
-modules and hiring stages. Existing jobs, candidates, interviews, offers,
+modules and hiring stages. Website route validation and static route generation
+also consume this catalogue; every module is registered under both `/app/talent`
+and `/test-workspaces/talent`. Existing jobs, candidates, interviews, offers,
 references, talent pools, clients and placements remain.
 
 New modules use the existing tenant-scoped workspace records API and the shared
@@ -23,6 +25,11 @@ specialist forms/insights registry:
 - **Candidate source tracking:** named job boards, external application/profile
   references, contact preferences and retention-review dates. Naming a source
   does not connect to it.
+- **Web/Mac recruitment reports:** shared specialist analysis of loaded jobs,
+  candidates, outreach, submissions, activities and placements, with refresh,
+  source-register links and CSV export. Load failures are shown explicitly,
+  never converted into zero totals. This replaces the generic sample report
+  on the Talent reports route; the native reports screen is not yet equivalent.
 
 An Offer is no longer reported as a hire: the candidate board has an explicit
 Hired stage. Existing Offer records remain Offer; there is no automatic migration
@@ -81,6 +88,7 @@ Targeted validation from the repository root:
 
 ```sh
 node --import tsx --test packages/ui/src/talent-workspace.test.ts
+node --import tsx --test apps/foundingos-web/src/workspace-routes.test.ts
 npm run typecheck --workspace @foundingos/mobile
 npm run typecheck --workspace @foundingos/foundingos-website
 ```

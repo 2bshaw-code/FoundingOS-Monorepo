@@ -10,3 +10,8 @@ different application: deploying a gallery there does not update desktop
 SuperDash. Verify the actual target route and deployment source, retain
 founder/partner/investor authorization, and test the relevant authenticated
 surface rather than inferring success from a build or a login-page redirect.
+
+Website workspace routes use `dynamicParams = false`: new menu modules must be
+included in both static generation and route validation. Talent routes consume
+the shared `talent-workspace` catalogue through `workspace-routes.ts`; run the
+route-registry tests and load the built pages, not just the access gate.
