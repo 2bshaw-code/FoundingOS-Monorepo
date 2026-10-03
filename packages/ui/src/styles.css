@@ -16058,6 +16058,30 @@ body:has(.cross-sell-ticker) .found-ai-fab { bottom: 64px; }
 .sd-pnl-forecast .sd-pnl-bars i { opacity: 0.72; }
 .sd-field { display: grid; gap: 4px; }
 .sd-field small { color: #8aa0b8; font-size: 12px; overflow-wrap: anywhere; }
+.sd-media-library { margin-bottom: 20px; }
+.sd-media-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 20px; }
+.sd-media-grid article { min-width: 0; }
+.sd-media-grid video { width: 100%; height: 230px; object-fit: contain; background: #05060a; border-radius: 10px; }
+.sd-media-grid h3 { margin-bottom: 4px; }
+.sd-media-grid small { display: block; margin-bottom: 12px; }
+.sd-media-grid .sd-form-row { flex-wrap: wrap; }
+.sd-media-library a { color: inherit; text-decoration: underline; }
+.sd-media-grid img { width: 100%; height: 300px; object-fit: contain; background: #05060a; border-radius: 10px; }
+.sd-social-caption { white-space: pre-line; }
+.sd-post-preview { width: 180px; max-width: 100%; height: 160px; object-fit: contain; background: #05060a; border-radius: 8px; }
+.sd-post .sd-post-open { display: block; background: transparent; color: inherit; padding: 0; border-radius: 4px; text-align: left; font: inherit; font-weight: 700; }
+.sd-post .sd-post-open:hover { color: #7dd3fc; }
+.sd-post .sd-post-open:focus-visible { outline: 2px solid #38bdf8; outline-offset: 4px; }
+.sd-post-dialog { width: min(720px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); box-sizing: border-box; overflow-y: auto; border: 1px solid #38516b; border-radius: 18px; background: #0f243b; color: #e8eef6; padding: 24px; }
+.sd-post-dialog::backdrop { background: rgba(0, 0, 0, .7); }
+.sd-post-dialog header, .sd-post-dialog footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.sd-post-dialog h2 { margin: 6px 0; }
+.sd-post-dialog dl { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+.sd-post-dialog dt { color: #8aa0b8; font-size: 12px; }
+.sd-post-dialog dd { margin: 4px 0 0; }
+.sd-post-dialog-image { display: block; width: 100%; max-height: 55vh; object-fit: contain; background: #05060a; border-radius: 10px; }
+.sd-post-dialog-caption { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; user-select: text; }
+.sd-post-dialog a { color: #7dd3fc; }
 
 /* Suites and their workspaces: one tidy map used on the homepage, /suites and /workspaces. */
 .suite-map { display: grid; gap: 20px; padding: 32px; }
@@ -16097,3 +16121,127 @@ body:has(.cross-sell-ticker) .found-ai-fab { bottom: 64px; }
   .suite-map { padding: 20px 16px; }
   .suite-map-row { grid-template-columns: 1fr; padding: 18px; }
 }
+
+/* Embedded tools share SuperDash's navy palette; standalone workspaces retain their theme. */
+.sd-shell {
+  --sd-surface: #10263e;
+  --sd-raised: #18334f;
+  --sd-border: #36516c;
+  --sd-text: #e8eef6;
+  --sd-muted: #a6b8ce;
+  --retail-accent: #38bdf8;
+  color-scheme: dark;
+}
+.sd-shell .sd-embedded {
+  --retail-accent: #38bdf8;
+  --retail-accent-text: #7dd3fc;
+  --surface: var(--sd-surface);
+  --surface-strong: var(--sd-raised);
+  --text: var(--sd-text);
+  --muted: var(--sd-muted);
+  --line: var(--sd-border);
+  background: transparent;
+  color: var(--sd-text);
+}
+.sd-shell .sd-embedded .retail-product-main { background: transparent; }
+.sd-shell .sd-embedded :is(
+  .retail-app-panel, .retail-app-metric, .retail-app-toolbar, .retail-app-board-card,
+  .retail-app-table-card, .retail-app-directory-card, .retail-app-detail,
+  .retail-app-preview-post, .retail-app-calendar-card, .retail-app-calendar,
+  .retail-app-calendar-day, .retail-app-form-card, .retail-app-modal,
+  .retail-app-kpi-strip > article, .retail-app-kpis > article,
+  .retail-app-kpi-gauge, .retail-app-kpi-distribution, .pro-coach,
+  .module-kpi-strip > article, .retail-app-studio-card, .retail-app-studio-upload, .retail-app-attachment-upload,
+  .retail-app-preview-box, .retail-app-preview-chrome, .retail-app-activity-list li,
+  .ap-strip, .ap-panel, .ap-stats > article, .mk-planner, .mk-publish,
+  .legal-flow > a, .legal-exceptions > a, .legal-assurance li,
+  .complete-workspace-stage-summary > article, .retail-app-funnel, .retail-app-kpi-strip,
+  .retail-app-crm-next, .ops-kpi, .ops-alert,
+  .mw-card, .mw-inline-form, .mw-table, .mw-ai, .ops-panel
+), .sd-shell .pro-panel {
+  background: var(--sd-surface);
+  color: var(--sd-text);
+  border-color: var(--sd-border);
+  border-radius: 18px;
+}
+.sd-shell .sd-embedded :is(h1, h2, h3, h4, strong, b, legend),
+.sd-shell .pro-panel :is(h2, h3, strong, b, legend) { color: var(--sd-text); }
+.sd-shell .sd-embedded :is(p, small, label, dt, .retail-app-heading > div > span, .retail-app-panel-heading > span, .retail-app-detail-header span, .pro-coach-summary),
+.sd-shell .pro-panel :is(p, small, label, dt, h4, .pro-eyebrow, .pro-hint, .pro-box),
+.sd-shell .pro-kpis span { color: var(--sd-muted); }
+.sd-shell .sd-embedded :is(.retail-app-board-column, .retail-app-directory-item, .retail-app-calendar-cell, .retail-app-note, .retail-app-attachment-box, .retail-app-detail-tabs, .retail-app-saved-views),
+.sd-shell :is(.pro-payment, .pro-copy, .pro-kpis > div, .pro-alerts li, .pro-badge) {
+  background: var(--sd-raised);
+  color: var(--sd-text);
+  border-color: var(--sd-border);
+}
+.sd-shell .sd-embedded :is(input, select, textarea),
+.sd-shell :is(.pro-panel input, .pro-panel select, .pro-panel textarea, .pro-period) {
+  background: #0b1c30;
+  color: var(--sd-text);
+  border-color: var(--sd-border);
+}
+.sd-shell .sd-embedded input::placeholder, .sd-shell .sd-embedded textarea::placeholder { color: var(--sd-muted); }
+.sd-shell .sd-embedded :is(button, .retail-app-secondary),
+.sd-shell :is(.pro-panel button, .pro-toolbar button, .pro-button) {
+  background: var(--sd-raised);
+  color: var(--sd-text);
+  border-color: var(--sd-border);
+}
+.sd-shell .sd-embedded :is(.retail-app-primary, button.active, button.is-selected, button[aria-pressed="true"]),
+.sd-shell :is(.pro-panel button.is-primary, .pro-panel button.is-selected, .pro-toggle button.is-selected) {
+  background: #38bdf8;
+  color: #04111f;
+  border-color: #38bdf8;
+}
+.sd-shell .sd-embedded :is(.retail-app-board-item, .retail-app-directory-item, .retail-app-calendar-item) { background: var(--sd-raised); color: var(--sd-text); border-color: var(--sd-border); }
+.sd-shell .sd-embedded :is(.retail-app-board-item strong, .retail-app-directory-item strong) { background: transparent; }
+.sd-shell .sd-embedded .retail-app-board-column > header strong { background: transparent; color: var(--sd-text); }
+.sd-shell .sd-embedded :is(.retail-app-board-item-avatar, .mw-chip, .retail-app-stage > span, .legal-panel-heading > span, .legal-flow i, .mw-ai-badge) {
+  background: var(--sd-raised);
+  color: #7dd3fc;
+  border-color: var(--sd-border);
+}
+.sd-shell .sd-embedded :is(.ap-strip span, .mw-chip span) { color: var(--sd-muted); }
+.sd-shell .sd-embedded .retail-app-table-card tr.selected td { background: #204564; }
+.sd-shell .sd-embedded tr.selected, .sd-shell .sd-embedded .mw-queue-row.selected { background: #204564; }
+.sd-shell .sd-embedded :is(
+  .retail-app-directory-bar, .retail-app-budget-track, .retail-app-stock-take-bar,
+  .retail-app-value-bar, .retail-app-funnel-track, .retail-app-kpi-distribution-bar,
+  .retail-app-lead-score-badge, .mw-avatar-line i, .mw-queue-row b, .mw-tabs b,
+  .retail-app-studio-card .retail-app-panel-heading span, .retail-app-preview-image-placeholder
+) { background: var(--sd-raised); color: #7dd3fc; }
+.sd-shell .sd-embedded :is(
+  .retail-app-budget-figures, .retail-app-stock-take-gauge span, .retail-app-funnel-label,
+  .retail-app-calendar-daynum, .retail-app-board-column > header span,
+  .ops-alert span, .ops-bar span
+) { color: var(--sd-muted); }
+.sd-shell .sd-embedded .ops-alert.is-danger { background: #442835; border-color: #f87171; }
+.sd-shell .sd-embedded .ops-alert.is-danger span { color: #fca5a5; }
+.sd-shell .sd-embedded .ops-kpi.is-danger { border-color: #f87171; }
+.sd-shell .sd-embedded .ops-kpi.is-warn { border-color: #fbbf24; }
+.sd-legal { display: grid; gap: 20px; margin-top: 20px; }
+.sd-legal a { color: #7dd3fc; }
+.sd-legal p { line-height: 1.6; }
+.sd-legal fieldset { display: grid; gap: 16px; border: 0; padding: 0; min-width: 0; }
+.sd-legal fieldset:disabled { opacity: .65; }
+.sd-legal input, .sd-legal select, .sd-legal textarea { width: 100%; min-width: 0; box-sizing: border-box; }
+.sd-legal textarea { min-height: 120px; }
+.sd-legal-entry { padding: 16px 0; border-top: 1px solid var(--sd-border); overflow-wrap: anywhere; }
+.sd-shell .pro-budget > i { background: var(--sd-raised); }
+.sd-shell .sd-embedded :is(.retail-app-board-item.selected, .retail-app-directory-item.selected) { background: #204564; border-color: #38bdf8; }
+.sd-shell .sd-embedded a, .sd-shell .pro-panel .pro-link { color: #7dd3fc; }
+.sd-shell .sd-embedded table, .sd-shell .pro-table, .sd-shell .pro-lines { color: var(--sd-text); }
+.sd-shell .sd-embedded :is(th, tfoot td),
+.sd-shell :is(.pro-table th, .pro-lines th, .pro-statement .is-sub td) { background: var(--sd-raised); color: var(--sd-muted); }
+.sd-shell .sd-embedded :is(td, th), .sd-shell :is(.pro-table td, .pro-lines td) { border-color: var(--sd-border); }
+.sd-shell .sd-embedded tr:hover td { background: var(--sd-raised); }
+.sd-shell .sd-embedded :is(.demo-data-bar, .retail-product-notice) { background: #12334d; color: var(--sd-text); border-color: #467496; }
+.sd-shell .sd-embedded .demo-data-bar.is-on { background: #352d20; border-color: #f59e0b; }
+.sd-shell .sd-embedded .demo-data-bar.is-on strong { color: #fcd34d; }
+.sd-shell :is(.pro-badge.is-good, .pro-alerts .is-good) { background: #123d36; color: #86efac; }
+.sd-shell :is(.pro-badge.is-warn, .pro-alerts .is-warn) { background: #3b3020; color: #fcd34d; }
+.sd-shell :is(.pro-badge.is-danger, .pro-alerts .is-danger) { background: #442835; color: #fca5a5; }
+.sd-shell :is(.pro-table .is-danger, .pro-panel button.is-danger) { color: #fca5a5; }
+.sd-shell .pro-panel button.is-good { color: #86efac; }
+.sd-shell .sd-embedded :is(button, a, input, select, textarea):focus-visible { outline: 2px solid #7dd3fc; outline-offset: 3px; }

@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { LinearGradient } from 'expo-linear-gradient'
-import { ReactElement, ReactNode, useState } from 'react'
+import { Children, createContext, ReactElement, ReactNode, useContext, useState } from 'react'
 import {
   ActivityIndicator,
   Pressable,
@@ -21,7 +21,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { ensureReadableText } from '../lib/colour-audit'
-import { QuantumTheme, getShellSafeTheme, useQuantumStore } from '../lib/store'
+import { FOUNDINGOS_SHELL_THEME, QuantumTheme, getShellSafeTheme, useQuantumStore } from '../lib/store'
 import { QuantumHeader as QuantumHeaderV1 } from './QuantumHeader'
 
 export const quantumSpace = {
@@ -127,9 +127,19 @@ export function getSemanticColor(tone: 'good' | 'watch' | 'risk' | 'info') {
   return quantumColors.neutral200
 }
 
+const ThemeOverride = createContext<QuantumTheme | null>(null)
+const SUPERDASH_THEME: QuantumTheme = {
+  ...FOUNDINGOS_SHELL_THEME, accent: '#38BDF8', bgPrimary: '#050b16',
+  bgSecondary: '#0d2a4a', cardBg: '#10263e', borderColor: '#36516c',
+  textColor: '#e8eef6', subtextColor: '#a6b8ce',
+}
+export function SuperDashTheme({ children }: { children: ReactNode }) {
+  return <ThemeOverride.Provider value={SUPERDASH_THEME}>{children}</ThemeOverride.Provider>
+}
 export function useActiveQuantumTheme() {
+  const override = useContext(ThemeOverride)
   const activeBrandSlug = useQuantumStore((state) => state.activeBrandSlug)
-  return getShellSafeTheme(activeBrandSlug)
+  return override ?? getShellSafeTheme(activeBrandSlug)
 }
 
 export function QuantumScreen({ children, scroll = true, refreshControl, style, contentStyle }: QuantumScreenProps) {
@@ -138,7 +148,7 @@ export function QuantumScreen({ children, scroll = true, refreshControl, style, 
   const content = [styles.screenContent, contentStyle]
 
   return (
-    <View style={styles.screenBackdrop}>
+    <View style={[styles.screenBackdrop, theme === SUPERDASH_THEME && { overflow: 'hidden' }]}>
       <LinearGradient
         colors={[theme.bgSecondary, theme.bgPrimary, '#000814']}
         locations={[0, 0.55, 1]}
@@ -232,6 +242,8 @@ export function QuantumHeader({
 
 export function QuantumButton({ children, onPress, tone = 'primary', disabled, style }: QuantumButtonProps) {
   const theme = useActiveQuantumTheme()
+  const content = Children.toArray(children)
+  const textOnly = content.every((child) => typeof child === 'string' || typeof child === 'number')
   const backgroundColor =
     tone === 'primary' ? theme.accent : tone === 'danger' ? quantumColors.danger : tone === 'secondary' ? theme.bgSecondary : 'transparent'
   const borderColor = tone === 'ghost' || tone === 'secondary' ? theme.borderColor : backgroundColor
@@ -257,12 +269,14 @@ export function QuantumButton({ children, onPress, tone = 'primary', disabled, s
           style={StyleSheet.absoluteFill}
         />
       ) : null}
-      {typeof children === 'string' || typeof children === 'number' ? (
+      {textOnly ? (
         <QuantumText variant="label" color={textColor} style={styles.buttonText}>
-          {children}
+          {content}
         </QuantumText>
       ) : (
-        children
+        content.map((child, index) => typeof child === 'string' || typeof child === 'number'
+          ? <QuantumText key={index} variant="label" color={textColor} style={styles.buttonText}>{child}</QuantumText>
+          : child)
       )}
     </Pressable>
   )

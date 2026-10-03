@@ -9,6 +9,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { productionRequest } from './workspace-production-client'
 import { MonthCalendar, type CalendarEvent } from './month-calendar'
+import { MarketingMediaLibrary } from './marketing-media-library'
+import { MarketingPostDialog } from './marketing-post-dialog'
+import { fullPostCaption, postPreviewMedia } from './marketing-post-preview'
+import { marketingSocialPostPath, withMarketingMediaLink } from './marketing-media'
 import { forecastPnl } from './founder-forecast'
 import { MARKET_FACTS, SCENARIOS, whatsappScenario, type ScenarioInputs, type ScenarioName } from './whatsapp-scenario'
 
@@ -128,6 +132,7 @@ export function FounderMarketingPanel({ demoData = null }: { demoData?: FounderM
   const [brief, setBrief] = useState({ goal: 'Get UK small business owners to start a free FoundingOS Lite account', durationDays: '14', channels: 'LinkedIn, Instagram, Facebook' })
   const [plan, setPlan] = useState<CampaignPlan | null>(null)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try { setData(await productionRequest<FounderMarketing>('/founder/marketing')); setError('') } catch (err) { setError(errorText(err, 'Could not load marketing')) }
@@ -176,10 +181,18 @@ export function FounderMarketingPanel({ demoData = null }: { demoData?: FounderM
   const events: CalendarEvent[] = (data?.posts ?? []).filter((item) => item.dueDate || item.publishedAt).map((item) => ({ id: item.id, date: (item.publishedAt || item.dueDate)!, title: `${item.channel ? `${item.channel}: ` : ''}${item.title}`, detail: item.text, tone: item.status === 'Published' ? 'good' : item.status === 'Approved' ? 'info' : 'muted' }))
   const dayPosts = selectedDay ? (data?.posts ?? []).filter((item) => { const at = item.publishedAt || item.dueDate; if (!at) return false; const d = new Date(at); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` === selectedDay }) : []
   const upcoming = (data?.posts ?? []).filter((item) => item.status !== 'Published').sort((a, b) => (a.dueDate || '9').localeCompare(b.dueDate || '9'))
+  const selectedPost = data?.posts.find((item) => item.id === selectedPostId)
 
   return <div className="sd-module">
     {error ? <p className="sd-error">{error}</p> : null}
     {notice ? <p className="sd-notice">{notice}</p> : null}
+    <MarketingMediaLibrary onSelect={(media) => {
+      setPost((current) => ({ ...current, title: current.title || media.title, text: withMarketingMediaLink(current.text, media) }))
+      setNotice('Video link added to the post composer below. This shares a link, not a native video upload.')
+    }} onSelectPost={(socialPost) => {
+      setPost((current) => ({ ...current, title: socialPost.title, text: `${socialPost.caption}\n\nhttps://www.foundingos.com${marketingSocialPostPath(socialPost)}`, hashtags: socialPost.hashtags, channel: socialPost.channel }))
+      setNotice('Social caption and image link loaded into the composer. Download the JPG for a native image upload.')
+    }} />
     <section className="sd-kpis">
       <article><span>Sign-ups</span><b>{f?.signups30d ?? 0}</b><small>30 days · {f?.signups7d ?? 0} this week</small></article>
       <article><span>Free → paid</span><b>{f?.conversionPct ?? 0}%</b><small>{f?.paying ?? 0} of {f?.customers ?? 0} companies</small></article>
@@ -190,10 +203,10 @@ export function FounderMarketingPanel({ demoData = null }: { demoData?: FounderM
     <div className="sd-grid">
       <section className="sd-panel sd-wide">
         <h2>Content calendar</h2>
-        <MonthCalendar emptyHint="Nothing scheduled yet — write a post or plan a campaign below." events={events} onSelectDay={(day) => { setSelectedDay(day); setPost({ ...post, dueDate: `${day}T10:00` }) }} onSelectEvent={(event) => setSelectedDay(localInput(new Date(event.date)).slice(0, 10))} selectedDay={selectedDay} />
+        <MonthCalendar emptyHint="Nothing scheduled yet — write a post or plan a campaign below." events={events} onSelectDay={(day) => { setSelectedDay(day); setPost({ ...post, dueDate: `${day}T10:00` }) }} onSelectEvent={(event) => { setSelectedDay(localInput(new Date(event.date)).slice(0, 10)); setSelectedPostId(event.id) }} selectedDay={selectedDay} />
         {selectedDay ? <div className="sd-day">
           <h3>{new Date(`${selectedDay}T12:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</h3>
-          {dayPosts.length ? dayPosts.map((item) => <PostRow busy={busy === item.id} item={item} key={item.id} onDelete={remove} onPublish={publishNow} onUpdate={update} />) : <p className="sd-muted">Nothing on this day. The composer is set to post at 10:00 on this date.</p>}
+          {dayPosts.length ? dayPosts.map((item) => <PostRow busy={busy === item.id} item={item} key={item.id} onDelete={remove} onPublish={publishNow} onUpdate={update} onPreview={setSelectedPostId} />) : <p className="sd-muted">Nothing on this day. The composer is set to post at 10:00 on this date.</p>}
         </div> : null}
       </section>
       <section className="sd-panel">
@@ -231,27 +244,36 @@ export function FounderMarketingPanel({ demoData = null }: { demoData?: FounderM
       </section>
       <section className="sd-panel sd-wide">
         <h2>Queue</h2>
-        {upcoming.length ? upcoming.map((item) => <PostRow busy={busy === item.id} item={item} key={item.id} onDelete={remove} onPublish={publishNow} onUpdate={update} />) : <p className="sd-muted">No posts waiting.</p>}
-        {(data?.posts ?? []).some((item) => item.status === 'Published') ? <><h2>Published</h2>{data!.posts.filter((item) => item.status === 'Published').slice(0, 10).map((item) => <PostRow busy={false} item={item} key={item.id} onDelete={remove} onPublish={publishNow} onUpdate={update} />)}</> : null}
+        {upcoming.length ? upcoming.map((item) => <PostRow busy={busy === item.id} item={item} key={item.id} onDelete={remove} onPublish={publishNow} onUpdate={update} onPreview={setSelectedPostId} />) : <p className="sd-muted">No posts waiting.</p>}
+        {(data?.posts ?? []).some((item) => item.status === 'Published') ? <><h2>Published</h2>{data!.posts.filter((item) => item.status === 'Published').slice(0, 10).map((item) => <PostRow busy={false} item={item} key={item.id} onDelete={remove} onPublish={publishNow} onUpdate={update} onPreview={setSelectedPostId} />)}</> : null}
       </section>
     </div>
+    {selectedPost ? <MarketingPostDialog key={selectedPost.id} post={selectedPost} example={Boolean(demoData)} onClose={() => setSelectedPostId(null)} /> : null}
   </div>
 }
 
-function PostRow({ item, busy, onPublish, onUpdate, onDelete }: { item: Post; busy: boolean; onPublish: (id: string) => void; onUpdate: (id: string, body: Record<string, unknown>) => void; onDelete: (id: string) => void }) {
+function PostRow({ item, busy, onPublish, onUpdate, onDelete, onPreview }: { item: Post; busy: boolean; onPublish: (id: string) => void; onUpdate: (id: string, body: Record<string, unknown>) => void; onDelete: (id: string) => void; onPreview: (id: string) => void }) {
   const social = ['LinkedIn', 'Instagram', 'Facebook'].includes(item.channel)
+  const media = postPreviewMedia(item)
+  const [copyError, setCopyError] = useState('')
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(fullPostCaption(item)); setCopyError('') } catch (error) { setCopyError(errorText(error, 'Could not copy. Open the preview and select the full caption.')) }
+  }
   return <div className="sd-row sd-post">
     <div>
-      <strong>{item.title}</strong>
+      <button className="sd-post-open" onClick={() => onPreview(item.id)} type="button" aria-haspopup="dialog">{item.title}</button>
       <small>{item.channel || 'No channel'} · {item.status}{item.dueDate ? ` · ${new Date(item.dueDate).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}` : ''}{item.campaign ? ` · ${item.campaign}` : ''}</small>
       <p>{item.text.slice(0, 220)}{item.text.length > 220 ? '…' : ''}</p>
+      {media.image ? <button className="sd-post-open" aria-label={`Preview image for ${item.title}`} aria-haspopup="dialog" onClick={() => onPreview(item.id)} type="button"><img className="sd-post-preview" src={media.image} alt={item.title} loading="lazy" /></button> : null}
+      {copyError ? <p className="sd-error" role="alert">{copyError}</p> : null}
       {item.publishedUrl ? <a href={item.publishedUrl} rel="noreferrer" target="_blank">View post ↗</a> : null}
     </div>
     <div className="sd-actions">
+      <button className="ghost" onClick={() => onPreview(item.id)} type="button">Preview post</button>
       {item.status === 'Draft' ? <button disabled={busy} onClick={() => onUpdate(item.id, { status: 'Approved' })} type="button">Approve</button> : null}
       {item.status !== 'Published' && social ? <button disabled={busy} onClick={() => onPublish(item.id)} type="button">Publish now</button> : null}
       {item.status !== 'Published' && !social ? <button disabled={busy} onClick={() => onUpdate(item.id, { status: 'Published' })} type="button">Mark published</button> : null}
-      <button className="ghost" disabled={busy} onClick={() => void navigator.clipboard?.writeText(item.text)} type="button">Copy</button>
+      <button className="ghost" disabled={busy} onClick={() => void copy()} type="button">Copy</button>
       <button className="ghost" disabled={busy} onClick={() => onDelete(item.id)} type="button">Delete</button>
     </div>
   </div>

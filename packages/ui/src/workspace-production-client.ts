@@ -286,10 +286,26 @@ export async function bootstrapProduction(input: Record<string, unknown>, bootst
 
 export async function logoutProduction() {
   const session = getProductionSession()
+  saveSession(null)
+  if (session) {
+    const response = await fetch(`${apiRoot()}/auth/logout`, { method: 'POST', credentials: 'include', headers: { 'X-Refresh-Token': session.refreshToken }, signal: AbortSignal.timeout(5000) })
+    if (!response.ok) throw new Error(`Server sign-out failed (HTTP ${response.status}). Your local session has been cleared.`)
+  }
+}
+
+export async function signOutOfFoundingOS() {
   try {
-    if (session) await fetch(`${apiRoot()}/auth/logout`, { method: 'POST', credentials: 'include', headers: { 'X-Refresh-Token': session.refreshToken } })
+    await logoutProduction()
+  } catch (error) {
+    console.error('[auth] could not revoke server session; clearing website access', error)
   } finally {
-    saveSession(null)
+    // A full-page POST clears the HttpOnly invitation cookie too; client-only sign-out
+    // otherwise allows preview-session adoption to immediately sign the visitor back in.
+    const form = document.createElement('form')
+    form.method = 'post'
+    form.action = '/api/access/logout'
+    document.body.appendChild(form)
+    form.submit()
   }
 }
 

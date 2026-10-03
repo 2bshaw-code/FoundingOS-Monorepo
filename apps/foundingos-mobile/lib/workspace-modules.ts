@@ -8,6 +8,8 @@
 // read/write the same generic backend records
 // (/api/v1/ops/platform/workspaces/:workspace/:module/records) with no
 // per-module custom logic required.
+import { talentModules } from '@foundingos/ui/talent-workspace'
+
 export type WorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'marketing' | 'talent' | 'hr' | 'health' | 'legal' | 'intelligence'
 
 export type WorkspaceModuleDef = { id: string; label: string; group: string; statuses?: string[] }
@@ -50,7 +52,7 @@ export const WORKSPACES: WorkspaceDef[] = [
   {
     slug: 'talent', label: 'Talent', accent: '#ff8a33',
     description: 'Recruit for your own business or run an agency: jobs, candidates, interviews, offers, checks, clients and placements.',
-    modules: [mod('overview', 'Recruitment home', 'Workspace'), mod('jobs', 'Jobs', 'Hiring', ['Draft', 'Open', 'Interviewing', 'Filled']), mod('candidates', 'Candidates', 'Hiring', ['Applied', 'Screening', 'Interview', 'Offer']), mod('interviews', 'Interviews', 'Hiring', ['Planned', 'Confirmed', 'Complete', 'Decision']), mod('offers', 'Offers', 'Hiring', ['Draft', 'Sent', 'Accepted', 'Onboarding']), mod('references', 'References & checks', 'Hiring', ['Requested', 'Chasing', 'Received', 'Cleared']), mod('talent-pool', 'Talent pool', 'Pipeline', ['Available', 'Contacted', 'Shortlisted', 'Placed']), mod('clients', 'Agency clients', 'Agency', ['Prospect', 'Active', 'Hiring', 'Paused']), mod('placements', 'Placements', 'Agency', ['Offered', 'Started', 'Invoiced', 'Paid']), mod('reports', 'Recruitment reports', 'Intelligence'), mod('automations', 'Automations', 'Intelligence'), mod('team', 'Team & access', 'Administration'), mod('integrations', 'Integrations', 'Administration'), mod('security', 'Security & Access', 'Administration'), mod('settings', 'Settings', 'Administration')],
+    modules: talentModules,
   },
   {
     slug: 'hr', label: 'HR', accent: '#2ec4b6',

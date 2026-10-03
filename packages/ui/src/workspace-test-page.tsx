@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { AccountNavLinks } from './account-nav'
 import { CompleteWorkspaceApplication, type BusinessWorkspaceSlug } from './complete-workspace-application'
 
 export type TestWorkspaceSlug = BusinessWorkspaceSlug
@@ -14,7 +15,7 @@ const workspaces: Array<{ slug: TestWorkspaceSlug; label: string; suite: string;
   { slug: 'hr', label: 'HR', suite: 'Core.Workforce', summary: 'Employees, contracts, rotas, timesheets, holiday, sickness, right-to-work, policies and payroll inputs.', modules: 21, accent: '#2ec4b6' },
   { slug: 'health', label: 'Health', suite: 'Core.Operations', summary: 'Appointments, patients, care plans, triage, practitioners, billing, claims, and compliance.', modules: 18, accent: '#00a6a6' },
   { slug: 'legal', label: 'Legal', suite: 'Core.Operations', summary: 'Matters, billable activity, calls, letters, evidence, NDAs, contracts, subscriptions and defensible client bills.', modules: 24, accent: '#3158d4' },
-  { slug: 'intelligence', label: 'SuperDashboard', suite: 'Core.Intelligence', summary: 'Executive control across every workspace, with signals, risks, forecasts, decisions, and the Event Feed.', modules: 17, accent: '#b77aff' },
+  { slug: 'intelligence', label: 'Core Intelligence', suite: 'Core.Intelligence', summary: 'Executive control across your business workspaces, with signals, risks, forecasts, decisions, and the Event Feed. This is not the founder SuperDash.', modules: 17, accent: '#b77aff' },
 ]
 
 export function WorkspaceDirectory({ basePath = '/test-workspaces' }: { basePath?: '/test-workspaces' | '/app' }) {
@@ -25,6 +26,7 @@ export function WorkspaceDirectory({ basePath = '/test-workspaces' }: { basePath
       <div><p className="eyebrow">{production ? 'Your operating system' : 'Choose a workspace to test'}</p><h1>One business. Nine connected workspaces.</h1><p>{production ? 'Open any enabled workspace. Access and records remain tenant-scoped.' : 'Every workspace is interactive, browser-persistent, and connected through the Shared Event Feed.'}</p></div>
     </header>
     <section aria-label="FoundingOS workspaces">
+      <AccountNavLinks variant="card" />
       {workspaces.map((workspace) => <Link href={`${basePath}/${workspace.slug}`} key={workspace.slug} style={{ ['--workspace-accent' as string]: workspace.accent }}>
         <span>{workspace.label.slice(0, 2).toUpperCase()}</span>
         <div><small>{workspace.suite}</small><h2>{workspace.label}</h2><p>{workspace.summary}</p></div>

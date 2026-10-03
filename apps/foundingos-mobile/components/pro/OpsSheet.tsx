@@ -119,7 +119,7 @@ function FieldInput({ field, value, accent, onChange }: { field: OpsField; value
   )
 }
 
-export function OpsSheet({ schema, record, accent, onClose, onSaved }: { schema: OpsSchema; record: WorkspaceRecordDTO; accent: string; onClose: () => void; onSaved: (record: WorkspaceRecordDTO) => void }) {
+export function OpsSheet({ schema, record, accent, onClose, onSaved, readOnly = false }: { schema: OpsSchema; record: WorkspaceRecordDTO; accent: string; onClose: () => void; onSaved: (record: WorkspaceRecordDTO) => void; readOnly?: boolean }) {
   const theme = useActiveQuantumTheme()
   const like = useMemo(() => opsRecordFromDto(record), [record])
   const [values, setValues] = useState<OpsValues>(() => readOps(like, schema))
@@ -129,6 +129,7 @@ export function OpsSheet({ schema, record, accent, onClose, onSaved }: { schema:
   const summary = schema.summary?.(values, like) ?? []
   const set = (key: string, value: unknown) => { setValues((current) => ({ ...current, [key]: value })); setDirty(true) }
   const save = async () => {
+    if (readOnly) { Alert.alert('View only', 'This SuperDash view cannot save changes.'); return }
     setBusy(true)
     try {
       const updated = await saveProPatch(record, opsPatch(values, schema))
@@ -165,7 +166,7 @@ export function OpsSheet({ schema, record, accent, onClose, onSaved }: { schema:
             </View>
           ))}
           <View style={styles.pills}>
-            <QuantumButton disabled={busy || !dirty} onPress={() => void save()}>{busy ? 'Saving…' : dirty ? `Save ${schema.title.toLowerCase()}` : 'Saved'}</QuantumButton>
+            <QuantumButton disabled={readOnly || busy || !dirty} onPress={() => void save()}>{readOnly ? 'View only' : busy ? 'Saving…' : dirty ? `Save ${schema.title.toLowerCase()}` : 'Saved'}</QuantumButton>
             {schema.letter ? <QuantumButton tone="secondary" onPress={() => void Share.share({ message: schema.letter!.build(values, like) })}>Share {schema.letter.label.toLowerCase()}</QuantumButton> : null}
           </View>
         </ScrollView>

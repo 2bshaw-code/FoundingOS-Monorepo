@@ -9,8 +9,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FounderFinancePanel, FounderMarketingPanel, FounderScenarioPanel } from './founder-superdash-modules'
 import { founderDemoFinance, founderDemoMarketing, founderDemoOverview } from './founder-superdash-demo'
 import { useDemoData } from './pro-coach'
-import { adoptPreviewSession, getProductionSession, loginToProduction, logoutProduction, productionRecords, productionRequest } from './workspace-production-client'
+import { adoptPreviewSession, getProductionSession, loginToProduction, logoutProduction, signOutOfFoundingOS, productionRecords, productionRequest } from './workspace-production-client'
 import { FounderAiPanel } from './founder-ai-panel'
+import { MarketingMediaLibrary } from './marketing-media-library'
+import { FounderLegalPanel } from './founder-legal-panel'
+import { founderSections as sections, type FounderTab as Tab } from './founder-navigation'
 import { FinanceReportsPage, MarketingReportsPage, SalesReportsPage } from './pro/reports'
 import { proRecordFromBackend } from './pro/models'
 import type { LoadRecords } from './pro/shared'
@@ -31,15 +34,8 @@ const ago = (iso: string | null) => {
 const loadFounderRecords: LoadRecords = async (workspace, module) => (await productionRecords.list(workspace, module)).map(proRecordFromBackend)
 const loadDemoRecords: LoadRecords = async (workspace, module) => demoWorkspaceRecords(workspace as BusinessWorkspaceSlug, module)
 
-type Tab = 'overview' | 'finance' | 'sales' | 'marketing' | 'legal'
 // Each SuperDash tab hosts FoundingOS's own records. 'workspace/module' entries render the full
 // professional workspace module inline; other keys are SuperDash-only views.
-const sections: Record<Exclude<Tab, 'overview'>, Array<[key: string, label: string]>> = {
-  finance: [['books', 'Books & runway'], ['scenario', 'WhatsApp growth scenario'], ['finance/invoices', 'Invoices'], ['finance/bills', 'Bills'], ['finance/expenses', 'Expenses'], ['finance/banking', 'Banking'], ['finance/reconciliation', 'Reconciliation'], ['finance/budgets', 'Budgets'], ['finance/tax', 'Tax & VAT'], ['reports', 'Reports']],
-  sales: [['forecast', 'Forecast'], ['retail/sales-pipeline', 'Deals & quotes'], ['subscribers', 'Subscribers'], ['retail/crm', 'Customers'], ['marketing/leads', 'Leads'], ['retail/orders', 'Orders'], ['retail/service', 'Support']],
-  marketing: [['posts', 'FoundAI posts'], ['marketing/campaigns', 'Campaigns'], ['marketing/content', 'Content'], ['marketing/calendar', 'Calendar'], ['marketing/audiences', 'Audiences'], ['marketing/journeys', 'Journeys'], ['reports', 'ROI & attribution']],
-  legal: [['legal/overview', 'Control tower'], ['legal/matters', 'Matters'], ['legal/time-entries', 'Billable work'], ['legal/communications', 'Calls & messages'], ['legal/billing-audit', 'Evidence packs'], ['legal/invoices', 'Client invoices'], ['legal/contracts', 'Contracts'], ['legal/subscriptions', 'Subscriptions'], ['legal/ndas', 'NDAs']],
-}
 const tabs: Tab[] = ['overview', 'finance', 'sales', 'marketing', 'legal']
 const readHash = (): [Tab, string] => {
   if (typeof window === 'undefined') return ['overview', '']
@@ -187,7 +183,7 @@ export function FounderSuperDash() {
   return <main className="sd-shell">
     <header className="sd-top">
       <div><p className="sd-eyebrow">{investor ? 'FoundingOS · Admin view' : 'FoundingOS · Founder'}</p><h1>SuperDash</h1><small>{investor ? (demo ? 'Example data · view only' : 'Live figures · view only') : demo ? 'Example data' : data ? `Updated ${ago(data.generatedAt)}` : error ? 'Live figures unavailable' : 'Loading…'}</small></div>
-      <nav><span className="sd-plan">Complete · all Pro tools on</span>{investor ? <><span className="sd-plan">View only</span>{signedIn && !demo ? <button onClick={() => void load()} type="button">Refresh</button> : null}</> : <><button onClick={() => void load()} type="button">Refresh</button><button className="ghost" onClick={() => { void logoutProduction().then(() => { setSignedIn(false); setData(null); setDemo(false) }) }} type="button">Sign out</button></>}</nav>
+      <nav><span className="sd-plan">Complete · all Pro tools on</span>{investor ? <><span className="sd-plan">View only</span>{signedIn && !demo ? <button onClick={() => void load()} type="button">Refresh</button> : null}</> : <button onClick={() => void load()} type="button">Refresh</button>}<button className="ghost" onClick={() => { void signOutOfFoundingOS() }} type="button">Sign out</button></nav>
     </header>
     <div className="sd-tab-bar">
       <div className="sd-tabs" role="tablist">
@@ -208,6 +204,8 @@ export function FounderSuperDash() {
       return <>
         <nav className="sd-subtabs" aria-label={`${title(tab)} sections`}>{items.map(([key, label]) => <button className={key === active ? 'on' : ''} key={key} onClick={() => go(tab, key)} type="button">{label}</button>)}</nav>
         {active.includes('/') ? <EmbeddedModule path={active} /> : null}
+        {tab === 'legal' && !active.includes('/') ? <FounderLegalPanel key={demo ? 'demo' : 'live'} demo={demo} readOnly={investor} overview={overview} section={active} /> : null}
+        {tab === 'marketing' && active === 'media' ? <div className="sd-module"><MarketingMediaLibrary /></div> : null}
         {tab === 'finance' && active === 'books' ? <FounderFinancePanel demoData={demoFinance} /> : null}
         {tab === 'finance' && active === 'scenario' ? <FounderScenarioPanel /> : null}
         {tab === 'finance' && active === 'reports' ? <section className="sd-pro"><h2>P&amp;L, VAT &amp; aged debt</h2><FinanceReportsPage key={demo ? 'demo' : 'live'} loadRecords={records} /></section> : null}

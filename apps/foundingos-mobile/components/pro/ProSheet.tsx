@@ -368,7 +368,7 @@ function CampaignEditor({ record, accent, save }: { record: WorkspaceRecordDTO; 
 
 const workspaceLabel = (slug: string) => (slug === 'logistics' ? 'Logistics billing' : 'Finance')
 
-export function ProRecordSheet({ record, workspace, module, kind, profile, statuses, accent, onClose, onSaved }: {
+export function ProRecordSheet({ record, workspace, module, kind, profile, statuses, accent, onClose, onSaved, readOnly = false }: {
   record: WorkspaceRecordDTO
   workspace: string
   module: string
@@ -378,16 +378,19 @@ export function ProRecordSheet({ record, workspace, module, kind, profile, statu
   accent: string
   onClose: () => void
   onSaved: (record: WorkspaceRecordDTO) => void
+  readOnly?: boolean
 }) {
   const theme = useActiveQuantumTheme()
   const [current, setCurrent] = useState(record)
   useEffect(() => setCurrent(record), [record])
   const save = async (patch: ProPatch) => {
+    if (readOnly) throw new Error('This SuperDash view is read-only; changes cannot be saved.')
     const updated = await saveProPatch(current, patch)
     setCurrent(updated)
     onSaved(updated)
   }
   const createInvoice = async (quote: BusinessDocument) => {
+    if (readOnly) throw new Error('This SuperDash view is read-only; invoices cannot be created.')
     const [targetWorkspace, targetModule] = invoiceTargetFor(workspace)
     const input = invoiceFromQuote(quote, profile)
     try {
@@ -411,6 +414,7 @@ export function ProRecordSheet({ record, workspace, module, kind, profile, statu
           <QuantumButton tone="ghost" onPress={onClose}>Done</QuantumButton>
         </View>
         <ScrollView contentContainerStyle={styles.sheetBody} keyboardShouldPersistTaps="handled">
+          {readOnly ? <QuantumNotice tone="info">View only: saving and document conversion are disabled.</QuantumNotice> : null}
           {kind === 'document' && documentKind ? (
             <DocumentEditor accent={accent} kind={documentKind} profile={profile} record={current} save={save} statuses={statuses} {...(documentKind === 'quote' ? { onConvert: createInvoice } : {})} />
           ) : null}

@@ -12,7 +12,7 @@ import { QuantumButton, QuantumCard, QuantumNotice, QuantumPill, QuantumSectionH
 const gbp = (value: number) => `${value < 0 ? '−' : ''}£${Math.abs(value).toLocaleString('en-GB', { maximumFractionDigits: 2 })}`
 const monthLabel = (month: string) => new Date(`${month}-01T00:00:00Z`).toLocaleDateString('en-GB', { month: 'short' })
 
-export function FounderFinancePanel({ reloadKey }: { reloadKey: number }) {
+export function FounderFinancePanel({ reloadKey, readOnly = false }: { reloadKey: number; readOnly?: boolean }) {
   const [data, setData] = useState<FounderFinance | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -28,6 +28,7 @@ export function FounderFinancePanel({ reloadKey }: { reloadKey: number }) {
   useEffect(() => { void load() }, [load, reloadKey])
 
   const save = async () => {
+    if (readOnly) { setError('This view is read-only.'); return }
     setBusy(true); setError('')
     try {
       await addFounderLedgerEntry({ kind, label, category, amountGbp: Number(amount), recurring: kind !== 'cash' && recurring, date: new Date().toISOString().slice(0, 10) })
@@ -93,7 +94,7 @@ export function FounderFinancePanel({ reloadKey }: { reloadKey: number }) {
         <QuantumTextInput keyboardType="decimal-pad" onChangeText={setAmount} placeholder="£ amount" value={amount} />
         {kind === 'expense' ? <View style={styles.pills}>{(data?.categories ?? []).map((item) => <QuantumPill active={category === item} key={item} onPress={() => setCategory(item)}>{item}</QuantumPill>)}</View> : null}
         {kind !== 'cash' ? <View style={styles.pills}><QuantumPill active={recurring} onPress={() => setRecurring(true)}>Every month</QuantumPill><QuantumPill active={!recurring} onPress={() => setRecurring(false)}>One-off</QuantumPill></View> : null}
-        <QuantumButton disabled={busy || !label.trim() || !amount} onPress={save}>{busy ? 'Saving…' : 'Save'}</QuantumButton>
+        <QuantumButton disabled={readOnly || busy || !label.trim() || !amount} onPress={save}>{busy ? 'Saving…' : 'Save'}</QuantumButton>
       </QuantumCard>
 
       <QuantumSectionHeader label="Costs by category" />
@@ -111,7 +112,7 @@ export function FounderFinancePanel({ reloadKey }: { reloadKey: number }) {
         <QuantumCard key={entry.id}>
           <Row left={entry.label} right={gbp(entry.amountGbp)} />
           <QuantumText variant="caption" color={quantumColors.neutral300}>{entry.date} · {entry.kind === 'cash' ? 'Cash balance' : `${entry.kind === 'income' ? 'Income' : entry.category}${entry.recurring ? ' · monthly' : ''}`}</QuantumText>
-          <QuantumButton tone="ghost" onPress={() => remove(entry.id, entry.label)}>Delete</QuantumButton>
+          <QuantumButton disabled={readOnly} tone="ghost" onPress={() => remove(entry.id, entry.label)}>Delete</QuantumButton>
         </QuantumCard>
       ))}
     </View>

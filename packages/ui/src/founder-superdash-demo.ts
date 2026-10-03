@@ -1,4 +1,5 @@
 import type { FounderFinance, FounderMarketing, FounderOverview } from './founder-types'
+import { MARKETING_SOCIAL_POSTS, marketingSocialPostPath } from './marketing-media'
 
 const DAY = 86_400_000
 const plans = [
@@ -193,6 +194,20 @@ export function founderDemoMarketing(overview: FounderOverview, now = Date.now()
     publishedAt: status === 'Published' ? at(Number(days)) : null,
     updatedAt: at(Math.min(0, Number(days))),
   }))
+  posts.push(...MARKETING_SOCIAL_POSTS.slice(0, 4).map((post, index) => ({
+    id: `demo-post-social-${index}`,
+    title: post.title,
+    status: index % 2 === 0 ? 'Draft' : 'Approved',
+    channel: post.channel,
+    text: `Example promotional draft. Not published.\n\n${post.caption}`,
+    hashtags: post.hashtags,
+    dueDate: at(index + 2),
+    campaign: 'Screenshot social examples',
+    publishedUrl: null,
+    publishedAt: null,
+    updatedAt: at(0),
+    previewImage: marketingSocialPostPath(post),
+  })))
   return {
     funnel: {
       signups30d: s.new30d,

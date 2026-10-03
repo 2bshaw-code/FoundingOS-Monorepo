@@ -20,7 +20,7 @@ export type FounderFinance = {
   pnl: PnlRow[]; byCategory: Array<{ category: string; monthlyGbp: number }>; topCustomers: Array<{ business: string; plan: string; monthlyGbp: number }>
   entries: LedgerEntry[]; categories: string[]; note: string
 }
-export type Post = { id: string; title: string; status: string; channel: string; text: string; hashtags: string; dueDate: string | null; campaign: string; publishedUrl: string | null; publishedAt: string | null; updatedAt: string }
+export type Post = { id: string; title: string; status: string; channel: string; text: string; hashtags: string; dueDate: string | null; campaign: string; publishedUrl: string | null; publishedAt: string | null; updatedAt: string; previewImage?: string }
 export type FounderMarketing = {
   funnel: { signups30d: number; signups7d: number; customers: number; paying: number; conversionPct: number; upgradeRequests90d: number; active7d: number; signupsByWeek: Array<{ weekOf: string; signups: number }> }
   channels: { facebookInstagram: boolean; linkedin: boolean }

@@ -3,6 +3,9 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { WorkspaceGate } from '../../../components/WorkspaceAccess'
+import { useSuperDashAccess } from '../../../lib/workspace-access'
+import { FounderPostPreview } from '../../../components/founder/FounderMedia'
+import { workspaceContentPost } from '../../../lib/founder-content-preview'
 import { ProCoach } from '../../../components/ProCoach'
 import { MonthCalendar, dayKey } from '../../../components/MonthCalendar'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -48,6 +51,7 @@ import {
   quantumColors,
   quantumSpace,
   useActiveQuantumTheme,
+  SuperDashTheme,
 } from '../../../components/QuantumUI'
 
 function formatValue(pence: number | null): string {
@@ -118,11 +122,14 @@ function firstImageUrl(record: WorkspaceRecordDTO): string | null {
 // backed by the same tenant-scoped WorkspaceRecord model the web app's
 // production mode uses (GET/POST /platform/workspaces/:workspace/:module/records,
 // PATCH /platform/records/:id) — no per-module backend or UI work required.
-function WorkspaceModuleScreenInner() {
+function WorkspaceModuleScreenInner({ readOnly = false }: { readOnly?: boolean }) {
   const theme = useActiveQuantumTheme()
   const { width: screenWidth } = useWindowDimensions()
-  const { workspace: workspaceSlug, module: moduleId } = useLocalSearchParams<{ workspace: string; module: string }>()
-  const workspace = findWorkspace(String(workspaceSlug || ''))
+  const { workspace: workspaceSlug, module: moduleId, source } = useLocalSearchParams<{ workspace: string; module: string; source?: string }>()
+  const workspace = useMemo(() => {
+    const definition = findWorkspace(String(workspaceSlug || ''))
+    return definition && source === 'superdash' ? { ...definition, accent: '#38BDF8' } : definition
+  }, [workspaceSlug, source])
   const module = findModule(String(workspaceSlug || ''), String(moduleId || ''))
   const statuses = module?.statuses
 
@@ -163,6 +170,7 @@ function WorkspaceModuleScreenInner() {
   }, [workspace, proKind])
   const proRecords = useMemo(() => (proKind === 'deal' || proKind === 'campaign' ? records.filter((record) => !record.id.startsWith('temp-')).map(dtoToPro) : []), [proKind, records])
   const sheetRecord = sheetRecordId ? records.find((record) => record.id === sheetRecordId) ?? null : null
+  const isMarketingContent = workspace?.slug === 'marketing' && (module?.id === 'content' || module?.id === 'calendar')
 
   const load = useCallback(
     async (isRefresh = false) => {
@@ -229,6 +237,7 @@ function WorkspaceModuleScreenInner() {
   }
 
   async function advance(record: WorkspaceRecordDTO) {
+    if (readOnly) { Alert.alert('View only', 'This SuperDash view cannot change records.'); return }
     const next = nextStatus(record.status)
     if (!next || !module) return
     const key = `advance:${record.id}`
@@ -255,6 +264,7 @@ function WorkspaceModuleScreenInner() {
   }
 
   async function addRecord(input?: { name: string; category: string; valuePence: number | null }) {
+    if (readOnly) { Alert.alert('View only', 'This SuperDash view cannot add records.'); return }
     if (!workspace || !module) return
     // Optimistic: show the new record in the list immediately with a
     // temporary id, then swap in the server's real record once it responds.
@@ -293,6 +303,7 @@ function WorkspaceModuleScreenInner() {
   }
 
   function beginAddRecord() {
+    if (readOnly) { Alert.alert('View only', 'This SuperDash view cannot add records.'); return }
     if (module?.id === 'products') {
       setProductFormOpen(true)
       return
@@ -351,6 +362,7 @@ function WorkspaceModuleScreenInner() {
   }
 
   async function scheduleOn(record: WorkspaceRecordDTO, day: string) {
+    if (readOnly) { Alert.alert('View only', 'This SuperDash view cannot schedule records.'); return }
     setBusyId(record.id)
     try {
       const due = new Date(`${day}T09:00:00`)
@@ -364,6 +376,7 @@ function WorkspaceModuleScreenInner() {
   }
 
   async function addPhoto(record: WorkspaceRecordDTO, source: 'camera' | 'library') {
+    if (readOnly) { Alert.alert('View only', 'This SuperDash view cannot upload photos.'); return }
     const permission =
       source === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (!permission.granted) {
@@ -410,7 +423,7 @@ function WorkspaceModuleScreenInner() {
         : null
     const photoUrl = sharedPhoto ?? firstImageUrl(record)
     const photoBusy = photoBusyId === record.id
-    const openable = Boolean(proKind || opsSchema) && !record.id.startsWith('temp-')
+    const openable = Boolean(proKind || opsSchema || isMarketingContent) && !record.id.startsWith('temp-')
     return (
       <Pressable key={record.id} disabled={!openable} onPress={() => setSheetRecordId(record.id)} style={({ pressed }) => ({ opacity: pressed && openable ? 0.8 : 1 })}>
       <QuantumCard accent={workspace!.accent} style={styles.recordCard}>
@@ -616,6 +629,7 @@ function WorkspaceModuleScreenInner() {
     >
       <QuantumBackButton label={`‹ ${workspace.label}`} fallbackHref={`/workspace/${workspace.slug}`} />
       <QuantumHeader eyebrow={workspace.label} title={module.label} accent={workspace.accent} />
+      {readOnly ? <QuantumNotice tone="info">SuperDash view only: account changes are disabled.</QuantumNotice> : null}
       {!isOnline ? <QuantumNotice tone="warning">Working offline — changes will sync later.</QuantumNotice> : null}
       {loadError ? <QuantumNotice tone="danger">{loadError}</QuantumNotice> : null}
       {feedback ? <QuantumNotice tone={feedback.tone} onRetry={feedback.onRetry}>{feedback.message}</QuantumNotice> : null}
@@ -663,8 +677,10 @@ function WorkspaceModuleScreenInner() {
       {opsSchema && records.length ? <OpsInsightsCard accent={workspace.accent} onOpen={setSheetRecordId} records={records} schema={opsSchema} statuses={statuses ?? []} /> : null}
 
       {renderBody()}
+      {sheetRecord && isMarketingContent && !proKind && !opsSchema ? <FounderPostPreview key={sheetRecord.id} post={workspaceContentPost(sheetRecord)} onClose={() => setSheetRecordId(null)} /> : null}
       {sheetRecord && opsSchema ? (
         <OpsSheet
+          readOnly={readOnly}
           accent={workspace.accent}
           onClose={() => setSheetRecordId(null)}
           onSaved={(updated) => setRecords((current) => current.map((item) => (item.id === updated.id ? updated : item)))}
@@ -674,6 +690,7 @@ function WorkspaceModuleScreenInner() {
       ) : null}
       {sheetRecord && proKind ? (
         <ProRecordSheet
+          readOnly={readOnly}
           accent={workspace.accent}
           kind={proKind}
           module={module.id}
@@ -742,10 +759,18 @@ const styles = StyleSheet.create({
 })
 
 export default function WorkspaceModuleScreen() {
-  const { workspace: workspaceSlug } = useLocalSearchParams<{ workspace: string; module: string }>()
-  return (
+  const { workspace: workspaceSlug, source } = useLocalSearchParams<{ workspace: string; module: string; source?: string }>()
+  const screen = (
     <WorkspaceGate slug={String(workspaceSlug || '')}>
       <WorkspaceModuleScreenInner />
     </WorkspaceGate>
   )
+  return source === 'superdash' ? <SuperDashTheme><FounderWorkspaceModule /></SuperDashTheme> : screen
+}
+
+function FounderWorkspaceModule() {
+  const access = useSuperDashAccess()
+  const [demo, setDemo] = useState(isDemoData())
+  useEffect(() => subscribeDemoData(setDemo), [])
+  return <WorkspaceModuleScreenInner readOnly={access !== 'founder' || demo} />
 }

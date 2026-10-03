@@ -7,9 +7,9 @@
 // SuperDash (founder, partners and investors) and Sign out when signed in.
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { adoptPreviewSession, getProductionSession, logoutProduction, productionRequest } from './workspace-production-client'
+import { adoptPreviewSession, getProductionSession, signOutOfFoundingOS, productionRequest } from './workspace-production-client'
 
-export function AccountNavLinks() {
+export function AccountNavLinks({ variant = 'account' }: { variant?: 'account' | 'superdash' | 'card' } = {}) {
   const [signedIn, setSignedIn] = useState(false)
   const [superDash, setSuperDash] = useState(false)
 
@@ -34,10 +34,18 @@ export function AccountNavLinks() {
     return () => { cancelled = true }
   }, [])
 
-  if (!signedIn) return <Link className="site-nav-account" href="/app">Sign in</Link>
+  if (variant !== 'account') {
+    if (variant === 'card') return <Link href="/superdash">
+      <span>Fos</span>
+      <div><small>Founder, partner and investor access required</small><h2>Founder SuperDash</h2><p>Run FoundingOS itself: business, finance, sales, marketing media and legal.</p></div>
+      <footer><strong>Separate from Core Intelligence</strong><b>{superDash ? 'Open SuperDash' : 'Open protected SuperDash'}</b></footer>
+    </Link>
+    return <Link className="retail-product-switcher" href="/superdash"><span>Founder SuperDash</span><b>↗</b></Link>
+  }
+  if (!signedIn) return <><Link className="site-nav-account" href="/app">Sign in</Link><Link href="/superdash">SuperDash</Link></>
   return <>
     <Link href="/app">Open app</Link>
-    {superDash ? <Link className="site-nav-superdash" href="/superdash">SuperDash</Link> : null}
-    <button className="site-nav-account" onClick={() => { void logoutProduction().finally(() => { window.location.href = '/' }) }} type="button">Sign out</button>
+    <Link className="site-nav-superdash" href="/superdash">SuperDash</Link>
+    <button className="site-nav-account" onClick={() => { void signOutOfFoundingOS() }} type="button">Sign out</button>
   </>
 }

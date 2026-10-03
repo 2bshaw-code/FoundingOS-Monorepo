@@ -9,12 +9,16 @@ import { RefreshControl, StyleSheet, View } from 'react-native'
 import { FounderFinancePanel } from '../../components/founder/FounderFinance'
 import { FounderMarketingPanel } from '../../components/founder/FounderMarketing'
 import { FounderScenarioPanel } from '../../components/founder/FounderScenario'
+import { FounderMediaLibrary } from '../../components/founder/FounderMedia'
+import { FounderLegalPanel } from '../../components/founder/FounderLegal'
+import { founderSections } from '@foundingos/ui/founder-navigation'
+import type { MarketingSocialPost } from '@foundingos/ui/marketing-media'
 import { isDemoData, setDemoData, subscribeDemoData } from '../../lib/demo-data'
 import { useSuperDashAccess } from '../../lib/workspace-access'
 import { FinanceReport, MarketingReport, SalesReport } from '../../components/pro/ProReports'
 import { router } from 'expo-router'
 import { FounderOverview, fetchSuperDashOverview, founderEnableWorkspaces } from '../../lib/core-operations-api'
-import { QuantumButton, QuantumCard, QuantumNotice, QuantumPill, QuantumScreen, QuantumSectionHeader, QuantumText, quantumColors, quantumSpace } from '../../components/QuantumUI'
+import { QuantumButton, QuantumCard, QuantumNotice, QuantumPill, QuantumScreen, QuantumSectionHeader, QuantumText, SuperDashTheme, quantumColors, quantumSpace } from '../../components/QuantumUI'
 
 const gbp = (value: number) => `£${value.toLocaleString('en-GB', { maximumFractionDigits: 2 })}`
 const ago = (iso: string | null) => {
@@ -31,12 +35,7 @@ const title = (slug: string) => slug.charAt(0).toUpperCase() + slug.slice(1)
 // 'workspace/module' keys open the full professional module screen; other keys
 // render a SuperDash-only panel inline.
 type SuperTab = 'business' | 'finance' | 'sales' | 'marketing' | 'legal'
-const SECTIONS: Record<Exclude<SuperTab, 'business'>, Array<[key: string, label: string]>> = {
-  finance: [['books', 'Books & runway'], ['scenario', 'WhatsApp growth scenario'], ['finance/invoices', 'Invoices'], ['finance/bills', 'Bills'], ['finance/expenses', 'Expenses'], ['finance/banking', 'Banking'], ['finance/reconciliation', 'Reconciliation'], ['finance/budgets', 'Budgets'], ['finance/tax', 'Tax & VAT'], ['reports', 'Reports']],
-  sales: [['forecast', 'Forecast'], ['retail/sales-pipeline', 'Deals & quotes'], ['subscribers', 'Subscribers'], ['retail/crm', 'Customers'], ['marketing/leads', 'Leads'], ['retail/orders', 'Orders'], ['retail/service', 'Support']],
-  marketing: [['posts', 'FoundAI posts'], ['marketing/campaigns', 'Campaigns'], ['marketing/content', 'Content'], ['marketing/calendar', 'Calendar'], ['marketing/audiences', 'Audiences'], ['marketing/journeys', 'Journeys'], ['reports', 'ROI & attribution']],
-  legal: [['legal/overview', 'Control tower'], ['legal/matters', 'Matters'], ['legal/time-entries', 'Billable work'], ['legal/communications', 'Calls & messages'], ['legal/billing-audit', 'Evidence packs'], ['legal/invoices', 'Client invoices'], ['legal/contracts', 'Contracts'], ['legal/subscriptions', 'Subscriptions'], ['legal/ndas', 'NDAs']],
-}
+const SECTIONS = founderSections
 
 function Kpi({ label, value, sub, alert }: { label: string; value: string; sub: string; alert?: boolean }) {
   return (
@@ -59,7 +58,7 @@ function Health({ ok, warn, label, detail }: { ok: boolean; warn?: boolean; labe
   )
 }
 
-export default function SuperDashScreen() {
+function SuperDashScreen() {
   const [data, setData] = useState<FounderOverview | null>(null)
   const [error, setError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
@@ -68,6 +67,7 @@ export default function SuperDashScreen() {
   const [sub, setSub] = useState('')
   const [reloadKey, setReloadKey] = useState(0)
   const [demo, setDemo] = useState(isDemoData())
+  const [selectedMedia, setSelectedMedia] = useState<MarketingSocialPost | null>(null)
   const access = useSuperDashAccess()
   const investor = access === 'investor'
   // Admins/investors open on example figures and can switch to live figures (read-only) any time.
@@ -107,7 +107,7 @@ export default function SuperDashScreen() {
   const items = tab === 'business' ? [] : SECTIONS[tab]
   const active = items.some(([key]) => key === sub) ? sub : items[0]?.[0] ?? ''
   const openSection = (key: string) => {
-    if (key.includes('/')) router.push(`/workspace/${key}`)
+    if (key.includes('/')) router.push(`/workspace/${key}?source=superdash`)
     else setSub(key)
   }
   const goTab = (next: SuperTab) => { setTab(next); setSub('') }
@@ -156,7 +156,7 @@ export default function SuperDashScreen() {
         <View style={styles.subLinks}>
           {items.map(([key, label]) => <QuantumPill active={key === active} key={key} onPress={() => openSection(key)}>{label}</QuantumPill>)}
         </View>
-        {tab === 'finance' && active === 'books' ? <FounderFinancePanel reloadKey={reloadKey} /> : null}
+        {tab === 'finance' && active === 'books' ? <FounderFinancePanel readOnly={access !== 'founder' || demo} reloadKey={reloadKey} /> : null}
         {tab === 'finance' && active === 'scenario' ? <FounderScenarioPanel /> : null}
         {tab === 'finance' && active === 'reports' ? <>
           <QuantumSectionHeader label="P&L, VAT & aged debt" />
@@ -167,7 +167,9 @@ export default function SuperDashScreen() {
           <SalesReport accent={PRO_ACCENT} refreshKey={reloadKey} workspace="retail" />
         </> : null}
         {tab === 'sales' && active === 'subscribers' ? subscribersPanel : null}
-        {tab === 'marketing' && active === 'posts' ? <FounderMarketingPanel reloadKey={reloadKey} /> : null}
+        {tab === 'marketing' && active === 'media' ? <FounderMediaLibrary onUsePost={(post) => { setSelectedMedia(post); setSub('posts') }} /> : null}
+        {tab === 'marketing' && active === 'posts' ? <FounderMarketingPanel selectedMedia={selectedMedia} readOnly={access !== 'founder'} reloadKey={reloadKey} /> : null}
+        {tab === 'legal' && !active.includes('/') ? <FounderLegalPanel key={demo ? 'demo' : 'live'} section={active} demo={demo} readOnly={access !== 'founder'} reloadKey={reloadKey} /> : null}
         {tab === 'marketing' && active === 'reports' ? <>
           <QuantumSectionHeader label="Campaign ROI & attribution" />
           <MarketingReport accent={PRO_ACCENT} refreshKey={reloadKey} />
@@ -192,7 +194,7 @@ export default function SuperDashScreen() {
               <QuantumText variant="caption" color={quantumColors.neutral300}>{request.ownerEmail} · {ago(request.createdAt)}</QuantumText>
               <QuantumText variant="caption">Wants {request.pending.map(title).join(', ')}</QuantumText>
             </View>
-            {investor ? null : <QuantumButton disabled={busy === request.tenantId} onPress={() => enable(request.tenantId, request.pending)}>{busy === request.tenantId ? '…' : 'Switch on'}</QuantumButton>}
+            {access !== 'founder' ? null : <QuantumButton disabled={demo || busy === request.tenantId} onPress={() => enable(request.tenantId, request.pending)}>{busy === request.tenantId ? '…' : 'Switch on'}</QuantumButton>}
           </View>
         )) : <QuantumText variant="caption" color={quantumColors.neutral300}>No pending requests.</QuantumText>}
       </QuantumCard>
@@ -267,6 +269,10 @@ export default function SuperDashScreen() {
 }
 
 const PRO_ACCENT = '#38bdf8'
+
+export default function NativeSuperDash() {
+  return <SuperDashTheme><SuperDashScreen /></SuperDashTheme>
+}
 
 const styles = StyleSheet.create({
   head: { gap: 2 },

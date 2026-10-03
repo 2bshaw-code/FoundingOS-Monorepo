@@ -5,7 +5,11 @@
 // SuperDash Marketing: grow FoundingOS itself — sign-up funnel, FoundAI post writer,
 // content calendar, and the publishing queue (autopilot posts Approved posts when due).
 import { useCallback, useEffect, useState } from 'react'
-import { Alert, Share, StyleSheet, View } from 'react-native'
+import { Alert, Image, Pressable, Share, StyleSheet, View } from 'react-native'
+import { marketingSocialPostPath, type MarketingSocialPost } from '@foundingos/ui/marketing-media'
+import { fullPostCaption, postPreviewMedia } from '@foundingos/ui/marketing-post-preview'
+import { isDemoData } from '../../lib/demo-data'
+import { FounderPostPreview } from './FounderMedia'
 import { deleteFounderPost, fetchFounderMarketing, publishSocialNow, saveFounderPost, updateFounderPost, writeFoundAiPost, type FounderMarketing, type FounderPost } from '../../lib/core-operations-api'
 import { MonthCalendar, dayKey } from '../MonthCalendar'
 import { QuantumButton, QuantumCard, QuantumNotice, QuantumPill, QuantumSectionHeader, QuantumText, QuantumTextInput, quantumColors, quantumSpace } from '../QuantumUI'
@@ -13,7 +17,7 @@ import { QuantumButton, QuantumCard, QuantumNotice, QuantumPill, QuantumSectionH
 const CHANNELS = ['LinkedIn', 'Instagram', 'Facebook', 'TikTok', 'Email']
 const SOCIAL = ['LinkedIn', 'Instagram', 'Facebook']
 
-export function FounderMarketingPanel({ reloadKey }: { reloadKey: number }) {
+export function FounderMarketingPanel({ reloadKey, readOnly = false, selectedMedia }: { reloadKey: number; readOnly?: boolean; selectedMedia?: MarketingSocialPost | null }) {
   const [data, setData] = useState<FounderMarketing | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -25,6 +29,14 @@ export function FounderMarketingPanel({ reloadKey }: { reloadKey: number }) {
   const [text, setText] = useState('')
   const [hashtags, setHashtags] = useState('')
   const [channel, setChannel] = useState('LinkedIn')
+  const [selectedPost, setSelectedPost] = useState<FounderPost | null>(null)
+  const writeDisabled = readOnly || isDemoData()
+  useEffect(() => {
+    if (!selectedMedia) return
+    setTitle(selectedMedia.title); setChannel(selectedMedia.channel)
+    setText(`${selectedMedia.caption}\n\nhttps://www.foundingos.com${marketingSocialPostPath(selectedMedia)}`)
+    setHashtags(selectedMedia.hashtags)
+  }, [selectedMedia])
 
   const load = useCallback(async () => {
     try { setData(await fetchFounderMarketing()); setError('') } catch (err: any) { setError(err?.message || 'Could not load marketing.') }
@@ -32,6 +44,7 @@ export function FounderMarketingPanel({ reloadKey }: { reloadKey: number }) {
   useEffect(() => { void load() }, [load, reloadKey])
 
   const run = async (key: string, task: () => Promise<void>) => {
+    if (writeDisabled) { setError('This view is read-only. Use live figures with founder access to make changes.'); return }
     setBusy(key); setError(''); setNotice('')
     try { await task() } catch (err: any) { setError(err?.message || 'Something went wrong.') } finally { setBusy('') }
   }
@@ -42,7 +55,8 @@ export function FounderMarketingPanel({ reloadKey }: { reloadKey: number }) {
     setHashtags(result.hashtags.map((tag) => (tag.startsWith('#') ? tag : `#${tag}`)).join(' '))
   })
   const save = (status: 'Approved' | 'Draft') => run(status, async () => {
-    const [hours, minutes] = (/^\d{1,2}:\d{2}$/.test(time) ? time : '10:00').split(':').map(Number)
+    if (!/^([01]?\d|2[0-3]):[0-5]\d$/.test(time)) throw new Error('Enter a valid time in HH:MM format.')
+    const [hours, minutes] = time.split(':').map(Number)
     const due = new Date(`${day}T00:00:00`); due.setHours(hours, minutes, 0, 0)
     await saveFounderPost({ title, text, hashtags, channel, dueDate: due.toISOString(), status })
     setNotice(status === 'Approved' ? 'Scheduled — FoundAI publishes it when it is due.' : 'Saved as a draft.')
@@ -75,14 +89,14 @@ export function FounderMarketingPanel({ reloadKey }: { reloadKey: number }) {
       <QuantumCard>
         <MonthCalendar items={items} onSelectDay={setDay} selectedDay={day} />
         <QuantumText variant="label">{new Date(`${day}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</QuantumText>
-        {onDay.length ? onDay.map((post) => <PostCard busy={busy === post.id} key={post.id} onDelete={remove} onPublish={publish} onUpdate={update} post={post} />) : <QuantumText variant="caption" color={quantumColors.neutral300}>Nothing on this day — the post you write below will be scheduled here.</QuantumText>}
+        {onDay.length ? onDay.map((post) => <PostCard readOnly={writeDisabled} onPreview={setSelectedPost} busy={busy === post.id} key={post.id} onDelete={remove} onPublish={publish} onUpdate={update} post={post} />) : <QuantumText variant="caption" color={quantumColors.neutral300}>Nothing on this day — the post you write below will be scheduled here.</QuantumText>}
       </QuantumCard>
 
       <QuantumSectionHeader label="Write a post with FoundAI" />
       <QuantumCard>
         <QuantumTextInput onChangeText={setTopic} placeholder="What should it be about?" value={topic} />
         <View style={styles.pills}>{CHANNELS.map((item) => <QuantumPill active={channel === item} key={item} onPress={() => setChannel(item)}>{item}</QuantumPill>)}</View>
-        <QuantumButton disabled={busy === 'draft'} tone="secondary" onPress={draft}>{busy === 'draft' ? 'FoundAI is writing…' : text ? 'Another version' : 'Draft it with FoundAI'}</QuantumButton>
+        <QuantumButton disabled={writeDisabled || busy === 'draft'} tone="secondary" onPress={draft}>{busy === 'draft' ? 'FoundAI is writing…' : text ? 'Another version' : 'Draft it with FoundAI'}</QuantumButton>
         <QuantumTextInput onChangeText={setTitle} placeholder="Headline" value={title} />
         <QuantumTextInput multiline onChangeText={setText} placeholder="Post text" style={styles.body} value={text} />
         <QuantumTextInput onChangeText={setHashtags} placeholder="#hashtags" value={hashtags} />
@@ -91,9 +105,10 @@ export function FounderMarketingPanel({ reloadKey }: { reloadKey: number }) {
           <QuantumTextInput onChangeText={setTime} placeholder="10:00" style={styles.time} value={time} />
         </View>
         <View style={styles.row}>
-          <QuantumButton disabled={!title || !text || Boolean(busy)} style={styles.flex} onPress={() => save('Approved')}>{busy === 'Approved' ? 'Scheduling…' : 'Schedule'}</QuantumButton>
-          <QuantumButton disabled={!title || !text || Boolean(busy)} style={styles.flex} tone="secondary" onPress={() => save('Draft')}>Save draft</QuantumButton>
+          <QuantumButton disabled={writeDisabled || !title || !text || Boolean(busy)} style={styles.flex} onPress={() => save('Approved')}>{busy === 'Approved' ? 'Scheduling…' : 'Schedule'}</QuantumButton>
+          <QuantumButton disabled={writeDisabled || !title || !text || Boolean(busy)} style={styles.flex} tone="secondary" onPress={() => save('Draft')}>Save draft</QuantumButton>
         </View>
+        <QuantumText variant="caption">{writeDisabled ? 'View-only / example mode: saving and publishing are disabled. ' : ''}Media links are saved as text, not native social attachments.</QuantumText>
       </QuantumCard>
 
       <QuantumSectionHeader label="Sign-ups by week" />
@@ -102,23 +117,31 @@ export function FounderMarketingPanel({ reloadKey }: { reloadKey: number }) {
       </QuantumCard>
 
       <QuantumSectionHeader label={`Queue · ${queue.length}`} />
-      {queue.map((post) => <QuantumCard key={post.id}><PostCard busy={busy === post.id} onDelete={remove} onPublish={publish} onUpdate={update} post={post} /></QuantumCard>)}
+      {queue.map((post) => <QuantumCard key={post.id}><PostCard readOnly={writeDisabled} onPreview={setSelectedPost} busy={busy === post.id} onDelete={remove} onPublish={publish} onUpdate={update} post={post} /></QuantumCard>)}
+      <FounderPostPreview key={selectedPost?.id ?? 'closed'} post={selectedPost} onClose={() => setSelectedPost(null)} />
       {!queue.length ? <QuantumText variant="caption" color={quantumColors.neutral300}>No posts waiting.</QuantumText> : null}
     </View>
   )
 }
 
-function PostCard({ post, busy, onPublish, onUpdate, onDelete }: { post: FounderPost; busy: boolean; onPublish: (post: FounderPost) => void; onUpdate: (post: FounderPost, status: string) => void; onDelete: (post: FounderPost) => void }) {
+function PostCard({ post, busy, readOnly, onPreview, onPublish, onUpdate, onDelete }: { post: FounderPost; busy: boolean; readOnly: boolean; onPreview: (post: FounderPost) => void; onPublish: (post: FounderPost) => void; onUpdate: (post: FounderPost, status: string) => void; onDelete: (post: FounderPost) => void }) {
+  const [shareError, setShareError] = useState('')
+  const image = postPreviewMedia(post).image
   return (
     <View style={styles.post}>
-      <QuantumText variant="label">{post.title}</QuantumText>
+      <Pressable accessibilityRole="button" accessibilityLabel={`Preview ${post.title}`} onPress={() => onPreview(post)}>
+        <QuantumText variant="label">{post.title}</QuantumText>
+        {image ? <Image source={{ uri: image.startsWith('/') ? `https://www.foundingos.com${image}` : image }} accessibilityLabel={post.title} resizeMode="contain" style={{ height: 180, width: '100%' }} onError={() => setShareError('Could not load post image. Check your connection.')} /> : null}
+      </Pressable>
       <QuantumText variant="caption" color={quantumColors.neutral300}>{post.channel} · {post.status}{post.dueDate ? ` · ${new Date(post.dueDate).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}</QuantumText>
       <QuantumText variant="caption" numberOfLines={4}>{post.text}</QuantumText>
-      {post.status !== 'Published' ? (
+      <QuantumButton tone="secondary" onPress={() => onPreview(post)}>Preview post</QuantumButton>
+      {shareError ? <QuantumNotice tone="danger">{shareError}</QuantumNotice> : null}
+      {post.status !== 'Published' && !readOnly ? (
         <View style={styles.pills}>
           {post.status === 'Draft' ? <QuantumPill onPress={busy ? undefined : () => onUpdate(post, 'Approved')}>Approve</QuantumPill> : null}
           {SOCIAL.includes(post.channel) ? <QuantumPill onPress={busy ? undefined : () => onPublish(post)}>Publish now</QuantumPill> : <QuantumPill onPress={busy ? undefined : () => onUpdate(post, 'Published')}>Mark published</QuantumPill>}
-          <QuantumPill onPress={() => void Share.share({ message: post.text })}>Share</QuantumPill>
+          <QuantumPill onPress={() => { void Share.share({ message: fullPostCaption(post) }).catch((err: unknown) => setShareError(err instanceof Error ? err.message : 'Could not share caption.')) }}>Share</QuantumPill>
           <QuantumPill onPress={busy ? undefined : () => onDelete(post)}>Delete</QuantumPill>
         </View>
       ) : null}

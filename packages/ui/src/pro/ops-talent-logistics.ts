@@ -6,6 +6,8 @@
 import {
   avgScore, countBy, daysUntil, emptyInsight, expiryInsight, gbp, list, niceDate, num, pctText, str, type OpsSchema,
 } from './ops'
+import { candidateIsClosed, candidateSources } from '../talent-workspace'
+import { outreachSchema, recruiterActivitySchema, submissionSchema } from './ops-talent-recruiter'
 
 // ── Talent ────────────────────────────────────────────────────────────────
 export const jobSchema: OpsSchema = {
@@ -41,7 +43,11 @@ export const candidateSchema: OpsSchema = {
   intro: 'Capture where candidates come from and move them on within 48 hours so good people don’t go elsewhere.',
   fields: [
     { key: 'role', label: 'Applied for', type: 'text', fallback: 'secondary' },
-    { key: 'source', label: 'Source', type: 'select', options: ['Job board', 'LinkedIn', 'Referral', 'Careers page', 'Agency', 'Talent pool', 'Social'] },
+    { key: 'source', label: 'Source', type: 'select', options: candidateSources, hint: 'Manually recorded attribution, not proof of a connected job-board integration.' },
+    { key: 'sourceReference', label: 'Source application / profile reference', type: 'text' },
+    { key: 'contactPreference', label: 'Contact preference', type: 'select', options: ['Email', 'Phone', 'SMS', 'WhatsApp', 'Do not contact', 'Not recorded'] },
+    { key: 'contactBasis', label: 'Contact basis / evidence', type: 'textarea' },
+    { key: 'retentionReview', label: 'Data retention review', type: 'date' },
     { key: 'applied', label: 'Applied on', type: 'date', demo: [-30, 0] },
     { key: 'lastContact', label: 'Last contact', type: 'date', fallback: 'dueDate', demo: [-10, 0] },
     { key: 'expectedSalary', label: 'Expected salary', type: 'money', demo: [25000, 55000] },
@@ -51,13 +57,16 @@ export const candidateSchema: OpsSchema = {
   insights: (rows, ctx) => {
     const out = emptyInsight()
     out.bars.push({ title: 'Pipeline funnel', items: ctx.statuses.map((status) => { const count = rows.filter((row) => row.record.status === status).length; return { label: status, value: count, display: `${count} (${pctText(count, rows.length)})` } }) })
-    const hired = ctx.statuses.at(-1)
+    const hired = 'Hired'
     const bySource = new Map<string, { total: number; hired: number }>()
     for (const row of rows) { const source = str(row.v.source) || 'Unknown'; const current = bySource.get(source) ?? { total: 0, hired: 0 }; bySource.set(source, { total: current.total + 1, hired: current.hired + (row.record.status === hired ? 1 : 0) }) }
     out.tables.push({ title: 'Source effectiveness', columns: ['Source', 'Candidates', 'Hired', 'Conversion'], rows: [...bySource.entries()].sort((a, b) => b[1].total - a[1].total).map(([source, item]) => [source, String(item.total), String(item.hired), pctText(item.hired, item.total)]), numeric: [1, 2, 3] })
-    const stale = rows.filter((row) => row.record.status !== hired && daysUntil(str(row.v.lastContact)) < -2)
-    out.kpis.push({ label: 'Candidates', value: String(rows.length), tone: 'info' }, { label: 'No contact 48h+', value: String(stale.length), tone: stale.length ? 'risk' : 'good' }, { label: 'Hire rate', value: pctText(rows.filter((row) => row.record.status === hired).length, rows.length), tone: 'info' })
-    if (stale.length) out.alerts.push({ text: `${stale.length} candidate${stale.length === 1 ? ' hasn’t' : 's haven’t'} heard from you in over 48 hours.`, tone: 'risk', recordId: stale[0].record.id })
+    const active = rows.filter((row) => !candidateIsClosed(row.record.status) && str(row.v.contactPreference) !== 'Do not contact')
+    const stale = active.filter((row) => daysUntil(str(row.v.lastContact)) < -2)
+    const noContactDate = active.filter((row) => !Number.isFinite(daysUntil(str(row.v.lastContact))))
+    out.kpis.push({ label: 'Candidates', value: String(rows.length), tone: 'info' }, { label: 'No contact 3+ calendar days', value: String(stale.length), tone: stale.length ? 'risk' : 'good' }, { label: 'Hire rate', value: pctText(rows.filter((row) => row.record.status === hired).length, rows.length), tone: 'info' })
+    if (stale.length) out.alerts.push({ text: `${stale.length} active candidate(s) have no contact recorded for at least 3 calendar days.`, tone: 'risk', recordId: stale[0].record.id })
+    if (noContactDate.length) out.alerts.push({ text: `${noContactDate.length} active candidate(s) have no valid last-contact date. Review contact preferences before following up.`, tone: 'watch', recordId: noContactDate[0].record.id })
     const sponsor = rows.filter((row) => str(row.v.rightToWork) === 'Not checked' && row.record.status !== ctx.statuses[0])
     if (sponsor.length) out.alerts.push({ text: `${sponsor.length} progressing candidate${sponsor.length === 1 ? ' has' : 's have'} no right-to-work status.`, tone: 'watch', recordId: sponsor[0].record.id })
     return out
@@ -210,6 +219,9 @@ export const talentSchemas: Record<string, OpsSchema> = {
   references: referenceSchema,
   'talent-pool': talentPoolSchema,
   clients: clientSchema,
+  submissions: submissionSchema,
+  outreach: outreachSchema,
+  activities: recruiterActivitySchema,
 }
 
 // ── Logistics ─────────────────────────────────────────────────────────────

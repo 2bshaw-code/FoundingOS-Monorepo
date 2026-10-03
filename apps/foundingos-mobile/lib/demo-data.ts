@@ -8,6 +8,7 @@
 import { moduleSamples } from '@foundingos/ui/sample-data'
 import { findModule } from './workspace-modules'
 import * as SecureStore from 'expo-secure-store'
+import { MARKETING_SOCIAL_POSTS, marketingSocialPostPath, marketingSocialPostText } from '@foundingos/ui/marketing-media'
 
 export type DemoRecord = {
   id: string
@@ -51,7 +52,7 @@ function seed(workspace: string, module: string): DemoRecord[] {
   const statuses = def?.statuses?.length ? def.statuses : ['Active']
   const label = def?.label ?? module.replace(/-/g, ' ')
   const samples = moduleSamples(workspace, module) ?? Array.from({ length: 4 }, (_, index) => ({ name: `Example ${label.toLowerCase().replace(/s$/, '')} ${index + 1}`, secondary: `${label} example`, value: undefined as string | undefined }))
-  return samples.map((sample, index) => {
+  const records = samples.map((sample, index) => {
     const h = hash(`${workspace}:${module}:${index}`)
     const money = sample.value && /£/.test(sample.value) ? Math.round(Number(sample.value.replace(/[^0-9.]/g, '')) * 100) : null
     const due = new Date(Date.now() + ((h % 21) - 5) * 86_400_000)
@@ -67,6 +68,19 @@ function seed(workspace: string, module: string): DemoRecord[] {
       updatedAt: new Date(Date.now() - index * 3_600_000).toISOString(),
     }
   })
+  if (workspace !== 'marketing' || module !== 'content') return records
+  return [
+    ...MARKETING_SOCIAL_POSTS.slice(0, 3).map((post, index): DemoRecord => ({
+      id: `demo-marketing-social-${index + 1}`, reference: `DEMO-SOCIAL-${index + 1}`,
+      name: post.title, status: 'Draft', ownerId: 'FoundingOS Demo', valuePence: null,
+      data: { demo: true, secondary: 'Illustrative social draft. Not published.', channel: post.channel,
+        postText: marketingSocialPostText(post), attachment: marketingSocialPostPath(post),
+        images: [{ url: `https://www.foundingos.com${marketingSocialPostPath(post)}` }],
+        dueDate: new Date(Date.now() + (index + 2) * 86_400_000).toISOString() },
+      version: 1, updatedAt: new Date().toISOString(),
+    })),
+    ...records,
+  ]
 }
 
 const key = (workspace: string, module: string) => `${workspace}/${module}`

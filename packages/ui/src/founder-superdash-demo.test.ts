@@ -55,4 +55,8 @@ test('demo finance and marketing cover a year of books and the demo subscribers'
   const marketing = founderDemoMarketing(overview, now)
   assert.equal(marketing.funnel.customers, overview.subscriptions.customers)
   assert.ok(marketing.posts.every((post) => post.id.startsWith('demo-post-')))
+  const screenshots = marketing.posts.filter((post) => post.previewImage)
+  assert.equal(screenshots.length, 4)
+  assert.ok(screenshots.every((post) => post.previewImage?.endsWith('.jpg') && post.publishedAt === null && post.publishedUrl === null))
+  assert.ok(screenshots.every((post) => post.status !== 'Published' && post.text.includes('Not published')))
 })
