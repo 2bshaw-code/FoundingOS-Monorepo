@@ -9,6 +9,23 @@ updates with the website. The packaging icon in `build/icon.png` uses the same
 multicolour design; the Dock/launcher icon requires the newly packaged app.
 FoundAI's floating help button shows the small character without a green circular
 background; it keeps its labelled button, keyboard focus and open/close behavior.
+Open the bot and choose **Bot settings & accessories** to change its name (up to
+30 characters), colour, free accessory, device voice or speaking speed. Preview
+changes before saving; settings are stored in this Mac app/browser, not synced
+across accounts or devices. Reset defaults restores the standard appearance and
+voice selection, without deleting chat or companion progress.
+
+Glasses, a bow tie and a crown are free try-on accessories, with no checkout.
+Companion levels advance after 5, 20 and 50 completed chat/action interactions
+on this device; they are cosmetic and do not train a model or grant permissions.
+Measured intelligence remains the Intelligence workspace's assessed outcomes
+and accuracy, not the companion level.
+
+Voice selection applies to replies, speaker buttons, stories and previews.
+Available voices depend on the device. Additional Mac voices can be downloaded
+from System Settings > Accessibility > Spoken Content (or Read & Speak).
+Online device voices may send spoken text to the device provider; no paid voice
+API is added. Unavailable voices and storage/playback failures display an error.
 
 - Links outside FoundingOS (WhatsApp, payments, help pages) open in your normal browser.
 - The microphone is only allowed for FoundingOS itself, so you can talk to FoundAI.

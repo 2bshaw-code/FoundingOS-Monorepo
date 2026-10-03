@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 'use client'
-// FoundAI voice on the web: the browser's built-in speech (free, no data leaves the device).
+// Built-in device speech; some installed voices use the device provider's online service.
 // Replies are only read aloud when someone taps a speaker button or turns on "Speak replies".
 import { useEffect, useState } from 'react'
 
@@ -36,17 +36,38 @@ export function stopSpeaking() {
   notify()
 }
 
-export function speak(text: string) {
-  if (!speechSupported() || !text.trim()) return
+export type SpeechOptions = { voiceURI?: string; rate?: number; onError?: (message: string) => void }
+
+export function speak(text: string, options: SpeechOptions = {}) {
+  if (!speechSupported()) { options.onError?.('Speech is not supported on this device.'); return }
+  if (!text.trim()) return
+  const voice = options.voiceURI
+    ? window.speechSynthesis.getVoices().find((item) => item.voiceURI === options.voiceURI)
+    : bestVoice()
+  if (options.voiceURI && !voice) {
+    options.onError?.('Your selected voice is unavailable. Choose another voice in Bot settings.')
+    return
+  }
   window.speechSynthesis.cancel()
   const utter = new SpeechSynthesisUtterance(spoken(text))
-  utter.rate = 1
-  const voice = bestVoice()
+  utter.rate = options.rate ?? 1
   if (voice) { utter.voice = voice; utter.lang = voice.lang } else utter.lang = 'en-GB'
-  utter.onend = utter.onerror = () => { if (speakingText === text) { speakingText = ''; notify() } }
+  const clear = () => { if (speakingText === text) { speakingText = ''; notify() } }
+  utter.onend = clear
+  utter.onerror = (event) => {
+    clear()
+    if (event.error !== 'canceled' && event.error !== 'interrupted') options.onError?.(`Voice playback failed (${event.error}). Please try another device voice.`)
+  }
   speakingText = text
   notify()
-  window.speechSynthesis.speak(utter)
+  try {
+    window.speechSynthesis.speak(utter)
+  } catch (error) {
+    clear()
+    const message = `Voice playback could not start. ${error instanceof Error ? error.message : 'Please try another device voice.'}`
+    if (options.onError) options.onError(message)
+    else console.error(message)
+  }
 }
 
 export function useSpeaking(text: string) {
@@ -71,10 +92,10 @@ export function useAutoSpeak(): [boolean, (on: boolean) => void] {
   return [on, set]
 }
 
-export function SpeakButton({ text, className = '' }: { text: string; className?: string }) {
+export function SpeakButton({ text, className = '', options }: { text: string; className?: string; options?: SpeechOptions }) {
   const active = useSpeaking(text)
   const [supported, setSupported] = useState(false)
   useEffect(() => setSupported(speechSupported()), [])
   if (!supported || !text) return null
-  return <button aria-label={active ? 'Stop reading' : 'Read aloud'} className={`speak-button${active ? ' is-on' : ''} ${className}`} onClick={() => (active ? stopSpeaking() : speak(text))} title={active ? 'Stop reading' : 'Read aloud'} type="button">{active ? '■' : '🔊'}</button>
+  return <button aria-label={active ? 'Stop reading' : 'Read aloud'} className={`speak-button${active ? ' is-on' : ''} ${className}`} onClick={() => (active ? stopSpeaking() : speak(text, options))} title={active ? 'Stop reading' : 'Read aloud'} type="button">{active ? '■' : '🔊'}</button>
 }

@@ -5,8 +5,8 @@ import test from 'node:test'
 test('FoundAI launcher shows the small bot without a coloured circle', () => {
   const source = readFileSync(new URL('./found-ai.tsx', import.meta.url), 'utf8')
   assert.ok(source.includes('className="found-ai-fab"'))
-  assert.ok(source.includes('<FoundAIMascot active thinking={loading} size={64} />'))
-  assert.ok(source.includes("aria-label={open ? 'Close FoundAI' : 'Open FoundAI'}"))
+  assert.ok(source.includes('<FoundAIMascot active thinking={loading} size={64} colour={botColour} accessory={preferences.accessory} />'))
+  assert.ok(source.includes("aria-label={`${open ? 'Close' : 'Open'} ${preferences.name}`}"))
   const css = readFileSync(new URL('./styles.css', import.meta.url), 'utf8')
   const rule = css.match(/\.found-ai-fab \{([^}]+)\}/)?.[1]
   assert.ok(rule)

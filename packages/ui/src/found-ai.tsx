@@ -11,6 +11,8 @@ import { LOCKED_BRAND_COLORS } from '@foundingos/config'
 import type { BrandConsoleConfig } from './console'
 import { useAIAssistance } from './ai-assistance'
 import { FoundAIMascot } from './foundai-mascot'
+import { FoundAISettings } from './foundai-settings'
+import { BOT_COLOURS, BOT_PREFERENCES_KEY, BOT_PROGRESS_KEY, DEFAULT_BOT_PREFERENCES, companionLevel, validateBotPreferences, type BotPreferences } from './foundai-preferences'
 
 type Message = { role: 'assistant' | 'user'; text: string }
 
@@ -143,30 +145,6 @@ const AUDIO_SET: string[] = [
   'You\u2019re not going to believe this\u2026 someone asked me for life advice.',
   'Here\u2019s a good one\u2026 someone asked if their dog is stealing food on purpose.',
 ]
-
-// Best-available free voice (matches tester-data.ts's NARRATION_PLAYER_SCRIPT — kept in sync).
-// No paid API, just a smarter pick from whatever voices this browser already ships for free.
-let cachedVoice: SpeechSynthesisVoice | null = null
-function pickBestVoice(): SpeechSynthesisVoice | null {
-  try {
-    if (!('speechSynthesis' in window)) return null
-    const voices = window.speechSynthesis.getVoices()
-    if (!voices || voices.length === 0) return null
-    const english = voices.filter((v) => /^en/i.test(v.lang))
-    const pool = english.length > 0 ? english : voices
-    return pool.find((v) => /natural/i.test(v.name))
-      ?? pool.find((v) => /enhanced|premium/i.test(v.name))
-      ?? pool.find((v) => /online/i.test(v.name))
-      ?? pool.find((v) => /google/i.test(v.name))
-      ?? pool.find((v) => v.localService === false)
-      ?? pool[0]
-  } catch {
-    return null
-  }
-}
-if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-  window.speechSynthesis.onvoiceschanged = () => { cachedVoice = null }
-}
 
 // Universal smart action, appended in every context/brand (see FoundAI component below) —
 // the voice pack isn't brand- or context-specific, so it doesn't belong in smartActions().
@@ -358,18 +336,74 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
   const pathname = usePathname()
   const aiEnabled = useAIAssistance()
   const [open, setOpen] = useState(false)
+  const panelRef = useRef<HTMLElement>(null)
+  useEffect(() => { if (panelRef.current) panelRef.current.inert = !open }, [open, aiEnabled])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [autoSpeak, setAutoSpeak] = useAutoSpeak()
   const [canSpeak, setCanSpeak] = useState(false)
+  const [preferences, setPreferences] = useState<BotPreferences>(DEFAULT_BOT_PREFERENCES)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsError, setSettingsError] = useState('')
+  const [voiceError, setVoiceError] = useState('')
+  const [interactions, setInteractions] = useState(0)
+  const interactionCount = useRef(0)
+  const progress = companionLevel(interactions)
+  const botColour = preferences.colour === 'original' ? undefined : BOT_COLOURS.find((colour) => colour.id === preferences.colour)?.hex
+  const speechOptions = { voiceURI: preferences.voiceURI, rate: preferences.rate, onError: setVoiceError }
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(BOT_PREFERENCES_KEY)
+      if (stored) setPreferences(validateBotPreferences(JSON.parse(stored)))
+    } catch (error) {
+      setSettingsError(`Could not load your bot settings. ${error instanceof Error ? error.message : 'Storage is unavailable.'} Save settings to replace them.`)
+    }
+    try {
+      const stored = window.localStorage.getItem(BOT_PROGRESS_KEY)
+      if (stored !== null) {
+        const count: unknown = JSON.parse(stored)
+        if (typeof count !== 'number') throw new Error('Invalid companion progress.')
+        companionLevel(count)
+        interactionCount.current = count
+        setInteractions(count)
+      }
+    } catch {
+      setSettingsError('Could not load companion progress. New progress will start on this device.')
+    }
+  }, [])
+  const savePreferences = (value: BotPreferences) => {
+    try {
+      const validated = validateBotPreferences(value)
+      window.localStorage.setItem(BOT_PREFERENCES_KEY, JSON.stringify(validated))
+      stopSpeaking()
+      setPreferences(validated)
+      setSettingsError('')
+      setVoiceError('')
+      return true
+    } catch (error) {
+      setSettingsError(`Settings were not saved. ${error instanceof Error ? error.message : 'Storage is unavailable.'}`)
+      return false
+    }
+  }
+  const recordInteraction = () => {
+    const next = interactionCount.current + 1
+    try {
+      companionLevel(next)
+      window.localStorage.setItem(BOT_PROGRESS_KEY, JSON.stringify(next))
+      interactionCount.current = next
+      setInteractions(next)
+    } catch {
+      setSettingsError('Companion progress could not be saved on this device.')
+    }
+  }
   useEffect(() => setCanSpeak(speechSupported()), [])
   const spokenCount = useRef(0)
   useEffect(() => {
     const last = messages[messages.length - 1]
-    if (autoSpeak && open && messages.length > spokenCount.current && last?.role === 'assistant') speak(last.text)
+    if (autoSpeak && open && messages.length > spokenCount.current && last?.role === 'assistant') speak(last.text, { voiceURI: preferences.voiceURI, rate: preferences.rate, onError: setVoiceError })
     spokenCount.current = messages.length
-  }, [messages, autoSpeak, open])
+  }, [messages, autoSpeak, open, preferences.voiceURI, preferences.rate])
   useEffect(() => { if (!open) stopSpeaking() }, [open])
   const [agentContext, setAgentContext] = useState<{ title?: string; coordinationSummary?: { scoreExplanation?: string[]; tradeoffs?: string[] }; historicalContext?: { narrative?: string }; predictiveSignals?: { triggerPattern?: string; likelyNext?: string; confidence?: number; highImpactOutcomeRate?: number; evidenceCount?: number; assessedOutcomes?: number; averageAccuracy?: number; reliabilityScore?: number; refined?: boolean; basis?: string[] }; simulationPreview?: { disclaimer?: string; comparison?: { predictedDelta?: string } }; outcomeAssessment?: { accuracy?: number; summary?: string } } | null>(null)
   const [systemIntelligence, setSystemIntelligence] = useState<{
@@ -462,10 +496,10 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
     setMessages([
       {
         role: 'assistant',
-        text: `Hi, I’m FoundAI. I’m watching ${brand.name} ${context.toLowerCase()} and can help with next steps, risks, or quick actions.`,
+        text: `Hi, I’m ${preferences.name}. I’m watching ${brand.name} ${context.toLowerCase()} and can help with next steps, risks, or quick actions.`,
       },
     ])
-  }, [open, messages.length, brand.name, context])
+  }, [open, messages.length, brand.name, context, preferences.name])
 
   // Respects the global AI Assistance toggle (Settings) — hides the floating button and
   // panel entirely, everywhere, the instant it's turned off.
@@ -485,6 +519,7 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
       ?? `Here's what's active in ${brand.name} ${context.toLowerCase()} — ask me about CRM, invoices, marketing, or SuperDash and I'll explain.`
     const reply = contextualMatch?.answer ?? knowledgeHit ?? `For ${brand.name} ${context.toLowerCase()}: ${contextualFallback}`
     setMessages((current) => [...current, { role: 'user', text: clean }, { role: 'assistant', text: reply }])
+    recordInteraction()
     setInput('')
     setLoading(false)
   }
@@ -505,19 +540,8 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
       window.setTimeout(() => {
         setMessages((current) => [...current, { role: 'assistant', text: line }])
         setLoading(false)
-        try {
-          if (!autoSpeak && 'speechSynthesis' in window) {
-            window.speechSynthesis.cancel()
-            const utter = new SpeechSynthesisUtterance(line)
-            utter.rate = 0.98
-            if (!cachedVoice) cachedVoice = pickBestVoice()
-            if (cachedVoice) utter.voice = cachedVoice
-            window.speechSynthesis.speak(utter)
-          }
-        } catch {
-          // Speech synthesis is a best-effort enhancement — the text message above already
-          // conveys the line, so a synthesis failure is silently non-fatal.
-        }
+        if (!autoSpeak) speak(line, speechOptions)
+        recordInteraction()
       }, 400)
       return
     }
@@ -531,6 +555,7 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
         })
         .then((data) => {
           setMessages((current) => [...current, { role: 'assistant', text: action.interpret!(data) }])
+          recordInteraction()
         })
         .catch(() => {
           setMessages((current) => [...current, { role: 'assistant', text: `I couldn’t reach ${action.fetchPath} on this app just now — it may not be deployed here yet.` }])
@@ -540,6 +565,7 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
     }
     window.setTimeout(() => {
       setMessages((current) => [...current, { role: 'assistant', text: action.answer ?? '' }])
+      if (action.answer) recordInteraction()
       setLoading(false)
     }, 500)
   }
@@ -552,31 +578,40 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
         style={{ '--found-ai-accent': theme.accent, '--found-ai-glow': theme.glow } as React.CSSProperties}
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        aria-label={open ? 'Close FoundAI' : 'Open FoundAI'}
+        aria-label={`${open ? 'Close' : 'Open'} ${preferences.name}`}
       >
-        <FoundAIMascot active thinking={loading} size={64} />
+        <FoundAIMascot active thinking={loading} size={64} colour={botColour} accessory={preferences.accessory} />
       </button>
 
-      <aside className={`found-ai-panel ${open ? 'open' : ''}`} style={{ '--found-ai-accent': theme.accent, '--found-ai-glow': theme.glow } as React.CSSProperties} aria-hidden={!open}>
+      <aside ref={panelRef} className={`found-ai-panel ${open ? 'open' : ''}`} style={{ '--found-ai-accent': theme.accent, '--found-ai-glow': theme.glow } as React.CSSProperties} aria-hidden={!open}>
         <header className="found-ai-panel-header">
-          <FoundAIMascot active={open} thinking={loading} size={58} />
+          <FoundAIMascot active={open} thinking={loading} size={58} colour={botColour} accessory={preferences.accessory} />
           <div>
-            <strong>FoundAI</strong>
+            <strong>{preferences.name}</strong>
             <span>{brand.name} · {context}</span>
           </div>
           {canSpeak ? <button type="button" className={`found-ai-voice${autoSpeak ? ' is-on' : ''}`} onClick={() => setAutoSpeak(!autoSpeak)} aria-pressed={autoSpeak} title={autoSpeak ? 'FoundAI reads replies aloud — tap to mute' : 'Turn on to hear FoundAI read replies aloud'}>{autoSpeak ? '🔊 Voice on' : '🔈 Voice off'}</button> : null}
-          <button type="button" className="found-ai-close" onClick={() => setOpen(false)} aria-label="Close FoundAI">×</button>
+          <button type="button" className="found-ai-close" onClick={() => setOpen(false)} aria-label={`Close ${preferences.name}`}>×</button>
         </header>
 
+        <div className="found-ai-personalise">
+          <button type="button" className="btn" aria-expanded={settingsOpen} onClick={() => { stopSpeaking(); setSettingsOpen(!settingsOpen) }}>Bot settings &amp; accessories</button>
+          <span>Level {progress.level} · {progress.label}</span>
+          <p>{interactions} interactions on this device{progress.next === null ? '' : ` · next level at ${progress.next}`}. Companion levels are cosmetic, not AI intelligence.</p>
+          {context === 'Intelligence' && systemIntelligence?.health ? <p>Measured intelligence: {systemIntelligence.health.totalAssessedOutcomes ?? 0} assessed outcomes. {!systemIntelligence.health.totalAssessedOutcomes || systemIntelligence.health.averagePredictionAccuracy == null ? 'Accuracy not available.' : `Average measured accuracy: ${systemIntelligence.health.averagePredictionAccuracy}%.`} Accessories never change approval permissions or decision quality.</p> : <p>For measured outcomes and intelligence, open the Intelligence workspace. Chat use does not train a model.</p>}
+          {settingsError ? <p role="alert">{settingsError}</p> : null}
+          {voiceError ? <p role="alert">{voiceError}</p> : null}
+        </div>
+        {settingsOpen ? <FoundAISettings preferences={preferences} onSave={savePreferences} onClose={() => setSettingsOpen(false)} onSpeechError={setVoiceError} /> : <>
         <section className="found-ai-chat">
           {messages.map((message, index) => (
             <div key={`${message.role}-${index}`} className={`found-ai-message ${message.role}`}>
               {message.text}
-              {message.role === 'assistant' ? <SpeakButton className="found-ai-speak" text={message.text} /> : null}
+              {message.role === 'assistant' ? <SpeakButton className="found-ai-speak" text={message.text} options={speechOptions} /> : null}
             </div>
           ))}
           {loading && (
-            <div className="found-ai-message assistant found-ai-typing" aria-label="FoundAI is typing">
+            <div className="found-ai-message assistant found-ai-typing" aria-label={`${preferences.name} is typing`}>
               <span /><span /><span />
             </div>
           )}
@@ -604,11 +639,12 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
           <textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            placeholder={`Ask FoundAI about ${context.toLowerCase()}...`}
+            placeholder={`Ask ${preferences.name} about ${context.toLowerCase()}...`}
             rows={3}
           />
           <button type="button" className="btn btn-primary btn-premium" onClick={() => submit(input)}>Send</button>
         </footer>
+        </>}
       </aside>
     </>
   )

@@ -10228,7 +10228,7 @@ body[data-sidebar-collapsed='true'] .nav-card {
   bottom: 96px;
   width: min(380px, calc(100vw - 48px));
   display: grid;
-  grid-template-rows: auto minmax(120px, 1fr) auto auto auto;
+  grid-template-rows: auto auto minmax(120px, 1fr) auto auto auto;
   gap: 14px;
   padding: 18px;
   overflow-y: auto;
@@ -10276,6 +10276,29 @@ body[data-sidebar-collapsed='true'] .nav-card {
   color: var(--muted);
   font-size: 12px;
 }
+
+.found-ai-panel-header strong { overflow-wrap: anywhere; }
+.found-ai-personalise { font-size: 12px; color: var(--muted); }
+.found-ai-personalise span { display: block; margin-top: 8px; }
+.found-ai-personalise p { margin: 6px 0 0; }
+.found-ai-settings { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.found-ai-settings p { margin: 0; font-size: 12px; color: var(--muted); }
+.found-ai-settings label { display: grid; gap: 6px; font-size: 13px; }
+.found-ai-settings input, .found-ai-settings select {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  color: var(--text);
+}
+.found-ai-try-on { display: grid; justify-items: center; font-size: 12px; overflow-wrap: anywhere; }
+.found-ai-accessories { display: flex; flex-wrap: wrap; gap: 8px; border: 1px solid var(--line); border-radius: 12px; min-width: 0; }
+.found-ai-accessories p { width: 100%; }
+.found-ai-accessories [aria-pressed='true'] { outline: 2px solid #7dd3fc; outline-offset: 1px; }
+.found-ai-settings-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .found-ai-close {
   width: 36px;
