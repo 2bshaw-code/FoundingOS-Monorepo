@@ -548,13 +548,13 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
     <>
       <button
         type="button"
-        className={`found-ai-fab found-ai-circle${open ? '' : ' breathing'}`}
+        className="found-ai-fab"
         style={{ '--found-ai-accent': theme.accent, '--found-ai-glow': theme.glow } as React.CSSProperties}
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-label={open ? 'Close FoundAI' : 'Open FoundAI'}
       >
-        <FoundAIMascot active={open} thinking={loading} size={64} />
+        <FoundAIMascot active thinking={loading} size={64} />
       </button>
 
       <aside className={`found-ai-panel ${open ? 'open' : ''}`} style={{ '--found-ai-accent': theme.accent, '--found-ai-glow': theme.glow } as React.CSSProperties} aria-hidden={!open}>

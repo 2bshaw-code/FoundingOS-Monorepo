@@ -10191,23 +10191,18 @@ body[data-sidebar-collapsed='true'] .nav-card {
   height: 64px;
   border: 0;
   border-radius: 999px;
-  background: radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--found-ai-accent) 80%, white), var(--found-ai-accent));
+  background: transparent;
   color: #061018;
   font-weight: 900;
-  box-shadow: 0 18px 40px var(--found-ai-glow), 0 10px 24px rgba(0, 0, 0, 0.28);
+  box-shadow: none;
+  padding: 0;
+  cursor: pointer;
   transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Very gentle idle "breathing" — only while the panel is closed (see the `open` state in
-   found-ai.tsx, which drops this class once the panel opens), so it reads as an ambient,
-   idle presence rather than fighting with the hover/press feedback below. */
-.found-ai-fab.breathing {
-  animation: fo-fab-breathe 4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
-}
-
-@keyframes fo-fab-breathe {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.015); }
+.found-ai-fab:focus-visible {
+  outline: 2px solid #7dd3fc;
+  outline-offset: 3px;
 }
 
 .found-ai-fab:hover {

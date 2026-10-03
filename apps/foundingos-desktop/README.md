@@ -7,6 +7,8 @@ The approved multicolour FOS mark is the main logo; workspaces use matching
 colour variants, and FoundAI retains its sphere character. In-window branding
 updates with the website. The packaging icon in `build/icon.png` uses the same
 multicolour design; the Dock/launcher icon requires the newly packaged app.
+FoundAI's floating help button shows the small character without a green circular
+background; it keeps its labelled button, keyboard focus and open/close behavior.
 
 - Links outside FoundingOS (WhatsApp, payments, help pages) open in your normal browser.
 - The microphone is only allowed for FoundingOS itself, so you can talk to FoundAI.
