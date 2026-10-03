@@ -10,6 +10,7 @@ import '@foundingos/ui/styles.css'
 
 export const metadata = {
   title: 'FoundingOS | AI that runs your business',
+  icons: { icon: '/brand/fos/foundingos.png', apple: '/brand/fos/foundingos.png' },
   description: 'FoundAI runs your invoices, stock, deliveries, customer messages, campaigns and posts across Retail, Logistics, Finance, Marketing, Talent and Health — and only asks you when a decision needs a human.',
 }
 

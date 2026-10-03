@@ -14,7 +14,7 @@ import { FOUNDINGOS_ACCENT, FOUNDINGOS_BASE } from '../lib/brands'
 import { normalizeRole } from '../lib/permissions'
 import { useQuantumStore } from '../lib/store'
 import { signOut } from '../lib/workspace-access'
-import { QuantumSphere } from '../components/QuantumSphere'
+import { FoundingOSBrandMark } from '../components/FoundingOSBrandMark'
 import { AppHomeSections, FoundAiMovie, WhatsAppHero } from '../components/AppHome'
 import { QuantumButton, QuantumCard, QuantumFormField, QuantumNotice, QuantumPasswordInput, QuantumText, QuantumTextInput, quantumSpace, shadeColor } from '../components/QuantumUI'
 
@@ -171,7 +171,7 @@ export default function LoginScreen() {
           >
             <View style={styles.topBar}>
               <View style={styles.topBrand}>
-                <QuantumSphere size={30} />
+                <FoundingOSBrandMark size={48} />
                 <QuantumText variant="label">FoundingOS</QuantumText>
               </View>
               {signedInAs

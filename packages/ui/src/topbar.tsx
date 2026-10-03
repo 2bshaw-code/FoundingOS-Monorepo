@@ -7,6 +7,7 @@
 import Link from 'next/link'
 import type { BrandConsoleConfig } from './console'
 import { ThemeToggle } from './theme'
+import { FoundingOSBrandMark } from './brand-mark'
 
 function ActualTopbar({ config }: { config?: BrandConsoleConfig }) {
   const theme = { '--accent': config?.colors.accent ?? '#4A90E2' } as React.CSSProperties
@@ -15,7 +16,7 @@ function ActualTopbar({ config }: { config?: BrandConsoleConfig }) {
   return (
     <header className="topbar" style={theme}>
       <div className="topbar-title">
-        <span className="brand-logo small">{config?.logo ?? 'FO'}</span>
+        <FoundingOSBrandMark />
         <div>
           <strong>FoundingOS</strong>
           <span>{suiteName}</span>

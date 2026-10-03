@@ -4,7 +4,7 @@
 */
 import { ReactNode, useEffect, useRef } from 'react'
 import { Animated, Easing, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native'
-import { QuantumSphere } from './QuantumSphere'
+import { FoundingOSBrandMark } from './FoundingOSBrandMark'
 import { QuantumText, quantumColors, quantumRadius, quantumShadow, quantumSpace } from './QuantumUI'
 import { FOUNDINGOS_SHELL_THEME, QuantumTheme, useQuantumStore } from '../lib/store'
 
@@ -111,7 +111,7 @@ export function QuantumShellFooter({ brandName, accent, shellTheme }: { brandNam
   return (
     <View pointerEvents="none" style={styles.footerWrap}>
       <QuantumDepthSurface accent={accent} shellTheme={shellTheme} style={styles.footerSurface}>
-        <QuantumSphere size={18} accent={accent} />
+        <FoundingOSBrandMark size={28} />
         <View style={styles.footerCopy}>
           <QuantumText variant="caption" color={accent}>
             FoundingOS mission control

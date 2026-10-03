@@ -14,6 +14,7 @@ import { logAction } from '../../../lib/action-logger'
 import { redeemInvestorCode, signOut, useSuperDashAccess, useWorkspaceAccess, WORKSPACE_OFFERS } from '../../../lib/workspace-access'
 import type { WorkspaceSlug } from '../../../lib/workspace-modules'
 import { ProductRatingCard } from '../../../components/ProductRatingCard'
+import { FoundingOSBrandMark } from '../../../components/FoundingOSBrandMark'
 import { QuantumButton, QuantumCard, QuantumHeader, QuantumNotice, QuantumPasswordInput, QuantumScreen, QuantumSectionHeader, QuantumText, quantumSpace, useActiveQuantumTheme } from '../../../components/QuantumUI'
 
 // Every destination in the app — the suites, their dedicated dashboards, and the
@@ -47,6 +48,7 @@ export default function WorkspaceDirectoryScreen() {
 
   return (
     <QuantumScreen>
+      <FoundingOSBrandMark size={64} />
       <QuantumHeader
         eyebrow="Everything, one tap away"
         title="Workspaces"
@@ -78,6 +80,7 @@ export default function WorkspaceDirectoryScreen() {
                     style={({ pressed }) => [styles.tile, tileTheme, { borderLeftColor: workspace.accent, opacity: pressed ? 0.7 : isLocked ? 0.75 : 1 }]}
                     onPress={() => (isLocked ? router.push({ pathname: '/(app)/upgrade', params: { add: slug } } as never) : router.push(`/workspace/${slug}`))}
                   >
+                    <FoundingOSBrandMark workspace={workspace.slug} size={44} />
                     <QuantumText variant="body" style={styles.tileTitle} numberOfLines={1}>{isLocked ? '🔒 ' : ''}{workspace.label}</QuantumText>
                     <QuantumText variant="caption" numberOfLines={1}>
                       {isLocked ? `${WORKSPACE_OFFERS[slug as WorkspaceSlug].price} · Add` : `${workspace.modules.length} modules`}

@@ -16248,19 +16248,24 @@ body:has(.cross-sell-ticker) .found-ai-fab { bottom: 64px; }
 .sd-shell .pro-panel button.is-good { color: #86efac; }
 .sd-shell .sd-embedded :is(button, a, input, select, textarea):focus-visible { outline: 2px solid #7dd3fc; outline-offset: 3px; }
 
-:is(.retail-product-brand, .complete-workspace-access-brand, .preview-brand, .whatsapp-phone-header) > .foundingos-brand-mark {
+.foundingos-brand-mark,
+:is(.retail-product-brand, .complete-workspace-access-brand, .preview-brand, .whatsapp-phone-header, .complete-workspace-directory > section > a) > .foundingos-brand-mark {
   align-items: center;
-  background: radial-gradient(circle at 30% 20%, #163f68, #050b16 75%);
-  border: 1px solid #38bdf8;
-  border-radius: 50%;
-  box-shadow: 0 0 16px #38bdf833, inset 0 0 10px #38bdf822;
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  box-shadow: none;
   display: inline-flex;
   flex: 0 0 54px;
   height: 54px;
   justify-content: center;
   width: 54px;
 }
-.foundingos-brand-mark .quantumSphereLogo { flex-shrink: 0; }
+.foundingos-brand-mark img { display: block; flex-shrink: 0; height: 52px; object-fit: contain; width: 52px; }
+.site-nav-logo { align-items: center; display: inline-flex; gap: 8px; }
+.site-nav-logo .foundingos-brand-mark { flex-basis: 36px; height: 36px; width: 36px; }
+.site-nav-logo .foundingos-brand-mark img { height: 36px; width: 36px; }
+.sd-top > .foundingos-brand-mark + div { flex: 1; }
 .foundai-mascot { flex: 0 0 auto; overflow: visible; }
 .foundai-mascot-limbs { opacity: 0; transform: scale(.05); transform-origin: 80px 80px; transition: transform .65s ease, opacity .35s ease; }
 .foundai-mascot-face { opacity: 0; transition: opacity .4s ease; }

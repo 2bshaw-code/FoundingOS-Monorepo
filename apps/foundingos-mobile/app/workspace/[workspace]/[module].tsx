@@ -13,6 +13,7 @@ import { ActivityIndicator, Alert, Image, Modal, Pressable, RefreshControl, Scro
 import * as ImagePicker from 'expo-image-picker'
 import { useLocalSearchParams } from 'expo-router'
 import { QuantumBackButton } from '../../../components/QuantumBackButton'
+import { FoundingOSBrandMark } from '../../../components/FoundingOSBrandMark'
 import {
   CoreOpsApiError,
   WorkspaceRecordDTO,
@@ -628,6 +629,7 @@ function WorkspaceModuleScreenInner({ readOnly = false }: { readOnly?: boolean }
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setReportRefresh((value) => value + 1); void load(true) }} tintColor={workspace.accent} />}
     >
       <QuantumBackButton label={`‹ ${workspace.label}`} fallbackHref={`/workspace/${workspace.slug}`} />
+      <FoundingOSBrandMark workspace={workspace.slug} size={48} />
       <QuantumHeader eyebrow={workspace.label} title={module.label} accent={workspace.accent} />
       {readOnly ? <QuantumNotice tone="info">SuperDash view only: account changes are disabled.</QuantumNotice> : null}
       {!isOnline ? <QuantumNotice tone="warning">Working offline — changes will sync later.</QuantumNotice> : null}

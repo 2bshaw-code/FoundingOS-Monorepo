@@ -6,6 +6,7 @@ import Link from 'next/link'
 import type { PlanTier, SuiteKey } from '@foundingos/config/suites'
 import { isModuleVisibleAtTier } from '@foundingos/config/suites'
 import type { BrandConsoleConfig } from './console'
+import { FoundingOSBrandMark } from './brand-mark'
 
 // Phase 27: maps this Sidebar's hardcoded display-name groups onto the
 // SuiteKey vocabulary moduleMinTier is keyed by, so tier filtering can reuse
@@ -70,7 +71,7 @@ function ActualSidebar({
   return (
     <aside className="sidebar" style={theme}>
       <Link className="sidebar-brand" href="/console">
-        <span className="brand-logo">{config?.logo ?? 'FO'}</span>
+        <FoundingOSBrandMark />
         <div>
           <strong>FoundingOS</strong>
           <span>OS Suite</span>

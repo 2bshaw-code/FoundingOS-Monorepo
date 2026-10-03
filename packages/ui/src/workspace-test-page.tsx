@@ -5,6 +5,7 @@ import { AccountNavLinks } from './account-nav'
 import { CompleteWorkspaceApplication, type BusinessWorkspaceSlug } from './complete-workspace-application'
 import { talentModules } from './talent-workspace'
 import { FoundingOSBrandMark } from './brand-mark'
+import { workspaceBrandIcons } from './brand-icons'
 
 export type TestWorkspaceSlug = BusinessWorkspaceSlug
 
@@ -29,8 +30,8 @@ export function WorkspaceDirectory({ basePath = '/test-workspaces' }: { basePath
     </header>
     <section aria-label="FoundingOS workspaces">
       <AccountNavLinks variant="card" />
-      {workspaces.map((workspace) => <Link href={`${basePath}/${workspace.slug}`} key={workspace.slug} style={{ ['--workspace-accent' as string]: workspace.accent }}>
-        <span>{workspace.label.slice(0, 2).toUpperCase()}</span>
+      {workspaces.map((workspace) => <Link href={`${basePath}/${workspace.slug}`} key={workspace.slug} style={{ ['--workspace-accent' as string]: workspaceBrandIcons[workspace.slug].accent }}>
+        <FoundingOSBrandMark workspace={workspace.slug} />
         <div><small>{workspace.suite}</small><h2>{workspace.label}</h2><p>{workspace.summary}</p></div>
         <footer><strong>{workspace.modules} modules</strong><b>Open workspace →</b></footer>
       </Link>)}

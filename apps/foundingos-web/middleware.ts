@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyFounderSession } from './src/founder-session'
 import { isPublicMarketingMedia } from '../../packages/ui/src/marketing-media'
+import { isPublicBrandIcon } from '../../packages/ui/src/brand-icons'
 
 const cookieName = 'foundingos_site_access'
 const founderCookieName = 'fo_tester_admin_session'
@@ -38,7 +39,7 @@ async function hasFounderSession(request: NextRequest) {
 }
 
 export async function middleware(request: NextRequest) {
-  if (isPublicMarketingMedia(request.nextUrl.pathname)) return NextResponse.next()
+  if (isPublicMarketingMedia(request.nextUrl.pathname) || isPublicBrandIcon(request.nextUrl.pathname)) return NextResponse.next()
   if (process.env.SITE_ACCESS_ENABLED !== 'true') return NextResponse.next()
   if (await hasFounderSession(request)) return NextResponse.next()
   if (!process.env.SITE_ACCESS_SECRET?.trim()) return new NextResponse('Site access is enabled but not configured.', { status: 503 })

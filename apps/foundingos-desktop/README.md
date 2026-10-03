@@ -3,6 +3,11 @@
 FoundingOS for Windows and Mac. The app opens the live FoundingOS workspace in its own window, so it
 always shows the latest version. There's no need to reinstall when the website is updated.
 
+The approved multicolour FOS mark is the main logo; workspaces use matching
+colour variants, and FoundAI retains its sphere character. In-window branding
+updates with the website. The packaging icon in `build/icon.png` uses the same
+multicolour design; the Dock/launcher icon requires the newly packaged app.
+
 - Links outside FoundingOS (WhatsApp, payments, help pages) open in your normal browser.
 - The microphone is only allowed for FoundingOS itself, so you can talk to FoundAI.
 - If there is no internet, a simple "You're offline" screen offers to try again.

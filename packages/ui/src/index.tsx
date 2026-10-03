@@ -288,7 +288,7 @@ async function SiteNav() {
           instead of the full viewport. Keeping <nav> filter-free lets the panel and
           scrim below size themselves against the real viewport. */}
       <div className="site-nav-bar">
-        <Link href="/" className="site-nav-logo">FoundingOS</Link>
+        <Link href="/" className="site-nav-logo"><FoundingOSBrandMark />FoundingOS</Link>
         <label htmlFor="site-nav-toggle" className="site-nav-toggle-button" aria-label="Open menu">
           <span />
           <span />

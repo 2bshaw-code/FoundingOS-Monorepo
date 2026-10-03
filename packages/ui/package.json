@@ -18,6 +18,7 @@
     "./talent-workspace": "./src/talent-workspace.ts",
     "./finance-labels": "./src/finance-labels.ts",
     "./brand-mark": "./src/brand-mark.tsx",
+    "./brand-icons": "./src/brand-icons.ts",
     "./founder-types": "./src/founder-types.ts",
     "./founder-legal": "./src/founder-legal.ts",
     "./marketing-media": "./src/marketing-media.ts",

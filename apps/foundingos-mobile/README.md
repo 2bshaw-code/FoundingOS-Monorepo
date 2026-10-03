@@ -6,6 +6,12 @@ caption/preview rules and company legal review definitions with the Mac/web app.
 
 ## SuperDash parity
 
+The approved multicolour FOS mark identifies the main app and SuperDash inside
+the native UI. Each workspace uses its approved colour variant, bundled locally
+so the images do not depend on a remote website. The FoundAI sphere remains a
+separate help identity. iOS/Android launcher and splash icons are binary assets;
+an OTA changes in-app branding only, not installed home-screen icons.
+
 Finance shares formal Sales invoices, Accounts payable, Bank accounts, Bank
 reconciliation and Tax & VAT labels with web/Mac, without changing stored module
 identifiers. The CSV bulk-import, register/PDF printing and animated FoundAI

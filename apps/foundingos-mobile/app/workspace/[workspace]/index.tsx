@@ -21,6 +21,7 @@ import {
 } from '../../../components/QuantumUI'
 import { findWorkspace, WorkspaceModuleDef } from '../../../lib/workspace-modules'
 import { getGroupCopy } from '../../../lib/workspace-copy'
+import { FoundingOSBrandMark } from '../../../components/FoundingOSBrandMark'
 
 // Groups that exist purely to hold the "overview" module (which is its own
 // dedicated screen, not a card in this grid) — never rendered as a section.
@@ -63,6 +64,7 @@ function WorkspaceModulesScreenInner() {
   return (
     <QuantumScreen>
       <QuantumBackButton label="‹ Workspaces" fallbackHref="/brands" />
+      <FoundingOSBrandMark workspace={workspace.slug} size={64} />
       <QuantumHeader eyebrow="Live workspace" title={workspace.label} accent={workspace.accent} />
 
       <View style={styles.trustStrip}>

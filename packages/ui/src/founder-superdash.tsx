@@ -1,4 +1,5 @@
 'use client'
+import { FoundingOSBrandMark } from './brand-mark'
 /*
   © 2024–2026 FoundingOS. All rights reserved.
   Unauthorized copying, distribution, or modification is strictly prohibited.
@@ -154,6 +155,7 @@ export function FounderSuperDash() {
 
   if (!signedIn && !investor) {
     return <main className="sd-shell"><form className="sd-login" onSubmit={signIn}>
+      <FoundingOSBrandMark />
       <p className="sd-eyebrow">Founder &amp; partners</p><h1>SuperDash</h1>
       <input autoComplete="username" onChange={(event) => setEmail(event.target.value)} placeholder="Email" type="email" value={email} />
       <input autoComplete="current-password" onChange={(event) => setPassword(event.target.value)} placeholder="Password or partner code" type="password" value={password} />
@@ -182,6 +184,7 @@ export function FounderSuperDash() {
 
   return <main className="sd-shell">
     <header className="sd-top">
+      <FoundingOSBrandMark />
       <div><p className="sd-eyebrow">{investor ? 'FoundingOS · Admin view' : 'FoundingOS · Founder'}</p><h1>SuperDash</h1><small>{investor ? (demo ? 'Example data · view only' : 'Live figures · view only') : demo ? 'Example data' : data ? `Updated ${ago(data.generatedAt)}` : error ? 'Live figures unavailable' : 'Loading…'}</small></div>
       <nav><span className="sd-plan">Complete · all Pro tools on</span>{investor ? <><span className="sd-plan">View only</span>{signedIn && !demo ? <button onClick={() => void load()} type="button">Refresh</button> : null}</> : <button onClick={() => void load()} type="button">Refresh</button>}<button className="ghost" onClick={() => { void signOutOfFoundingOS() }} type="button">Sign out</button></nav>
     </header>

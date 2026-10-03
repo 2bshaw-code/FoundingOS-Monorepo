@@ -19,6 +19,7 @@ import { FinanceReport, MarketingReport, SalesReport } from '../../components/pr
 import { router } from 'expo-router'
 import { FounderOverview, fetchSuperDashOverview, founderEnableWorkspaces } from '../../lib/core-operations-api'
 import { QuantumButton, QuantumCard, QuantumNotice, QuantumPill, QuantumScreen, QuantumSectionHeader, QuantumText, SuperDashTheme, quantumColors, quantumSpace } from '../../components/QuantumUI'
+import { FoundingOSBrandMark } from '../../components/FoundingOSBrandMark'
 
 const gbp = (value: number) => `£${value.toLocaleString('en-GB', { maximumFractionDigits: 2 })}`
 const ago = (iso: string | null) => {
@@ -129,6 +130,7 @@ function SuperDashScreen() {
 
   return (
     <QuantumScreen refreshControl={<RefreshControl refreshing={refreshing} tintColor="#38BDF8" onRefresh={async () => { setRefreshing(true); setReloadKey((key) => key + 1); await load(); setRefreshing(false) }} />}>
+      <FoundingOSBrandMark size={64} />
       <View style={styles.head}>
         <QuantumText variant="overline" color="#38BDF8">{investor ? 'FoundingOS · Admin view' : 'FoundingOS · Founder'}</QuantumText>
         <QuantumText variant="h1">SuperDash</QuantumText>

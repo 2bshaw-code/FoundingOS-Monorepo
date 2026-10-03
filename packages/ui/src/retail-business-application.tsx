@@ -257,7 +257,7 @@ export function RetailBusinessApplication({ section = 'overview' }: { section?: 
   }
   return <main className="retail-product-shell">
     <aside className="retail-product-sidebar">
-      <Link className="retail-product-brand" href="/"><FoundingOSBrandMark /><div><strong>FoundingOS</strong><small>Retail Workspace</small></div></Link>
+      <Link className="retail-product-brand" href="/"><FoundingOSBrandMark workspace="retail" /><div><strong>FoundingOS</strong><small>Retail Workspace</small></div></Link>
       <div className="retail-product-store"><span>FS</span><div><strong>{state.settings.businessName}</strong><small>Demo organisation</small></div><b>⌄</b></div>
       <nav aria-label="Retail workspace navigation">{groups.map((group) => <div key={group}><p>{group}</p>{sections.filter((item) => item.group === group).map((item) => <Link aria-current={section === item.id ? 'page' : undefined} className={section === item.id ? 'active' : ''} href={item.id === 'overview' ? '/test-workspaces/retail' : `/test-workspaces/retail/${item.id}`} key={item.id}><i>{item.icon}</i>{item.label}{item.id === 'orders' ? <em>{state.orders.filter((order) => order.status !== 'Delivered').length}</em> : null}</Link>)}</div>)}</nav>
       <Link className="retail-product-switcher" href="/test-workspaces/logistics">Switch workspace <span>↗</span></Link>
