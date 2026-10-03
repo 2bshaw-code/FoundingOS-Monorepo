@@ -9,6 +9,7 @@
 // (/api/v1/ops/platform/workspaces/:workspace/:module/records) with no
 // per-module custom logic required.
 import { talentModules } from '@foundingos/ui/talent-workspace'
+import { financeModuleLabels } from '@foundingos/ui/finance-labels'
 
 export type WorkspaceSlug = 'retail' | 'logistics' | 'finance' | 'marketing' | 'talent' | 'hr' | 'health' | 'legal' | 'intelligence'
 
@@ -42,7 +43,7 @@ export const WORKSPACES: WorkspaceDef[] = [
   {
     slug: 'finance', label: 'Finance', accent: '#ffb33e',
     description: 'Control cash, invoices, bills, banking, reconciliation, budgets, tax, and financial approvals.',
-    modules: [mod('overview', 'Finance home', 'Workspace'), mod('cashflow', 'Cash flow', 'Money'), mod('invoices', 'Invoices', 'Money', ['Draft', 'Sent', 'Overdue', 'Paid']), mod('bills', 'Bills', 'Money', ['Received', 'Approved', 'Scheduled', 'Paid']), mod('banking', 'Banking', 'Money'), mod('reconciliation', 'Reconciliation', 'Money', ['Unmatched', 'Suggested', 'Matched', 'Verified']), mod('expenses', 'Expenses', 'Spend', ['Submitted', 'Review', 'Approved', 'Reimbursed']), mod('payments', 'Payments', 'Spend', ['Pending', 'Authorised', 'Paid', 'Reconciled']), mod('budgets', 'Budgets', 'Planning'), mod('forecasting', 'Forecasting', 'Planning'), mod('tax', 'Tax', 'Compliance', standard), mod('approvals', 'Approvals', 'Compliance', ['Requested', 'Review', 'Approved', 'Actioned']), mod('reports', 'Reports', 'Intelligence'), mod('automations', 'Automations', 'Intelligence'), mod('team', 'Team & access', 'Administration'), mod('integrations', 'Integrations', 'Administration'), mod('security', 'Security & Access', 'Administration'), mod('settings', 'Settings', 'Administration')],
+    modules: [mod('overview', 'Finance home', 'Workspace'), mod('cashflow', 'Cash flow', 'Money'), mod('invoices', financeModuleLabels.invoices, 'Money', ['Draft', 'Sent', 'Overdue', 'Paid']), mod('bills', financeModuleLabels.bills, 'Money', ['Received', 'Approved', 'Scheduled', 'Paid']), mod('banking', financeModuleLabels.banking, 'Money'), mod('reconciliation', financeModuleLabels.reconciliation, 'Money', ['Unmatched', 'Suggested', 'Matched', 'Verified']), mod('expenses', 'Expenses', 'Spend', ['Submitted', 'Review', 'Approved', 'Reimbursed']), mod('payments', 'Payments', 'Spend', ['Pending', 'Authorised', 'Paid', 'Reconciled']), mod('budgets', 'Budgets', 'Planning'), mod('forecasting', 'Forecasting', 'Planning'), mod('tax', financeModuleLabels.tax, 'Compliance', standard), mod('approvals', 'Approvals', 'Compliance', ['Requested', 'Review', 'Approved', 'Actioned']), mod('reports', 'Reports', 'Intelligence'), mod('automations', 'Automations', 'Intelligence'), mod('team', 'Team & access', 'Administration'), mod('integrations', 'Integrations', 'Administration'), mod('security', 'Security & Access', 'Administration'), mod('settings', 'Settings', 'Administration')],
   },
   {
     slug: 'marketing', label: 'Marketing', accent: '#f56fc2',

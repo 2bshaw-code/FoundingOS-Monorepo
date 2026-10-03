@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { FoundingOSBrandMark } from './brand-mark'
 
 type DemoScenario = {
   id: string
@@ -151,7 +152,7 @@ export function MessagingDemo() {
       <div className="messaging-demo-grid">
         <div className="whatsapp-phone">
           <div className="whatsapp-phone-header">
-            <span>F</span>
+            <FoundingOSBrandMark />
             <div><strong>FoundingOS</strong><small>WhatsApp Business · online</small></div>
           </div>
           <div className="whatsapp-chat">

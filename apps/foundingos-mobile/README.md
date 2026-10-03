@@ -6,6 +6,11 @@ caption/preview rules and company legal review definitions with the Mac/web app.
 
 ## SuperDash parity
 
+Finance shares formal Sales invoices, Accounts payable, Bank accounts, Bank
+reconciliation and Tax & VAT labels with web/Mac, without changing stored module
+identifiers. The CSV bulk-import, register/PDF printing and animated FoundAI
+character are currently web/Mac features, not native-mobile controls.
+
 - Business, Finance, Sales, Marketing and Legal use a scoped navy/blue native theme.
   Modules opened from SuperDash retain that theme; standalone workspaces retain
   their own accents. The route's `source=superdash` is presentation only and grants

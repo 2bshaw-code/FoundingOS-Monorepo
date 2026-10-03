@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { AccountNavLinks } from './account-nav'
 import { CompleteWorkspaceApplication, type BusinessWorkspaceSlug } from './complete-workspace-application'
 import { talentModules } from './talent-workspace'
+import { FoundingOSBrandMark } from './brand-mark'
 
 export type TestWorkspaceSlug = BusinessWorkspaceSlug
 
@@ -23,7 +24,7 @@ export function WorkspaceDirectory({ basePath = '/test-workspaces' }: { basePath
   const production = basePath === '/app'
   return <main className="complete-workspace-directory">
     <header>
-      <Link className="complete-workspace-access-brand" href="/"><span>F</span><div><strong>FoundingOS</strong><small>{production ? 'Production workspaces' : 'Interactive test workspaces'}</small></div></Link>
+      <Link className="complete-workspace-access-brand" href="/"><FoundingOSBrandMark /><div><strong>FoundingOS</strong><small>{production ? 'Production workspaces' : 'Interactive test workspaces'}</small></div></Link>
       <div><p className="eyebrow">{production ? 'Your operating system' : 'Choose a workspace to test'}</p><h1>One business. Nine connected workspaces.</h1><p>{production ? 'Open any enabled workspace. Access and records remain tenant-scoped.' : 'Every workspace is interactive, browser-persistent, and connected through the Shared Event Feed.'}</p></div>
     </header>
     <section aria-label="FoundingOS workspaces">

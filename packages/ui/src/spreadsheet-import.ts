@@ -137,6 +137,18 @@ export function duplicateKey(row: { name: string; secondary?: string; email?: st
   return `${row.name.trim().toLowerCase()}|${(row.email || row.secondary || '').trim().toLowerCase()}`
 }
 
+export function deduplicateImportRows(rows: ImportRow[], existing: Array<{ name: string; secondary?: string; email?: string }>) {
+  const seen = new Set(existing.map(duplicateKey))
+  const unique: ImportRow[] = []
+  let duplicates = 0
+  for (const row of rows) {
+    const key = duplicateKey(row)
+    if (seen.has(key)) duplicates += 1
+    else { unique.push(row); seen.add(key) }
+  }
+  return { rows: unique, duplicates }
+}
+
 export function importTemplateCsv(fields: { name: string; secondary: string; value: string }): string {
   const quote = (value: string) => `"${value.replaceAll('"', '""')}"`
   return [
@@ -146,20 +158,21 @@ export function importTemplateCsv(fields: { name: string; secondary: string; val
 }
 
 // Runs the saves a few at a time so a large import is quick without overloading the server.
-export async function runImport<T>(items: T[], save: (item: T) => Promise<unknown>, onProgress: (done: number) => void, concurrency = 3): Promise<{ saved: number; failed: T[] }> {
+export async function runImport<T>(items: T[], save: (item: T) => Promise<unknown>, onProgress: (done: number) => void, concurrency = 3): Promise<{ saved: number; failed: T[]; errors: string[] }> {
   let next = 0
   let done = 0
   let saved = 0
   const failed: T[] = []
+  const errors: string[] = []
   const worker = async () => {
     while (next < items.length) {
       const item = items[next]
       next += 1
-      try { await save(item); saved += 1 } catch { failed.push(item) }
+      try { await save(item); saved += 1 } catch (error) { failed.push(item); errors.push(error instanceof Error ? error.message : 'An import batch could not be saved.') }
       done += 1
       onProgress(done)
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker))
-  return { saved, failed }
+  return { saved, failed, errors }
 }

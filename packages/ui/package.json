@@ -16,6 +16,8 @@
     "./founder-superdash-demo": "./src/founder-superdash-demo.ts",
     "./founder-navigation": "./src/founder-navigation.ts",
     "./talent-workspace": "./src/talent-workspace.ts",
+    "./finance-labels": "./src/finance-labels.ts",
+    "./brand-mark": "./src/brand-mark.tsx",
     "./founder-types": "./src/founder-types.ts",
     "./founder-legal": "./src/founder-legal.ts",
     "./marketing-media": "./src/marketing-media.ts",

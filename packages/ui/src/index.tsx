@@ -3,6 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { AccountNavLinks } from './account-nav'
+import { FoundingOSBrandMark } from './brand-mark'
 import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { baseKeys, boltOnKeys, commercialAddOns, commercialBases, commercialBoltOns, commercialPlans, extraSeat, marketingPlanFeatures } from '@foundingos/config/commercial'
@@ -378,7 +379,7 @@ function SecondaryPage({ page, workspaceSlug }: { page: Exclude<FounderPage, 'ho
 
       <section className="product-preview marketing-preview" aria-label="Marketing Workspace sample">
         <aside className="preview-sidebar">
-          <div className="preview-brand"><span>F</span><strong>FoundingOS</strong></div>
+          <div className="preview-brand"><FoundingOSBrandMark /><strong>FoundingOS</strong></div>
           <p>Marketing Workspace</p>
           <ul>{['Overview', 'Campaigns', 'Audiences', 'Content studio', 'Publishing calendar', 'Analytics'].map((module, index) => <li className={index === 0 ? 'active' : ''} key={module}>{module}</li>)}</ul>
         </aside>

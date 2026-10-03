@@ -297,7 +297,7 @@ const profiles: Record<string, ModuleProfile> = {
   },
   // Commerce Pro (finance)
   'finance/invoices': {
-    noun: 'invoice', copy: 'Bill customers, chase what is overdue, and see cash coming in.',
+    noun: 'sales invoice', copy: 'Manage accounts receivable: issue customer invoices, review overdue balances and record receipts.',
     fields: { name: 'Invoice', secondary: 'Customer', value: 'Amount', owner: 'Issued by' }, valueHint: '£0',
     kpis: (records) => [
       { label: 'Outstanding', value: gbp(sum(inStatus(records, 'Sent', 'Overdue'))), tone: 'watch' },
@@ -307,7 +307,7 @@ const profiles: Record<string, ModuleProfile> = {
     ],
   },
   'finance/bills': {
-    noun: 'bill', copy: 'Supplier bills, approved and scheduled so nothing is paid late or twice.',
+    noun: 'supplier invoice', copy: 'Manage accounts payable: record supplier invoices, approve liabilities and schedule payments.',
     fields: { name: 'Bill', secondary: 'Supplier', value: 'Amount', owner: 'Approver' }, valueHint: '£0',
     kpis: (records, statuses) => [
       { label: 'To approve', value: gbp(sum(inStatus(records, first(statuses)))), tone: 'watch' },

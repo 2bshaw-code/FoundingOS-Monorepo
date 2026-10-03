@@ -5,6 +5,7 @@
 'use client'
 
 import { SpeakButton } from './speech'
+import { FoundAIMascot } from './foundai-mascot'
 import { AI_DISCLAIMER } from './ai-disclaimer'
 import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { coachQuestion, moduleHealth, playbookFor, workspaceExperts, type ExperienceMode, type HealthCheck, type HealthRecord } from '@foundingos/config/pro-playbooks'
@@ -117,6 +118,7 @@ export function ProCoach({ workspace, moduleId, moduleLabel, noun, statuses, rec
   return (
     <section className={`pro-coach pro-coach-${tone}${expanded ? ' is-open' : ''}`}>
       <button aria-expanded={expanded} className="pro-coach-bar" onClick={() => setOpen(!expanded)} type="button">
+        <FoundAIMascot active={expanded} thinking={asking} />
         <span className="pro-coach-score">{records.length ? `${score}%` : '—'}</span>
         <span className="pro-coach-title"><strong>Pro standard</strong> · FoundAI as your {expert}</span>
         <span className="pro-coach-summary">{records.length ? `${checks.filter((check) => check.ok).length} of ${checks.length} checks met` : `Add your first ${noun} to get scored`}</span>

@@ -133,12 +133,17 @@ export default function UserGuidePage() {
             wrong, or choose <em>Not in my file</em> for fields you do not have. Only the name is required.
           </li>
           <li>Look at the preview of the first rows to make sure they look right.</li>
-          <li>If some rows are already in FoundingOS, leave the <strong>Skip already in FoundingOS</strong> box ticked so you do not get doubles.</li>
+          <li>Leave the duplicate-skip box ticked to avoid matching records already in FoundingOS or repeated within the same CSV file.</li>
           <li>Press the <strong>Import</strong> button at the bottom. Keep the window open until the bar finishes.</li>
           <li>You will see how many rows went in. If any could not be saved, press <strong>Download the ones that did not import</strong>, fix them in your spreadsheet and import that file.</li>
         </Steps>
         <Tip>Names split into First name and Last name columns are joined for you. Dates written the UK way, like 31/12/2026, are understood.</Tip>
         <Tip>Have more than 500 rows? Split the file into smaller files and import them one after another.</Tip>
+        <p>Imports map the basic name, detail, value, stage, owner, email, phone and date fields. Specialist forms, CV files and provider history are not automatically migrated from arbitrary columns. Check the preview and completed counts. A failed refresh is shown explicitly; reload before retrying so you do not import saved records twice.</p>
+        <h3>Bulk actions and printing</h3>
+        <p>Select records using the list or board checkboxes, then move the selection to its next stage. Changes are processed with bounded concurrency; any failed records remain selected with an error message. Review partial results before retrying.</p>
+        <p><strong>Print register / PDF</strong> opens a clean document containing the currently filtered records and saved specialist details, without app navigation. When records are selected, it prints only that selection. Allow pop-ups, then choose a printer or Save as PDF. Recruitment reports also has a print-summary button. Individual sales and supplier invoices have their own <strong>Print / PDF</strong> action with document line items and totals.</p>
+        <p>Finance uses accounting labels: Sales invoices, Accounts payable (supplier invoices), Bank accounts and Bank reconciliation. Existing routes and stored records are unchanged.</p>
 
         <h2 id="add">7. Adding records by hand</h2>
         <Steps>

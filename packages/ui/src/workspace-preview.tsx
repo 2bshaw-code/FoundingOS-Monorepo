@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { FoundingOSBrandMark } from './brand-mark'
 import { useState } from 'react'
 import { LocalizedGbp } from './globalisation'
 
@@ -96,7 +97,7 @@ export function WorkspacePreview({ product }: { product: WorkspacePreviewProduct
 
       <section id="product-preview" className="product-preview" aria-label={`${product.name} interactive sample workspace`}>
         <aside className="preview-sidebar">
-          <div className="preview-brand"><span>F</span><strong>FoundingOS</strong></div>
+          <div className="preview-brand"><FoundingOSBrandMark /><strong>FoundingOS</strong></div>
           <p>{product.name}</p>
           <div className="preview-tabs" role="tablist" aria-label={`${product.name} modules`}>
             {tabs.map((module) => (

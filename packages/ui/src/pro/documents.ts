@@ -54,7 +54,7 @@ export const vatRates: { value: VatRate; label: string }[] = [
   { value: -1, label: 'Exempt' },
 ]
 
-export const documentLabel: Record<DocumentKind, string> = { invoice: 'Invoice', bill: 'Bill', quote: 'Quote', 'credit-note': 'Credit note' }
+export const documentLabel: Record<DocumentKind, string> = { invoice: 'Sales invoice', bill: 'Supplier invoice', quote: 'Quotation', 'credit-note': 'Credit note' }
 
 export const lineId = () => `ln_${Math.random().toString(36).slice(2, 10)}`
 

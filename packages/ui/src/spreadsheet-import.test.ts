@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { buildImportRows, duplicateKey, guessMapping, importTemplateCsv, normaliseDate, parseCsv, runImport } from './spreadsheet-import'
+import { buildImportRows, deduplicateImportRows, duplicateKey, guessMapping, IMPORT_BATCH_SIZE, importTemplateCsv, MAX_IMPORT_ROWS, normaliseDate, parseCsv, runImport } from './spreadsheet-import'
 
 test('reads quoted cells, commas and line breaks inside quotes, and Windows line endings', () => {
   const rows = parseCsv('\uFEFFName,Notes,Amount\r\n"Smith, Jo","Likes ""oat"" milk\non Fridays",£1,200\r\n\r\nAmina,,£50\r\n')
@@ -67,6 +67,23 @@ test('imports everything, reports failures and never runs more than three at onc
   }, (done) => progress.push(done))
   assert.equal(result.saved, 6)
   assert.deepEqual(result.failed, [4])
+  assert.deepEqual(result.errors, ['nope'])
   assert.equal(peak, 3)
   assert.equal(progress.at(-1), 7)
+})
+
+test('500 rows form ten complete API batches and duplicate rows are removed within the file and existing list', async () => {
+  const csv = ['Name,Detail,Email', ...Array.from({ length: MAX_IMPORT_ROWS }, (_, index) => `Candidate ${index},Role ${index},candidate${index}@example.com`)].join('\n')
+  const table = parseCsv(csv)
+  const built = buildImportRows(table, guessMapping(table[0]), ['Applied'])
+  assert.equal(built.rows.length, 500)
+  const batches = Array.from({ length: Math.ceil(built.rows.length / IMPORT_BATCH_SIZE) }, (_, index) => built.rows.slice(index * IMPORT_BATCH_SIZE, (index + 1) * IMPORT_BATCH_SIZE))
+  let count = 0
+  const result = await runImport(batches, async (rows) => { assert.equal(rows.length, 50); count += rows.length }, () => {}, 2)
+  assert.equal(count, 500)
+  assert.equal(result.saved, 10)
+  assert.equal(result.failed.length, 0)
+  const deduped = deduplicateImportRows([...built.rows, built.rows[1]], [built.rows[0]])
+  assert.equal(deduped.rows.length, 499)
+  assert.equal(deduped.duplicates, 2)
 })

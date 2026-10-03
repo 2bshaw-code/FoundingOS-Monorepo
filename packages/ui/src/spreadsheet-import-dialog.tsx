@@ -1,7 +1,8 @@
 'use client'
 
 import { useMemo, useState, type ChangeEvent } from 'react'
-import { buildImportRows, IMPORT_BATCH_SIZE, duplicateKey, guessMapping, IMPORT_FIELDS, importTemplateCsv, MAX_IMPORT_ROWS, parseCsv, runImport, type ImportField, type ImportMapping, type ImportRow } from './spreadsheet-import'
+import { buildImportRows, deduplicateImportRows, IMPORT_BATCH_SIZE, guessMapping, IMPORT_FIELDS, importTemplateCsv, MAX_IMPORT_ROWS, parseCsv, runImport, type ImportField, type ImportMapping, type ImportRow } from './spreadsheet-import'
+import { downloadCsv } from './pro/shared'
 
 type Props = {
   moduleId: string
@@ -26,8 +27,6 @@ function download(name: string, text: string) {
   URL.revokeObjectURL(url)
 }
 
-const quote = (value: string) => `"${value.replaceAll('"', '""')}"`
-
 export function SpreadsheetImportDialog({ moduleId, moduleLabel, noun, fields, statuses, existing, onSaveBatch, onFinished, onClose }: Props) {
   const [stage, setStage] = useState<Stage>('choose')
   const [fileName, setFileName] = useState('')
@@ -42,9 +41,9 @@ export function SpreadsheetImportDialog({ moduleId, moduleLabel, noun, fields, s
   const labels: Record<ImportField, string> = { name: `${fields.name} (required)`, secondary: fields.secondary, value: fields.value, status: 'Stage', owner: 'Owner', email: 'Email', phone: 'Phone', dueDate: 'Date' }
   const headers = table[0] ?? []
   const built = useMemo(() => table.length > 1 ? buildImportRows(table, mapping, statuses) : { rows: [], skipped: 0 }, [table, mapping, statuses])
-  const existingKeys = useMemo(() => new Set(existing.map(duplicateKey)), [existing])
-  const duplicates = built.rows.filter((row) => existingKeys.has(duplicateKey(row))).length
-  const toImport = skipDuplicates ? built.rows.filter((row) => !existingKeys.has(duplicateKey(row))) : built.rows
+  const deduplicated = useMemo(() => deduplicateImportRows(built.rows, existing), [built.rows, existing])
+  const duplicates = deduplicated.duplicates
+  const toImport = skipDuplicates ? deduplicated.rows : built.rows
 
   const choose = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -55,8 +54,9 @@ export function SpreadsheetImportDialog({ moduleId, moduleLabel, noun, fields, s
       setError('That is an Excel or Numbers file. Open it, choose File, then Save As (or Download), pick CSV, and choose the new file here.')
       return
     }
-    const text = await file.text()
-    const rows = parseCsv(text)
+    let rows: string[][]
+    try { rows = parseCsv(await file.text()) }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'The selected file could not be read.'); return }
     if (rows.length < 2) {
       setError('We could not find any rows. Check the file has a header row and at least one line underneath.')
       return
@@ -80,21 +80,27 @@ export function SpreadsheetImportDialog({ moduleId, moduleLabel, noun, fields, s
     const chunks = Array.from({ length: Math.ceil(toImport.length / IMPORT_BATCH_SIZE) }, (_, index) => ({ start: index * IMPORT_BATCH_SIZE, rows: toImport.slice(index * IMPORT_BATCH_SIZE, (index + 1) * IMPORT_BATCH_SIZE) }))
     let created = 0
     let already = 0
+    let processed = 0
     const outcome = await runImport(chunks, async (chunk) => {
-      const saved = await onSaveBatch(chunk.rows, chunk.start, batch)
-      created += saved.created
-      already += saved.skipped
-    }, (finished) => setDone(Math.min(toImport.length, finished * IMPORT_BATCH_SIZE)), 2)
-    await onFinished().catch(() => undefined)
+      try {
+        const saved = await onSaveBatch(chunk.rows, chunk.start, batch)
+        created += saved.created
+        already += saved.skipped
+      } finally { processed += chunk.rows.length }
+    }, () => setDone(processed), 2)
+    const warnings = [...outcome.errors]
+    try { await onFinished() }
+    catch (cause) { warnings.push(`Import saves finished, but the list could not refresh: ${cause instanceof Error ? cause.message : 'reload failed'}. Reload the page before importing again.`) }
+    if (warnings.length) setError(warnings.join(' '))
     setResult({ saved: created, already, failed: outcome.failed.flatMap((chunk) => chunk.rows) })
     setStage('done')
   }
 
   const downloadFailed = () => {
     if (!result) return
-    const header = ['Name', 'Detail', 'Value', 'Email', 'Phone', 'Date']
-    const lines = result.failed.map((row) => [row.name, row.secondary, row.value, row.email ?? '', row.phone ?? '', row.dueDate ?? ''].map(quote).join(','))
-    download(`${moduleId}-not-imported.csv`, [header.map(quote).join(','), ...lines].join('\n'))
+    const header = ['Name', 'Detail', 'Value', 'Status', 'Owner', 'Email', 'Phone', 'Date']
+    const rows = result.failed.map((row) => [row.name, row.secondary, row.value, row.status ?? '', row.owner ?? '', row.email ?? '', row.phone ?? '', row.dueDate ?? ''])
+    downloadCsv(`${moduleId}-not-imported.csv`, [header, ...rows])
   }
 
   const plural = (count: number) => `${count} ${noun}${count === 1 ? '' : 's'}`
@@ -134,7 +140,7 @@ export function SpreadsheetImportDialog({ moduleId, moduleLabel, noun, fields, s
           </table>
           {built.rows.length > 5 ? <p className="spreadsheet-import__hint">Showing the first 5 of {built.rows.length}.</p> : null}
         </div>
-        {duplicates > 0 ? <label className="spreadsheet-import__check"><input checked={skipDuplicates} onChange={(event) => setSkipDuplicates(event.target.checked)} type="checkbox" /> Skip {plural(duplicates)} already in FoundingOS</label> : null}
+        {duplicates > 0 ? <label className="spreadsheet-import__check"><input checked={skipDuplicates} onChange={(event) => setSkipDuplicates(event.target.checked)} type="checkbox" /> Skip {plural(duplicates)} already in FoundingOS or repeated in this file</label> : null}
       </> : null}
 
       {stage === 'running' ? <div className="spreadsheet-import__progress" role="status">

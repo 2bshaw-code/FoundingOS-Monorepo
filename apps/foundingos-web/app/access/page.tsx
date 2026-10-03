@@ -1,9 +1,10 @@
 import { PasswordField } from './password-field'
+import { FoundingOSBrandMark } from '@foundingos/ui/brand-mark'
 
 export default function SiteAccessPage({ searchParams }: { searchParams: { returnTo?: string; error?: string } }) {
   return <main className="complete-workspace-access">
     <section>
-      <div className="complete-workspace-access-brand"><span>F</span><div><strong>FoundingOS</strong><small>Private product preview</small></div></div>
+      <div className="complete-workspace-access-brand"><FoundingOSBrandMark /><div><strong>FoundingOS</strong><small>Private product preview</small></div></div>
       <p className="eyebrow">Invitation only</p>
       <h1>Sign in to FoundingOS</h1>
       <p>Use your email address and the invitation code we sent you. Already have a FoundingOS account? Use your own password.</p>

@@ -10233,9 +10233,11 @@ body[data-sidebar-collapsed='true'] .nav-card {
   bottom: 96px;
   width: min(380px, calc(100vw - 48px));
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  grid-template-rows: auto minmax(120px, 1fr) auto auto auto;
   gap: 14px;
   padding: 18px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   border: 1px solid color-mix(in srgb, var(--found-ai-accent) 28%, var(--line));
   border-radius: 24px;
   background: var(--surface-strong);
@@ -10252,9 +10254,9 @@ body[data-sidebar-collapsed='true'] .nav-card {
 
 .found-ai-panel-header {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto auto;
+  grid-template-columns: 58px minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .found-ai-avatar {
@@ -16245,3 +16247,44 @@ body:has(.cross-sell-ticker) .found-ai-fab { bottom: 64px; }
 .sd-shell :is(.pro-table .is-danger, .pro-panel button.is-danger) { color: #fca5a5; }
 .sd-shell .pro-panel button.is-good { color: #86efac; }
 .sd-shell .sd-embedded :is(button, a, input, select, textarea):focus-visible { outline: 2px solid #7dd3fc; outline-offset: 3px; }
+
+:is(.retail-product-brand, .complete-workspace-access-brand, .preview-brand, .whatsapp-phone-header) > .foundingos-brand-mark {
+  align-items: center;
+  background: radial-gradient(circle at 30% 20%, #163f68, #050b16 75%);
+  border: 1px solid #38bdf8;
+  border-radius: 50%;
+  box-shadow: 0 0 16px #38bdf833, inset 0 0 10px #38bdf822;
+  display: inline-flex;
+  flex: 0 0 54px;
+  height: 54px;
+  justify-content: center;
+  width: 54px;
+}
+.foundingos-brand-mark .quantumSphereLogo { flex-shrink: 0; }
+.foundai-mascot { flex: 0 0 auto; overflow: visible; }
+.foundai-mascot-limbs { opacity: 0; transform: scale(.05); transform-origin: 80px 80px; transition: transform .65s ease, opacity .35s ease; }
+.foundai-mascot-face { opacity: 0; transition: opacity .4s ease; }
+.foundai-mascot.is-active .foundai-mascot-limbs { opacity: 1; transform: scale(1); }
+.foundai-mascot.is-active .foundai-mascot-face { opacity: 1; }
+.foundai-mascot.is-active .foundai-mascot-arm-right { animation: foundai-wave 3s ease-in-out infinite; transform-origin: 119px 82px; }
+.foundai-mascot.is-active .foundai-mascot-eyes { animation: foundai-blink 5s ease-in-out infinite; transform-origin: 80px 77px; }
+.foundai-mascot.is-thinking .foundai-mascot-body { animation: foundai-think 1.4s ease-in-out infinite; }
+@keyframes foundai-wave { 0%, 65%, 100% { transform: rotate(0); } 75%, 90% { transform: rotate(14deg); } 82% { transform: rotate(-8deg); } }
+@keyframes foundai-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.12); } }
+@keyframes foundai-think { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) {
+  .foundai-mascot * { animation: none !important; transition: none !important; }
+  .found-ai-panel, .found-ai-fab { animation: none !important; transition: none !important; }
+}
+@media print {
+  html, body { background: #fff !important; color: #10263e !important; }
+  :is(.complete-workspace-shell, .sd-shell) { background: #fff !important; display: block !important; height: auto !important; min-height: 0 !important; overflow: visible !important; }
+  :is(.complete-workspace-shell, .sd-shell) :is(.retail-product-sidebar, .retail-product-topbar, .retail-product-footer, .cross-sell-ticker, .demo-data-bar, .retail-app-toolbar, .retail-app-views-bar, .pro-coach, .retail-app-modal-backdrop, button), .found-ai-fab, .found-ai-panel { display: none !important; }
+  :is(.complete-workspace-shell, .sd-shell) :is(.retail-product-main, .retail-product-content, .pro-panel, .ops-insights, .ops-visuals, .retail-app-dashboard-grid) { background: #fff !important; border-color: #cbd5e1 !important; box-shadow: none !important; color: #10263e !important; height: auto !important; max-height: none !important; overflow: visible !important; }
+  :is(.complete-workspace-shell, .sd-shell) .retail-product-content { padding: 0 !important; }
+  :is(.complete-workspace-shell, .sd-shell) :is(h1, h2, h3, h4, p, span, strong, td, th) { color: #10263e !important; }
+  :is(.complete-workspace-shell, .sd-shell) table { width: 100% !important; }
+  :is(.complete-workspace-shell, .sd-shell) thead { display: table-header-group; }
+  :is(.complete-workspace-shell, .sd-shell) tr { break-inside: avoid; }
+  :is(.complete-workspace-shell, .sd-shell) .pro-actions a { display: none; }
+}

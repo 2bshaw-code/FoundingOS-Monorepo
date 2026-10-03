@@ -10,6 +10,7 @@ import { usePathname } from 'next/navigation'
 import { LOCKED_BRAND_COLORS } from '@foundingos/config'
 import type { BrandConsoleConfig } from './console'
 import { useAIAssistance } from './ai-assistance'
+import { FoundAIMascot } from './foundai-mascot'
 
 type Message = { role: 'assistant' | 'user'; text: string }
 
@@ -551,14 +552,14 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
         style={{ '--found-ai-accent': theme.accent, '--found-ai-glow': theme.glow } as React.CSSProperties}
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
-        aria-label="Open FoundAI"
+        aria-label={open ? 'Close FoundAI' : 'Open FoundAI'}
       >
-        <span>AI</span>
+        <FoundAIMascot active={open} thinking={loading} size={64} />
       </button>
 
       <aside className={`found-ai-panel ${open ? 'open' : ''}`} style={{ '--found-ai-accent': theme.accent, '--found-ai-glow': theme.glow } as React.CSSProperties} aria-hidden={!open}>
         <header className="found-ai-panel-header">
-        <div className="found-ai-avatar found-ai-circle">AI</div>
+          <FoundAIMascot active={open} thinking={loading} size={58} />
           <div>
             <strong>FoundAI</strong>
             <span>{brand.name} · {context}</span>
