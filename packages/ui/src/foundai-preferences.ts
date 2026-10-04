@@ -1,6 +1,7 @@
 export const BOT_PREFERENCES_KEY = 'foundingos-foundai-preferences-v1'
 export const BOT_COLOURS = [
   { id: 'original', label: 'Original', hex: '#38bdf8' },
+  { id: 'multicolour', label: 'Multicolour', hex: '#38bdf8' },
   { id: 'blue', label: 'Blue', hex: '#38bdf8' },
   { id: 'green', label: 'Green', hex: '#34d399' },
   { id: 'purple', label: 'Purple', hex: '#a78bfa' },
@@ -14,16 +15,38 @@ export type BotPreferences = {
   voiceURI: string
   rate: number
   accessory: typeof BOT_ACCESSORIES[number]['id']
+  character: typeof BOT_CHARACTERS[number]['id']
+  size: number
 }
+export const BOT_CHARACTERS = [
+  { id: 'classic', label: 'Original bot', description: 'Your familiar little companion.' },
+  { id: 'folded', label: 'Folded light', description: 'Iridescent ribbons and an asymmetric crest.' },
+  { id: 'creature', label: 'Mischief', description: 'A midnight creature with swept ears and a curling tail.' },
+  { id: 'sidekick', label: 'The Executive', description: 'A sharp little sidekick in a tailored jacket.' },
+  { id: 'sculpture', label: 'Flux', description: 'A living loop with a face nestled in its flowing form.' },
+  { id: 'superbot', label: 'SuperBot', description: 'SuperDash guardian with a midnight suit, gold FOS emblem and flowing cape.' },
+] as const
+export const BOT_PACKS = [
+  { id: 'creature', label: 'Mischief collection', description: 'Planned creature finishes and expressions.' },
+  { id: 'sidekick', label: 'Executive wardrobe', description: 'Planned outfits and character details.' },
+  { id: 'sculpture', label: 'Flux editions', description: 'Planned sculptural materials and lighting.' },
+] as const
 export const BOT_ACCESSORIES = [
   { id: 'none', label: 'Just me' },
   { id: 'glasses', label: 'Smart glasses' },
   { id: 'bowtie', label: 'Bow tie' },
   { id: 'crown', label: 'Little crown' },
 ] as const
-export const DEFAULT_BOT_PREFERENCES: BotPreferences = { name: 'FoundAI', colour: 'original', voiceURI: '', rate: 1, accessory: 'none' }
+export const DEFAULT_BOT_PREFERENCES: BotPreferences = { name: 'FoundAI', colour: 'original', voiceURI: '', rate: 1, accessory: 'none', character: 'classic', size: 64 }
+export function botPreferenceScope(pathname: string | null) {
+  const superdash = /^\/superdash(?:\/|$)/.test(pathname ?? '')
+  return {
+    key: superdash ? 'foundingos-superdash-bot-preferences-v1' : BOT_PREFERENCES_KEY,
+    defaults: superdash ? { ...DEFAULT_BOT_PREFERENCES, name: 'SuperBot', character: 'superbot' as const } : DEFAULT_BOT_PREFERENCES,
+  }
+}
 export function botWelcome(name: string) {
-  return `Welcome! I'm ${name}, your AI bot, powered by FoundAI. I'm here to help you find your way around FoundingOS and work through your next steps. You can make me your own by opening Bot settings and accessories. Give me a new name, choose my colour, and try on free smart glasses, a bow tie or a little crown. You can also choose an available device voice, adjust my speaking speed and preview how I sound. Press Save settings when you're happy. Your choices stay on this Mac or browser. My companion level grows as we work together, but that is separate from measured intelligence and does not train a model. What would you like help with today?`
+  return `Welcome! I'm ${name}, your AI bot, powered by FoundAI. I'm here to help you find your way around FoundingOS and work through your next steps. Click me to choose Talk to me or Open chat. Talk to me uses your microphone and your browser's speech recognition service. You can make me your own by opening Bot settings and accessories. Give me a new name, choose my colour or Multicolour, preview a different character, and try on free smart glasses, a bow tie or a little crown. Drag me to move me, or close settings and grab my corner handle to resize me. Paid character packs are coming soon, with no purchases or charges available yet. Automatic matches a free on-device voice to my character. You can also choose an available device voice, adjust my speaking speed and preview how I sound. Press Save settings when you're happy. Your choices stay on this Mac or browser. My companion level grows as we work together, but that is separate from measured intelligence and does not train a model. What would you like help with today?`
 }
 export const BOT_PROGRESS_KEY = 'foundingos-foundai-companion-progress-v1'
 
@@ -47,5 +70,9 @@ export function validateBotPreferences(value: unknown): BotPreferences {
   }
   const accessory = BOT_ACCESSORIES.find((item) => item.id === (record.accessory ?? 'none'))
   if (!accessory) throw new Error('Choose an available accessory.')
-  return { name: record.name.trim(), colour: colour.id, voiceURI: record.voiceURI, rate: record.rate, accessory: accessory.id }
+  const character = BOT_CHARACTERS.find((item) => item.id === (record.character === undefined ? 'classic' : record.character))
+  if (!character) throw new Error('Choose an available bot character.')
+  const size = record.size === undefined ? 64 : record.size
+  if (typeof size !== 'number' || !Number.isInteger(size) || size < 64 || size > 192) throw new Error('Bot size must be between 64 and 192 pixels.')
+  return { name: record.name.trim(), colour: colour.id, voiceURI: record.voiceURI, rate: record.rate, accessory: accessory.id, character: character.id, size }
 }

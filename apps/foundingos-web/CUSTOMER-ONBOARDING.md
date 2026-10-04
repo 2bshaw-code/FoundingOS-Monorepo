@@ -6,6 +6,24 @@
 4. Open Integrations → WhatsApp. Choose **Connect my WhatsApp Business app** (keep the same number on the phone) or **Connect a new number**, sign in with Facebook and pick the business and number. If quick connect is unavailable, use the manual Cloud API setup below.
 5. Send a test message from an opted-in phone, open WhatsApp Inbox and refresh. Select the real conversation, confirm consent and send a reply. Refresh to distinguish Meta acceptance from delivered/read status.
 
+## Personalise your assistant
+
+Open Bot settings to compare and select character previews: the original bot, Folded light, Mischief (a swept-ear creature), The Executive (a tailored sidekick), and Flux (a living sculpture). The original stays the default for existing and new users. Previews are free to select and save on this browser or Mac app; Cancel discards unsaved choices.
+
+SuperDash defaults to **SuperBot**, with a midnight suit, metallic gold FOS chest emblem, gold suit trim and cape edging. Lighting and cape colours still follow the selected colour; the gold detailing stays consistent. Its name and appearance settings save separately from the ordinary workspace bot, so visiting SuperDash does not replace that companion. Reset defaults restores SuperBot in SuperDash and the original bot elsewhere. SuperBot is also selectable in the character collection. This is a cosmetic identity using the existing assistant, not new intelligence, permissions or automation. Cape movement respects reduced-motion preferences.
+
+Paid character packs are labelled **Coming soon**. Mischief collection, Executive wardrobe and Flux editions are planned cosmetic collections only: no prices, checkout, payment, entitlements or premium voice purchases are implemented. Preview access is not a paid entitlement.
+
+Name, colour, free device voices and accessories remain configurable. Drag the bot to reposition it, or use the existing dance and slide controls. No character adds a sphere backdrop; reduced-motion settings still disable animations. Saved settings without a character field migrate to the original bot without losing the other choices.
+
+**Character-matched speech:** Automatic uses installed, on-device English voices, preferring British and enhanced voices where available. Each character has a different pitch profile and preview line: friendly Original, airy Folded light, playful Mischief, composed Executive, measured Flux and confident SuperBot. Settings show the actual matched voice. Some characters can share an installed voice; these are delivery presets, not newly generated voices. A manually selected voice overrides matching and pitch. Speaking speed is always the saved user choice. No paid speech provider is integrated. If no suitable local voice is available, a visible error directs the user to install one or choose a device voice; Automatic does not silently send speech to a cloud provider.
+
+Choose **Multicolour** under Bot colour for a blue, purple, rose, gold and green gradient finish. It applies to all character previews, the launcher and chat header, saves like single colours and retains SuperBot's metallic gold badge and trim.
+
+**Grab-to-resize:** close settings and drag the corner handle to resize the launcher from 64 to 192 pixels. Arrow keys on the handle resize it too. The bot itself still drags to move. Size is saved in the existing local settings (separately for SuperDash), and legacy settings default to 64 pixels. Position clamps use the rendered size during moving, sliding and viewport resizing. Cancelled resize gestures do not save. Storage failures are reported rather than claiming success.
+
+**Click choices:** clicking the bot offers Talk to me or Open chat. Talk to me starts one-turn browser speech recognition after explicit selection, shows listening state and recognised text, and speaks the same contextual answer as text chat. Speech recognition may use the browser provider's online service. Stop, close, switching to chat and leaving the component abort listening; there is no background or automatically repeating microphone loop. Permission, unsupported-browser, no-speech and playback errors are visible. Open chat remains available to type instead. No new execution permissions or generative backend are introduced by voice mode.
+
 ## Quick connect (Meta Embedded Signup)
 
 The recommended path appears when the backend has `WHATSAPP_APP_ID`, `WHATSAPP_APP_SECRET` and `WHATSAPP_EMBEDDED_SIGNUP_CONFIG_ID` set. FoundingOS exchanges the Meta code server-side, confirms the number belongs to the chosen WhatsApp Business Account, subscribes the app and stores the connection as ready. No tokens or webhook settings are copied by the customer.

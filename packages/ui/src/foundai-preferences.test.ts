@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { BOT_ACCESSORIES, BOT_COLOURS, DEFAULT_BOT_PREFERENCES, botWelcome, companionLevel, validateBotPreferences } from './foundai-preferences'
+import { BOT_ACCESSORIES, BOT_CHARACTERS, BOT_COLOURS, DEFAULT_BOT_PREFERENCES, botPreferenceScope, botWelcome, companionLevel, validateBotPreferences } from './foundai-preferences'
 
 test('welcome introduces the chosen name and explains actual personalisation controls', () => {
   const welcome = botWelcome('Buddy')
@@ -19,6 +19,39 @@ test('bot defaults and each palette/accessory combination validate', () => {
 test('invalid saved settings are rejected, not silently applied', () => {
   for (const value of [null, [], { ...DEFAULT_BOT_PREFERENCES, name: '' }, { ...DEFAULT_BOT_PREFERENCES, name: 'a'.repeat(31) }, { ...DEFAULT_BOT_PREFERENCES, name: 'Bot\n' }, { ...DEFAULT_BOT_PREFERENCES, colour: 'invalid' }, { ...DEFAULT_BOT_PREFERENCES, accessory: 'paid' }, { ...DEFAULT_BOT_PREFERENCES, rate: NaN }, { ...DEFAULT_BOT_PREFERENCES, rate: 0.4 }, { ...DEFAULT_BOT_PREFERENCES, rate: 1.6 }, { ...DEFAULT_BOT_PREFERENCES, voiceURI: 1 }]) {
     assert.throws(() => validateBotPreferences(value))
+  }
+})
+
+test('character choice persists and old settings retain the original bot', () => {
+  const { character, ...legacy } = DEFAULT_BOT_PREFERENCES
+  assert.equal(validateBotPreferences(legacy).character, 'classic')
+  for (const item of BOT_CHARACTERS) {
+    assert.equal(validateBotPreferences(JSON.parse(JSON.stringify({ ...DEFAULT_BOT_PREFERENCES, character: item.id }))).character, item.id)
+  }
+  for (const character of ['paid', '', null, 42]) {
+    assert.throws(() => validateBotPreferences({ ...DEFAULT_BOT_PREFERENCES, character }))
+  }
+})
+
+test('SuperDash has an independent SuperBot default without changing other workspaces', () => {
+  for (const path of ['/superdash', '/superdash/', '/superdash/marketing']) {
+    const scope = botPreferenceScope(path)
+    assert.equal(scope.defaults.character, 'superbot')
+    assert.equal(scope.defaults.name, 'SuperBot')
+    assert.notEqual(scope.key, botPreferenceScope('/').key)
+    assert.deepEqual(validateBotPreferences(scope.defaults), scope.defaults)
+  }
+  for (const path of [null, '/', '/app/retail', '/superdashboard']) {
+    assert.deepEqual(botPreferenceScope(path).defaults, DEFAULT_BOT_PREFERENCES)
+  }
+})
+
+test('size persists, legacy settings migrate, and invalid sizes are rejected', () => {
+  const { size, ...legacy } = DEFAULT_BOT_PREFERENCES
+  assert.equal(validateBotPreferences(legacy).size, 64)
+  for (const size of [64, 128, 192]) assert.equal(validateBotPreferences({ ...legacy, size }).size, size)
+  for (const size of [0, 63, 193, 128.5, NaN, Infinity, null, '128']) {
+    assert.throws(() => validateBotPreferences({ ...legacy, size }))
   }
 })
 

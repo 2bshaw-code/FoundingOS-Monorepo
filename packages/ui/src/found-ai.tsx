@@ -13,7 +13,9 @@ import { useAIAssistance } from './ai-assistance'
 import { FoundAIMascot } from './foundai-mascot'
 import { FoundAISettings } from './foundai-settings'
 import { useBotMovement } from './use-bot-movement'
-import { BOT_COLOURS, BOT_PREFERENCES_KEY, BOT_PROGRESS_KEY, DEFAULT_BOT_PREFERENCES, botWelcome, companionLevel, validateBotPreferences, type BotPreferences } from './foundai-preferences'
+import { useBotResize } from './use-bot-resize'
+import { BotVoiceConversation } from './bot-voice-conversation'
+import { BOT_COLOURS, BOT_PROGRESS_KEY, botPreferenceScope, botWelcome, companionLevel, validateBotPreferences, type BotPreferences } from './foundai-preferences'
 
 type Message = { role: 'assistant' | 'user'; text: string }
 
@@ -301,9 +303,16 @@ function matchKnowledge(text: string): string | null {
 
 export function FoundAI({ brand }: { brand: FoundAIBrand }) {
   const pathname = usePathname()
+  const scope = botPreferenceScope(pathname)
+  return <FoundAICompanion key={scope.key} brand={brand} scope={scope} />
+}
+
+function FoundAICompanion({ brand, scope }: { brand: FoundAIBrand; scope: ReturnType<typeof botPreferenceScope> }) {
+  const pathname = usePathname()
   const aiEnabled = useAIAssistance()
   const [open, setOpen] = useState(false)
-  const movement = useBotMovement(open, aiEnabled)
+  const [choicesOpen, setChoicesOpen] = useState(false)
+  const [voiceOpen, setVoiceOpen] = useState(false)
   const panelRef = useRef<HTMLElement>(null)
   useEffect(() => { if (panelRef.current) panelRef.current.inert = !open }, [open, aiEnabled])
   const [input, setInput] = useState('')
@@ -311,7 +320,7 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
   const [messages, setMessages] = useState<Message[]>([])
   const [autoSpeak, setAutoSpeak] = useAutoSpeak()
   const [canSpeak, setCanSpeak] = useState(false)
-  const [preferences, setPreferences] = useState<BotPreferences>(DEFAULT_BOT_PREFERENCES)
+  const [preferences, setPreferences] = useState<BotPreferences>(scope.defaults)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsError, setSettingsError] = useState('')
   const [voiceError, setVoiceError] = useState('')
@@ -320,10 +329,10 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
   const interactionCount = useRef(0)
   const progress = companionLevel(interactions)
   const botColour = preferences.colour === 'original' ? undefined : BOT_COLOURS.find((colour) => colour.id === preferences.colour)?.hex
-  const speechOptions = { voiceURI: preferences.voiceURI, rate: preferences.rate, onError: setVoiceError }
+  const speechOptions = { voiceURI: preferences.voiceURI, rate: preferences.rate, character: preferences.character, onError: setVoiceError }
   useEffect(() => {
     try {
-      const stored = window.localStorage.getItem(BOT_PREFERENCES_KEY)
+      const stored = window.localStorage.getItem(scope.key)
       if (stored) setPreferences(validateBotPreferences(JSON.parse(stored)))
     } catch (error) {
       setSettingsError(`Could not load your bot settings. ${error instanceof Error ? error.message : 'Storage is unavailable.'} Save settings to replace them.`)
@@ -344,7 +353,7 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
   const savePreferences = (value: BotPreferences) => {
     try {
       const validated = validateBotPreferences(value)
-      window.localStorage.setItem(BOT_PREFERENCES_KEY, JSON.stringify(validated))
+      window.localStorage.setItem(scope.key, JSON.stringify(validated))
       stopSpeaking()
       setPreferences(validated)
       setSettingsError('')
@@ -356,6 +365,8 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
       return false
     }
   }
+  const resize = useBotResize(preferences.size, (size) => savePreferences({ ...preferences, size }))
+  const movement = useBotMovement(open || choicesOpen || voiceOpen, aiEnabled, resize.size, resize.resizing)
   const recordInteraction = () => {
     const next = interactionCount.current + 1
     try {
@@ -371,9 +382,9 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
   const spokenCount = useRef(0)
   useEffect(() => {
     const last = messages[messages.length - 1]
-    if (autoSpeak && open && messages.length > spokenCount.current && last?.role === 'assistant') speak(last.text, { voiceURI: preferences.voiceURI, rate: preferences.rate, onError: setVoiceError })
+    if (autoSpeak && open && messages.length > spokenCount.current && last?.role === 'assistant') speak(last.text, { voiceURI: preferences.voiceURI, rate: preferences.rate, character: preferences.character, onError: setVoiceError })
     spokenCount.current = messages.length
-  }, [messages, autoSpeak, open, preferences.voiceURI, preferences.rate])
+  }, [messages, autoSpeak, open, preferences.voiceURI, preferences.rate, preferences.character])
   useEffect(() => { if (!open) stopSpeaking() }, [open])
   const [agentContext, setAgentContext] = useState<{ title?: string; coordinationSummary?: { scoreExplanation?: string[]; tradeoffs?: string[] }; historicalContext?: { narrative?: string }; predictiveSignals?: { triggerPattern?: string; likelyNext?: string; confidence?: number; highImpactOutcomeRate?: number; evidenceCount?: number; assessedOutcomes?: number; averageAccuracy?: number; reliabilityScore?: number; refined?: boolean; basis?: string[] }; simulationPreview?: { disclaimer?: string; comparison?: { predictedDelta?: string } }; outcomeAssessment?: { accuracy?: number; summary?: string } } | null>(null)
   const [systemIntelligence, setSystemIntelligence] = useState<{
@@ -492,6 +503,7 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
     recordInteraction()
     setInput('')
     setLoading(false)
+    return reply
   }
 
   const runAction = (action: SmartAction) => {
@@ -542,24 +554,39 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
       <button
         type="button"
         className={`found-ai-fab${movement.move ? ` is-${movement.move}` : ''}${movement.dragging ? ' is-dragging' : ''}`}
-        style={{ '--found-ai-accent': theme.accent, '--found-ai-glow': theme.glow, ...(movement.position ? { left: movement.position.x, top: movement.position.y, right: 'auto', bottom: 'auto' } : {}) } as React.CSSProperties}
+        style={{ '--found-ai-accent': theme.accent, '--found-ai-glow': theme.glow, width: resize.size, height: resize.size, ...(movement.position ? { left: movement.position.x, top: movement.position.y, right: 'auto', bottom: 'auto' } : {}) } as React.CSSProperties}
         onPointerDown={movement.pointerDown}
         onPointerMove={movement.pointerMove}
         onPointerUp={movement.pointerEnd}
         onPointerCancel={movement.pointerEnd}
         onLostPointerCapture={movement.pointerEnd}
         onKeyDown={movement.keyDown}
-        title="Drag to move. Use arrow keys when focused. Click to open help."
-        onClick={() => { if (!movement.consumeDrag()) { movement.stop(); setOpen((value) => !value) } }}
-        aria-expanded={open}
-        aria-label={`${open ? 'Close' : 'Open'} ${preferences.name}`}
+        title="Drag to move. Grab the corner handle to resize. Use arrow keys when focused. Click to open help."
+        onClick={() => { if (!movement.consumeDrag()) { movement.stop(); setOpen(false); setVoiceOpen(false); setChoicesOpen((value) => !value) } }}
+        aria-expanded={choicesOpen || open || voiceOpen}
+        aria-label={`${choicesOpen || open || voiceOpen ? 'Close' : 'Open'} ${preferences.name}`}
       >
-        <FoundAIMascot active thinking={loading} size={64} colour={botColour} accessory={preferences.accessory} />
+        <FoundAIMascot active thinking={loading} size={resize.size} colour={botColour} multicolour={preferences.colour === 'multicolour'} accessory={preferences.accessory} character={preferences.character} />
+      </button>
+      {settingsError && !open ? <p className="found-ai-float-status" role="alert">{settingsError}</p> : null}
+      {choicesOpen ? <section className="found-ai-choices" role="dialog" aria-label={`${preferences.name} options`} onKeyDown={(event) => { if (event.key === 'Escape') setChoicesOpen(false) }}>
+        <strong>{preferences.name}</strong>
+        <button type="button" autoFocus onClick={() => { setChoicesOpen(false); setSettingsOpen(false); setVoiceOpen(true) }}>Talk to me</button>
+        <span>Microphone + spoken replies. Your browser may use an online recognition service.</span>
+        <button type="button" onClick={() => { setChoicesOpen(false); setVoiceOpen(false); setSettingsOpen(false); setOpen(true) }}>Open chat</button>
+        <button type="button" onClick={() => setChoicesOpen(false)}>Cancel</button>
+      </section> : null}
+      {voiceOpen ? <BotVoiceConversation name={preferences.name} options={speechOptions} onSubmit={submit} onClose={() => setVoiceOpen(false)} onOpenChat={() => { setVoiceOpen(false); setSettingsOpen(false); setOpen(true) }} /> : null}
+      <button type="button" className="found-ai-resize" disabled={settingsOpen && open} aria-label={`Resize ${preferences.name}, currently ${resize.size} pixels`} title={settingsOpen && open ? 'Close Bot settings before resizing.' : 'Drag diagonally to resize. Arrow keys grow or shrink the bot.'}
+        style={movement.position ? { left: movement.position.x + resize.size - 24, top: movement.position.y + resize.size - 24, right: 'auto', bottom: 'auto' } : { right: 24, bottom: 24 }}
+        onPointerDown={(event) => { movement.stop(); resize.pointerDown(event) }} onPointerMove={resize.pointerMove} onPointerUp={resize.pointerEnd} onPointerCancel={resize.pointerEnd} onLostPointerCapture={resize.pointerEnd}
+        onKeyDown={(event) => { movement.stop(); resize.keyDown(event) }}>
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16"><path d="M3 9 V3 H9 M3 3 L13 13 M7 13 H13 V7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </button>
 
       <aside ref={panelRef} className={`found-ai-panel ${open ? 'open' : ''}${settingsOpen ? ' is-settings' : ''}`} style={{ '--found-ai-accent': theme.accent, '--found-ai-glow': theme.glow } as React.CSSProperties} aria-hidden={!open}>
         <header className="found-ai-panel-header">
-          <FoundAIMascot active={open} thinking={loading} size={58} colour={botColour} accessory={preferences.accessory} />
+          <FoundAIMascot active={open} thinking={loading} size={58} colour={botColour} multicolour={preferences.colour === 'multicolour'} accessory={preferences.accessory} character={preferences.character} />
           <div>
             <strong>{preferences.name}</strong>
             <span>{brand.name} · {context}</span>
@@ -587,7 +614,7 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
           </div>
           {movement.reduced ? <p>Dance and slide are disabled by your reduced-motion setting. You can still drag the bot.</p> : null}</> : null}
         </div>
-        {settingsOpen ? <FoundAISettings preferences={preferences} onSave={savePreferences} onClose={() => setSettingsOpen(false)} onSpeechError={setVoiceError} /> : <>
+        {settingsOpen ? <FoundAISettings preferences={preferences} defaults={scope.defaults} onSave={savePreferences} onClose={() => setSettingsOpen(false)} onSpeechError={setVoiceError} /> : <>
         <section className="found-ai-chat">
           {messages.map((message, index) => (
             <div key={`${message.role}-${index}`} className={`found-ai-message ${message.role}`}>

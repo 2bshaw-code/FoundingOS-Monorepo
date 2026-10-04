@@ -6,6 +6,8 @@
 // Built-in device speech; some installed voices use the device provider's online service.
 // Replies are only read aloud when someone taps a speaker button or turns on "Speak replies".
 import { useEffect, useState } from 'react'
+import { BOT_VOICE_PROFILES, matchedBotVoice } from './bot-voice'
+import type { BotPreferences } from './foundai-preferences'
 
 const AUTO_KEY = 'foundingos-foundai-speak'
 let cachedVoice: SpeechSynthesisVoice | null = null
@@ -36,14 +38,18 @@ export function stopSpeaking() {
   notify()
 }
 
-export type SpeechOptions = { voiceURI?: string; rate?: number; onError?: (message: string) => void }
+export type SpeechOptions = { voiceURI?: string; rate?: number; character?: BotPreferences['character']; onError?: (message: string) => void }
 
 export function speak(text: string, options: SpeechOptions = {}) {
   if (!speechSupported()) { options.onError?.('Speech is not supported on this device.'); return }
   if (!text.trim()) return
   const voice = options.voiceURI
     ? window.speechSynthesis.getVoices().find((item) => item.voiceURI === options.voiceURI)
-    : bestVoice()
+    : options.character ? matchedBotVoice(window.speechSynthesis.getVoices(), options.character) : bestVoice()
+  if (!options.voiceURI && options.character && !voice) {
+    options.onError?.('No on-device English voice is available yet. Install an English device voice or choose a voice manually in Bot settings.')
+    return
+  }
   if (options.voiceURI && !voice) {
     options.onError?.('Your selected voice is unavailable. Choose another voice in Bot settings.')
     return
@@ -51,6 +57,7 @@ export function speak(text: string, options: SpeechOptions = {}) {
   window.speechSynthesis.cancel()
   const utter = new SpeechSynthesisUtterance(spoken(text))
   utter.rate = options.rate ?? 1
+  if (options.character && !options.voiceURI) utter.pitch = BOT_VOICE_PROFILES[options.character].pitch
   if (voice) { utter.voice = voice; utter.lang = voice.lang } else utter.lang = 'en-GB'
   const clear = () => { if (speakingText === text) { speakingText = ''; notify() } }
   utter.onend = clear
