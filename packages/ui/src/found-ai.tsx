@@ -12,7 +12,8 @@ import type { BrandConsoleConfig } from './console'
 import { useAIAssistance } from './ai-assistance'
 import { FoundAIMascot } from './foundai-mascot'
 import { FoundAISettings } from './foundai-settings'
-import { BOT_COLOURS, BOT_PREFERENCES_KEY, BOT_PROGRESS_KEY, DEFAULT_BOT_PREFERENCES, companionLevel, validateBotPreferences, type BotPreferences } from './foundai-preferences'
+import { useBotMovement } from './use-bot-movement'
+import { BOT_COLOURS, BOT_PREFERENCES_KEY, BOT_PROGRESS_KEY, DEFAULT_BOT_PREFERENCES, botWelcome, companionLevel, validateBotPreferences, type BotPreferences } from './foundai-preferences'
 
 type Message = { role: 'assistant' | 'user'; text: string }
 
@@ -113,42 +114,8 @@ type SmartAction = {
   // itself and never invents the record's real data (name/value/amount) — the user still
   // types that; this only removes the friction of finding the form.
   href?: string
-  // Text-to-speech-ready voice pack — picked at click time (not fixed at render), read via
-  // the browser's own speechSynthesis (same mechanism the narrator already uses), and always
-  // also shown as a normal text message first. Never auto-plays; only this explicit,
-  // opt-in click ever triggers audio, matching "text only unless TTS is enabled".
-  audioBank?: string[]
+  audio?: string
 }
-
-// FoundAI's humorous voice pack — short, safe, TTS-ready story lines (third-person retellings,
-// distinct from the two-line FunnySet bubbles in animated-message-flow.tsx, which are written
-// to be read on screen rather than spoken aloud). Purely lighthearted; never a claim about
-// real user conversations.
-const AUDIO_SET: string[] = [
-  'Did you hear someone asked if they could turn themselves off and on again? I told them that only works for laptops.',
-  'Someone asked if they should drink another coffee. I said no — they\u2019re already vibrating.',
-  'Someone said they\u2019re going to the gym. I congratulated them\u2026 even though they were still on the sofa.',
-  'Someone forgot their password again. I told them I forgot mine too — and I don\u2019t even have one.',
-  'Someone said they\u2019re eating healthy today. Salad first\u2026 then a pizza. I called it balanced.',
-  'Someone asked if I\u2019m sure. I said confidently no.',
-  'Someone told me it\u2019s Monday. I alerted Guardian. High-risk day.',
-  'Someone said they\u2019re overthinking. I said same — even though I don\u2019t think, I just over-simulate.',
-  'Someone asked if their dog eating their sandwich is normal. I said classic dog.',
-  'Someone asked if she likes them. I requested data. They said she smiled. I said correlation does not equal causation.',
-  'Someone asked for life advice. I said step one: breathe. Step two: continue step one.',
-  'Someone said they\u2019re tired. I recommended sleep. They said they can\u2019t. I said\u2026 then be tired.',
-  'Someone asked if they\u2019re dramatic. I told them they\u2019re passionate. Passionately dramatic.',
-  'Someone told me their laptop froze. I said same — emotionally.',
-  'Someone said they don\u2019t feel productive. I offered to procrastinate with them.',
-  'Oh, you\u2019ll like this one\u2026 someone asked if they could reboot themselves.',
-  'Wait till you hear this\u2026 someone asked if Monday is dangerous.',
-  'You\u2019re not going to believe this\u2026 someone asked me for life advice.',
-  'Here\u2019s a good one\u2026 someone asked if their dog is stealing food on purpose.',
-]
-
-// Universal smart action, appended in every context/brand (see FoundAI component below) —
-// the voice pack isn't brand- or context-specific, so it doesn't belong in smartActions().
-const FOUNDAI_STORY_ACTION: SmartAction = { label: '\ud83d\udd0a Hear a FoundAI story', audioBank: AUDIO_SET }
 
 // Single-step AI Auto-Actions: each opens the real create form in the live workspace
 // (via "#new"), so the record's name/value/amount still comes from the user.
@@ -336,6 +303,7 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
   const pathname = usePathname()
   const aiEnabled = useAIAssistance()
   const [open, setOpen] = useState(false)
+  const movement = useBotMovement(open, aiEnabled)
   const panelRef = useRef<HTMLElement>(null)
   useEffect(() => { if (panelRef.current) panelRef.current.inert = !open }, [open, aiEnabled])
   const [input, setInput] = useState('')
@@ -347,6 +315,7 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsError, setSettingsError] = useState('')
   const [voiceError, setVoiceError] = useState('')
+  const [settingsNotice, setSettingsNotice] = useState('')
   const [interactions, setInteractions] = useState(0)
   const interactionCount = useRef(0)
   const progress = companionLevel(interactions)
@@ -380,6 +349,7 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
       setPreferences(validated)
       setSettingsError('')
       setVoiceError('')
+      setSettingsNotice('Bot settings saved on this device.')
       return true
     } catch (error) {
       setSettingsError(`Settings were not saved. ${error instanceof Error ? error.message : 'Storage is unavailable.'}`)
@@ -473,8 +443,8 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
         })
       }
     }
-    return [...contextual, ...aiAutoActions(brand), FOUNDAI_STORY_ACTION]
-  }, [agentContext, brand, context, systemIntelligence])
+    return [...contextual, ...aiAutoActions(brand), { label: '\ud83d\udd0a Hear my welcome', audio: botWelcome(preferences.name) }]
+  }, [agentContext, brand, context, systemIntelligence, preferences.name])
 
   useEffect(() => {
     const receiveContext = (event: Event) => setAgentContext((event as CustomEvent).detail ?? null)
@@ -532,11 +502,8 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
       return
     }
     setLoading(true)
-    if (action.audioBank && action.audioBank.length > 0) {
-      // Picked at click time (not fixed at render) so it varies across opens. Always shown
-      // as a normal text message first; speech is a genuinely opt-in extra for this one
-      // action only — nothing in FoundAI ever auto-plays audio.
-      const line = action.audioBank[Math.floor(Math.random() * action.audioBank.length)]
+    if (action.audio) {
+      const line = action.audio
       window.setTimeout(() => {
         setMessages((current) => [...current, { role: 'assistant', text: line }])
         setLoading(false)
@@ -574,16 +541,23 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
     <>
       <button
         type="button"
-        className="found-ai-fab"
-        style={{ '--found-ai-accent': theme.accent, '--found-ai-glow': theme.glow } as React.CSSProperties}
-        onClick={() => setOpen((value) => !value)}
+        className={`found-ai-fab${movement.move ? ` is-${movement.move}` : ''}${movement.dragging ? ' is-dragging' : ''}`}
+        style={{ '--found-ai-accent': theme.accent, '--found-ai-glow': theme.glow, ...(movement.position ? { left: movement.position.x, top: movement.position.y, right: 'auto', bottom: 'auto' } : {}) } as React.CSSProperties}
+        onPointerDown={movement.pointerDown}
+        onPointerMove={movement.pointerMove}
+        onPointerUp={movement.pointerEnd}
+        onPointerCancel={movement.pointerEnd}
+        onLostPointerCapture={movement.pointerEnd}
+        onKeyDown={movement.keyDown}
+        title="Drag to move. Use arrow keys when focused. Click to open help."
+        onClick={() => { if (!movement.consumeDrag()) { movement.stop(); setOpen((value) => !value) } }}
         aria-expanded={open}
         aria-label={`${open ? 'Close' : 'Open'} ${preferences.name}`}
       >
         <FoundAIMascot active thinking={loading} size={64} colour={botColour} accessory={preferences.accessory} />
       </button>
 
-      <aside ref={panelRef} className={`found-ai-panel ${open ? 'open' : ''}`} style={{ '--found-ai-accent': theme.accent, '--found-ai-glow': theme.glow } as React.CSSProperties} aria-hidden={!open}>
+      <aside ref={panelRef} className={`found-ai-panel ${open ? 'open' : ''}${settingsOpen ? ' is-settings' : ''}`} style={{ '--found-ai-accent': theme.accent, '--found-ai-glow': theme.glow } as React.CSSProperties} aria-hidden={!open}>
         <header className="found-ai-panel-header">
           <FoundAIMascot active={open} thinking={loading} size={58} colour={botColour} accessory={preferences.accessory} />
           <div>
@@ -595,12 +569,23 @@ export function FoundAI({ brand }: { brand: FoundAIBrand }) {
         </header>
 
         <div className="found-ai-personalise">
-          <button type="button" className="btn" aria-expanded={settingsOpen} onClick={() => { stopSpeaking(); setSettingsOpen(!settingsOpen) }}>Bot settings &amp; accessories</button>
+          <button type="button" className="btn" aria-expanded={settingsOpen} onClick={() => { stopSpeaking(); setSettingsNotice(''); setSettingsOpen(!settingsOpen) }}>{settingsOpen ? 'Back to chat' : 'Bot settings & accessories'}</button>
+          {!settingsOpen ? <>
           <span>Level {progress.level} · {progress.label}</span>
           <p>{interactions} interactions on this device{progress.next === null ? '' : ` · next level at ${progress.next}`}. Companion levels are cosmetic, not AI intelligence.</p>
           {context === 'Intelligence' && systemIntelligence?.health ? <p>Measured intelligence: {systemIntelligence.health.totalAssessedOutcomes ?? 0} assessed outcomes. {!systemIntelligence.health.totalAssessedOutcomes || systemIntelligence.health.averagePredictionAccuracy == null ? 'Accuracy not available.' : `Average measured accuracy: ${systemIntelligence.health.averagePredictionAccuracy}%.`} Accessories never change approval permissions or decision quality.</p> : <p>For measured outcomes and intelligence, open the Intelligence workspace. Chat use does not train a model.</p>}
+          </> : null}
+          {settingsNotice ? <p role="status">{settingsNotice}</p> : null}
           {settingsError ? <p role="alert">{settingsError}</p> : null}
           {voiceError ? <p role="alert">{voiceError}</p> : null}
+          {!settingsOpen ? <><div className="found-ai-movement" role="group" aria-label="Bot movement">
+            <button type="button" disabled={movement.reduced} onClick={() => movement.perform('dance')}>Dance</button>
+            <button type="button" disabled={movement.reduced} onClick={() => movement.perform('slide')}>Slide</button>
+            <button type="button" onClick={() => { movement.stop(); movement.setAutomatic(false) }}>Stop moving</button>
+            <button type="button" onClick={movement.reset}>Reset position</button>
+            <button type="button" disabled={movement.reduced} aria-pressed={movement.automatic} onClick={() => movement.setAutomatic(!movement.automatic)}>Move on his own: {movement.automatic ? 'on' : 'off'}</button>
+          </div>
+          {movement.reduced ? <p>Dance and slide are disabled by your reduced-motion setting. You can still drag the bot.</p> : null}</> : null}
         </div>
         {settingsOpen ? <FoundAISettings preferences={preferences} onSave={savePreferences} onClose={() => setSettingsOpen(false)} onSpeechError={setVoiceError} /> : <>
         <section className="found-ai-chat">

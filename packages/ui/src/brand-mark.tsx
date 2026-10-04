@@ -15,6 +15,7 @@ import superdash from '../assets/fos/superdash.png'
 
 const icons = { foundingos, retail, finance, marketing, logistics, legal, health, talent, hr, intelligence, superdash }
 
-export function FoundingOSBrandMark({ workspace }: { workspace?: BrandIcon }) {
-  return <span className="foundingos-brand-mark"><img alt={brandIconLabel(workspace)} height={52} src={icons[workspace ?? 'foundingos'].src} width={52} /></span>
+export function FoundingOSBrandMark({ workspace, size }: { workspace?: BrandIcon; size?: number }) {
+  const dimensions = size === undefined ? undefined : { width: size, height: size }
+  return <span className="foundingos-brand-mark" style={size === undefined ? undefined : { ...dimensions, flexBasis: size }}><img alt={brandIconLabel(workspace)} height={size ?? 52} src={icons[workspace ?? 'foundingos'].src} style={dimensions} width={size ?? 52} /></span>
 }

@@ -27,6 +27,7 @@ export function FoundAISettings({ preferences, onSave, onClose, onSpeechError }:
   const unavailable = Boolean(draft.voiceURI && !voices.some((voice) => voice.voiceURI === draft.voiceURI))
   const selectedColour = BOT_COLOURS.find((item) => item.id === draft.colour)
   return <form className="found-ai-settings" onSubmit={(event) => { event.preventDefault(); if (onSave(draft)) onClose() }}>
+    <div className="found-ai-settings-scroll">
     <h3>Bot settings</h3>
     <p>Personal to this browser or Mac app. Your bot is still powered by FoundAI.</p>
     <label htmlFor={`${id}-name`}>Bot name</label><input id={`${id}-name`} required maxLength={30} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
@@ -44,15 +45,18 @@ export function FoundAISettings({ preferences, onSave, onClose, onSpeechError }:
       {voices.map((voice) => <option key={`${voice.voiceURI}-${voice.lang}`} value={voice.voiceURI}>{voice.name} ({voice.lang}){voice.localService ? ' - on-device' : ' - device online voice'}</option>)}
     </select>
     {!speechSupported() ? <p role="status">This device does not support speech. Chat still works.</p> : voices.length === 0 ? <p role="status">No named voices are available yet. Automatic uses the device default.</p> : null}
-    {unavailable ? <p role="status">Choose an available voice or Automatic before previewing or saving.</p> : null}
     <label htmlFor={`${id}-speed`}>Speaking speed: {draft.rate.toFixed(1)}x</label><input id={`${id}-speed`} type="range" min="0.5" max="1.5" step="0.1" value={draft.rate} onChange={(event) => { stopSpeaking(); setDraft({ ...draft, rate: Number(event.target.value) }) }} />
     <p>Free device voices only. On Mac, additional voices can be downloaded in System Settings → Accessibility → Spoken Content (or Read &amp; Speak). Availability varies by macOS version. Online voices may send spoken text to the device’s voice provider.</p>
     <div className="found-ai-settings-buttons">
       <button type="button" className="btn" disabled={!speechSupported() || unavailable} onClick={() => { onSpeechError(''); speak(`Hello, I'm ${draft.name.trim() || 'FoundAI'}. Ready to help with your day.`, { ...draft, onError: onSpeechError }) }}>Preview voice</button>
       <button type="button" className="btn" onClick={stopSpeaking}>Stop voice</button>
       <button type="button" className="btn" onClick={() => { stopSpeaking(); setDraft({ ...DEFAULT_BOT_PREFERENCES }) }}>Reset defaults</button>
-      <button type="button" className="btn" onClick={onClose}>Cancel</button>
-      <button type="submit" className="btn btn-primary" disabled={unavailable}>Save settings</button>
     </div>
+    </div>
+    <footer className="found-ai-settings-footer">
+      {unavailable ? <p role="status">To save, choose an available voice or Automatic above.</p> : null}
+      <button type="button" className="btn" onClick={onClose}>Cancel</button>
+      <button type="submit" className="btn found-ai-save" disabled={unavailable}>Save settings</button>
+    </footer>
   </form>
 }

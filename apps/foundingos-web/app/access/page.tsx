@@ -1,5 +1,6 @@
 import { PasswordField } from './password-field'
 import { FoundingOSBrandMark } from '@foundingos/ui/brand-mark'
+import { DeviceField } from './device-field'
 
 export default function SiteAccessPage({ searchParams }: { searchParams: { returnTo?: string; error?: string } }) {
   return <main className="complete-workspace-access">
@@ -9,6 +10,7 @@ export default function SiteAccessPage({ searchParams }: { searchParams: { retur
       <h1>Sign in to FoundingOS</h1>
       <p>Use your email address and the invitation code we sent you. Already have a FoundingOS account? Use your own password.</p>
       <form action="/api/access/login" method="post">
+        <DeviceField />
         <input name="returnTo" type="hidden" value={searchParams.returnTo || '/'} />
         <label>Email address<input autoComplete="email" autoFocus name="email" required type="email" /></label>
         <PasswordField label="Invitation code or password" minLength={8} name="password" />

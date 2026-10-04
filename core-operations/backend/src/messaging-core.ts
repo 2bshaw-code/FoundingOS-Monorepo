@@ -14,6 +14,8 @@ import { buildIntelligenceBrief, explainActionForMessaging } from './intelligenc
 import { askFoundAi, isAiConfigured } from './ai.js'
 import { decideAutopilotApproval, listAutopilotApprovals } from './autopilot.js'
 import { insideServiceWindow, sendWhatsAppTemplate, templateParams } from './whatsapp-templates.js'
+import { assertWebhookPhone, extractWhatsAppDeliveries, statusesNotToDowngrade } from './whatsapp-delivery.js'
+import { BUSINESS_APP_ECHO_INTENT, HISTORY_IMPORT_INTENT, extractCoexistenceEvents, type MirroredWhatsAppMessage } from './whatsapp-coexistence.js'
 
 const json = (value: unknown): Prisma.InputJsonValue =>
   JSON.parse(JSON.stringify(value ?? {})) as Prisma.InputJsonValue
@@ -313,13 +315,14 @@ async function sendAndStoreReply(input: {
   }
 }
 
-async function processInboundMessage(input: WhatsAppInbound) {
+async function processInboundMessage(input: WhatsAppInbound, expectedTenantId?: string) {
   const providerMessageId = clean(input.message.id)
   const sender = clean(input.message.from)
   if (!providerMessageId || !sender) throw new Error('WhatsApp message is missing its provider ID or sender.')
 
   const existing = await prisma.messagingMessage.findUnique({ where: { providerMessageId } })
   if (existing) {
+    if (expectedTenantId && existing.tenantId !== expectedTenantId) throw Object.assign(new Error('Message belongs to a different company.'), { status: 403 })
     const delivery = record(existing.raw)
     const retryReply = clean(delivery.replyBody)
     if (retryReply && delivery.confirmationSent === false) {
@@ -352,6 +355,7 @@ async function processInboundMessage(input: WhatsAppInbound) {
   if (!connection?.active) {
     throw new Error(`No active tenant connection exists for WhatsApp phone number ID ${input.phoneNumberId}.`)
   }
+  if (expectedTenantId && connection.tenantId !== expectedTenantId) throw Object.assign(new Error('WhatsApp connection belongs to a different company.'), { status: 403 })
 
   const conversation = await prisma.messagingConversation.upsert({
     where: {
@@ -382,6 +386,7 @@ async function processInboundMessage(input: WhatsAppInbound) {
       body: body || null,
       intent: intent.type,
       raw: json(input.message),
+      ...(Number.isFinite(Number(input.message.timestamp)) && Number(input.message.timestamp) > 0 ? { createdAt: new Date(Number(input.message.timestamp) * 1000) } : {}),
     },
   })
   await publishEvent({
@@ -398,7 +403,7 @@ async function processInboundMessage(input: WhatsAppInbound) {
   let statePatch: Record<string, unknown> = {}
   let intentSucceeded = false
   if (!participant?.active) {
-    reply = `This number is not authorized to run FoundingOS actions. Ask your account owner to add it in Messaging settings.\n\nWeb fallback: ${webFallbackUrl()}`
+    return { providerMessageId, status: 'received' as const, intent: intent.type, confirmationSent: false }
   } else {
     try {
       assertIntentAllowed(participant.role, intent.type)
@@ -450,10 +455,67 @@ async function processInboundMessage(input: WhatsAppInbound) {
   return { providerMessageId, status: 'processed' as const, intent: intent.type, confirmationSent }
 }
 
-export async function processWhatsAppWebhook(payload: unknown) {
+async function activeConnectionFor(phoneNumberId: string, expectedTenantId?: string) {
+  const connection = await prisma.messagingChannelConnection.findUnique({ where: { channel_externalAccountId: { channel: 'whatsapp', externalAccountId: phoneNumberId } } })
+  if (!connection?.active || (expectedTenantId && connection.tenantId !== expectedTenantId)) throw Object.assign(new Error('Webhook connection is unavailable for this company.'), { status: 403 })
+  return connection
+}
+
+// Stores messages mirrored from the WhatsApp Business app (echoes and shared history).
+// They are recorded only: no commands run, no auto-replies are sent.
+async function storeMirroredMessage(message: MirroredWhatsAppMessage, expectedTenantId?: string) {
+  const connection = await activeConnectionFor(message.phoneNumberId, expectedTenantId)
+  const existing = await prisma.messagingMessage.findUnique({ where: { providerMessageId: message.id }, select: { tenantId: true } })
+  if (existing) {
+    if (existing.tenantId !== connection.tenantId) throw Object.assign(new Error('Message belongs to a different company.'), { status: 403 })
+    return { providerMessageId: message.id, status: 'duplicate' as const }
+  }
+  const sentAt = message.timestamp ? new Date(message.timestamp * 1000) : new Date()
+  const conversation = await prisma.messagingConversation.upsert({
+    where: { tenantId_channel_externalConversationId: { tenantId: connection.tenantId, channel: 'whatsapp', externalConversationId: message.counterpart } },
+    create: { tenantId: connection.tenantId, channel: 'whatsapp', externalConversationId: message.counterpart, participantAddress: message.counterpart, lastMessageAt: sentAt },
+    update: {},
+  })
+  if (conversation.lastMessageAt < sentAt) await prisma.messagingConversation.update({ where: { id: conversation.id }, data: { lastMessageAt: sentAt } })
+  await prisma.messagingMessage.create({
+    data: {
+      tenantId: connection.tenantId,
+      conversationId: conversation.id,
+      providerMessageId: message.id,
+      direction: message.direction,
+      messageType: message.type,
+      body: message.body,
+      intent: message.source === 'history' ? HISTORY_IMPORT_INTENT : BUSINESS_APP_ECHO_INTENT,
+      status: message.status,
+      createdAt: sentAt,
+    },
+  }).catch((error: unknown) => {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return null
+    throw error
+  })
+  return { providerMessageId: message.id, status: message.source === 'history' ? 'history_imported' as const : 'echo_recorded' as const }
+}
+
+export async function processWhatsAppWebhook(payload: unknown, expected?: { tenantId: string; phoneNumberId: string }) {
   const messages = extractWhatsAppMessages(payload)
+  const deliveries = extractWhatsAppDeliveries(payload)
+  const coexistence = extractCoexistenceEvents(payload)
+  for (const item of [...messages, ...deliveries, ...coexistence.messages]) assertWebhookPhone(expected?.phoneNumberId, item.phoneNumberId)
+  for (const phoneNumberId of coexistence.historyDeclined) assertWebhookPhone(expected?.phoneNumberId, phoneNumberId)
   const results = []
-  for (const message of messages) results.push(await processInboundMessage(message))
+  for (const message of messages) results.push(await processInboundMessage(message, expected?.tenantId))
+  for (const message of coexistence.messages) results.push(await storeMirroredMessage(message, expected?.tenantId))
+  for (const phoneNumberId of new Set(coexistence.historyDeclined)) {
+    const connection = await activeConnectionFor(phoneNumberId, expected?.tenantId)
+    await prisma.workspaceAuditEvent.create({ data: { tenantId: connection.tenantId, actorId: 'meta-webhook', action: 'whatsapp.history_declined', metadata: { phoneNumberId } } })
+  }
+  for (const delivery of deliveries) {
+    const connection = await activeConnectionFor(delivery.phoneNumberId, expected?.tenantId)
+    await prisma.messagingMessage.updateMany({
+      where: { tenantId: connection.tenantId, providerMessageId: delivery.id, direction: 'outbound', status: { notIn: statusesNotToDowngrade(delivery.status) } },
+      data: { status: delivery.status },
+    })
+  }
   return results
 }
 
@@ -565,10 +627,11 @@ export const messagingReadiness = async (tenantId: string) => {
 export const saveMessagingConnection = (tenantId: string, channel: string, input: Record<string, unknown>) => {
   const externalAccountId = clean(input.externalAccountId)
   if (!externalAccountId) throw Object.assign(new Error('External account ID is required.'), { status: 400 })
-  return prisma.messagingChannelConnection.upsert({
-    where: { channel_externalAccountId: { channel, externalAccountId } },
-    create: { tenantId, channel, externalAccountId, displayName: clean(input.displayName) || null, active: input.active !== false },
-    update: { tenantId, displayName: clean(input.displayName) || null, active: input.active !== false },
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.messagingChannelConnection.findUnique({ where: { channel_externalAccountId: { channel, externalAccountId } } })
+    if (existing && existing.tenantId !== tenantId) throw Object.assign(new Error('This messaging number already belongs to a different company.'), { status: 409 })
+    if (existing) return tx.messagingChannelConnection.update({ where: { id: existing.id }, data: { displayName: clean(input.displayName) || null, active: input.active !== false } })
+    return tx.messagingChannelConnection.create({ data: { tenantId, channel, externalAccountId, displayName: clean(input.displayName) || null, active: input.active !== false } })
   })
 }
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { PasswordField } from '../access/password-field'
+import { FoundingOSBrandMark } from '@foundingos/ui/brand-mark'
 import { baseKeys, boltOnKeys, commercialBases, commercialBoltOns, commercialPlans, extraSeat, monthlyTotalGbp, type BaseWorkspaceKey, type BoltOnKey } from '@foundingos/config/commercial'
 import type { PlanTier } from '@foundingos/config/suites'
 
@@ -80,11 +81,12 @@ export default function SignupPage() {
 
   return <main className="complete-workspace-access signup-page">
     <section>
-      <div className="complete-workspace-access-brand"><span>F</span><div><strong>FoundingOS</strong><small>Core.Operations · Core.Workforce · Core.Intelligence</small></div></div>
+      <div className="complete-workspace-access-brand"><FoundingOSBrandMark /><div><strong>FoundingOS</strong><small>Core.Operations · Core.Workforce · Core.Intelligence</small></div></div>
       {status === 'done' ? <>
         <p className="eyebrow">Welcome to FoundingOS</p>
-        <h1>Your account is ready</h1>
+        <h1>Continue to your account</h1>
         <p>Sign in with the email and password you just chose.</p>
+        <p>Next: add your first product, follow the WhatsApp connection guide, then read and reply to your first test conversation in WhatsApp Inbox. Paid features activate only after payment is confirmed.</p>
         {message ? <div className="complete-workspace-error" role="status">{message}</div> : null}
         <a className="retail-app-primary invitation-link" href="/app/retail">Sign in to FoundingOS</a>
       </> : <>
@@ -99,7 +101,7 @@ export default function SignupPage() {
           </label>
           <small className="site-access-note">{PLANS[plan].summary} Need SSO or a custom rollout? <a className="text-link" href="/contact">Talk to us about Enterprise</a>.</small>
           {plan === 'core' ? <fieldset className="signup-bolt-ons">
-            <legend>Your workspaces (£19/month each)</legend>
+            <legend>Your workspaces (priced individually below)</legend>
             {baseKeys.map((key) => <label className="signup-check" key={key}>
               <input checked={bases.includes(key)} onChange={() => toggleBase(key)} type="checkbox" />
               <span>{commercialBases[key].name} · £{commercialBases[key].monthlyPriceGbp}/month<small>{commercialBases[key].description}</small></span>

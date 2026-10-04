@@ -4,6 +4,11 @@ import Link from 'next/link'
 import { talentModules } from './talent-workspace'
 import { financeModuleLabels } from './finance-labels'
 import { FoundingOSBrandMark } from './brand-mark'
+import { CustomerLaunch } from './customer-launch'
+import { WhatsAppSetup } from './whatsapp-setup'
+import { LiveWhatsAppInbox } from './live-whatsapp-inbox'
+import { whatsAppCredentialFields } from './whatsapp-credential-fields'
+import { companyWhatsAppWebhookUrl } from './workspace-production-client'
 import { printRecordRegister } from './workspace-print'
 import { runImport } from './spreadsheet-import'
 import { AccountNavLinks } from './account-nav'
@@ -523,7 +528,7 @@ function useWorkspaceState(workspace: BusinessWorkspaceSlug, activeModule: strin
       if (activeModule === 'integrations') {
         requests.push(
           productionRequest<Array<{ id: string; provider: string; displayName: string; configuration: { category?: string }; status: string }>>('/platform/integrations')
-            .then((integrations) => setState((current) => ({ ...current, integrations: integrations.map((item) => ({ id: item.provider, name: item.displayName, category: item.configuration?.category || 'Integration', connected: item.status === 'ready' || item.status === 'configured' })) }))),
+            .then((integrations) => setState((current) => ({ ...current, integrations: integrations.map((item) => ({ id: item.provider, name: item.displayName, category: item.configuration?.category || 'Integration', connected: item.status === 'ready' })) }))),
         )
       }
       if (activeModule === 'settings') {
@@ -1622,7 +1627,7 @@ const channelGlyph: Record<InboxChannel, string> = { WhatsApp: '💬', Email: '�
 // (All + one folder per stage, like Outlook's Focused/Other), a searchable message list on the left
 // (avatar, sender, channel badge, subject preview, unread indicator, timestamp), and the open message
 // with a reply box on the right, exactly like Gmail/Outlook/WhatsApp Web.
-function InboxListView({ records, selectedId, onSelect, statuses }: { records: WorkspaceRecord[]; selectedId?: string; onSelect: (id: string) => void; statuses: string[] }) {
+function InboxListView({ production, records, selectedId, onSelect, statuses }: { production: boolean; records: WorkspaceRecord[]; selectedId?: string; onSelect: (id: string) => void; statuses: string[] }) {
   const [folder, setFolder] = useState('All')
   const [query, setQuery] = useState('')
   const filtered = records
@@ -1632,7 +1637,7 @@ function InboxListView({ records, selectedId, onSelect, statuses }: { records: W
   const [replyDraft, setReplyDraft] = useState('')
   const [sentFlash, setSentFlash] = useState(false)
   const sendReply = () => {
-    if (!replyDraft.trim()) return
+    if (production || !replyDraft.trim()) return
     setReplyDraft('')
     setSentFlash(true)
     window.setTimeout(() => setSentFlash(false), 2400)
@@ -1642,7 +1647,7 @@ function InboxListView({ records, selectedId, onSelect, statuses }: { records: W
       <button className={folder === 'All' ? 'active' : ''} onClick={() => setFolder('All')} type="button"><span>All conversations</span><em>{records.length}</em></button>
       {statuses.map((status) => <button className={folder === status ? 'active' : ''} key={status} onClick={() => setFolder(status)} type="button"><span>{status}</span><em>{records.filter((record) => record.status === status).length}</em></button>)}
       <div className="retail-app-inbox-connect">
-        <p>Bring every conversation here</p>
+        <p>{production ? 'Live message delivery is not wired to this register yet.' : 'Demo conversations - no messages sent'}</p>
         <Link href="../integrations">Connect email &amp; channels →</Link>
       </div>
     </div>
@@ -1654,7 +1659,7 @@ function InboxListView({ records, selectedId, onSelect, statuses }: { records: W
           <span className="retail-app-inbox-avatar">{initials(record.name)}</span>
           <span className="retail-app-inbox-row-body">
             <span className="retail-app-inbox-row-top"><b>{record.name}</b><i>{record.updated}</i></span>
-            <span className="retail-app-inbox-row-preview"><em className="retail-app-inbox-channel" title={channelFor(record.id)}>{channelGlyph[channelFor(record.id)]}</em>{record.secondary} — {messageBody(record.id).slice(0, 46)}…</span>
+            <span className="retail-app-inbox-row-preview">{production ? record.secondary : <><em className="retail-app-inbox-channel" title={channelFor(record.id)}>{channelGlyph[channelFor(record.id)]}</em>{record.secondary} — {messageBody(record.id).slice(0, 46)}…</>}</span>
           </span>
           {record.status === statuses[0] ? <span className="retail-app-inbox-dot" /> : null}
         </button>)}
@@ -1664,16 +1669,16 @@ function InboxListView({ records, selectedId, onSelect, statuses }: { records: W
     {selected ? <div className="retail-app-inbox-thread">
       <div className="retail-app-inbox-thread-head">
         <span className="retail-app-inbox-avatar large">{initials(selected.name)}</span>
-        <div><strong>{selected.name}</strong><span>{channelGlyph[channelFor(selected.id)]} {channelFor(selected.id)} · {selected.secondary} · {selected.updated}</span></div>
+        <div><strong>{selected.name}</strong><span>{production ? 'Registered conversation' : `${channelGlyph[channelFor(selected.id)]} ${channelFor(selected.id)}`} · {selected.secondary} · {selected.updated}</span></div>
         <span className={`retail-app-status status-${selected.status.toLowerCase().replace(/\s+/g, '-')}`}>{selected.status}</span>
       </div>
       <div className="retail-app-inbox-thread-body">
-        <p>{messageBody(selected.id)}</p>
+        <p>{production ? selected.secondary : messageBody(selected.id)}</p>
       </div>
       <div className="retail-app-inbox-reply">
-        <textarea onChange={(event) => setReplyDraft(event.target.value)} placeholder={`Reply to ${selected.name}…`} rows={3} value={replyDraft} />
-        <button className="retail-app-primary" disabled={!replyDraft.trim()} onClick={sendReply} type="button">Send reply</button>
-        {sentFlash ? <span className="retail-app-inbox-sent">Sent ✓</span> : null}
+        <textarea disabled={production} onChange={(event) => setReplyDraft(event.target.value)} placeholder={production ? 'Live replies are not available in this register yet.' : `Reply to ${selected.name}…`} rows={3} value={replyDraft} />
+        <button className="retail-app-primary" disabled={production || !replyDraft.trim()} onClick={sendReply} type="button">{production ? 'Live reply unavailable' : 'Simulate reply'}</button>
+        {sentFlash ? <span className="retail-app-inbox-sent">Demo reply simulated - no message sent</span> : null}
       </div>
     </div> : <div className="retail-app-inbox-thread"><p className="retail-app-board-empty">Select a conversation to read it</p></div>}
   </div>
@@ -2357,7 +2362,7 @@ async function convertToInvoice(create: (workspace: BusinessWorkspaceSlug, modul
   return `Draft invoice ${input.reference} created in ${configs[targetWorkspace].label}`
 }
 
-function RecordsPage({ autopilot, workspace, config, item, state, createRecord, advanceRecord, attachRecord, uploadProductPhoto, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords, importRecords, reloadModule }: { autopilot?: AutopilotController; workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; uploadProductPhoto: (record: WorkspaceRecord, file: File) => Promise<void>; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string, kind?: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate' | 'email' | 'phone'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void>; saveRecordData: (module: string, record: WorkspaceRecord, patch: ProPatch) => Promise<void>; createLinkedRecord: (workspace: BusinessWorkspaceSlug, module: string, input: { reference: string; name: string; status: string; valuePence: number; data: Record<string, unknown> }) => Promise<void>; loadRecords: LoadRecords; importRecords: (module: string, records: WorkspaceRecord[]) => Promise<{ created: number; skipped: number }>; reloadModule: (module: string) => Promise<void> }) {
+function RecordsPage({ production, autopilot, workspace, config, item, state, createRecord, advanceRecord, attachRecord, uploadProductPhoto, adjustStock, logNote, updateRecord, bulkAdvance, publishHandoff, saveRecordData, createLinkedRecord, loadRecords, importRecords, reloadModule }: { production: boolean; autopilot?: AutopilotController; workspace: BusinessWorkspaceSlug; config: WorkspaceConfig; item: WorkspaceModule; state: WorkspaceState; createRecord: (module: string, record: WorkspaceRecord) => Promise<WorkspaceRecord>; advanceRecord: (module: string, record: WorkspaceRecord, status: string) => Promise<void>; attachRecord: (module: string, record: WorkspaceRecord, attachment: string | undefined, attachmentName: string) => void; uploadProductPhoto: (record: WorkspaceRecord, file: File) => Promise<void>; adjustStock: (module: string, record: WorkspaceRecord, quantity: number, note: string) => void; logNote: (module: string, record: WorkspaceRecord, note: string, kind?: string) => void; updateRecord: (module: string, record: WorkspaceRecord, patch: Partial<Pick<WorkspaceRecord, 'name' | 'secondary' | 'value' | 'owner' | 'dueDate' | 'email' | 'phone'>>) => Promise<void>; bulkAdvance: (module: string, records: WorkspaceRecord[], status: string) => Promise<void>; publishHandoff: (module: string, record: WorkspaceRecord, target: BusinessWorkspaceSlug) => Promise<void>; saveRecordData: (module: string, record: WorkspaceRecord, patch: ProPatch) => Promise<void>; createLinkedRecord: (workspace: BusinessWorkspaceSlug, module: string, input: { reference: string; name: string; status: string; valuePence: number; data: Record<string, unknown> }) => Promise<void>; loadRecords: LoadRecords; importRecords: (module: string, records: WorkspaceRecord[]) => Promise<{ created: number; skipped: number }>; reloadModule: (module: string) => Promise<void> }) {
   const records = state.records[item.id] ?? []
   const documentKind = documentKindFor(workspace, item.id)
   const proDocuments = useProDocuments(workspace, documentKind || item.id === 'sales-pipeline' ? workspace : '', loadRecords)
@@ -2728,7 +2733,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
       <button onClick={() => exportCsv(visible.filter((record) => checked.includes(record.id)))} type="button">Export selected</button>
       <button onClick={() => setCheckedIds([])} type="button">Clear selection</button>
     </div> : null}
-    {isInbox ? <InboxListView onSelect={selectRecord} records={visible} selectedId={selected?.id} statuses={statuses} /> : <section className="retail-app-record-layout">
+    {isInbox ? <InboxListView production={production} onSelect={selectRecord} records={visible} selectedId={selected?.id} statuses={statuses} /> : <section className="retail-app-record-layout">
       {isCalendar ? <CalendarGridView entries={(CALENDAR_SOURCES[item.id] ?? [item.id]).flatMap((source) => (source === item.id ? visible : state.records[source] ?? []).map((record) => ({ record, module: source })))} onCreate={(day) => { setCreateDay(day); setCreating(true) }} onSchedule={(entry, day) => void updateRecord(entry.module, entry.record, { dueDate: day })} onSelect={(entry) => { if (entry.module === item.id) selectRecord(entry.record.id) }} selectedId={selected?.id} /> : isProducts ? <ProductGridView checked={checked} onSelect={selectRecord} onToggle={toggleChecked} records={visible} selectedId={selected?.id} /> : isDirectory ? <div className="retail-app-directory-card">
         <div className="retail-app-panel-heading"><div><p>{item.group}</p><h2>{visible.length} {item.label.toLowerCase()}</h2></div></div>
         <div className="retail-app-directory-grid">
@@ -2864,7 +2869,7 @@ function RecordsPage({ autopilot, workspace, config, item, state, createRecord, 
       onSaveBatch={(rows, start, batch) => importRecords(item.id, rows.map((row, offset) => ({ id: `${item.id.slice(0, 3).toUpperCase()}-${batch}-${start + offset + 1}`, name: row.name, secondary: row.secondary, value: row.value, status: row.status ?? statuses[0], owner: row.owner ?? 'Unassigned', updated: 'Now', email: row.email, phone: row.phone, dueDate: row.dueDate })))}
       statuses={statuses}
     /> : null}
-    {creating ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void create(event)}><div><p>{item.label}</p><h2>New {noun}</h2></div><label>{fields.name}<input name="name" required /></label><label>{fields.secondary}<input name="secondary" required /></label><div className="retail-app-form-grid"><label>{fields.value}<input name="value" placeholder={profile?.valueHint ?? '£0 or priority'} required={profile?.valueRequired ?? true} /></label><label>{fields.owner}<select name="owner"><option>Maya</option><option>Noah</option><option>Ava</option><option>Bobby</option></select></label></div>{isCalendar ? <label>Date<input defaultValue={createDay} key={createDay} name="dueDate" required type="date" /></label> : null}<label>Attachment (optional)<input accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv" name="attachment" type="file" /></label>{error ? <div className="complete-workspace-error" role="alert"><span>{error}</span>{retry ? <button type="button" className="complete-workspace-error__retry" onClick={retry}>Retry</button> : null}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setCreating(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Saving…' : `Create ${noun}`}</button></footer></form></div> : null}
+    {creating ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void create(event)}><div><p>{item.label}</p><h2>New {noun}</h2></div><label>{fields.name}<input name="name" required /></label><label>{fields.secondary}<input name="secondary" required /></label><div className="retail-app-form-grid"><label>{fields.value}<input name="value" type={workspace === 'retail' && item.id === 'products' ? 'number' : 'text'} min={workspace === 'retail' && item.id === 'products' ? '0' : undefined} step={workspace === 'retail' && item.id === 'products' ? '0.01' : undefined} placeholder={workspace === 'retail' && item.id === 'products' ? 'Price in GBP, e.g. 12.50' : profile?.valueHint ?? '£0 or priority'} required={profile?.valueRequired ?? true} /></label><label>{fields.owner}<select name="owner">{production ? <option>Unassigned</option> : <><option>Maya</option><option>Noah</option><option>Ava</option><option>Bobby</option></>}</select></label></div>{isCalendar ? <label>Date<input defaultValue={createDay} key={createDay} name="dueDate" required type="date" /></label> : null}<label>Attachment (optional)<input accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv" name="attachment" type="file" /></label>{error ? <div className="complete-workspace-error" role="alert"><span>{error}</span>{retry ? <button type="button" className="complete-workspace-error__retry" onClick={retry}>Retry</button> : null}</div> : null}<footer><button className="retail-app-secondary" disabled={saving} onClick={() => setCreating(false)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Saving…' : `Create ${noun}`}</button></footer></form></div> : null}
   </>
 }
 
@@ -2888,6 +2893,8 @@ function IntegrationsPage({ state, update, production }: { state: WorkspaceState
   const [selectedProvider, setSelectedProvider] = useState<(typeof providerCatalog)[number] | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const tenantId = production ? getProductionSession()?.user.tenantId : undefined
+  const webhookUrl = tenantId ? companyWhatsAppWebhookUrl(tenantId) : undefined
   const integrations = production
     ? providerCatalog.map((provider) => ({ ...provider, connected: state.integrations.some((item) => item.id === provider.id && item.connected) }))
     : state.integrations.map((integration) => ({ ...integration, fields: [] as readonly string[] }))
@@ -2913,7 +2920,7 @@ function IntegrationsPage({ state, update, production }: { state: WorkspaceState
       setSaving(false)
     }
   }
-  return <><WorkspaceHeading eyebrow="Connected platform" title="Integrations" copy="Connect channels and systems through one governed FoundingOS integration layer. Credentials are encrypted before storage and never returned to the browser." /><div className="retail-app-automation-grid">{integrations.map((integration) => <article className="retail-app-panel" key={integration.id}><div className="retail-app-panel-heading"><div><p>{integration.category}</p><h2>{integration.name}</h2></div><span className={`retail-app-status ${integration.connected ? 'status-active' : 'status-draft'}`}>{integration.connected ? 'Connected' : 'Available'}</span></div><p>{integration.connected ? 'Configuration passed the platform readiness check.' : 'Add provider credentials to activate this service.'}</p><button className={integration.connected ? 'retail-app-secondary' : 'retail-app-primary'} onClick={() => production ? setSelectedProvider(providerCatalog.find((item) => item.id === integration.id) || null) : update((current) => ({ ...current, integrations: current.integrations.map((item) => item.id === integration.id ? { ...item, connected: !item.connected } : item) }), `${integration.name} ${integration.connected ? 'disconnected' : 'connected'}`)} type="button">{production ? (integration.connected ? 'Replace credentials' : 'Configure') : (integration.connected ? 'Disconnect demo' : 'Connect demo')}</button></article>)}</div>{selectedProvider ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void connect(event)}><div><p>{selectedProvider.category}</p><h2>Connect {selectedProvider.name}</h2></div>{selectedProvider.fields.map((field) => <label key={field}>{field.replace(/([A-Z])/g, ' $1')}<input autoComplete="off" name={field} required={!(selectedProvider as { optional?: string[] }).optional?.includes(field)} type={field.toLowerCase().includes('secret') || field.toLowerCase().includes('token') || field.toLowerCase().includes('key') ? 'password' : 'text'} /></label>)}{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<footer><button className="retail-app-secondary" onClick={() => setSelectedProvider(null)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Checking…' : 'Save and check'}</button></footer></form></div> : null}</>
+  return <><WorkspaceHeading eyebrow="Connected platform" title="Integrations" copy="Connect channels and systems through one governed FoundingOS integration layer. Credentials are encrypted before storage and never returned to the browser." /><WhatsAppSetup simulation={!production} webhookUrl={webhookUrl} /><div className="retail-app-automation-grid">{integrations.map((integration) => <article className="retail-app-panel" key={integration.id}><div className="retail-app-panel-heading"><div><p>{integration.category}</p><h2>{integration.name}</h2></div><span className={`retail-app-status ${integration.connected ? 'status-active' : 'status-draft'}`}>{production ? (integration.connected ? 'Credentials verified' : 'Setup required') : (integration.connected ? 'Demo connected' : 'Demo available')}</span></div><p>{integration.connected ? (production ? integration.id === 'whatsapp' ? 'Provider credentials accepted. Verify webhook delivery and a test conversation separately.' : 'Provider credentials accepted. Verify the service-specific workflow before launch.' : 'Simulated connection only. No real provider is connected.') : 'Follow the setup guide and add provider credentials to activate this service.'}</p><button className={integration.connected ? 'retail-app-secondary' : 'retail-app-primary'} onClick={() => production ? setSelectedProvider(providerCatalog.find((item) => item.id === integration.id) || null) : update((current) => ({ ...current, integrations: current.integrations.map((item) => item.id === integration.id ? { ...item, connected: !item.connected } : item) }), `${integration.name} ${integration.connected ? 'disconnected' : 'connected'}`)} type="button">{production ? (integration.connected ? 'Replace credentials' : 'Configure') : (integration.connected ? 'Disconnect demo' : 'Connect demo')}</button></article>)}</div>{selectedProvider ? <div className="retail-app-modal-backdrop"><form className="retail-app-modal" onSubmit={(event) => void connect(event)}><div><p>{selectedProvider.category}</p><h2>Connect {selectedProvider.name}</h2></div>{selectedProvider.fields.map((field) => <label key={field}>{selectedProvider.id === 'whatsapp' ? whatsAppCredentialFields[field]?.label : field.replace(/([A-Z])/g, ' $1')}<input autoComplete="off" name={field} required={!(selectedProvider as { optional?: string[] }).optional?.includes(field)} type={field.toLowerCase().includes('secret') || field.toLowerCase().includes('token') || field.toLowerCase().includes('key') ? 'password' : 'text'} />{selectedProvider.id === 'whatsapp' ? <small>{whatsAppCredentialFields[field]?.hint}</small> : null}{selectedProvider.id === 'whatsapp' && field === 'verifyToken' ? <button className="retail-app-secondary" disabled={saving} onClick={(event) => { const input = event.currentTarget.closest('form')?.elements.namedItem('verifyToken'); if (input instanceof HTMLInputElement) input.value = `${crypto.randomUUID()}-${crypto.randomUUID()}` }} type="button">Generate verify token</button> : null}</label>)}{error ? <div className="complete-workspace-error" role="alert">{error}</div> : null}<footer><button className="retail-app-secondary" disabled={saving} onClick={() => setSelectedProvider(null)} type="button">Cancel</button><button className="retail-app-primary" disabled={saving} type="submit">{saving ? 'Checking…' : 'Save and check'}</button></footer></form></div> : null}</>
 }
 
 function OutcomesPage({ intelligence, production }: { intelligence: AgentIntelligenceSummary; production: boolean }) {
@@ -3383,8 +3390,10 @@ export function CompleteWorkspaceApplication({ workspace, section = 'overview', 
   else if (['reports', 'forecasting', 'attribution'].includes(current.id)) content = <ReportsPage config={config} />
   else if (current.id === 'event-feed') content = <EventFeedPage events={events} />
   else if (current.id === 'settings') content = <SettingsPage config={config} production={production} state={state} update={update} />
-  else content = <RecordsPage key={`${workspace}/${current.id}`} autopilot={autopilot} adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} uploadProductPhoto={uploadProductPhoto} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} saveRecordData={saveRecordData} createLinkedRecord={createLinkedRecord} loadRecords={loadRecords} importRecords={importRecords} reloadModule={reloadModule} />
+  else if (production && current.id === 'inbox') content = <LiveWhatsAppInbox key={workspace} integrationsHref={`${workspaceRoot}/${workspace}/integrations#whatsapp-setup`} />
+  else content = <RecordsPage key={`${workspace}/${current.id}`} production={production} autopilot={autopilot} adjustStock={adjustStock} advanceRecord={advanceRecord} attachRecord={attachRecord} uploadProductPhoto={uploadProductPhoto} bulkAdvance={bulkAdvance} config={config} createRecord={createRecord} item={current} logNote={logNote} publishHandoff={publishHandoff} state={state} updateRecord={updateRecord} workspace={workspace} saveRecordData={saveRecordData} createLinkedRecord={createLinkedRecord} loadRecords={loadRecords} importRecords={importRecords} reloadModule={reloadModule} />
   if (current.id === 'overview') content = <><AutopilotPanel controller={autopilot} label={config.label} workspace={workspace} />{content}</>
+  if (workspace === 'retail' && current.id === 'overview') content = <><CustomerLaunch root={workspaceRoot} products={state.records.products?.length ?? 0} loading={loading} error={error} simulation={!production} />{content}</>
   const demoBar = productionModeEnabled && productionApiConfigured ? <div className={`demo-data-bar${demo ? ' is-on' : ''}`}>{demo
     ? <><strong>Demo data on</strong><span>Made-up example records so you can see what a busy {config.label} workspace looks like. Changes stay in this browser — nothing touches your real account.</span><button onClick={() => { reset(); setDemo(false) }} type="button">Back to my data</button></>
     : <><strong>See it in action</strong><span>Fill {config.label} with realistic example records to explore every tool.</span><button onClick={() => setDemo(true)} type="button">Load demo data</button></>}</div> : null

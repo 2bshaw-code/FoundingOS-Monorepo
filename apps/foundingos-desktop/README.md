@@ -14,6 +14,19 @@ Open the bot and choose **Bot settings & accessories** to change its name (up to
 changes before saving; settings are stored in this Mac app/browser, not synced
 across accounts or devices. Reset defaults restores the standard appearance and
 voice selection, without deleting chat or companion progress.
+Settings scroll independently, while the high-contrast Save settings and Cancel
+buttons remain visible at the bottom. A saved confirmation appears in chat.
+Preview voice, Stop voice, Reset defaults and accessories are in the scrollable
+settings area. Back to chat discards unsaved changes, like Cancel.
+Collapsed page coaches keep the small bot's face, arms and legs visible rather
+than reverting to a coloured sphere. Older console logo imports now display the
+approved FOS mark; the legacy sphere artwork is no longer rendered.
+Drag the floating bot with mouse or touch, or focus it and use arrow keys.
+Dragging does not open help. Bot movement controls provide Dance, Slide,
+Stop moving, Reset position and an optional Move on his own switch.
+Automatic moves run at most every 30 seconds while help is closed, the page is
+visible and no drag is active. Reduced motion disables dance/slide, not dragging.
+Position and automatic movement are session-only and reset on reload.
 
 Glasses, a bow tie and a crown are free try-on accessories, with no checkout.
 Companion levels advance after 5, 20 and 50 completed chat/action interactions
@@ -21,7 +34,10 @@ on this device; they are cosmetic and do not train a model or grant permissions.
 Measured intelligence remains the Intelligence workspace's assessed outcomes
 and accuracy, not the companion level.
 
-Voice selection applies to replies, speaker buttons, stories and previews.
+**Hear my welcome** replaces the story action with a spoken introduction using
+the bot's saved name and instructions for personalising it. The welcome is also
+shown in chat and plays only when requested (or with reply narration enabled).
+Voice selection applies to replies, speaker buttons, the welcome and previews.
 Available voices depend on the device. Additional Mac voices can be downloaded
 from System Settings > Accessibility > Spoken Content (or Read & Speak).
 Online device voices may send spoken text to the device provider; no paid voice

@@ -214,6 +214,11 @@ const apiRoot = () => {
   return configuredRoot.replace(/\/+$/, '')
 }
 
+export function companyWhatsAppWebhookUrl(tenantId: string) {
+  if (!tenantId) throw new Error('Company identity is required for WhatsApp setup.')
+  return `${apiRoot()}/ops/whatsapp/webhook/${encodeURIComponent(tenantId)}`
+}
+
 const readBody = async (response: Response) => {
   const body = await response.json().catch(() => ({ success: false, message: 'Invalid server response' })) as { success?: boolean; message?: string; data?: unknown }
   if (!response.ok || body.success === false) throw new Error(body.message || `Request failed with status ${response.status}`)
@@ -265,7 +270,7 @@ export async function loginToProduction(email: string, password: string) {
 
 // Admins/investors who passed the website access page with their code get a full SuperDash
 // session without signing in again: the site's server exchanges its verified access cookie.
-export async function adoptPreviewSession() {
+async function requestPreviewSession() {
   const response = await fetch('/api/access/session', { method: 'POST', cache: 'no-store', headers: { 'X-Device-Fingerprint': deviceFingerprint() } })
   const body = await readBody(response) as { accessToken?: string; token?: string; refreshToken?: string; user?: ProductionUser }
   const accessToken = body.accessToken || body.token
@@ -273,6 +278,12 @@ export async function adoptPreviewSession() {
   const session = { accessToken, refreshToken: body.refreshToken, user: body.user }
   saveSession(session)
   return session
+}
+
+let adoption: Promise<ProductionSession> | null = null
+export function adoptPreviewSession() {
+  if (!adoption) adoption = requestPreviewSession().finally(() => { adoption = null })
+  return adoption
 }
 
 export async function bootstrapProduction(input: Record<string, unknown>, bootstrapToken: string) {

@@ -115,7 +115,7 @@ export default function PrivacyPolicyPage() {
         <p>
           You can ask to see, correct, export or delete your personal data, object to or restrict how we use it, and
           ask for a copy in a portable format. Company owners can export their workspace data from settings. Email us
-          to make a request — we reply within one month. If you are unhappy with how we handle your data, you can
+          to make a request — we reply within one month. See <a href="/data-deletion">how to delete your data</a>. If you are unhappy with how we handle your data, you can
           complain to the UK Information Commissioner’s Office (ico.org.uk) or your local data protection authority.
         </p>
 

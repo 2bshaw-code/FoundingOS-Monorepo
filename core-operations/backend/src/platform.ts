@@ -397,26 +397,39 @@ export async function saveIntegration(tenantId: string, actorId: string, provide
   const credentials = input.credentials && typeof input.credentials === 'object' && !Array.isArray(input.credentials) ? input.credentials as Record<string, unknown> : {}
   const missing = requirements.filter((key) => !String(credentials[key] ?? '').trim())
   if (missing.length) throw Object.assign(new Error(`Missing ${provider} credentials: ${missing.join(', ')}`), { status: 400 })
+  return storeIntegration(tenantId, actorId, provider, credentials, input, { status: 'configured', lastCheckedAt: null }, requestId)
+}
+
+// Embedded Signup tokens are verified with Meta before saving; verify token and app secret come from the platform app.
+export async function saveEmbeddedWhatsAppIntegration(tenantId: string, actorId: string, credentials: Record<string, unknown>, input: { displayName: string; configuration: Record<string, unknown> }, requestId?: string) {
+  if (!String(credentials.accessToken ?? '').trim() || !String(credentials.phoneNumberId ?? '').trim()) throw Object.assign(new Error('WhatsApp connection is missing its token or phone number.'), { status: 400 })
+  return storeIntegration(tenantId, actorId, 'whatsapp', credentials, input, { status: 'ready', lastCheckedAt: new Date() }, requestId)
+}
+
+async function storeIntegration(tenantId: string, actorId: string, provider: string, credentials: Record<string, unknown>, input: Record<string, unknown>, state: { status: string; lastCheckedAt: Date | null }, requestId?: string) {
   const encrypted = encryptIntegrationCredentials(credentials)
   const data = {
     displayName: String(input.displayName || provider),
-    status: 'configured',
+    status: state.status,
     configuration: json(input.configuration),
     credentialsCiphertext: encrypted.credentialsCiphertext,
     credentialsIv: encrypted.credentialsIv,
     credentialsTag: encrypted.credentialsTag,
-    lastCheckedAt: null,
+    lastCheckedAt: state.lastCheckedAt,
     lastError: null,
     updatedBy: actorId,
   }
-  const record = await prisma.integrationCredential.upsert({ where: { tenantId_provider: { tenantId, provider } }, create: { tenantId, provider, createdBy: actorId, ...data }, update: data })
-  if (provider === 'whatsapp') {
-    await prisma.messagingChannelConnection.upsert({
-      where: { channel_externalAccountId: { channel: 'whatsapp', externalAccountId: String(credentials.phoneNumberId) } },
-      create: { tenantId, channel: 'whatsapp', externalAccountId: String(credentials.phoneNumberId), displayName: String(input.displayName || 'WhatsApp'), active: true },
-      update: { tenantId, displayName: String(input.displayName || 'WhatsApp'), active: true },
-    })
-  }
+  const record = await prisma.$transaction(async (tx) => {
+    if (provider === 'whatsapp') {
+      const externalAccountId = String(credentials.phoneNumberId).trim()
+      const connection = await tx.messagingChannelConnection.findUnique({ where: { channel_externalAccountId: { channel: 'whatsapp', externalAccountId } } })
+      if (connection && connection.tenantId !== tenantId) throw Object.assign(new Error('This WhatsApp number already belongs to a different company.'), { status: 409 })
+      await tx.messagingChannelConnection.updateMany({ where: { tenantId, channel: 'whatsapp', externalAccountId: { not: externalAccountId } }, data: { active: false } })
+      if (connection) await tx.messagingChannelConnection.update({ where: { id: connection.id }, data: { displayName: String(input.displayName || 'WhatsApp'), active: true } })
+      else await tx.messagingChannelConnection.create({ data: { tenantId, channel: 'whatsapp', externalAccountId, displayName: String(input.displayName || 'WhatsApp'), active: true } })
+    }
+    return tx.integrationCredential.upsert({ where: { tenantId_provider: { tenantId, provider } }, create: { tenantId, provider, createdBy: actorId, ...data }, update: data })
+  })
   await audit({ tenantId, actorId, action: 'integration.configured', entityId: record.id, requestId, metadata: { provider, credentialFields: Object.keys(credentials) } })
   return publicIntegration(record)
 }
@@ -458,7 +471,9 @@ export async function checkIntegration(tenantId: string, actorId: string, provid
   const record = await prisma.integrationCredential.findUnique({ where: { tenantId_provider: { tenantId, provider } } })
   if (!record) throw Object.assign(new Error(`${provider} is not configured`), { status: 404 })
   const credentials = decryptIntegrationCredentials(record)
-  const missing = (providerRequirements[provider] || []).filter((key) => !String(credentials[key] ?? '').trim())
+  const embedded = provider === 'whatsapp' && credentials.connectionMode === 'embedded_signup'
+  const required = (providerRequirements[provider] || []).filter((key) => !embedded || !['verifyToken', 'appSecret'].includes(key))
+  const missing = required.filter((key) => !String(credentials[key] ?? '').trim())
   if (missing.length) {
     const lastError = `Missing credentials: ${missing.join(', ')}`
     const updated = await prisma.integrationCredential.update({ where: { id: record.id }, data: { status: 'invalid', lastCheckedAt: new Date(), lastError, updatedBy: actorId } })

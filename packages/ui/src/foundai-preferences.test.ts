@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { BOT_ACCESSORIES, BOT_COLOURS, DEFAULT_BOT_PREFERENCES, companionLevel, validateBotPreferences } from './foundai-preferences'
+import { BOT_ACCESSORIES, BOT_COLOURS, DEFAULT_BOT_PREFERENCES, botWelcome, companionLevel, validateBotPreferences } from './foundai-preferences'
+
+test('welcome introduces the chosen name and explains actual personalisation controls', () => {
+  const welcome = botWelcome('Buddy')
+  assert.match(welcome, /Welcome! I'm Buddy, your AI bot/)
+  for (const detail of ['Bot settings and accessories', 'new name', 'colour', 'smart glasses', 'bow tie', 'crown', 'device voice', 'speaking speed', 'Save settings', 'this Mac or browser', 'does not train a model']) assert.ok(welcome.includes(detail))
+  assert.match(botWelcome('FoundAI'), /I'm FoundAI/)
+})
 
 test('bot defaults and each palette/accessory combination validate', () => {
   assert.deepEqual(validateBotPreferences(DEFAULT_BOT_PREFERENCES), DEFAULT_BOT_PREFERENCES)

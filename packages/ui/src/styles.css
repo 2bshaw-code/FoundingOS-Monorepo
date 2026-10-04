@@ -10204,6 +10204,18 @@ body[data-sidebar-collapsed='true'] .nav-card {
   outline: 2px solid #7dd3fc;
   outline-offset: 3px;
 }
+.found-ai-fab { touch-action: none; user-select: none; }
+.found-ai-fab.is-dragging { cursor: grabbing; transition: none; }
+.found-ai-fab.is-slide { transition: left 1.2s ease-in-out, top 1.2s ease-in-out; }
+.found-ai-fab.is-dance > svg { animation: foundai-dance .65s ease-in-out 5; transform-origin: center bottom; }
+@keyframes foundai-dance {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  25% { transform: translateY(-8px) rotate(-12deg); }
+  75% { transform: translateY(-8px) rotate(12deg); }
+}
+.found-ai-movement { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.found-ai-movement button { min-height: 36px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-strong); color: var(--text); cursor: pointer; }
+.found-ai-movement [aria-pressed='true'] { border-color: #38bdf8; }
 
 .found-ai-fab:hover {
   animation-play-state: paused;
@@ -10281,7 +10293,9 @@ body[data-sidebar-collapsed='true'] .nav-card {
 .found-ai-personalise { font-size: 12px; color: var(--muted); }
 .found-ai-personalise span { display: block; margin-top: 8px; }
 .found-ai-personalise p { margin: 6px 0 0; }
-.found-ai-settings { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.found-ai-panel.is-settings { grid-template-rows: auto auto minmax(0, 1fr); overflow: hidden; }
+.found-ai-settings { display: grid; grid-template-rows: minmax(0, 1fr) auto; min-width: 0; min-height: 0; gap: 12px; }
+.found-ai-settings-scroll { display: grid; gap: 12px; align-content: start; overflow-y: auto; overscroll-behavior: contain; min-height: 0; padding: 4px; }
 .found-ai-settings p { margin: 0; font-size: 12px; color: var(--muted); }
 .found-ai-settings label { display: grid; gap: 6px; font-size: 13px; }
 .found-ai-settings input, .found-ai-settings select {
@@ -10299,6 +10313,22 @@ body[data-sidebar-collapsed='true'] .nav-card {
 .found-ai-accessories p { width: 100%; }
 .found-ai-accessories [aria-pressed='true'] { outline: 2px solid #7dd3fc; outline-offset: 1px; }
 .found-ai-settings-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.found-ai-settings-footer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+.found-ai-settings-footer p { grid-column: 1 / -1; }
+.found-ai-panel .btn {
+  min-height: 44px;
+  padding: 8px 12px;
+  background: var(--surface-strong);
+  color: var(--text);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.found-ai-panel .found-ai-save { background: #38bdf8; color: #071014; border-color: #38bdf8; }
+.found-ai-panel .found-ai-save:hover:not(:disabled) { background: #7dd3fc; }
+.found-ai-panel button:focus-visible { outline: 2px solid #7dd3fc; outline-offset: 2px; }
+.found-ai-panel button:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .found-ai-close {
   width: 36px;
@@ -15601,6 +15631,40 @@ html[data-accessibility-simplified='true'] .btn {
 /* Homepage: AI-first hero + FoundAI movie */
 .hero.hero-ai { max-width: 1200px; grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr); gap: 44px; padding-top: 64px; }
 .hero.hero-ai h1 { font-size: clamp(40px, 6vw, 72px); line-height: 1.02; }
+.hero.hero-ai .hero-copy { gap: 12px; align-content: start; }
+.hero.hero-ai .hero-copy > p { margin: 0; line-height: 1.5; }
+.hero.hero-ai .hero-copy > ul { margin: 0; }
+.hero.hero-ai .hero-actions { margin-top: 2px; }
+.customer-launch { margin-bottom: 20px; }
+.customer-launch > ol { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.customer-launch > ol > li { display: grid; align-content: start; gap: 10px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; }
+.customer-launch li > span { font-size: 13px; color: var(--muted); }
+.whatsapp-setup { margin-bottom: 20px; }
+.whatsapp-setup details { margin-block: 16px; }
+.whatsapp-setup summary { cursor: pointer; font-weight: 700; }
+.whatsapp-setup li, .retail-app-inbox-thread-body article p, .retail-app-inbox-row-body { overflow-wrap: anywhere; }
+.retail-app-modal:has(input[name="verifyToken"]) { max-height: calc(100dvh - 48px); overflow-y: auto; }
+.retail-app-modal:has(input[name="verifyToken"]) footer { position: sticky; bottom: 0; padding-block: 12px; background: #fff; border-top: 1px solid #e5eaf0; }
+.retail-app-inbox-reply label { display: flex; align-items: flex-start; gap: 8px; }
+.retail-app-inbox-reply input[type="checkbox"] { flex: 0 0 auto; width: auto; }
+.whatsapp-setup ol { padding-left: 24px; display: grid; gap: 12px; }
+.whatsapp-setup input { width: 100%; min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-strong); color: var(--text); }
+.whatsapp-quick-connect { display: grid; gap: 16px; margin-block: 16px 24px; padding: 20px; border: 2px solid #25d366; border-radius: 14px; background: #f1fbf5; color: #172033; }
+.whatsapp-quick-connect p, .whatsapp-quick-connect li { color: #3d4a5c; line-height: 1.5; }
+.whatsapp-quick-connect h3, .whatsapp-quick-connect h4, .whatsapp-quick-connect summary { color: #172033; }
+.whatsapp-quick-connect h3, .whatsapp-quick-connect h4, .whatsapp-quick-connect p { margin: 0; }
+.whatsapp-quick-connect > div:first-child { display: grid; gap: 6px; }
+.whatsapp-quick-connect-eyebrow { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #128c4b; }
+.whatsapp-quick-connect-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.whatsapp-quick-connect-options article { display: grid; gap: 10px; align-content: space-between; padding: 16px; border: 1px solid #dfe5ed; border-radius: 10px; background: #fff; }
+.whatsapp-quick-connect-options button { width: 100%; min-height: 44px; }
+.whatsapp-quick-connect-options button:disabled { opacity: .6; cursor: progress; }
+.whatsapp-quick-connect ul { margin: 8px 0 0; padding-left: 20px; display: grid; gap: 6px; }
+.whatsapp-quick-connect-done { display: grid; gap: 8px; padding: 12px 14px; border-radius: 10px; background: #dff6e8; color: #0b3d22; }
+.whatsapp-quick-connect-done p { color: #0b3d22; }
+.whatsapp-quick-connect [role="alert"] { color: #b42318; font-weight: 600; }
+.whatsapp-manual-heading { margin: 8px 0 0; font-size: 16px; }
+@media (max-width: 760px) { .customer-launch > ol { grid-template-columns: 1fr; } }
 .hero-ai-intro { display: grid; justify-items: start; gap: 10px; }
 .hero-ai .eyebrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
 .hero-ai .hero-ai-tagline { margin: 0; font-size: 12px; line-height: 1.4; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
@@ -15609,10 +15673,10 @@ html[data-accessibility-simplified='true'] .btn {
 @media (max-width: 600px) {
   .hero.hero-ai { gap: 28px; padding: 36px clamp(18px, 6vw, 32px) 48px; }
   .hero.hero-ai h1 { font-size: clamp(32px, 9vw, 44px); line-height: 1.09; overflow-wrap: break-word; }
-  .hero.hero-ai .hero-copy { gap: 16px; }
+  .hero.hero-ai .hero-copy { gap: 12px; }
   .hero-ai .hero-ai-tagline { font-size: 11px; letter-spacing: .08em; }
   .hero-ai .hero-ai-pill, .hero-ai .hero-wa-pill { margin: 0; font-size: 11px; }
-  .hero.hero-ai .hero-copy > p:not(.eyebrow) { font-size: 16px; line-height: 1.6; }
+  .hero.hero-ai .hero-copy > p:not(.eyebrow) { font-size: 16px; line-height: 1.5; }
 }
 .whatsapp-chat .chat-bubble p { white-space: pre-line; }
 .hero-ai-points { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 10px; }
@@ -16285,8 +16349,8 @@ body:has(.cross-sell-ticker) .found-ai-fab { bottom: 64px; }
 .site-nav-logo .foundingos-brand-mark img { height: 36px; width: 36px; }
 .sd-top > .foundingos-brand-mark + div { flex: 1; }
 .foundai-mascot { flex: 0 0 auto; overflow: visible; }
-.foundai-mascot-limbs { opacity: 0; transform: scale(.05); transform-origin: 80px 80px; transition: transform .65s ease, opacity .35s ease; }
-.foundai-mascot-face { opacity: 0; transition: opacity .4s ease; }
+.foundai-mascot-limbs { opacity: 1; transform: scale(1); transform-origin: 80px 80px; }
+.foundai-mascot-face { opacity: 1; }
 .foundai-mascot.is-active .foundai-mascot-limbs { opacity: 1; transform: scale(1); }
 .foundai-mascot.is-active .foundai-mascot-face { opacity: 1; }
 .foundai-mascot.is-active .foundai-mascot-arm-right { animation: foundai-wave 3s ease-in-out infinite; transform-origin: 119px 82px; }

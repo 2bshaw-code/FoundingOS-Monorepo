@@ -22,6 +22,9 @@ export const BOT_ACCESSORIES = [
   { id: 'crown', label: 'Little crown' },
 ] as const
 export const DEFAULT_BOT_PREFERENCES: BotPreferences = { name: 'FoundAI', colour: 'original', voiceURI: '', rate: 1, accessory: 'none' }
+export function botWelcome(name: string) {
+  return `Welcome! I'm ${name}, your AI bot, powered by FoundAI. I'm here to help you find your way around FoundingOS and work through your next steps. You can make me your own by opening Bot settings and accessories. Give me a new name, choose my colour, and try on free smart glasses, a bow tie or a little crown. You can also choose an available device voice, adjust my speaking speed and preview how I sound. Press Save settings when you're happy. Your choices stay on this Mac or browser. My companion level grows as we work together, but that is separate from measured intelligence and does not train a model. What would you like help with today?`
+}
 export const BOT_PROGRESS_KEY = 'foundingos-foundai-companion-progress-v1'
 
 export function companionLevel(interactions: number) {

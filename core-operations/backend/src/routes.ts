@@ -22,6 +22,8 @@ import { addMerchantStaff, merchantWorkspace, ownerMerchantSummary, removeMercha
 import { listEvents, predictEventPattern, publishEvent, queryEvents, registerEventStreamClient, summarizeEventPattern } from './event-feed.js'
 import { generateInsightsFromRecentEvents, listInsights, registerInsightStreamClient } from './insights.js'
 import { listMessagingConnections, listMessagingParticipants, messagingReadiness, processWhatsAppWebhook, saveMessagingConnection, saveMessagingParticipant, sendMessagingIntelligenceBrief } from './messaging-core.js'
+import { inboxThread, listInboxConversations, replyToInbox, whatsAppDiagnostics } from './inbox.js'
+import { connectWhatsAppWithEmbeddedSignup, retryWhatsAppCoexistenceSync, whatsAppEmbeddedSignupConfig } from './whatsapp-embedded-signup-service.js'
 import { acceptTeamInvitation, assertWorkspaceAccess, bootstrapTenant, checkIntegration, completeStripeCheckout, createWorkspaceRecord, deleteWorkspaceRecord, exportGovernanceCsv, getControlSettings, getIntegrationCredentials, getInvitationDetails, getOnboarding, importWorkspaceRecords, inviteTeamMember, listAuditEvents, listIntegrations, listPendingInvitations, listTeam, listTenantWorkspaces, listWorkspaceRecords, platformReadiness, requestWorkspaceUpgrade, ensureFounderEntitlements, recordPaymentCheckout, revokeTeamInvitation, resendTeamInvitation, saveControlSettings, saveIntegration, saveOnboarding, saveTenantWorkspace, updateTeamMember, updateWorkspaceRecord, uploadWorkspaceRecordImage } from './platform.js'
 import { verifyBootstrapToken } from './platform-security.js'
 import { createTenantCheckout, verifyStripeWebhookSignature } from './stripe.js'
@@ -170,8 +172,11 @@ apiRouter.post('/whatsapp/webhook', async (req, res, next) => {
 })
 apiRouter.get('/whatsapp/webhook/:tenantId', async (req, res, next) => {
   try {
-    const credentials = await getIntegrationCredentials(String(req.params.tenantId), 'whatsapp')
-    return verifyWebhook(req.query['hub.mode'], req.query['hub.verify_token'], credentials) ? res.send(String(req.query['hub.challenge'] || '')) : res.status(403).json({ success: false, message: 'Webhook verification failed' })
+    const tenantId = String(req.params.tenantId)
+    const credentials = await getIntegrationCredentials(tenantId, 'whatsapp')
+    if (!verifyWebhook(req.query['hub.mode'], req.query['hub.verify_token'], credentials)) return res.status(403).json({ success: false, message: 'Webhook verification failed' })
+    await prisma.workspaceAuditEvent.create({ data: { tenantId, actorId: 'meta-webhook', action: 'whatsapp.webhook_verified', metadata: { phoneNumberId: String(credentials.phoneNumberId) } } })
+    return res.send(String(req.query['hub.challenge'] || ''))
   } catch (error) { next(error) }
 })
 apiRouter.post('/whatsapp/webhook/:tenantId', async (req, res, next) => {
@@ -179,7 +184,7 @@ apiRouter.post('/whatsapp/webhook/:tenantId', async (req, res, next) => {
     const credentials = await getIntegrationCredentials(String(req.params.tenantId), 'whatsapp')
     const rawBody = (req as typeof req & { rawBody?: Buffer }).rawBody || Buffer.from(JSON.stringify(req.body || {}))
     if (!verifyWebhookSignature(rawBody, req.get('x-hub-signature-256'), credentials)) return res.status(401).json({ success: false, message: 'Invalid webhook signature' })
-    const messages = await processWhatsAppWebhook(req.body)
+    const messages = await processWhatsAppWebhook(req.body, { tenantId: String(req.params.tenantId), phoneNumberId: String(credentials.phoneNumberId) })
     res.status(200).json({ success: true, data: messages })
   } catch (error) { next(error) }
 })
@@ -225,6 +230,27 @@ apiRouter.get('/messaging/readiness', requireOwnerAccess, requireTenant, require
   } catch (error) {
     next(error)
   }
+})
+apiRouter.get('/messaging/inbox', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await listInboxConversations(readTenant(req, res)!) }) } catch (error) { next(error) }
+})
+apiRouter.get('/messaging/inbox/:id', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await inboxThread(readTenant(req, res)!, String(req.params.id)) }) } catch (error) { next(error) }
+})
+apiRouter.post('/messaging/inbox/:id/replies', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.status(202).json({ success: true, data: await replyToInbox(readTenant(req, res)!, String(req.params.id), req.body || {}, req.get('Idempotency-Key') || '') }) } catch (error) { next(error) }
+})
+apiRouter.get('/messaging/whatsapp-diagnostics', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await whatsAppDiagnostics(readTenant(req, res)!) }) } catch (error) { next(error) }
+})
+apiRouter.get('/messaging/whatsapp/embedded-signup/config', requireOwnerAccess, requireTenant, requireCoreOperationsModule, (_req, res) => {
+  res.json({ success: true, data: whatsAppEmbeddedSignupConfig() })
+})
+apiRouter.post('/messaging/whatsapp/embedded-signup', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.status(201).json({ success: true, data: await connectWhatsAppWithEmbeddedSignup(readTenant(req, res)!, res.locals.auth.id, req.body || {}, req.get('X-Request-Id') || undefined) }) } catch (error) { next(error) }
+})
+apiRouter.post('/messaging/whatsapp/embedded-signup/sync', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
+  try { res.json({ success: true, data: await retryWhatsAppCoexistenceSync(readTenant(req, res)!, res.locals.auth.id) }) } catch (error) { next(error) }
 })
 apiRouter.put('/messaging/connections/:channel', requireOwnerAccess, requireTenant, requireCoreOperationsModule, async (req, res, next) => {
   try {

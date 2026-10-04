@@ -8,6 +8,7 @@
 import type { AutopilotOutbound } from '@foundingos/config/autopilot'
 import { prisma } from './auth.js'
 import { getIntegrationCredentials } from './platform.js'
+import { countsTowardServiceWindow } from './whatsapp-coexistence.js'
 
 export const TEMPLATE_LANGUAGE = 'en_GB'
 type TemplateInput = { reference: string; name: string; business: string; amount: string; due: string }
@@ -127,7 +128,7 @@ export async function submitWhatsAppTemplates(tenantId: string, actorId: string)
 export async function insideServiceWindow(tenantId: string, phoneDigits: string) {
   const since = new Date(Date.now() - 24 * 60 * 60_000)
   const inbound = await prisma.messagingMessage.findFirst({
-    where: { tenantId, direction: 'inbound', createdAt: { gte: since }, conversation: { channel: 'whatsapp', participantAddress: { in: [phoneDigits, `+${phoneDigits}`] } } },
+    where: { tenantId, direction: 'inbound', ...countsTowardServiceWindow, createdAt: { gte: since }, conversation: { channel: 'whatsapp', participantAddress: { in: [phoneDigits, `+${phoneDigits}`] } } },
     select: { id: true },
   })
   return Boolean(inbound)
