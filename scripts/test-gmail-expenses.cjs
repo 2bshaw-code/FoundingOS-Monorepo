@@ -73,7 +73,7 @@ const server = load(`${root}/superdashboard/gmail.server.ts`, {
   '../tester/session': { ADMIN_COOKIE: 'admin', verifyToken: async (scope, token) => token === 'valid-admin' ? 'founder' : null },
   './gmail-data': data,
 })
-process.env.TESTER_SESSION_SECRET = 'test-only-non-default-secret'
+process.env.TESTER_SESSION_SECRET = 'test-only-non-default-secret-0123456789'
 process.env.GMAIL_CLIENT_ID = 'test-client'
 process.env.GMAIL_CLIENT_SECRET = 'test-only-secret'
 process.env.GMAIL_REDIRECT_URI = 'https://console.example/api/gmail/callback'
@@ -94,6 +94,24 @@ test('private access rejects anonymous and tester sessions; cookie is secure and
   const key = Buffer.alloc(32, 1)
   jar.set(server.GMAIL_COOKIE, data.seal({ ownerId: 'founder', token: 'fake', email: 'owner@example.test', expiresAt: 0 }, key))
   assert.throws(() => server.connection('founder'), /expired/)
+})
+
+test('private expenses reject missing, default, and short shared session secrets', async () => {
+  const secret = process.env.TESTER_SESSION_SECRET
+  try {
+    delete process.env.TESTER_SESSION_SECRET
+    await assert.rejects(server.requireFounder(), /cannot read TESTER_SESSION_SECRET/)
+    process.env.TESTER_SESSION_SECRET = 'founderos-tester-program-dev-secret'
+    await assert.rejects(server.requireFounder(), /development fallback/)
+    process.env.TESTER_SESSION_SECRET = 'short-session-key'
+    await assert.rejects(server.requireFounder(), /at least 32 characters/)
+    process.env.TESTER_SESSION_SECRET = 'test-only-non-default-secret-0123456789'
+    jar.set('admin', 'valid-admin')
+    assert.equal(await server.requireFounder(), 'founder')
+  } finally {
+    if (secret === undefined) delete process.env.TESTER_SESSION_SECRET
+    else process.env.TESTER_SESSION_SECRET = secret
+  }
 })
 
 test('expense reads are founder-scoped with exact per-currency totals; duplicate saves are explicit', async () => {

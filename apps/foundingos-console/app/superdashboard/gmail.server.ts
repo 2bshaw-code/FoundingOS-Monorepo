@@ -13,7 +13,9 @@ export class GmailError extends Error {
 
 export async function requireFounder() {
   const secret = process.env.TESTER_SESSION_SECRET
-  if (!secret || secret === 'founderos-tester-program-dev-secret') throw new GmailError('A secure founder session must be configured before using private expenses.', 503)
+  if (!secret) throw new GmailError('The FoundingOS console cannot read TESTER_SESSION_SECRET at runtime. Check its Production environment setting and redeploy.', 503)
+  if (secret === 'founderos-tester-program-dev-secret') throw new GmailError('TESTER_SESSION_SECRET is still using the development fallback. Set a secure shared production value before using private expenses.', 503)
+  if (secret.length < 32) throw new GmailError('The shared TESTER_SESSION_SECRET must be at least 32 characters before private expenses can be used.', 503)
   const token = cookies().get(ADMIN_COOKIE)?.value
   let id: string | null = null
   if (token) {
