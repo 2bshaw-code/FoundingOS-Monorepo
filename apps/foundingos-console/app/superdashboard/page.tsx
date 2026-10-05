@@ -10,10 +10,14 @@ import { getTesterSummary } from './server/tester-metrics.server'
 import { readSurveyFeedEntries } from './survey-feed-store.server'
 import { checkAllBrandRouteHealth } from './route-health.server'
 import { SuperDashSurveyGuardian } from '@foundingos/ui/superdash/SuperDashSurveyGuardian'
+import { cookies } from 'next/headers'
+import { ADMIN_COOKIE, verifyToken } from '../tester/session'
 
 // FounderOS-only route: do not import or link this page from any brand console.
 export default async function SuperDashboardRoute({ searchParams }: { searchParams: Promise<{ readOnly?: string }> }) {
   const { readOnly } = await searchParams
+  const adminToken = cookies().get(ADMIN_COOKIE)?.value
+  const adminId = adminToken ? await verifyToken('admin', adminToken) : null
   const [quantumSignals, verificationStatus, testerSummary, surveyFeedEntries, routeHealth] = await Promise.all([
     enrichBrandSignalsWithQuantum(aggregateBrandSignals(new Date(0).toISOString())),
     readVerificationStatus(),
@@ -28,6 +32,7 @@ export default async function SuperDashboardRoute({ searchParams }: { searchPara
   return (
     <SuperDashboardPage
       readOnly={readOnly === '1'}
+      canManageExpenses={Boolean(adminId)}
       quantumSignals={quantumSignals}
       verificationStatus={verificationStatus}
       testerSummary={testerSummary}

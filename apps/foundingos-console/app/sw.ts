@@ -3,7 +3,7 @@
   Unauthorized copying, distribution, or modification is strictly prohibited.
 */
 import { defaultCache } from '@serwist/next/worker'
-import { Serwist } from 'serwist'
+import { NetworkOnly, Serwist } from 'serwist'
 import type { PrecacheEntry } from 'serwist'
 
 declare const self: ServiceWorkerGlobalScope &
@@ -20,7 +20,17 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  runtimeCaching: [
+    {
+      matcher: ({ url }) => url.origin === self.location.origin && (
+        url.pathname === '/api/gmail' ||
+        url.pathname.startsWith('/api/gmail/') ||
+        url.pathname === '/api/founder-expenses'
+      ),
+      handler: new NetworkOnly(),
+    },
+    ...defaultCache,
+  ],
 })
 
 serwist.addEventListeners()

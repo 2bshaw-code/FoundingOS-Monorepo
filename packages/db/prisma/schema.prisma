@@ -7,6 +7,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model FounderExpense {
+  id            String   @id @default(cuid())
+  ownerId       String
+  gmailAccount  String
+  messageId     String
+  supplier      String
+  invoiceNumber String
+  amount        Decimal  @db.Decimal(14, 2)
+  currency      String
+  invoiceDate   DateTime @db.Date
+  createdAt     DateTime @default(now())
+
+  @@unique([ownerId, gmailAccount, messageId])
+  @@index([ownerId, invoiceDate])
+  @@map("founder_expenses")
+}
+
 enum Role {
   admin
   staff

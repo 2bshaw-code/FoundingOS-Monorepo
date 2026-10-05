@@ -35,6 +35,7 @@ import { SuperDashSurveyPanel } from '@foundingos/ui/superdash/SuperDashSurveyPa
 import { SuperDashSurveyFeedPanel } from '@foundingos/ui/superdash/SuperDashSurveyFeedPanel'
 import { SuperDashBrandMetricsPanel } from '@foundingos/ui/superdash/SuperDashBrandMetricsPanel'
 import { SuperDashAISummary } from '@foundingos/ui/superdash/SuperDashAISummary'
+import { BuildingExpensesPanel } from './BuildingExpensesPanel'
 
 type Tone = 'good' | 'watch' | 'risk'
 
@@ -137,7 +138,7 @@ function SuperKPICard({ label, value, trend, icon, tone, history }: { label: str
   )
 }
 
-export default function SuperDashboardPage({ readOnly = false, quantumSignals = [], verificationStatus, testerSummary, guardianWarnings = [] }: { readOnly?: boolean; quantumSignals?: Array<BrandSignal & QuantumEnrichedFields>; verificationStatus?: { lastRun: string | null; driftCount: number; safeFixCount: number; pendingGuardian: number }; testerSummary?: { activation: string; engagement: number; retention: number; stability: number; autonomy: string }; guardianWarnings?: string[] }) {
+export default function SuperDashboardPage({ readOnly = false, canManageExpenses = false, quantumSignals = [], verificationStatus, testerSummary, guardianWarnings = [] }: { readOnly?: boolean; canManageExpenses?: boolean; quantumSignals?: Array<BrandSignal & QuantumEnrichedFields>; verificationStatus?: { lastRun: string | null; driftCount: number; safeFixCount: number; pendingGuardian: number }; testerSummary?: { activation: string; engagement: number; retention: number; stability: number; autonomy: string }; guardianWarnings?: string[] }) {
   const handleCommand = useSuperDashCommandHandler()
   const superDashTiles = useMemo(() => getSuperDashTiles(), [])
   const autoActions = useMemo(
@@ -197,6 +198,8 @@ export default function SuperDashboardPage({ readOnly = false, quantumSignals = 
       </header>
 
       <SuperDashAISummary brandRows={BRAND_ROWS} anomalies={ANOMALIES} guardianWarnings={guardianWarnings} />
+
+      {canManageExpenses && !readOnly && <BuildingExpensesPanel />}
 
       <div className="kpi-grid">
         {summaryMetrics.map((metric) => <SuperKPICard key={metric.label} {...metric} />)}
