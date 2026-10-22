@@ -8,6 +8,7 @@
     "@shopify/flash-list": "2.0.2",
     "@tanstack/react-query": "^5.67.2",
     "expo": "~57.0.20",
+    "expo-audio": "~57.0.4",
     "expo-camera": "~57.0.4",
     "expo-clipboard": "~57.0.2",
     "expo-constants": "~57.0.17",

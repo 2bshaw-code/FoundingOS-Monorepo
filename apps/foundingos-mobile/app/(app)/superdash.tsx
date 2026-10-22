@@ -11,6 +11,7 @@ import { FounderMarketingPanel } from '../../components/founder/FounderMarketing
 import { FounderScenarioPanel } from '../../components/founder/FounderScenario'
 import { FounderMediaLibrary } from '../../components/founder/FounderMedia'
 import { FounderLegalPanel } from '../../components/founder/FounderLegal'
+import { SpokenSuperDashBriefing } from '../../components/SpokenSuperDashBriefing'
 import { founderSections } from '@foundingos/ui/founder-navigation'
 import type { MarketingSocialPost } from '@foundingos/ui/marketing-media'
 import { isDemoData, setDemoData, subscribeDemoData } from '../../lib/demo-data'
@@ -147,6 +148,7 @@ function SuperDashScreen() {
           <QuantumButton tone={demo ? 'secondary' : undefined} onPress={() => setDemoData(!demo)}>{demo ? 'Back to live figures' : 'Load demo figures'}</QuantumButton>
         </>}
       </View>
+      {tab === 'business' && data ? <SpokenSuperDashBriefing data={data} demo={demo} /> : null}
       <View style={styles.links}>
         <QuantumPill active={tab === 'business'} onPress={() => goTab('business')}>Business</QuantumPill>
         <QuantumPill active={tab === 'finance'} onPress={() => goTab('finance')}>Finance</QuantumPill>
