@@ -49,7 +49,7 @@ export function SuperDashSurveyFeedPanel() {
   return (
     <article className="panel wide fo-card" style={{ marginTop: 24 }}>
       <h2>Survey Feed Intelligence</h2>
-      <p><small>Live tester survey submissions from FoundRetail (and future brand sites), flowing into anomaly detection, Guardian, and autonomous suggestions.</small></p>
+      <p><small>Live tester survey submissions from the Retail workspace (and future workspaces), flowing into anomaly detection, Guardian, and autonomous suggestions.</small></p>
 
       <div className="module-card-grid">
         {tiles.map((tile) => <Tile key={tile.id} tile={tile} />)}
