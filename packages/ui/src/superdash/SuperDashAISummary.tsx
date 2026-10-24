@@ -34,11 +34,11 @@ export function computeSuperDashAISummary(brandRows: SuperDashBrandRow[], anomal
   let dailySummary: string
   if (riskCount > 0) {
     const watchNote = watchCount > 0 ? `, and ${watchCount} more worth watching` : ''
-    dailySummary = `${riskCount} of ${brandRows.length} brands ${riskCount > 1 ? 'need' : 'needs'} attention right now${watchNote}.`
+    dailySummary = `${riskCount} of ${brandRows.length} workspaces ${riskCount > 1 ? 'need' : 'needs'} attention right now${watchNote}.`
   } else if (watchCount > 0) {
-    dailySummary = `Everything's stable — just ${watchCount} brand${watchCount > 1 ? 's' : ''} worth keeping an eye on.`
+    dailySummary = `Everything's stable — just ${watchCount} workspace${watchCount > 1 ? 's' : ''} worth keeping an eye on.`
   } else {
-    dailySummary = `All ${brandRows.length} brands are in great shape today — nothing needs your attention.`
+    dailySummary = `All ${brandRows.length} workspaces are in great shape today — nothing needs your attention.`
   }
 
   // Real delta: serviceLoad vs previousServiceLoad, already both present on every brand row.

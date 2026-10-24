@@ -19,10 +19,9 @@ const PACKAGE_ANALYTICS = [
 ]
 
 const RECOMMENDATION_LOGS = [
-  { brand: 'FoundRetail', style: 'strong', reason: 'Fast growth trajectory + high data volume across 3 consoles.' },
-  { brand: 'FoundHealth', style: 'subtle', reason: 'Moderate intelligence needs; QuantumOS adds value but isn\u2019t essential yet.' },
-  { brand: 'FoundCrypto', style: 'strong', reason: 'High risk level + high expected usage — QuantumOS strongly indicated.' },
-  { brand: 'FoundLogistics', style: 'none', reason: 'Small, steady operation — SystemOS alone is sufficient for now.' },
+  { brand: 'Retail', style: 'strong', reason: 'Fast growth trajectory + high data volume across 3 consoles.' },
+  { brand: 'Health', style: 'subtle', reason: 'Moderate intelligence needs; QuantumOS adds value but isn\u2019t essential yet.' },
+  { brand: 'Logistics', style: 'none', reason: 'Small, steady operation — SystemOS alone is sufficient for now.' },
 ]
 
 const USAGE_PROJECTIONS = { insights: 12400, simulations: 3100, anomalies: 890 }
@@ -34,8 +33,9 @@ const MODULE_UNLOCK_MAP = [
   { tier: 'Enterprise', modules: ['Core modules', 'Workflow modules', 'All modules', 'Custom modules'] },
 ]
 
-const BRAND_HEALTH = INDUSTRY_PACKS.map((pack, index) => ({
-  name: pack.name,
+// Meat and Crypto packs are deprecated; FoundThat now lives in Core.Intelligence.
+const BRAND_HEALTH = INDUSTRY_PACKS.filter((pack) => pack.brand !== 'meat' && pack.brand !== 'crypto').map((pack, index) => ({
+  name: pack.brand === 'foundthat' ? 'IntelligenceOS' : pack.name,
   uptime: 99.5 + (index % 3) * 0.15,
   stability: 90 + ((index * 7) % 10),
   performance: 85 + ((index * 5) % 12),
@@ -185,7 +185,7 @@ export function SuperDashCommercialPanel() {
         </div>
 
         <div className="module-card fo-card">
-          <strong>Brand health indicators</strong>
+          <strong>Pack health indicators</strong>
           <ul>
             {BRAND_HEALTH.slice(0, 4).map((row) => (
               <li key={row.name}>{row.name}: {row.uptime.toFixed(2)}% uptime, {row.stability}% stability</li>

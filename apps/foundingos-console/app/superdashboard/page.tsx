@@ -4,6 +4,7 @@
 */
 import SuperDashboardPage from './SuperDashboardPage'
 import { aggregateBrandSignals } from '@foundingos/config/brandSignalFeed'
+import { isActiveWorkspaceSignal } from './workspaces'
 import { enrichBrandSignalsWithQuantum } from '@foundingos/config/quantum-orchestration-layer'
 import { readVerificationStatus } from './server/verification-layer.server'
 import { getTesterSummary } from './server/tester-metrics.server'
@@ -15,7 +16,7 @@ import { SuperDashSurveyGuardian } from '@foundingos/ui/superdash/SuperDashSurve
 export default async function SuperDashboardRoute({ searchParams }: { searchParams: Promise<{ readOnly?: string }> }) {
   const { readOnly } = await searchParams
   const [quantumSignals, verificationStatus, testerSummary, surveyFeedEntries, routeHealth] = await Promise.all([
-    enrichBrandSignalsWithQuantum(aggregateBrandSignals(new Date(0).toISOString())),
+    enrichBrandSignalsWithQuantum(aggregateBrandSignals(new Date(0).toISOString()).filter(isActiveWorkspaceSignal)),
     readVerificationStatus(),
     getTesterSummary(),
     readSurveyFeedEntries(),

@@ -26,7 +26,7 @@ export function QuantumSyncStatus({ nodes, pulseStrength = 72 }: { nodes: number
       <span className="quantum-sync-dot" aria-hidden="true" />
       <div>
         <strong>Synchronized</strong>
-        <small>{nodes} brand nodes · last pulse {seconds === null ? '—' : `${seconds}s ago`}</small>
+        <small>{nodes} workspace nodes · last pulse {seconds === null ? '—' : `${seconds}s ago`}</small>
         <div className="quantum-sync-meter" role="meter" aria-valuenow={pulseStrength} aria-valuemin={0} aria-valuemax={100}>
           <span style={{ width: `${pulseStrength}%` }} />
         </div>

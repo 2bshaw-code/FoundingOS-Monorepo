@@ -55,8 +55,8 @@ function buildTile(id: string, title: string, description: string, href: string,
     description,
     href,
     score: scoreStr,
-    aiHint: FoundAIInlineHints('FoundRetail', id, scoreStr),
-    aiVoice: FoundAIVoicePrompt('FoundRetail', id, scoreStr),
+    aiHint: FoundAIInlineHints('Retail', id, scoreStr),
+    aiVoice: FoundAIVoicePrompt('Retail', id, scoreStr),
   }
 }
 
