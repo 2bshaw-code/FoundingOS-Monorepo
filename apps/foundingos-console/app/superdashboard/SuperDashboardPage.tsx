@@ -54,6 +54,7 @@ type BrandRow = {
 }
 
 // Demo figures for the FoundingOS workspaces (Core.Operations, Core.Workforce, Core.Intelligence).
+// Core.Workforce includes both Talent and HR (see docs/positioning.md).
 // FoundMeat and FoundCrypto are deprecated (see docs/positioning.md) and are not shown.
 const BRAND_ROWS: BrandRow[] = [
   { brand: 'Retail', marketing: 88, accounting: 96, serviceLoad: 42, previousServiceLoad: 39, messaging: 1240, aiActions: 68, status: 'good', marketingHistory: [80, 82, 85, 84, 87, 88] },
@@ -61,6 +62,7 @@ const BRAND_ROWS: BrandRow[] = [
   { brand: 'Finance', marketing: 74, accounting: 99, serviceLoad: 14, previousServiceLoad: 14, messaging: 520, aiActions: 62, status: 'good', marketingHistory: [72, 73, 73, 74, 74, 74] },
   { brand: 'Health', marketing: 66, accounting: 92, serviceLoad: 48, previousServiceLoad: 37, messaging: 690, aiActions: 51, status: 'risk', marketingHistory: [70, 69, 68, 67, 66, 66] },
   { brand: 'Talent', marketing: 78, accounting: 93, serviceLoad: 45, previousServiceLoad: 40, messaging: 910, aiActions: 71, status: 'watch', marketingHistory: [73, 74, 76, 77, 77, 78] },
+  { brand: 'HR', marketing: 76, accounting: 91, serviceLoad: 31, previousServiceLoad: 34, messaging: 620, aiActions: 59, status: 'good', marketingHistory: [70, 72, 73, 74, 75, 76] },
   { brand: 'Intelligence', marketing: 70, accounting: 88, serviceLoad: 26, previousServiceLoad: 24, messaging: 340, aiActions: 33, status: 'good', marketingHistory: [66, 67, 68, 69, 69, 70] },
 ]
 

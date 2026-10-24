@@ -12,6 +12,7 @@ const WORKSPACES: Record<string, { label: string; suite: string }> = {
   finance: { label: 'Finance', suite: 'Core.Operations' },
   health: { label: 'Health', suite: 'Core.Operations' },
   talent: { label: 'Talent', suite: 'Core.Workforce' },
+  hr: { label: 'HR', suite: 'Core.Workforce' },
   foundthat: { label: 'System Integrity', suite: 'Core.Intelligence' },
   it: { label: 'Intelligence', suite: 'Core.Intelligence' },
 }

@@ -16,6 +16,7 @@ const TEAM_MEMBERS: TeamMember[] = [
   { name: 'Leo Marchetti', role: 'Retail Ops Lead', brand: 'Retail · Core.Operations', status: 'active', lastActive: '14 min ago', permission: 'Admin' },
   { name: 'Tomasz Nowak', role: 'Data Analyst', brand: 'Intelligence · Core.Intelligence', status: 'inactive', lastActive: '3 days ago', permission: 'Member' },
   { name: 'Ella Sørensen', role: 'Recruiter', brand: 'Talent · Core.Workforce', status: 'active', lastActive: '1 hour ago', permission: 'Member' },
+  { name: 'Nia Campbell', role: 'People Operations Lead', brand: 'HR · Core.Workforce', status: 'active', lastActive: '12 min ago', permission: 'Admin' },
   { name: 'Chidi Umeh', role: 'Finance Controller', brand: 'Finance · Core.Operations', status: 'active', lastActive: '5 min ago', permission: 'Admin' },
   { name: 'Sofia Reyes', role: 'Compliance Lead', brand: 'Health · Core.Operations', status: 'active', lastActive: '22 min ago', permission: 'Member' },
   { name: 'Daniel Kessler', role: 'Fleet Coordinator', brand: 'Logistics · Core.Operations', status: 'inactive', lastActive: '5 days ago', permission: 'Viewer' },
